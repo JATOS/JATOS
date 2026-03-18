@@ -40,7 +40,7 @@ public class ComponentResult {
      */
     public enum ComponentState {
         STARTED, // Component was started
-        DATA_RETRIEVED, // Component's jsonData were retrieved
+        DATA_RETRIEVED, // Component properties were retrieved
         RESULTDATA_POSTED, // Not used anymore but kept to ensure proper JPA enum mapping
         FINISHED, // Component was finished
         RELOADED, // Component was reloaded
@@ -215,23 +215,15 @@ public class ComponentResult {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof ComponentResult)) return false;
-
         ComponentResult other = (ComponentResult) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

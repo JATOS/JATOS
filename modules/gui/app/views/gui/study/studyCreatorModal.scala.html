@@ -53,8 +53,8 @@
                 alerts.warning("The study was not added.", 5000);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#studyCreatorForm", response.responseJSON);
-                } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                } else if (response.responseText) {
+                    alerts.error(response.responseText);
                 } else {
                     alerts.error("Couldn't add a new study");
                 }

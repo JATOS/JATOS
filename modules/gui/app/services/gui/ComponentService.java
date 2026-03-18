@@ -1,10 +1,7 @@
 package services.gui;
 
-import auth.gui.AuthService;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import general.common.MessagesStrings;
 import general.gui.RequestScopeMessaging;
 import models.common.Component;
@@ -40,18 +37,13 @@ public class ComponentService {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final IOUtils ioUtils;
-    private final AuthService authService;
-    private final Checker checker;
 
     @Inject
-    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils,
-                     AuthService authService, Checker checker) {
+    ComponentService(ResultRemover resultRemover, StudyDao studyDao, ComponentDao componentDao, IOUtils ioUtils) {
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.ioUtils = ioUtils;
-        this.authService = authService;
-        this.checker = checker;
     }
 
     /**
@@ -67,7 +59,7 @@ public class ComponentService {
         clone.setHtmlFilePath(componentToBeCloned.getHtmlFilePath());
         clone.setReloadable(componentToBeCloned.isReloadable());
         clone.setActive(componentToBeCloned.isActive());
-        clone.setJsonData(componentToBeCloned.getJsonData());
+        clone.setComponentInput(componentToBeCloned.getComponentInput());
         clone.setComments(componentToBeCloned.getComments());
         return clone;
     }
@@ -93,7 +85,7 @@ public class ComponentService {
         component.setReloadable(updatedComponent.isReloadable());
         component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
         component.setComments(updatedComponent.getComments());
-        component.setJsonData(updatedComponent.getJsonData());
+        component.setComponentInput(updatedComponent.getComponentInput());
         component.setActive(updatedComponent.isActive());
         componentDao.update(component);
     }
@@ -104,8 +96,9 @@ public class ComponentService {
     public void updateComponentAfterEdit(Component component, ComponentProperties updatedProps) {
         component.setTitle(updatedProps.getTitle());
         component.setReloadable(updatedProps.isReloadable());
+        component.setActive(updatedProps.isActive());
         component.setComments(updatedProps.getComments());
-        component.setJsonData(updatedProps.getJsonData());
+        component.setComponentInput(updatedProps.getComponentInput());
         componentDao.update(component);
     }
 
@@ -142,7 +135,7 @@ public class ComponentService {
                     component.getHtmlFilePath()));
         }
         props.setId(component.getId());
-        props.setJsonData(component.getJsonData());
+        props.setComponentInput(component.getComponentInput());
         props.setReloadable(component.isReloadable());
         if (component.getStudy() != null) {
             props.setStudyId(component.getStudy().getId());
@@ -154,10 +147,7 @@ public class ComponentService {
      * Initialise and persist the given Component. Updates its study.
      */
     public Component createAndPersistComponent(Study study, Component component) {
-        component.setStudy(study);
-        if (!study.hasComponent(component)) {
-            study.addComponent(component);
-        }
+        study.addComponent(component);
         componentDao.create(component);
         studyDao.update(study);
         return component;
@@ -179,9 +169,10 @@ public class ComponentService {
         Component component = new Component();
         component.setTitle(props.getTitle());
         component.setHtmlFilePath(props.getHtmlFilePath());
+        component.setActive(props.isActive());
         component.setReloadable(props.isReloadable());
         component.setComments(props.getComments());
-        component.setJsonData(props.getJsonData());
+        component.setComponentInput(props.getComponentInput());
         return component;
     }
 
@@ -236,28 +227,24 @@ public class ComponentService {
      */
     public void remove(Component component, User signedinUser) {
         Study study = component.getStudy();
+
+        // Remove component's ComponentResults
+        resultRemover.removeAllComponentResults(component, signedinUser);
+
         // Remove component from study
         study.removeComponent(component);
         studyDao.update(study);
-        // Remove component's ComponentResults
-        resultRemover.removeAllComponentResults(component, signedinUser);
+
         componentDao.remove(component);
     }
 
-    public Component getComponentFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Component getComponentFromIdOrUuid(String idOrUuid) {
         Optional<Long> componentId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser();
-        Component component;
         if (componentId.isPresent()) {
-            component = componentDao.findById(componentId.get());
-            if (component == null) throw new NotFoundException("Couldn't find component with ID " + idOrUuid);
-            checker.checkStandardForComponent(componentId.get(), component, signedinUser);
+            return componentDao.findById(componentId.get());
         } else {
-            component = componentDao.findByUuid(idOrUuid)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find component with UUID " + idOrUuid));
-            checker.checkStandardForComponent(component.getId(), component, signedinUser);
+            return componentDao.findByUuid(idOrUuid).orElse(null);
         }
-        return component;
     }
 
 }

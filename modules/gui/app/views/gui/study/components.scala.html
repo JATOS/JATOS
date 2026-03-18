@@ -235,10 +235,12 @@
         const cid = getComponentId(checkbox);
         const active = $(checkbox).is(':checked');
         $.ajax({
-            url : window.routes.Components.toggleActive(window.study.id, cid, active),
-            type : "POST",
+            url : window.routes.Api.updateComponent(cid),
+            type: "PATCH",
+            contentType: "application/json",
+            data: JSON.stringify({ "active": active }),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: function(active) {
+            success: function() {
                 $(checkbox).prop('checked', active);
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle component activation")

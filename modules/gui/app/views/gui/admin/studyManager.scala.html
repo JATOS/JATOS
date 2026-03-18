@@ -146,8 +146,10 @@
         const tr = $(this).closest('tr');
         const studyInfo = dataTable.row(tr).data();
         $.ajax({
-            url : window.routes.Studies.toggleActive(studyInfo.id, isActive),
-            type : "POST",
+            url : window.routes.Api.updateStudy(studyInfo.id),
+            type: "PATCH",
+            contentType: "application/json",
+            data: JSON.stringify({ "active": isActive }),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => {
                 $(checkbox).prop('checked', isActive);

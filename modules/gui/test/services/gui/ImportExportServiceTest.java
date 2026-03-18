@@ -1,6 +1,5 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
@@ -24,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -68,7 +68,7 @@ public class ImportExportServiceTest {
         if (commonStatic != null) commonStatic.close();
     }
 
-    private Checker checker;
+    private AuthorizationService authorizationService;
     private StudyService studyService;
     private ComponentService componentService;
     private JsonUtils jsonUtils;
@@ -83,7 +83,7 @@ public class ImportExportServiceTest {
 
     @Before
     public void setup() {
-        checker = mock(Checker.class);
+        authorizationService = mock(AuthorizationService.class);
         studyService = mock(StudyService.class);
         BatchService batchService = mock(BatchService.class);
         componentService = mock(ComponentService.class);
@@ -93,7 +93,7 @@ public class ImportExportServiceTest {
         componentDao = mock(ComponentDao.class);
         studyDeserializer = mock(StudyDeserializer.class);
 
-        importExportService = new ImportExportService(checker, studyService, batchService, componentService,
+        importExportService = new ImportExportService(authorizationService, studyService, batchService, componentService,
                 jsonUtils, ioUtils, studyDao, componentDao, studyDeserializer);
 
         user = new User();
@@ -111,7 +111,7 @@ public class ImportExportServiceTest {
         c.setUuid("c-1");
         c.setTitle("Comp1");
         c.setStudy(s);
-        s.getComponentList().add(c);
+        s.addComponent(c);
         return s;
     }
 
@@ -176,15 +176,15 @@ public class ImportExportServiceTest {
         when(studyDao.findByUuid("u-123")).thenReturn(Optional.empty());
         when(ioUtils.checkStudyAssetsDirExists("assetsA")).thenReturn(false);
 
-        ObjectNode json = importExportService.importStudy(user, fakeZip);
+        Map<String, Object> result = importExportService.importStudy(user, fakeZip);
 
-        assertThat(json.get("studyExists").asBoolean()).isFalse();
-        assertThat(json.get("uuid").asText()).isEqualTo("u-123");
-        assertThat(json.get("uploadedStudyTitle").asText()).isEqualTo("My Study");
-        assertThat(json.get("uploadedDirName").asText()).isEqualTo("assetsA");
-        assertThat(json.get("uploadedDirExists").asBoolean()).isFalse();
+        assertThat((Boolean) result.get("studyExists")).isFalse();
+        assertThat(result.get("uuid").toString()).isEqualTo("u-123");
+        assertThat(result.get("uploadedStudyTitle").toString()).isEqualTo("My Study");
+        assertThat(result.get("uploadedDirName").toString()).isEqualTo("assetsA");
+        assertThat((Boolean) result.get("uploadedDirExists")).isFalse();
 
-        // Session contains generated temp dir name
+        // Session contains a generated temp dir name
         String tempDirName = Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
         assertThat(tempDirName).isNotEmpty();
 
@@ -241,6 +241,7 @@ public class ImportExportServiceTest {
 
     @Test
     public void importStudyConfirmed_overwriteExistingStudy_moveAssets_andUpdateWithoutDirName_whenKeepCurrentAssetsName() throws Exception {
+        ContextMocker.mock();
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
         // put temp dir name into session
@@ -258,14 +259,13 @@ public class ImportExportServiceTest {
         when(ioUtils.findDirectories(temp.dir)).thenReturn(new File[]{ temp.assetsSubdir });
 
         // Act
-        Long returnedId = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
+        Study returnedStudy = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
                 /*keepCurrentAssetsName*/true, /*renameAssets*/true);
 
         // Assert
-        assertThat(returnedId).isEqualTo(10L);
+        assertThat(returnedStudy.getId()).isEqualTo(10L);
         // permissions checked
-        verify(checker).checkStandardForStudy(eq(current), eq(current.getId()), eq(user));
-        verify(checker).checkStudyLocked(eq(current));
+        verify(authorizationService).canUserAccessStudy(eq(current), eq(user), eq(true));
         // assets handling: remove old and move new with current dir name
         verify(ioUtils).removeStudyAssetsDir("currentDir");
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("currentDir"));
@@ -299,11 +299,11 @@ public class ImportExportServiceTest {
         when(studyService.createAndPersistStudy(eq(user), any(Study.class))).thenReturn(persisted);
 
         // Act
-        Long newId = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
+        Study newStudy = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
                 /*keepCurrentAssetsName*/false, /*renameAssets*/true);
 
         // Assert
-        assertThat(newId).isEqualTo(42L);
+        assertThat(newStudy.getId()).isEqualTo(42L);
         // assets moved to renamed dir
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("uploadedDir_2"));
         // study persisted with possibly renamed dir name
@@ -312,8 +312,9 @@ public class ImportExportServiceTest {
         assertThat(studyCaptor.getValue().getDirName()).isEqualTo("uploadedDir_2");
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IOException.class)
     public void importStudyConfirmed_throwsIfNoTempDirInSession() throws Exception {
+        ContextMocker.mock();
         // no session set
         importExportService.importStudyConfirmed(user, false, false, false, true);
     }
@@ -328,7 +329,7 @@ public class ImportExportServiceTest {
         when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });
         when(studyDeserializer.deserialize(temp.jasFile)).thenReturn(uploaded);
         when(studyDao.findByUuid("uuid-3")).thenReturn(Optional.of(current));
-        doThrow(new ForbiddenException("no")).when(checker).checkStandardForStudy(eq(current), eq(77L), eq(user));
+        doThrow(new ForbiddenException("no")).when(authorizationService).canUserAccessStudy(eq(current), eq(user), eq(true));
 
         // Act
         importExportService.importStudyConfirmed(user, false, false, true, true);

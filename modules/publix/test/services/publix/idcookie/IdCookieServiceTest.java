@@ -83,7 +83,7 @@ public class IdCookieServiceTest {
         StudyResult sr = new StudyResult(); sr.setId(7L); sr.setUuid("uuid-7"); sr.setStudy(study); sr.setBatch(batch);
         GeneralSingleWorker w = new GeneralSingleWorker(); w.setId(9L); sr.setWorker(w);
         Component comp = new Component(); comp.setId(3L);
-        study.getComponentList().add(comp);
+        study.addComponent(comp);
         ComponentResult cr = new ComponentResult(); cr.setId(4L); cr.setComponent(comp);
 
         // Use ArgumentCaptor to capture the IdCookieModel that is passed to the accessor's write method

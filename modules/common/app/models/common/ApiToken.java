@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
@@ -35,10 +36,21 @@ public class ApiToken {
     /**
      * Owning User.
      */
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_username")
+    @NotNull
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_username", nullable = false)
     @JsonIgnore
     private User user;
+
+    @JsonProperty("username")
+    public String getUsername() {
+        return user != null ? user.getUsername() : null;
+    }
+
+    @JsonProperty("userId")
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
 
     /**
      * Timestamp of the creation date
@@ -48,6 +60,7 @@ public class ApiToken {
     /**
      * Time in seconds that this token will expire after creation date. Null means no expiration.
      */
+    @JsonProperty("expiresAfter")
     private Integer expires;
 
     @JsonProperty("expirationDate")
@@ -146,23 +159,15 @@ public class ApiToken {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getTokenHash() == null) ? 0 : getTokenHash().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof ApiToken)) return false;
-
         ApiToken other = (ApiToken) obj;
-        if (getTokenHash() == null) return other.getTokenHash() == null;
-        return getTokenHash().equals(other.getTokenHash());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

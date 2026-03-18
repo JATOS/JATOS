@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * Controller that deals with requests regarding ComponentResult.
@@ -40,7 +42,7 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
 public class ComponentResults extends Controller {
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final AuthService authService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
@@ -50,12 +52,12 @@ public class ComponentResults extends Controller {
     private final ComponentResultDao componentResultDao;
 
     @Inject
-    ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker,
+    ComponentResults(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthorizationService authorizationService,
             AuthService authService, BreadcrumbsService breadcrumbsService,
             ResultRemover resultRemover, ResultStreamer resultStreamer, StudyDao studyDao,
             ComponentDao componentDao, ComponentResultDao componentResultDao) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
@@ -69,15 +71,15 @@ public class ComponentResults extends Controller {
      * Shows a view with all component results of a component of a study.
      */
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result componentResults(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForComponent(studyId, componentId, component);
+            authorizationService.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessComponent(component, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         }
@@ -91,7 +93,7 @@ public class ComponentResults extends Controller {
      * a comma separated list of ComponentResult IDs as a String.
      */
     @Transactional
-    @Auth
+    @Auth(roles = USER)
     public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
         if (request.body().asJson() == null) return badRequest("Malformed request body");
@@ -108,11 +110,11 @@ public class ComponentResults extends Controller {
      * GET request that returns all ComponentResults as JSON for a given component. It streams the data as chunks (reduces memory usage)
      */
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForComponent(componentId, component, signedinUser);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         Source<ByteString, ?> dataSource = resultStreamer.streamComponentResults(component);
         return ok().chunked(dataSource).as("application/json");
@@ -122,11 +124,11 @@ public class ComponentResults extends Controller {
      * GET result data of one component result
      */
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User signedinUser = authService.getSignedinUser();
-        checker.checkComponentResult(componentResult, signedinUser, false);
+        authorizationService.canUserAccessComponentResult(componentResult, signedinUser, false);
         return ok(componentResultDao.getData(componentResultId));
     }
 

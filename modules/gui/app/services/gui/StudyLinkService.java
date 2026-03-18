@@ -1,7 +1,5 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
 import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
@@ -9,12 +7,9 @@ import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import models.common.Batch;
-import models.common.Study;
 import models.common.StudyLink;
 import models.common.workers.*;
-import scala.Option;
-import utils.common.Helpers;
-import utils.common.JsonUtils;
+import models.gui.StudyCodeProperties;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -34,63 +29,35 @@ public class StudyLinkService {
     private final WorkerDao workerDao;
     private final StudyLinkDao studyLinkDao;
     private final WorkerService workerService;
-    private final StudyService studyService;
-    private final Checker checker;
 
     @Inject
     StudyLinkService(BatchDao batchDao, WorkerDao workerDao, StudyLinkDao studyLinkDao,
-            WorkerService workerService, StudyService studyService, Checker checker) {
+            WorkerService workerService) {
         this.batchDao = batchDao;
         this.workerDao = workerDao;
         this.studyLinkDao = studyLinkDao;
         this.workerService = workerService;
-        this.studyService = studyService;
-        this.checker = checker;
     }
 
-    public JsonNode getStudyCodes(String id, Option<Long> batchId, String workerType, String comment,
-            Integer amount) throws ForbiddenException, NotFoundException, BadRequestException {
-        Study study = studyService.getStudyFromIdOrUuid(id);
-
-        Batch batch;
-        if (batchId.nonEmpty()) {
-            batch = batchDao.findById(batchId.get());
-            checker.checkStandardForBatch(batch, batch.getStudy(), batchId.get());
-        } else {
-            batch = study.getDefaultBatch();
-        }
-
-        workerType = workerService.extractWorkerType(workerType);
-        switch (workerType) {
+    public List<String> getStudyCodes(Batch batch, StudyCodeProperties props)
+            throws ForbiddenException, NotFoundException, BadRequestException {
+        switch (props.getType()) {
             case PersonalSingleWorker.WORKER_TYPE:
             case PersonalMultipleWorker.WORKER_TYPE:
-                return getPersonalRun(batch, workerType, comment, amount);
+                return createAndPersistStudyLinks(props.getComment(), props.getAmount(), batch, props.getType());
             case GeneralSingleWorker.WORKER_TYPE:
             case GeneralMultipleWorker.WORKER_TYPE:
             case MTWorker.WORKER_TYPE:
-                return getGeneralRun(batch, workerType);
+                StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, props.getType())
+                        .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, props.getType())));
+                return Collections.singletonList(studyLink.getStudyCode());
             default:
-                throw new BadRequestException("Unknown worker type");
+                throw new BadRequestException("Unknown type");
         }
-    }
-
-    /**
-     * Creates either Personal Single or Personal Multiple study codes and their corresponding workers.
-     */
-    private JsonNode getPersonalRun(Batch batch, String workerType, String comment, Integer amount)
-            throws BadRequestException {
-        comment = Strings.isNullOrEmpty(comment) ? "" : Helpers.urlDecode(comment);
-        amount = amount == null ? 1 : amount;
-        List<String> studyCodeList;
-        studyCodeList = createAndPersistStudyLinks(comment, amount, batch, workerType);
-
-        return JsonUtils.asJsonNode(studyCodeList);
     }
 
     private List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, String workerType)
             throws BadRequestException {
-        amount = Math.max(amount, 1);
-
         List<String> studyCodeList = new ArrayList<>();
         while (amount > 0) {
             Worker worker;
@@ -116,17 +83,6 @@ public class StudyLinkService {
             amount--;
         }
         return studyCodeList;
-    }
-
-    /**
-     * Returns the study code for the given worker type (possible types are GeneralMultipleWorker, GeneralSingleWorker,
-     * MTWorker). Since for the 'General' workers only one study link is necessary per batch and worker type it only
-     * creates one if it is not already stored in the StudyLink table.
-     */
-    private JsonNode getGeneralRun(Batch batch, String workerType) {
-        StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, workerType)
-                .orElseGet(() -> studyLinkDao.create(new StudyLink(batch, workerType)));
-        return JsonUtils.asJsonNode(Collections.singletonList(studyLink.getStudyCode()));
     }
 
 }

@@ -53,6 +53,9 @@ public class StudyServiceIntegrationTest extends JatosTest {
     @Inject
     private BatchDao batchDao;
 
+    @Inject
+    private AuthorizationService authorizationService;
+
     /**
      * StudyService.clone(): clones a study but does not persist. This includes
      * the Components, Batches and asset directory.
@@ -72,7 +75,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
             assertThat(clone.getDate()).isEqualTo(study.getDate());
             assertThat(clone.getDescription()).isEqualTo(study.getDescription());
             assertThat(clone.getComments()).isEqualTo(study.getComments());
-            assertThat(clone.getJsonData()).isEqualTo(study.getJsonData());
+            assertThat(clone.getStudyInput()).isEqualTo(study.getStudyInput());
             assertThat(clone.getUserList()).containsOnly(admin);
             assertThat(clone.getTitle()).isEqualTo(study.getTitle() + " (clone)");
 
@@ -331,32 +334,33 @@ public class StudyServiceIntegrationTest extends JatosTest {
      * properties of updatedStudy (excluding study's dir name).
      */
     @Test
-    public void checkBindToStudyWithoutDirName() {
+    public void checkBindToStudy() {
         Long studyId = importExampleStudy();
         Study study = getStudy(studyId);
 
         StudyProperties updatedProps = new StudyProperties();
         updatedProps.setTitle("Changed Title");
         updatedProps.setDescription("Changed description");
+        updatedProps.setDirName("Changed dir name");
         updatedProps.setComments("Changed comments");
         updatedProps.setStudyEntryMsg("Changed study entry msg");
         updatedProps.setEndRedirectUrl("Changed end redirect url");
-        updatedProps.setJsonData("{}");
+        updatedProps.setStudyInput("{}");
         updatedProps.setAllowPreview(false);
         updatedProps.setLinearStudy(false);
         updatedProps.setGroupStudy(false);
         updatedProps.setUuid("UUID cannot be changed");
-        updatedProps.setDirName("Dir name cannot be changed");
 
-        studyService.bindToStudyWithoutDirName(study, updatedProps);
+        studyService.bindToStudy(study, updatedProps);
 
         // Check changed properties of the study
         assertThat(study.getTitle()).isEqualTo(updatedProps.getTitle());
         assertThat(study.getDescription()).isEqualTo(updatedProps.getDescription());
+        assertThat(study.getDirName()).isEqualTo(updatedProps.getDirName());
         assertThat(study.getComments()).isEqualTo(updatedProps.getComments());
         assertThat(study.getStudyEntryMsg()).isEqualTo(updatedProps.getStudyEntryMsg());
         assertThat(study.getEndRedirectUrl()).isEqualTo(updatedProps.getEndRedirectUrl());
-        assertThat(study.getJsonData()).isEqualTo(updatedProps.getJsonData());
+        assertThat(study.getStudyInput()).isEqualTo(updatedProps.getStudyInput());
         assertThat(study.isAllowPreview()).isEqualTo(updatedProps.isAllowPreview());
         assertThat(study.isLinearStudy()).isEqualTo(updatedProps.isLinearStudy());
         assertThat(study.isGroupStudy()).isEqualTo(updatedProps.isGroupStudy());
@@ -364,7 +368,6 @@ public class StudyServiceIntegrationTest extends JatosTest {
         // ID, UUID, and dirName shouldn't be changed
         assertThat(study.getId()).isEqualTo(studyId);
         assertThat(study.getUuid()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
-        assertThat(study.getDirName()).isEqualTo("potatoCompass");
     }
 
     /**
@@ -424,32 +427,33 @@ public class StudyServiceIntegrationTest extends JatosTest {
     }
 
     @Test
-    public void checkCreateAndPersistStudyFromProperties() {
+    public void checkCreateAndPersistStudyAndAssetsDirFromProperties() {
         StudyProperties props = new StudyProperties();
         props.setTitle("My Study");
         props.setDescription("Desc");
         props.setComments("Comments");
         props.setStudyEntryMsg("Welcome");
         props.setEndRedirectUrl("http://example.org");
-        props.setJsonData("{}");
+        props.setStudyInput("{}");
         props.setAllowPreview(true);
         props.setGroupStudy(false);
         props.setLinearStudy(true);
 
-        Long studyId = jpaApi.withTransaction((em) -> {
-            return studyService.createAndPersistStudy(admin, props).getId();
-        });
+        Long studyId = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+                studyService.createAndPersistStudyAndAssetsDir(admin, props, true).getId()
+        ));
 
-        // Persisted study has a default batch and contains the admin as member
+        // Persisted study has a default batch and contains the admin as a member
         jpaApi.withTransaction(unchecked(em -> {
             Study study = studyDao.findById(studyId);
             assertThat(study.getId()).isNotNull();
             assertThat(study.getBatchList()).hasSize(1);
             Batch defaultBatch = study.getBatchList().get(0);
             assertThat(defaultBatch.getId()).isNotNull();
-            // admin's worker is added to the batch
-            assertThat(defaultBatch.getWorkerList()).isNotEmpty();
+            assertThat(defaultBatch.getWorkerList()).containsOnly(admin.getWorker());
             assertThat(study.getUserList()).contains(admin);
+
+            assertThat(ioUtils.checkStudyAssetsDirExists(study.getDirName())).isTrue();
         }));
     }
 
@@ -461,7 +465,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         study.setComments("C");
         study.setStudyEntryMsg("Hi");
         study.setEndRedirectUrl("http://x");
-        study.setJsonData("{}");
+        study.setStudyInput("{}");
         study.setLinearStudy(false);
         study.setAllowPreview(false);
         study.setGroupStudy(true);
@@ -478,7 +482,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
     }
 
     @Test
-    public void checkUpdateStudy() {
+    public void checkUpdateStudyAndRenameAssets() {
         Study study = jpaApi.withTransaction((em) -> {
             Study s = new Study();
             s.setTitle("A");
@@ -486,7 +490,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
             s.setComments("comments");
             s.setStudyEntryMsg("study entry msg");
             s.setEndRedirectUrl("http://example.org");
-            s.setJsonData("{}");
+            s.setStudyInput("{}");
             s.setAllowPreview(true);
             s.setLinearStudy(true);
             s.setGroupStudy(false);
@@ -500,14 +504,14 @@ public class StudyServiceIntegrationTest extends JatosTest {
         updated.setComments("changed_comments");
         updated.setStudyEntryMsg("changed_study_entry_msg");
         updated.setEndRedirectUrl("changed_end_redirect_url");
-        updated.setJsonData("{\"foo\":\"bar\"}");
+        updated.setStudyInput("{\"foo\":\"bar\"}");
         updated.setAllowPreview(false);
         updated.setLinearStudy(false);
         updated.setGroupStudy(false);
         updated.setUuid("UUID cannot be changed");
         updated.setDirName("changed_dirname");
         jpaApi.withTransaction((em) -> {
-            studyService.updateStudy(study, updated, admin);
+            studyService.updateStudyAndRenameAssets(study, updated, admin);
         });
 
 
@@ -518,7 +522,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         assertThat(verifyUpdated.getComments()).isEqualTo("changed_comments");
         assertThat(verifyUpdated.getStudyEntryMsg()).isEqualTo("changed_study_entry_msg");
         assertThat(verifyUpdated.getEndRedirectUrl()).isEqualTo("changed_end_redirect_url");
-        assertThat(verifyUpdated.getJsonData()).isEqualTo("{\"foo\":\"bar\"}");
+        assertThat(verifyUpdated.getStudyInput()).isEqualTo("{\"foo\":\"bar\"}");
         assertThat(verifyUpdated.isAllowPreview()).isEqualTo(false);
         assertThat(verifyUpdated.isLinearStudy()).isEqualTo(false);
         assertThat(verifyUpdated.isGroupStudy()).isEqualTo(false);
@@ -557,7 +561,8 @@ public class StudyServiceIntegrationTest extends JatosTest {
 
         jpaApi.withTransaction(em -> {
             try {
-                studyService.getStudyFromIdOrUuid("999999");
+                Study study = studyService.getStudyFromIdOrUuid("999999");
+                authorizationService.canUserAccessStudy(study, admin);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected
@@ -568,7 +573,8 @@ public class StudyServiceIntegrationTest extends JatosTest {
 
         jpaApi.withTransaction(em -> {
             try {
-                studyService.getStudyFromIdOrUuid(randomUuid);
+                Study study = studyService.getStudyFromIdOrUuid(randomUuid);
+                authorizationService.canUserAccessStudy(study, admin);
                 Fail.fail();
             } catch (NotFoundException e) {
                 // expected

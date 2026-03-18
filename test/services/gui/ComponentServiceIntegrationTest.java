@@ -4,16 +4,14 @@ import auth.gui.AuthService;
 import com.pivovarit.function.ThrowingConsumer;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import general.common.RequestScope;
 import models.common.Component;
 import models.common.Study;
 import models.gui.ComponentProperties;
 import org.fest.assertions.Fail;
 import org.junit.Test;
-import testutils.JatosTest;
 import testutils.ContextMocker;
+import testutils.JatosTest;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -60,7 +58,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             assertThat(clone.getHtmlFilePath()).isEqualTo(original.getHtmlFilePath());
             assertThat(clone.isReloadable()).isEqualTo(original.isReloadable());
             assertThat(clone.isActive()).isEqualTo(original.isActive());
-            assertThat(clone.getJsonData()).isEqualTo(original.getJsonData());
+            assertThat(clone.getComponentInput()).isEqualTo(original.getComponentInput());
             assertThat(clone.getComments()).isEqualTo(original.getComments());
 
             // Differences
@@ -101,21 +99,21 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             ComponentProperties updated = new ComponentProperties();
             updated.setTitle(component.getTitle() + " updated");
             updated.setComments("Some comment");
-            updated.setJsonData("{\"a\":1}");
+            updated.setComponentInput("{\"a\":1}");
             updated.setReloadable(!component.isReloadable());
+            updated.setActive(!component.isActive());
             updated.setHtmlFilePath("shouldNotChange.html"); // will be ignored
-            updated.setActive(!component.isActive()); // will be ignored
 
             componentService.updateComponentAfterEdit(component, updated);
 
             Component reloaded = componentDao.findById(component.getId());
             assertThat(reloaded.getTitle()).isEqualTo(updated.getTitle());
             assertThat(reloaded.getComments()).isEqualTo(updated.getComments());
-            assertThat(reloaded.getJsonData()).isEqualTo(updated.getJsonData());
+            assertThat(reloaded.getComponentInput()).isEqualTo(updated.getComponentInput());
             assertThat(reloaded.isReloadable()).isEqualTo(updated.isReloadable());
+            assertThat(reloaded.isActive()).isEqualTo(updated.isActive());
             // unchanged
             assertThat(reloaded.getHtmlFilePath()).isEqualTo(originalHtml);
-            assertThat(reloaded.isActive()).isEqualTo(originalActive);
         }));
     }
 
@@ -131,7 +129,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             props.setHtmlFilePath("newComp.html");
             props.setReloadable(true);
             props.setComments("Hello");
-            props.setJsonData("{\"x\":2}");
+            props.setComponentInput("{\"x\":2}");
 
             Component created = componentService.createAndPersistComponent(study, props);
 
@@ -318,16 +316,12 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Component comp = study.getFirstComponent().get();
 
-            try {
-                // by ID
-                Component byId = componentService.getComponentFromIdOrUuid(String.valueOf(comp.getId()));
-                assertThat(byId.getId()).isEqualTo(comp.getId());
-                // by UUID
-                Component byUuid = componentService.getComponentFromIdOrUuid(comp.getUuid());
-                assertThat(byUuid.getUuid()).isEqualTo(comp.getUuid());
-            } catch (NotFoundException | ForbiddenException e) {
-                Fail.fail();
-            }
+            // by ID
+            Component byId = componentService.getComponentFromIdOrUuid(String.valueOf(comp.getId()));
+            assertThat(byId.getId()).isEqualTo(comp.getId());
+            // by UUID
+            Component byUuid = componentService.getComponentFromIdOrUuid(comp.getUuid());
+            assertThat(byUuid.getUuid()).isEqualTo(comp.getUuid());
         }));
     }
 

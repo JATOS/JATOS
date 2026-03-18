@@ -16,6 +16,11 @@ import utils.common.Helpers;
 
 import javax.inject.Provider;
 
+import java.util.Collections;
+import java.util.EnumSet;
+
+import static models.common.User.Role.ADMIN;
+import static models.common.User.Role.USER;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -72,7 +77,7 @@ public class AuthSessionCookieTest {
     private static User makeUser(boolean active, boolean hasRole) {
         User u = mock(User.class);
         when(u.isActive()).thenReturn(active);
-        when(u.hasRole(any())).thenReturn(hasRole);
+        when(u.hasRole(Collections.singleton(any()))).thenReturn(hasRole);
         when(u.getUsername()).thenReturn("bob");
         return u;
     }
@@ -81,7 +86,7 @@ public class AuthSessionCookieTest {
     public void authenticate_wrongMethod_whenNotSessionCookieRequest() {
         helpersMock.when(() -> Helpers.isSessionCookieRequest(any())).thenReturn(false);
 
-        AuthResult res = authSessionCookie.authenticate(emptyRequest(), User.Role.USER);
+        AuthResult res = authSessionCookie.authenticate(emptyRequest(), EnumSet.of(USER));
         assertThat(res.state).isEqualTo(AuthResult.State.WRONG_METHOD);
     }
 
@@ -89,7 +94,7 @@ public class AuthSessionCookieTest {
     public void authenticate_denied_whenNoSignedInUserInSession() {
         when(authService.getSignedinUserBySessionCookie(any())).thenReturn(null);
 
-        AuthResult res = authSessionCookie.authenticate(emptyRequest(), User.Role.USER);
+        AuthResult res = authSessionCookie.authenticate(emptyRequest(), EnumSet.of(USER));
 
         assertThat(res.state).isEqualTo(AuthResult.State.DENIED);
         assertThat(res.result).isNotNull();
@@ -103,7 +108,7 @@ public class AuthSessionCookieTest {
         when(authService.isSessionKeepSignedin(any())).thenReturn(false);
         when(authService.isSessionTimeout(any())).thenReturn(true);
 
-        AuthResult res = authSessionCookie.authenticate(emptyRequest(), User.Role.USER);
+        AuthResult res = authSessionCookie.authenticate(emptyRequest(), EnumSet.of(USER));
 
         assertThat(res.state).isEqualTo(AuthResult.State.DENIED);
         assertThat(res.result).isNotNull();
@@ -118,7 +123,7 @@ public class AuthSessionCookieTest {
         when(authService.isSessionTimeout(any())).thenReturn(false);
         when(authService.isInactivityTimeout(any())).thenReturn(true);
 
-        AuthResult res = authSessionCookie.authenticate(emptyRequest(), User.Role.USER);
+        AuthResult res = authSessionCookie.authenticate(emptyRequest(), EnumSet.of(USER));
 
         assertThat(res.state).isEqualTo(AuthResult.State.DENIED);
         assertThat(res.result).isNotNull();
@@ -131,7 +136,7 @@ public class AuthSessionCookieTest {
         when(authService.getSignedinUserBySessionCookie(any())).thenReturn(u);
         when(authService.isSessionKeepSignedin(any())).thenReturn(true); // skip timeouts
 
-        AuthResult res = authSessionCookie.authenticate(emptyRequest(), User.Role.USER);
+        AuthResult res = authSessionCookie.authenticate(emptyRequest(), EnumSet.of(USER));
 
         assertThat(res.state).isEqualTo(AuthResult.State.DENIED);
         assertThat(res.result).isNotNull();
@@ -139,17 +144,17 @@ public class AuthSessionCookieTest {
     }
 
     @Test
-    public void authenticate_denied_whenInsufficientRole() {
+    public void authenticate_denied_whenInsufficientRoles() {
         User u = makeUser(true, false);
         when(authService.getSignedinUserBySessionCookie(any())).thenReturn(u);
         when(authService.isSessionKeepSignedin(any())).thenReturn(true); // skip timeouts
 
-        AuthResult res = authSessionCookie.authenticate(emptyRequest(), User.Role.ADMIN);
+        AuthResult res = authSessionCookie.authenticate(emptyRequest(), EnumSet.of(ADMIN));
 
         assertThat(res.state).isEqualTo(AuthResult.State.DENIED);
         assertThat(res.result).isNotNull();
         verify(homeProvider, times(1)).get();
-        verify(home, times(1)).home(any(Http.Request.class), eq(Http.Status.FORBIDDEN));
+        verify(home, times(1)).home(any(Http.Request.class), eq(Http.Status.UNAUTHORIZED));
         verify(userService, never()).setLastSeen(any());
     }
 
@@ -159,7 +164,7 @@ public class AuthSessionCookieTest {
         when(authService.getSignedinUserBySessionCookie(any())).thenReturn(u);
         when(authService.isSessionKeepSignedin(any())).thenReturn(true); // skip timeout checks
 
-        AuthResult res = authSessionCookie.authenticate(emptyRequest(), User.Role.USER);
+        AuthResult res = authSessionCookie.authenticate(emptyRequest(), EnumSet.of(USER));
 
         assertThat(res.state).isEqualTo(AuthResult.State.AUTHENTICATED);
         verify(userService, times(1)).setLastSeen(u);

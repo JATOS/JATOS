@@ -21,7 +21,8 @@
 
 /* global jsonpatch, jsonpointer */
 
-const jatos = {};
+var jatos = {};
+window.jatos = jatos; // Make jatos available in the window object for backward compatibility
 
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
 // or functions or variables)
@@ -31,7 +32,7 @@ const jatos = {};
     /**
      * jatos.js version
      */
-    jatos.version = "3.9.8";
+    jatos.version = "3.10.1";
     /**
      * How long in ms should JATOS wait before retrying the HTTP call.
      */
@@ -438,15 +439,15 @@ const jatos = {};
     function setInitData(initData) {
         // Batch properties
         jatos.batchProperties = initData.batchProperties;
-        if (typeof jatos.batchProperties.jsonData != 'undefined' &&
-            jatos.studyProperties.jsonData !== null) {
+        if (typeof jatos.batchProperties.batchInput != 'undefined' &&
+            jatos.studyProperties.studyInput !== null) {
             jatos.batchJsonInput = jatos.jQuery
-                .parseJSON(jatos.batchProperties.jsonData);
+                .parseJSON(jatos.batchProperties.batchInput);
         } else {
             jatos.batchJsonInput = {};
         }
         jatos.batchInput = jatos.batchJsonInput;
-        delete jatos.batchProperties.jsonData;
+        delete jatos.batchProperties.batchInput;
 
         // Study session data
         try {
@@ -457,15 +458,15 @@ const jatos = {};
 
         // Study properties
         jatos.studyProperties = initData.studyProperties;
-        if (typeof jatos.studyProperties.jsonData != 'undefined' &&
-            jatos.studyProperties.jsonData !== null) {
+        if (typeof jatos.studyProperties.studyInput != 'undefined' &&
+            jatos.studyProperties.studyInput !== null) {
             jatos.studyJsonInput = jatos.jQuery
-                .parseJSON(jatos.studyProperties.jsonData);
+                .parseJSON(jatos.studyProperties.studyInput);
         } else {
             jatos.studyJsonInput = {};
         }
         jatos.studyInput = jatos.studyJsonInput;
-        delete jatos.studyProperties.jsonData;
+        delete jatos.studyProperties.studyInput;
 
         // Study's component list and study length
         jatos.componentList = initData.componentList;
@@ -473,15 +474,15 @@ const jatos = {};
 
         // Component properties
         jatos.componentProperties = initData.componentProperties;
-        if (typeof jatos.componentProperties.jsonData != 'undefined' &&
-            jatos.componentProperties.jsonData !== null) {
+        if (typeof jatos.componentProperties.componentInput != 'undefined' &&
+            jatos.componentProperties.componentInput !== null) {
             jatos.componentJsonInput = jatos.jQuery
-                .parseJSON(jatos.componentProperties.jsonData);
+                .parseJSON(jatos.componentProperties.componentInput);
         } else {
             jatos.componentJsonInput = {};
         }
         jatos.componentInput = jatos.componentJsonInput;
-        delete jatos.componentProperties.jsonData;
+        delete jatos.componentProperties.componentInput;
 
         // Query string parameters of the URL that started the study
         jatos.urlQueryParameters = initData.urlQueryParameters;

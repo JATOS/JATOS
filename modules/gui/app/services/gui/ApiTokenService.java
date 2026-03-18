@@ -3,6 +3,8 @@ package services.gui;
 import daos.common.ApiTokenDao;
 import models.common.ApiToken;
 import models.common.User;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;
@@ -22,17 +24,17 @@ public class ApiTokenService {
     }
 
     /**
-     * Generates a new api token and persists its hash in the database. Returns the token string.
+     * Generates a new api token and persists its hash in the database. Returns the token and the token string.
      * A token consists of the prefix "jap_" + a random string of 31 characters and a checksum of 6 characters.
      */
-    public String create(User user, String name, Integer expires) {
+    public Pair<ApiToken, String> create(User user, String name, Integer expires) {
         String randomStr = HashUtils.generateSecureRandomString(31);
         String checksum = HashUtils.getChecksum(randomStr);
         String apiTokenStr = "jap_" + randomStr + checksum;
         String tokenHash = HashUtils.getHash(apiTokenStr, HashUtils.SHA_256);
         ApiToken at = new ApiToken(tokenHash, name, expires, user);
         apiTokenDao.create(at);
-        return apiTokenStr;
+        return new ImmutablePair<>(at, apiTokenStr);
     }
 
 }

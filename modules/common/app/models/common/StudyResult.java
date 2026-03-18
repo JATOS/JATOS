@@ -60,7 +60,7 @@ public class StudyResult {
     public enum StudyState {
         PRE, // Preview of study (exists only in PersonalSingleWorker and GeneralSingleWorker)
         STARTED, // Study was started
-        DATA_RETRIEVED, // Study's jsonData were retrieved
+        DATA_RETRIEVED, // Study properties were retrieved
         FINISHED, // Study successfully finished
         ABORTED, // Study aborted by worker
         FAIL; // Something went wrong
@@ -370,23 +370,15 @@ public class StudyResult {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof StudyResult)) return false;
-
         StudyResult other = (StudyResult) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

@@ -23,6 +23,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.naming.NamingException;
 
+import static models.common.User.Role.*;
+
 /**
  * Controller that deals with authentication for users stored in JATOS' DB and users authenticated by LDAP. OIDC auth is
  * handled by the classes {@link SigninGoogle} and {@link SigninOidc}.There are two sign-in views: 1) sign-in HTML page,
@@ -127,7 +129,7 @@ public class Signin extends Controller {
      * Removes user from session and shows sign-in view with a sign-out message.
      */
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result signout(Http.Request request) {
         LOGGER.info(".signout: " + request.session().get(AuthService.SESSION_USERNAME));
         FlashScopeMessaging.success("You've been signed out.");

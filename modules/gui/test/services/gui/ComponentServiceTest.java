@@ -1,10 +1,7 @@
 package services.gui;
 
-import auth.gui.AuthService;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
@@ -20,7 +17,6 @@ import utils.common.IOUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Optional;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -54,8 +50,6 @@ public class ComponentServiceTest {
     private StudyDao studyDao;
     private ComponentDao componentDao;
     private IOUtils ioUtils;
-    private AuthService authService;
-    private Checker checker;
 
     private ComponentService componentService;
 
@@ -65,10 +59,8 @@ public class ComponentServiceTest {
         studyDao = Mockito.mock(StudyDao.class);
         componentDao = Mockito.mock(ComponentDao.class);
         ioUtils = Mockito.mock(IOUtils.class);
-        authService = Mockito.mock(AuthService.class);
-        checker = Mockito.mock(Checker.class);
 
-        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils, authService, checker);
+        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils);
     }
 
     private Component exampleComponent(Study study) {
@@ -78,7 +70,7 @@ public class ComponentServiceTest {
         c.setHtmlFilePath("a/index.html");
         c.setReloadable(true);
         c.setActive(true);
-        c.setJsonData("{\"x\":1}");
+        c.setComponentInput("{\"x\":1}");
         c.setComments("note");
         c.setId(10L);
         return c;
@@ -98,7 +90,7 @@ public class ComponentServiceTest {
         assertThat(clone.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
         assertThat(clone.isReloadable()).isTrue();
         assertThat(clone.isActive()).isTrue();
-        assertThat(clone.getJsonData()).isEqualTo("{\"x\":1}");
+        assertThat(clone.getComponentInput()).isEqualTo("{\"x\":1}");
         assertThat(clone.getComments()).isEqualTo("note");
         // differences
         assertThat(clone.getId()).isNull();
@@ -164,7 +156,7 @@ public class ComponentServiceTest {
         assertThat(props.getStudyId()).isEqualTo(3L);
         assertThat(props.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
         assertThat(props.isHtmlFileExists()).isTrue();
-        assertThat(props.getJsonData()).isEqualTo("{\"x\":1}");
+        assertThat(props.getComponentInput()).isEqualTo("{\"x\":1}");
         assertThat(props.getComments()).isEqualTo("note");
         assertThat(props.isReloadable()).isTrue();
         assertThat(props.isActive()).isTrue();
@@ -179,7 +171,7 @@ public class ComponentServiceTest {
         updated.setTitle("New");
         updated.setReloadable(false);
         updated.setComments("c2");
-        updated.setJsonData("{\"y\":2}");
+        updated.setComponentInput("{\"y\":2}");
 
         // When
         componentService.updateComponentAfterEdit(c, updated);
@@ -188,7 +180,7 @@ public class ComponentServiceTest {
         assertThat(c.getTitle()).isEqualTo("New");
         assertThat(c.isReloadable()).isFalse();
         assertThat(c.getComments()).isEqualTo("c2");
-        assertThat(c.getJsonData()).isEqualTo("{\"y\":2}");
+        assertThat(c.getComponentInput()).isEqualTo("{\"y\":2}");
         // unchanged
         assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
         assertThat(c.isActive()).isTrue();
@@ -205,7 +197,7 @@ public class ComponentServiceTest {
         p.setHtmlFilePath("f.html");
         p.setReloadable(true);
         p.setComments("X");
-        p.setJsonData("{\"z\":1}");
+        p.setComponentInput("{\"z\":1}");
 
         // When
         Component created = componentService.createAndPersistComponent(s, p);
@@ -313,51 +305,4 @@ public class ComponentServiceTest {
         verify(componentDao).remove(c);
     }
 
-    @Test
-    public void getComponentFromIdOrUuid_withId_shouldReturn_andCheckPermissions() throws NotFoundException, ForbiddenException {
-        // Given
-        User signed = new User("u", "U", "u@x");
-        when(authService.getSignedinUser()).thenReturn(signed);
-        Component c = new Component();
-        c.setId(123L);
-        when(componentDao.findById(123L)).thenReturn(c);
-
-        // When
-        Component res = componentService.getComponentFromIdOrUuid("123");
-
-        // Then
-        assertThat(res).isEqualTo(c);
-        verify(checker).checkStandardForComponent(123L, c, signed);
-    }
-
-    @Test
-    public void getComponentFromIdOrUuid_withUuid_shouldReturn_andCheckPermissions() throws NotFoundException, ForbiddenException {
-        // Given
-        User signed = new User("u", "U", "u@x");
-        when(authService.getSignedinUser()).thenReturn(signed);
-        Component c = new Component();
-        c.setId(55L);
-        when(componentDao.findByUuid("abc")).thenReturn(Optional.of(c));
-
-        // When
-        Component res = componentService.getComponentFromIdOrUuid("abc");
-
-        // Then
-        assertThat(res).isEqualTo(c);
-        verify(checker).checkStandardForComponent(55L, c, signed);
-    }
-
-    @Test(expected = NotFoundException.class)
-    public void getComponentFromIdOrUuid_withUnknownId_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
-        when(componentDao.findById(999L)).thenReturn(null);
-        componentService.getComponentFromIdOrUuid("999");
-    }
-
-    @Test(expected = NotFoundException.class)
-    public void getComponentFromIdOrUuid_withUnknownUuid_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
-        when(componentDao.findByUuid("nope")).thenReturn(Optional.empty());
-        componentService.getComponentFromIdOrUuid("nope");
-    }
 }

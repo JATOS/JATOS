@@ -4,7 +4,6 @@ import akka.stream.javadsl.Flow;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import general.common.Common;
-import models.common.User;
 import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -19,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static auth.gui.AuthAction.Auth;
+import static models.common.User.Role.ADMIN;
 
 /**
  * Controller with endpoints used by /jatos/test. Each endpoint tests a different aspect of JATOS.
@@ -38,7 +38,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Auth(User.Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);
@@ -49,7 +49,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Auth(User.Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result testFolderAccess() {
         Map<String, Boolean> folderAccessResults = new HashMap<>();
         folderAccessResults.put("studyAssetsRoot", testFolder(Common.getStudyAssetsRootPath()));
@@ -75,7 +75,7 @@ public class Tests extends Controller {
     }
 
     @Transactional
-    @Auth(User.Role.ADMIN)
+    @Auth(roles = ADMIN)
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
             // send response back to a client

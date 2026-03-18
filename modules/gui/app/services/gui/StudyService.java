@@ -3,20 +3,17 @@ package services.gui;
 import auth.gui.AuthService;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import daos.common.worker.WorkerDao;
 import exceptions.gui.BadRequestException;
 import exceptions.gui.ForbiddenException;
-import exceptions.gui.NotFoundException;
+import exceptions.gui.ValidationException;
 import general.common.MessagesStrings;
 import general.common.StudyLogger;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
 import models.gui.StudyProperties;
 import play.Logger;
@@ -27,7 +24,6 @@ import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.validation.ValidationException;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,28 +41,22 @@ public class StudyService {
     private final BatchService batchService;
     private final ComponentService componentService;
     private final StudyDao studyDao;
-    private final BatchDao batchDao;
     private final UserDao userDao;
-    private final WorkerDao workerDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
     private final AuthService authService;
-    private final Checker checker;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
-            BatchDao batchDao, UserDao userDao, WorkerDao workerDao, IOUtils ioUtils,
-            StudyLogger studyLogger, AuthService authService, Checker checker) {
+            UserDao userDao, IOUtils ioUtils,
+            StudyLogger studyLogger, AuthService authService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
-        this.batchDao = batchDao;
         this.userDao = userDao;
-        this.workerDao = workerDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
         this.authService = authService;
-        this.checker = checker;
     }
 
     /**
@@ -83,7 +73,7 @@ public class StudyService {
         clone.setComments(study.getComments());
         clone.setEndRedirectUrl(study.getEndRedirectUrl());
         clone.setStudyEntryMsg(study.getStudyEntryMsg());
-        clone.setJsonData(study.getJsonData());
+        clone.setStudyInput(study.getStudyInput());
         clone.setLocked(false);
         clone.setGroupStudy(study.isGroupStudy());
         clone.setLinearStudy(study.isLinearStudy());
@@ -92,7 +82,6 @@ public class StudyService {
         // Clone each component
         for (Component component : study.getComponentList()) {
             Component componentClone = componentService.clone(component);
-            componentClone.setStudy(clone);
             clone.addComponent(componentClone);
         }
 
@@ -136,7 +125,8 @@ public class StudyService {
                 throw new ForbiddenException(MessagesStrings.STUDY_AT_LEAST_ONE_USER);
             }
             study.removeUser(userToChange);
-            study.getBatchList().forEach(b -> b.removeWorker(userToChange.getWorker()));
+            Worker workerToRemove = userToChange.getWorker();
+            study.getBatchList().forEach(b -> b.removeWorker(workerToRemove));
         }
         studyDao.update(study);
         userDao.update(userToChange);
@@ -147,7 +137,7 @@ public class StudyService {
      */
     public void addAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
-        study.getUserList().addAll(userList);
+        study.addAllUsers(userList);
         List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.addAllWorkers(usersWorkerList));
 
@@ -160,13 +150,17 @@ public class StudyService {
      * workers from the study's batches (except the signed-in user's workers).
      */
     public void removeAllUserMembers(Study study) {
-        List<User> userList = userDao.findAll();
-        userList.remove(authService.getSignedinUser());
-        List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
+        List<User> usersToRemove = userDao.findAll();
+        User signedInUser = authService.getSignedinUser();
+        usersToRemove.remove(signedInUser);
+
+        List<Worker> usersWorkerList = usersToRemove.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
-        study.getUserList().removeAll(userList);
+
+        study.removeAllUsers(usersToRemove);
+
         studyDao.update(study);
-        userList.forEach(userDao::update);
+        usersToRemove.forEach(userDao::update);
     }
 
     /**
@@ -190,14 +184,27 @@ public class StudyService {
         }
     }
 
-    /**
-     * Create and persist a Study with given properties. Creates and persists the default Batch. If the study has
-     * components already, it persists them too. Adds the given user to the users of this study.
-     */
-    public Study createAndPersistStudy(User signedinUser, StudyProperties studyProperties) {
+    public Study createAndPersistStudyAndAssetsDir(User signedinUser, StudyProperties props, boolean renameAssets)
+            throws IOException, ForbiddenException {
         Study study = new Study();
-        bindToStudyWithoutDirName(study, studyProperties);
-        return createAndPersistStudy(signedinUser, study);
+        bindToStudy(study, props);
+        if (Strings.isNullOrEmpty(study.getDirName())) {
+            study.setDirName(study.getUuid());
+        }
+
+        boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(study.getDirName());
+        if (uploadedDirExists) {
+            if (renameAssets) {
+                String newDirName = ioUtils.findNonExistingStudyAssetsDirName(study.getDirName());
+                study.setDirName(newDirName);
+            } else {
+                throw new ForbiddenException("Cannot create study: a study assets directory with the same name exists already, but 'renameAssets' is set to false.");
+            }
+        }
+
+        ioUtils.createStudyAssetsDir(study.getDirName());
+        createAndPersistStudy(signedinUser, study);
+        return study;
     }
 
     /**
@@ -205,24 +212,20 @@ public class StudyService {
      * them too. Adds the given user to the users of this study.
      */
     public Study createAndPersistStudy(User signedinUser, Study study) {
-        study.getComponentList().forEach(c -> c.setStudy(study));
+        signedinUser = userDao.findByUsername(signedinUser.getUsername()); // We need the user to be in the current Hibernate session
+        study.addUser(signedinUser);
+
+        if (study.getBatchList().isEmpty()) {
+            // Create a default batch if we have no batch
+            Batch defaultBatch = batchService.createDefaultBatch();
+            batchService.initBatch(defaultBatch, study);
+            study.addBatch(defaultBatch);
+        } else {
+            study.getBatchList().forEach(b -> batchService.initBatch(b, study));
+        }
 
         studyDao.create(study);
 
-        if (study.getBatchList().isEmpty()) {
-            // Create default batch if we have no batch
-            Batch defaultBatch = batchService.createDefaultBatch(study);
-            study.addBatch(defaultBatch);
-            batchDao.create(defaultBatch);
-        } else {
-            study.getBatchList().forEach(b -> batchService.createBatch(b, study));
-            study.getBatchList().forEach(batchDao::create);
-        }
-
-        // Add user
-        addUserToStudy(study, signedinUser);
-
-        studyDao.update(study);
         studyLogger.create(study);
         studyLogger.log(study, signedinUser, "Created study");
         if (!Strings.isNullOrEmpty(study.getDescription())) {
@@ -231,25 +234,10 @@ public class StudyService {
         return study;
     }
 
-    private void addUserToStudy(Study study, User user) {
-        study.addUser(user);
-        user.addStudy(study);
-        studyDao.update(study);
-        userDao.update(user);
-
-        // For each of the study's batches add the user's JatosWorker
-        JatosWorker jatosWorker = user.getWorker();
-        for (Batch batch : study.getBatchList()) {
-            batch.addWorker(jatosWorker);
-            batchDao.update(batch);
-        }
-        workerDao.update(jatosWorker);
-    }
-
     /**
      * Update properties of study with properties of updatedStudy.
      */
-    public void updateStudy(Study study, Study updatedStudy, User signedinUser) {
+    public void updateStudyAndRenameAssets(Study study, Study updatedStudy, User signedinUser) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(),
                 updatedStudy.getDescriptionHash());
         updateStudyCommon(study, updatedStudy);
@@ -275,7 +263,7 @@ public class StudyService {
         study.setComments(updatedStudy.getComments());
         study.setStudyEntryMsg(updatedStudy.getStudyEntryMsg());
         study.setEndRedirectUrl(updatedStudy.getEndRedirectUrl());
-        study.setJsonData(updatedStudy.getJsonData());
+        study.setStudyInput(updatedStudy.getStudyInput());
         study.setLinearStudy(updatedStudy.isLinearStudy());
         study.setAllowPreview(updatedStudy.isAllowPreview());
         study.setGroupStudy(updatedStudy.isGroupStudy());
@@ -284,11 +272,20 @@ public class StudyService {
     /**
      * Update Study with given properties and persist. It doesn't update Study's dirName field.
      */
-    public void updateStudy(Study study, StudyProperties studyProperties, User signedinUser) {
-        boolean logStudyDescriptionHash = !Objects.equals(study.getDescription(), studyProperties.getDescription());
-        bindToStudyWithoutDirName(study, studyProperties);
+    public void updateStudyAndRenameAssets(Study study, StudyProperties studyProperties, User signedinUser) throws IOException {
+        if (Strings.isNullOrEmpty(studyProperties.getDirName())) {
+            // In case the dirName was updated to null or empty, don't use it
+            studyProperties.setDirName(study.getDirName());
+        }
+        if (!Objects.equals(study.getDirName(), studyProperties.getDirName())) {
+            ioUtils.renameStudyAssetsDir(study.getDirName(), studyProperties.getDirName());
+        }
+
+        boolean isDescriptionHashChanged = !Objects.equals(study.getDescription(), studyProperties.getDescription());
+        bindToStudy(study, studyProperties);
         studyDao.update(study);
-        if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
+
+        if (isDescriptionHashChanged) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }
 
     /**
@@ -302,15 +299,18 @@ public class StudyService {
     }
 
     /**
-     * Update properties of study with properties of updatedStudy (excluding study's dir name). Does not persist.
+     * Binds a study with values of study properties
      */
-    public void bindToStudyWithoutDirName(Study study, StudyProperties studyProperties) {
+    public void bindToStudy(Study study, StudyProperties studyProperties) {
         study.setTitle(studyProperties.getTitle());
         study.setDescription(studyProperties.getDescription());
         study.setComments(studyProperties.getComments());
+        study.setDirName(studyProperties.getDirName());
         study.setStudyEntryMsg(studyProperties.getStudyEntryMsg());
         study.setEndRedirectUrl(studyProperties.getEndRedirectUrl());
-        study.setJsonData(studyProperties.getJsonData());
+        study.setStudyInput(studyProperties.getStudyInput());
+        study.setLocked(studyProperties.isLocked());
+        study.setActive(studyProperties.isActive());
         study.setGroupStudy(studyProperties.isGroupStudy());
         study.setLinearStudy(studyProperties.isLinearStudy());
         study.setAllowPreview(studyProperties.isAllowPreview());
@@ -343,7 +343,7 @@ public class StudyService {
         studyProperties.setComments(study.getComments());
         studyProperties.setEndRedirectUrl(study.getEndRedirectUrl());
         studyProperties.setStudyEntryMsg(study.getStudyEntryMsg());
-        studyProperties.setJsonData(study.getJsonData());
+        studyProperties.setStudyInput(study.getStudyInput());
         return studyProperties;
     }
 
@@ -371,33 +371,28 @@ public class StudyService {
         }
 
         // Remove this study from all member users
-        for (User user : study.getUserList()) {
-            user.removeStudy(study);
-            userDao.update(user);
+        for (User user : new ArrayList<>(study.getUserList())) {
+            study.removeUser(user);
         }
 
         // Remove study. This also removes all study's components and their ComponentResults via cascading.
         studyDao.remove(study);
 
-        ioUtils.removeStudyAssetsDir(study.getDirName());
+        if (study.getDirName() != null) {
+            ioUtils.removeStudyAssetsDir(study.getDirName());
+        }
+
         studyLogger.log(study, signedinUser, "Removed study");
         studyLogger.retire(study);
     }
 
-    public Study getStudyFromIdOrUuid(String idOrUuid) throws NotFoundException, ForbiddenException {
+    public Study getStudyFromIdOrUuid(String idOrUuid) {
         Optional<Long> studyId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = authService.getSignedinUser();
-        Study study;
         if (studyId.isPresent()) {
-            study = studyDao.findById(studyId.get());
-            if (study == null) throw new NotFoundException("Couldn't find study with ID " + idOrUuid);
-            checker.checkStandardForStudy(study, studyId.get(), signedinUser);
+            return studyDao.findById(studyId.get());
         } else {
-            study = studyDao.findByUuid(idOrUuid)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find study with UUID " + idOrUuid));
-            checker.checkStandardForStudy(study, study.getId(), signedinUser);
+            return studyDao.findByUuid(idOrUuid).orElse(null);
         }
-        return study;
     }
 
 }

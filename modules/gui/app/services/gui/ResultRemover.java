@@ -31,7 +31,7 @@ public class ResultRemover {
 
     private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
@@ -40,10 +40,10 @@ public class ResultRemover {
     private final IOUtils ioUtils;
 
     @Inject
-    ResultRemover(Checker checker, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, GroupResultDao groupResultDao,
-            WorkerDao workerDao, StudyLogger studyLogger, IOUtils ioUtils) {
-        this.checker = checker;
+    ResultRemover(AuthorizationService authorizationService, ComponentResultDao componentResultDao,
+                  StudyResultDao studyResultDao, GroupResultDao groupResultDao,
+                  WorkerDao workerDao, StudyLogger studyLogger, IOUtils ioUtils) {
+        this.authorizationService = authorizationService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
@@ -64,7 +64,7 @@ public class ResultRemover {
     public void removeComponentResults(List<Long> componentResultIdList, User user, boolean removeEmptyStudyResults)
             throws NotFoundException, ForbiddenException {
         List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
-        checker.checkComponentResults(componentResultList, user, true);
+        authorizationService.canUserAccessComponentResults(componentResultList, user, true);
         for (ComponentResult componentResult : componentResultList) {
             removeComponentResult(componentResult.getId());
             if (removeEmptyStudyResults && componentResult.getStudyResult().getComponentResultList().isEmpty()) {
@@ -90,7 +90,7 @@ public class ResultRemover {
             throws NotFoundException, ForbiddenException {
         List<StudyResult> studyResultList = studyResultDao.findByIds(studyResultIdList);
         Set<Study> studies = new HashSet<>();
-        checker.checkStudyResults(studyResultList, user, true);
+        authorizationService.canUserAccessStudyResults(studyResultList, user, true);
         for (StudyResult studyResult : studyResultList) {
             removeStudyResult(studyResult.getId());
         }

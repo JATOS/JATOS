@@ -13,17 +13,24 @@ import models.common.User;
 import models.common.User.AuthMethod;
 import models.common.User.Role;
 import models.common.workers.JatosWorker;
+import models.gui.NewUserProperties;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import play.data.Form;
+import play.data.FormFactory;
 import play.db.jpa.JPAApi;
+import testutils.gui.ContextMocker;
 
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Supplier;
 
+import static models.common.User.Role.ADMIN;
+import static models.common.User.Role.SUPERUSER;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,18 +48,21 @@ public class UserServiceTest {
     private StudyDao studyDao;
     private WorkerDao workerDao;
     private ApiTokenDao apiTokenDao;
+    private FormFactory formFactory;
 
     private UserService userService;
 
     @SuppressWarnings("deprecation")
     @Before
     public void setUp() {
+        ContextMocker.mock();
         studyService = mock(StudyService.class);
         authService = mock(AuthService.class);
         userDao = mock(UserDao.class);
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
         apiTokenDao = mock(ApiTokenDao.class);
+        formFactory = Mockito.mock(FormFactory.class);
 
         JPAApi jpaApi = mock(JPAApi.class);
         // Mock JPAApi.withTransaction(Supplier<R>) to execute the supplier
@@ -83,6 +93,43 @@ public class UserServiceTest {
     public void retrieveUser_notFound_throws() throws NotFoundException {
         when(userDao.findByUsername("missing")).thenReturn(null);
         userService.retrieveUser("missing");
+    }
+
+    @Test
+    public void registerUser_success() throws ForbiddenException {
+        NewUserProperties newUserProperties = new NewUserProperties();
+        newUserProperties.setUsername("newuser");
+        newUserProperties.setName("New User");
+        newUserProperties.setEmail("newuser@example.com");
+        newUserProperties.setPassword("password123");
+        newUserProperties.setAuthMethod(AuthMethod.DB);
+
+        when(userDao.findByUsername("newuser")).thenReturn(null);
+        Form<NewUserProperties> form = mock(Form.class);
+        when(form.get()).thenReturn(newUserProperties);
+        when(form.hasErrors()).thenReturn(false);
+        when(formFactory.form(NewUserProperties.class)).thenReturn(form);
+        when(form.fill(any())).thenReturn(form);
+
+        User user = userService.registerUser(newUserProperties);
+
+        assertThat(user).isNotNull();
+        assertThat(user.getUsername()).isEqualTo("newuser");
+        assertThat(user.getName()).isEqualTo("New User");
+        assertThat(user.getEmail()).isEqualTo("newuser@example.com");
+        assertThat(user.getAuthMethod()).isEqualTo(AuthMethod.DB);
+        verify(userDao).create(any(User.class));
+        verify(workerDao).create(any(JatosWorker.class));
+    }
+
+    @Test(expected = ForbiddenException.class)
+    public void registerUser_userExists_throwsAuthException() throws ForbiddenException {
+        NewUserProperties newUserProperties = new NewUserProperties();
+        newUserProperties.setUsername("existinguser");
+
+        when(userDao.findByUsername("existinguser")).thenReturn(new User());
+
+        userService.registerUser(newUserProperties);
     }
 
     @Test
@@ -153,13 +200,13 @@ public class UserServiceTest {
         User u = new User("foo@ex.org", "Foo", "foo@ex.org");
         when(userDao.findByUsername("foo@ex.org")).thenReturn(u);
 
-        boolean afterAdd = userService.changeSuperuserRole("foo@ex.org", true);
-        assertThat(afterAdd).isTrue();
+        Set<Role> afterAdd = userService.changeSuperuserRole("foo@ex.org", true);
+        assertThat(afterAdd).contains(SUPERUSER);
         assertThat(u.isSuperuser()).isTrue();
         verify(userDao, times(1)).update(u);
 
-        boolean afterRemove = userService.changeSuperuserRole("foo@ex.org", false);
-        assertThat(afterRemove).isFalse();
+        Set<Role> afterRemove = userService.changeSuperuserRole("foo@ex.org", false);
+        assertThat(afterRemove).excludes(SUPERUSER);
         assertThat(u.isSuperuser()).isFalse();
         verify(userDao, times(2)).update(u);
     }
@@ -176,12 +223,12 @@ public class UserServiceTest {
         when(userDao.findByUsername("foo@ex.org")).thenReturn(u);
         when(authService.getSignedinUser()).thenReturn(new User("other@ex.org", "Other", "other@ex.org"));
 
-        boolean afterAdd = userService.changeAdminRole("foo@ex.org", true);
-        assertThat(afterAdd).isTrue();
+        Set<Role> afterAdd = userService.changeAdminRole("foo@ex.org", true);
+        assertThat(afterAdd).contains(ADMIN);
         assertThat(u.isAdmin()).isTrue();
 
-        boolean afterRemove = userService.changeAdminRole("foo@ex.org", false);
-        assertThat(afterRemove).isFalse();
+        Set<Role> afterRemove = userService.changeAdminRole("foo@ex.org", false);
+        assertThat(afterRemove).excludes(ADMIN);
         assertThat(u.isAdmin()).isFalse();
     }
 
@@ -236,8 +283,8 @@ public class UserServiceTest {
 
         Study s = new Study();
         // Simulate that user is member and sole member of the study
-        s.setUserList(new HashSet<>(Collections.singletonList(u)));
-        u.setStudyList(new HashSet<>(Collections.singletonList(s)));
+        s.addUser(u);
+        u.addStudy(s);
 
         // Make apiTokenDao return two tokens to be removed (we only care about calls)
         when(apiTokenDao.findByUser(u)).thenReturn(Collections.emptyList());
@@ -259,8 +306,8 @@ public class UserServiceTest {
 
         Study s = new Study();
         User other = new User("other@ex.org", "Other", "other@ex.org");
-        s.setUserList(new HashSet<>(Arrays.asList(u, other)));
-        u.setStudyList(new HashSet<>(Collections.singletonList(s)));
+        s.addAllUsers(Arrays.asList(u, other));
+        u.addStudy(s);
 
         when(apiTokenDao.findByUser(u)).thenReturn(Collections.emptyList());
 

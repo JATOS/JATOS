@@ -1,5 +1,6 @@
 package models.common;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Strings;
@@ -11,6 +12,7 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
 
+import static javax.persistence.CascadeType.*;
 import static utils.common.JsonUtils.JsonForIO;
 import static utils.common.JsonUtils.asStringForDB;
 
@@ -56,7 +58,7 @@ public class Study {
     private String title;
 
     @Lob
-    @JsonView({JsonForPublix.class, JsonForIO.class})
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     private String description;
 
     /**
@@ -72,9 +74,8 @@ public class Study {
     private boolean locked = false;
 
     /**
-     * A deactivated study cannot be run by worker. A study can be deactivated by an admin, but not by the member users
-     * of the study (unless they are admin). It's meant to give admins the possibility to turn off studies that use to
-     * many resources. By default, it's activated (true).
+     * A deactivated study cannot be run by a worker. A study can be deactivated by any admin or by a member user.
+     * By default, it's activated (true).
      */
     @JsonView({JsonForApi.class})
     private boolean active = true;
@@ -115,11 +116,13 @@ public class Study {
 
     /**
      * Study input data in JSON format: every study run of this Study gets access to them. Can be used for initial data
-     * and configuration. It's called study input in the GUI and can be accessed via jatos.studyInput in jatos.js.
+     * and configuration. It's called study input in the GUI and can be accessed via 'jatos.studyInput' in jatos.js.
      */
     @Lob
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
-    private String jsonData;
+    @JsonAlias({"studyInput", "jsonData"})
+    @Column(name = "jsonData")
+    private String studyInput;
 
     /**
      * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
@@ -147,8 +150,8 @@ public class Study {
     /**
      * Ordered list of component of this study. The relationship is bidirectional.
      */
-    @JsonView({JsonForIO.class, JsonForApi.class})
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonView({JsonForIO.class})
+    @OneToMany(fetch = FetchType.LAZY, cascade = ALL, orphanRemoval = true)
     @OrderColumn(name = "componentList_order")
     @JoinColumn(name = "study_id")
     // Not using mappedBy because of
@@ -158,8 +161,8 @@ public class Study {
     /**
      * Ordered list of batches of this study. The relationship is bidirectional.
      */
-    @JsonView({JsonForIO.class, JsonForApi.class})
-    @OneToMany(fetch = FetchType.LAZY)
+    @JsonView({JsonForIO.class})
+    @OneToMany(fetch = FetchType.LAZY, cascade = {PERSIST, MERGE, REMOVE})
     @OrderColumn(name = "batchList_order")
     @JoinColumn(name = "study_id")
     // Not using mappedBy because of
@@ -272,12 +275,12 @@ public class Study {
         this.allowPreview = allowPreview;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getStudyInput() {
+        return studyInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = asStringForDB(jsonData);
+    public void setStudyInput(String studyInput) {
+        this.studyInput = asStringForDB(studyInput);
     }
 
     public String getEndRedirectUrl() {
@@ -296,28 +299,43 @@ public class Study {
         this.studyEntryMsg = studyEntryMsg;
     }
 
-    public void setUserList(Set<User> userList) {
-        this.userList = userList;
-    }
-
     public Set<User> getUserList() {
         return userList;
     }
 
+    /**
+     * Adds a user to this study and the study to the user. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void addUser(User user) {
-        userList.add(user);
+        if (user == null) return;
+        if (userList.add(user)) {
+            user.addStudy(this);
+        }
     }
 
-    public void removeUser(User user) {
-        userList.remove(user);
+    public void addAllUsers(List<User> userList) {
+        userList.forEach(this::addUser);
     }
+
+    /**
+     * Removes a user from this study and the study from the user. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
+    public void removeUser(User user) {
+        if (user == null) return;
+        if (userList.remove(user)) {
+            user.removeStudy(this);
+        }
+    }
+
+    public void removeAllUsers(List<User> userList) {
+        userList.forEach(this::removeUser);
+    }
+
 
     public boolean hasUser(User user) {
         return userList.contains(user);
-    }
-
-    public void setComponentList(List<Component> componentList) {
-        this.componentList = componentList;
     }
 
     public List<Component> getComponentList() {
@@ -341,11 +359,20 @@ public class Study {
     }
 
     public void addComponent(Component component) {
-        componentList.add(component);
+        if (component == null) return;
+        if (!componentList.contains(component)) {
+            componentList.add(component);
+        }
+        if (component.getStudy() != this) {
+            component.setStudy(this);
+        }
     }
 
     public void removeComponent(Component component) {
-        componentList.remove(component);
+        if (component == null) return;
+        if (componentList.remove(component) && component.getStudy() == this) {
+            component.setStudy(null);
+        }
     }
 
     public boolean hasComponent(Component component) {
@@ -380,24 +407,33 @@ public class Study {
         }
     }
 
-    public void setBatchList(List<Batch> batchList) {
-        this.batchList = batchList;
-    }
-
     public List<Batch> getBatchList() {
         return this.batchList;
     }
 
-    public boolean hasBatch(Batch batch) {
-        return batchList.contains(batch);
-    }
-
+    /**
+     * Adds a batch to this study and the study to the batch. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void addBatch(Batch batch) {
-        batchList.add(batch);
+        if (batch == null) return;
+        if (!batchList.contains(batch)) {
+            batchList.add(batch);
+        }
+        if (batch.getStudy() != this) {
+            batch.setStudy(this);
+        }
     }
 
+    /**
+     * Removes a batch from this study and the study from the batch. Because Study is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void removeBatch(Batch batch) {
-        batchList.remove(batch);
+        if (batch == null) return;
+        if (batchList.remove(batch) && batch.getStudy() == this) {
+            batch.setStudy(null);
+        }
     }
 
     @JsonIgnore
@@ -412,23 +448,15 @@ public class Study {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof Study)) return false;
-
         Study other = (Study) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

@@ -3,6 +3,8 @@ package auth.gui;
 import daos.common.ApiTokenDao;
 import models.common.ApiToken;
 import models.common.User;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -68,7 +70,8 @@ public class ApiTokensTest {
 
     @Test
     public void generate_valid_callsService_andReturnsTokenString() {
-        when(apiTokenService.create(eq(user), eq("mytoken"), isNull())).thenReturn("TOKEN123");
+        Pair<ApiToken, String> created = new ImmutablePair<>(new ApiToken(), "TOKEN123");
+        when(apiTokenService.create(eq(user), eq("mytoken"), isNull())).thenReturn(created);
 
         Result res = apiTokens.generate("mytoken", 0); // 0 = never expires
 

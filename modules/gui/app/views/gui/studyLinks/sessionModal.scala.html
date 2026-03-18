@@ -45,7 +45,7 @@
 
     $('#batchTable').on('click', '.batch-session', function() {
         const batch = Helpers.getDataFromDataTableRow($("#batchTable").DataTable(), this);
-        const dataUrl = window.routes.StudyLinks.batchSessionData(window.study.id, batch.id);
+        const dataUrl = window.routes.Api.getBatchSession(batch.id);
         $('#sessionModal').data('type', 'batch');
         $('#sessionModal').data('properties', batch);
         loadSession(dataUrl);
@@ -54,7 +54,7 @@
     $('#groupsModal').on('click', '.group-session', function() {
         const tr = $(this).closest('tr');
         const group = $("#groupsTable").DataTable().row(tr).data();
-        const dataUrl = window.routes.StudyLinks.groupSessionData(window.study.id, group.id);
+        const dataUrl = window.routes.Api.getGroupSession(group.id);
         $('#sessionModal').data('type', 'group');
         $('#sessionModal').data('properties', group);
         loadSession(dataUrl);
@@ -81,37 +81,41 @@
             Helpers.generateModalSubtitles("#sessionModal", {"Group ID": properties.id});
         }
 
-        const sessionData = session.data ? session.data : "{}";
+        const sessionData = session.data?.sessionData ?? "{}";
         Editor.setup("json", sessionData, "#sessionJsonEditor", 10000);
         Editor.focus("#sessionJsonEditor");
 
-        $('#sessionFormVersion').val(session.version);
+        $('#sessionFormVersion').val(session.data.version);
         $('#sessionModal').modal('show');
     }
 
     $("#sessionConfirmed").click(function(e) {
         event.preventDefault(e);
-        // Put JSON from editor into textarea to let it be picked up by form.serialize
         const jsonData = Editor.getValue('#sessionJsonEditor');
         $("#sessionFormJsonData").val(jsonData);
         const properties = $('#sessionModal').data('properties');
         const type = $('#sessionModal').data('type');
+        const version = $('#sessionFormVersion').val();
 
         if (type == 'batch') {
-            const postUrl = window.routes.StudyLinks.submitEditedBatchSessionData(window.study.id, properties.id);
+            const postUrl = window.routes.Api.updateBatchSession(properties.id, version);
             postSession(postUrl);
         } else if (type == 'group') {
-            const postUrl = window.routes.StudyLinks.submitEditedGroupSessionData(window.study.id, properties.id);
+            const postUrl = window.routes.Api.updateGroupSession(properties.id, version);
             postSession(postUrl);
         }
     });
 
     function postSession(postUrl) {
+        const sessionData = Editor.getValue('#sessionJsonEditor');
         $.ajax({
-            type: 'POST',
+            type: 'PATCH',
             url: postUrl,
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            data: $('#sessionForm').serialize(),
+            contentType: 'application/json; charset=UTF-8',
+            dataType: 'json',
+            processData: false,
+            data: sessionData,
             success: function(response) {
                 $('#sessionModal').modal('hide');
                 Alerts.success("The session data were changed successfully.");
@@ -119,10 +123,9 @@
             error: function(err) {
                 FormValidation.clear("#sessionForm");
                 alerts.warning("The session data were not saved.");
-                if (Helpers.isJson(err.responseText)) {
-                    FormValidation.show("#sessionForm", err.responseJSON);
-                } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                const message = err?.responseJSON?.error?.message;
+                if (message) {
+                    alerts.error(message);
                 } else {
                     alerts.error("Couldn't change session data");
                 }

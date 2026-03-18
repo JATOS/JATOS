@@ -5,10 +5,6 @@ import javax.inject.Singleton;
 import play.db.jpa.JPAApi;
 
 /**
- * Abstract DAO: Of the JPA calls only refresh() is public - persist(), merge()
- * and remove() are protected. The latter ones usually involve changes in
- * different entities and should be handled by the DAO of that type.
- * 
  * @author Kristian Lange
  */
 @SuppressWarnings("deprecation")
@@ -35,6 +31,10 @@ public abstract class AbstractDao {
 
 	protected void refresh(Object entity) {
 		jpa.em().refresh(entity);
+	}
+
+	public void flush() {
+		jpa.em().flush();
 	}
 
 }

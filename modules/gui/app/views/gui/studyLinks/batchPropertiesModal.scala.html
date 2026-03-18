@@ -72,22 +72,20 @@
                             <div class="input-group">
                                 <div class="input-group-text">
                                     <input type="checkbox" class="form-check-input checkbox-batch mt-0" id="batchPropertiesFormMaxTotalWorkerLimited" name="maxTotalWorkerLimited">
-                                    @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
-                                    <input type="hidden" name="maxTotalWorkerLimited" value="false" />
                                 </div>
                                 <input type="number" class="form-control" id="batchPropertiesFormMaxTotalWorkers" name="maxTotalWorkers" min="1">
                             </div>
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormJsonData" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                        <label class="col-sm-3 col-form-label" for="batchPropertiesFormBatchInput" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
                             Batch input<br>
                             <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#batchPropertiesJsonEditor" data-bs-tooltip="Format your JSON nicely">Pretty</button>
                         </label>
                         <div class="col-sm-9">
                             <div class="form-control" id="batchPropertiesJsonEditor"></div>
                             @* We use a hidden textarea here to transfer the JSON data into the form POST *@
-                            <textarea id="batchPropertiesFormJsonData" name="jsonData" hidden></textarea>
+                            <textarea id="batchPropertiesFormBatchInput" name="batchInput" hidden></textarea>
                         </div>
                     </div>
                     <div class="card card-body mt-5" id="batchPropertiesGroupProperties">
@@ -103,8 +101,6 @@
                                 <div class="input-group">
                                     <div class="input-group-text">
                                         <input type="checkbox" class="form-check-input checkbox-batch mt-0" id="batchPropertiesFormMaxTotalMemberLimited" name="maxTotalMemberLimited">
-                                        @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
-                                        <input type="hidden" name="maxTotalMemberLimited" value="false" />
                                     </div>
                                     <input type="number" class="form-control" id="batchPropertiesFormMaxTotalMembers" name="maxTotalMembers" min="1">
                                 </div>
@@ -118,8 +114,6 @@
                                 <div class="input-group">
                                     <div class="input-group-text">
                                         <input type="checkbox" class="form-check-input checkbox-batch mt-0" id="batchPropertiesFormMaxActiveMemberLimited" name="maxActiveMemberLimited">
-                                        @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
-                                        <input type="hidden" name="maxActiveMemberLimited" value="false" />
                                     </div>
                                     <input type="number" class="form-control" id="batchPropertiesFormMaxActiveMembers" name="maxActiveMembers" min="1">
                                 </div>
@@ -168,11 +162,11 @@
         $('#batchPropertiesFormComments').val(properties.comments);
 
         // Set allowed type checkboxes
-        $.each(properties.allowedWorkerTypes, function(index, workerType) {
-            $(`#batchPropertiesForm${workerType}`).prop('checked', true);
+        $.each(properties.allowedWorkerTypes, function(index, type) {
+            $(`#batchPropertiesForm${type}`).prop('checked', true);
         });
 
-        Editor.setup("json", properties.jsonData, "#batchPropertiesJsonEditor");
+        Editor.setup("json", properties.batchInput, "#batchPropertiesJsonEditor");
 
         // Group properties
         if (window.study.isGroupStudy) {
@@ -193,18 +187,15 @@
 
     $('#batchPropertiesModal').on('shown.bs.modal', () => {
         const properties = $('#batchPropertiesModal').data('properties');
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", properties.maxTotalWorkerLimited,
-            "maxTotalWorkers", properties.maxTotalWorkers);
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", properties.maxTotalMemberLimited,
-            "maxTotalMembers", properties.maxTotalMembers);
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", properties.maxActiveMemberLimited,
-            "maxActiveMembers", properties.maxActiveMembers);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", "maxTotalWorkers", properties.maxTotalWorkers);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", "maxTotalMembers", properties.maxTotalMembers);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", "maxActiveMembers", properties.maxActiveMembers);
     });
 
-    function drawInputGroupWithCheckbox(formSelector, checkboxName, checkboxValue, inputName, inputValue) {
+    function drawInputGroupWithCheckbox(formSelector, checkboxName, inputName, inputValue) {
         const checkboxElem = $(`${formSelector} input[name='${checkboxName}']`);
         const inputElem = $(`${formSelector} input[name='${inputName}']`);
-        if (checkboxValue) {
+        if (inputValue) {
             checkboxElem.prop('checked', true);
             inputElem.prop('disabled', false);
             inputElem.removeClass('disabled');
@@ -220,25 +211,31 @@
     }
 
     $("#batchPropertiesFormMaxTotalWorkerLimited").change(function(e) {
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", this.checked, "maxTotalWorkers", 1);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalWorkerLimited", "maxTotalWorkers", this.checked ? 1 : null);
     });
 
     $("#batchPropertiesFormMaxTotalMemberLimited").change(function(e) {
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", this.checked, "maxTotalMembers", 1);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxTotalMemberLimited", "maxTotalMembers", this.checked ? 1 : null);
     });
 
     $("#batchPropertiesFormMaxActiveMemberLimited").change(function(e) {
-        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", this.checked, "maxActiveMembers", 1);
+        drawInputGroupWithCheckbox("#batchPropertiesForm", "maxActiveMemberLimited", "maxActiveMembers", this.checked ? 1 : null);
     });
 
     $("#batchPropertiesConfirmed").click(function(event) {
         // Put JSON from editor into textarea to let it be picked up by form.serialize
-        const jsonData = Editor.getValue('#batchPropertiesJsonEditor');
-        $("#batchPropertiesFormJsonData").val(jsonData);
-        const properties = $('#batchPropertiesModal').data('properties');
+        const batchInput = Editor.getValue('#batchPropertiesJsonEditor');
+        $("#batchPropertiesFormBatchInput").val(batchInput);
+        const isMaxTotalWorkerLimited = $('#batchPropertiesFormMaxTotalWorkerLimited').prop('checked');
+        const isMaxTotalMemberLimited = $('#batchPropertiesFormMaxTotalMemberLimited').prop('checked');
+        const isMaxActiveMemberLimited = $('#batchPropertiesFormMaxActiveMemberLimited').prop('checked');
+        if (!isMaxTotalWorkerLimited) $('#batchPropertiesFormMaxTotalWorkers').val(null);
+        if (!isMaxTotalMemberLimited) $('#batchPropertiesFormMaxTotalMembers').val(null);
+        if (!isMaxActiveMemberLimited) $('#batchPropertiesFormMaxActiveMembers').val(null);
+        const batchId = $('#batchPropertiesModal').data('properties').id;
         $.ajax({
             type: 'POST',
-            url: window.routes.StudyLinks.submitEditedBatchProperties(window.study.id, properties.id),
+            url: window.routes.StudyLinks.submitEditedBatchProperties(window.study.id, batchId),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#batchPropertiesForm').serialize(),
             success: function(response) {

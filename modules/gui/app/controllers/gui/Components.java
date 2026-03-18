@@ -20,12 +20,18 @@ import play.db.jpa.Transactional;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.*;
+import services.gui.AuthorizationService;
+import services.gui.BatchService;
+import services.gui.ComponentService;
+import services.gui.JatosGuiExceptionThrower;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * Controller that deals with all requests regarding Components within the JATOS GUI.
@@ -41,7 +47,7 @@ public class Components extends Controller {
     public static final String EDIT_SAVE = "save";
 
     private final JatosGuiExceptionThrower jatosGuiExceptionThrower;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final ComponentService componentService;
     private final AuthService authService;
     private final BatchService batchService;
@@ -51,11 +57,11 @@ public class Components extends Controller {
     private final FormFactory formFactory;
 
     @Inject
-    Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, Checker checker, ComponentService componentService,
-            AuthService authService, BatchService batchService, StudyDao studyDao,
-            StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory) {
+    Components(JatosGuiExceptionThrower jatosGuiExceptionThrower, AuthorizationService authorizationService, ComponentService componentService,
+               AuthService authService, BatchService batchService, StudyDao studyDao,
+               StudyLinkDao studyLinkDao, ComponentDao componentDao, FormFactory formFactory) {
         this.jatosGuiExceptionThrower = jatosGuiExceptionThrower;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.componentService = componentService;
         this.authService = authService;
         this.batchService = batchService;
@@ -70,7 +76,7 @@ public class Components extends Controller {
      * Uses a JatosWorker and the given batch. Redirects to /publix/runx.
      */
     @Transactional
-    @Auth
+    @Auth(roles = USER)
     public Result runComponent(Http.Request request, Long studyId, Long componentId, Long batchId, Long frames,
                                Long hSplit, Long vSplit) throws JatosGuiException, NotFoundException {
         User signedinUser = authService.getSignedinUser();
@@ -78,13 +84,13 @@ public class Components extends Controller {
         Batch batch = batchService.fetchBatch(batchId, study);
         Component component = componentDao.findById(componentId);
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForBatch(batch, study, batchId);
+            authorizationService.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessBatch(batch, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwHome(request, e);
         }
         try {
-            checker.checkStandardForComponent(studyId, componentId, component);
+            authorizationService.canUserAccessComponent(component, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
             jatosGuiExceptionThrower.throwStudy(request, e, studyId);
         }
@@ -107,11 +113,11 @@ public class Components extends Controller {
      * POST request: Handles the post request of the form to create a new Component.
      */
     @Transactional
-    @Auth
-    public Result submitCreated(Http.Request request, Long studyId) throws JatosGuiException {
+    @Auth(roles = USER)
+    public Result submitCreated(Http.Request request, Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
-        checkStudyAndLocked(request, studyId, study, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -126,13 +132,13 @@ public class Components extends Controller {
      * GET requests for getting the properties of a Component.
      */
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result properties(Long studyId, Long componentId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStandardForComponent(studyId, componentId, component);
+        authorizationService.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         ComponentProperties p = componentService.bindToProperties(component);
         return ok(JsonUtils.asJsonNode(p));
@@ -142,12 +148,14 @@ public class Components extends Controller {
      * POST request that handles update of component properties
      */
     @Transactional
-    @Auth
-    public Result submitEdited(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
+    @Auth(roles = USER)
+    public Result submitEdited(Http.Request request, Long studyId, Long componentId)
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest();
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -163,32 +171,17 @@ public class Components extends Controller {
     }
 
     /**
-     * POST Request to change the property 'active' of a component.
-     */
-    @Transactional
-    @Auth
-    public Result toggleActive(Http.Request request, Long studyId, Long componentId, Boolean active) throws JatosGuiException {
-        Study study = studyDao.findById(studyId);
-        User signedinUser = authService.getSignedinUser();
-        Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
-
-        if (active != null) {
-            componentDao.changeActive(component, active);
-        }
-        return ok(JsonUtils.asJsonNode(component.isActive()));
-    }
-
-    /**
      * GET request to clone a component.
      */
     @Transactional
-    @Auth
-    public Result cloneComponent(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
+    @Auth(roles = USER)
+    public Result cloneComponent(Http.Request request, Long studyId, Long componentId)
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         Component clone = componentService.cloneWholeComponent(component);
         componentService.createAndPersistComponent(study, clone);
@@ -199,36 +192,18 @@ public class Components extends Controller {
      * DELETE request to remove a component.
      */
     @Transactional
-    @Auth
-    public Result remove(Http.Request request, Long studyId, Long componentId) throws JatosGuiException {
+    @Auth(roles = USER)
+    public Result remove(Http.Request request, Long studyId, Long componentId)
+            throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = authService.getSignedinUser();
         Component component = componentDao.findById(componentId);
-        checkStudyAndLockedAndComponent(request, studyId, componentId, study, signedinUser, component);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessComponent(component, signedinUser);
 
         componentService.remove(component, signedinUser);
         RequestScopeMessaging.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
         return ok(RequestScopeMessaging.getAsJson());
     }
 
-    private void checkStudyAndLocked(Http.Request request, Long studyId, Study study, User signedinUser)
-            throws JatosGuiException {
-        try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStudyLocked(study);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
-        }
-    }
-
-    private void checkStudyAndLockedAndComponent(Http.Request request, Long studyId, Long componentId, Study study,
-            User signedinUser, Component component) throws JatosGuiException {
-        try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStudyLocked(study);
-            checker.checkStandardForComponent(studyId, componentId, component);
-        } catch (ForbiddenException | NotFoundException e) {
-            jatosGuiExceptionThrower.throwStudy(request, e, studyId);
-        }
-    }
 }

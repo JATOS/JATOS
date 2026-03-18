@@ -82,8 +82,9 @@ public class JsonUtils {
         return Json.mapper().readTree(tmpStr);
     }
 
-    public JsonNode asJsonForApi(Object obj) throws IOException {
-        // Unnecessary conversion into a temporary string - better solution?
+    public JsonNode asJsonWithStrictViewInclusion(Object obj) throws IOException {
+        // Unnecessary conversion into a temporary string. Better solution with ObjectWriter.writeValueAsTree
+        // when available in later Jackson versions
         String tmpStr = Json.mapper()
                 .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                 .writerWithView(JsonForApi.class)
@@ -114,17 +115,17 @@ public class JsonUtils {
     }
 
     /**
-     * Checks whether the given string is a valid JSON string. An empty string is accepted as valid.
+     * Checks whether the given string is a valid JSON string. An empty string, "hello", 123, true, null are all
+     * accepted as valid JSON.
      */
-    public static boolean isValid(final String json) {
-        boolean valid = false;
+    public static boolean isValid(String json) {
+        if (json == null) return false;
         try {
             Json.mapper().readTree(json);
-            valid = true;
-        } catch (IOException | IllegalArgumentException | NullPointerException e) {
-            LOGGER.info(".isValid: error probably due to invalid JSON");
+            return true;
+        } catch (IOException e) {
+            return false;
         }
-        return valid;
     }
 
     /**
@@ -177,9 +178,8 @@ public class JsonUtils {
     /**
      * Returns all GroupResults as a JSON string intended for GUI.
      */
-    public JsonNode allGroupResultsForUI(List<GroupResult> groupResultList) {
-        ObjectNode allGroupResultsNode = Json.newObject();
-        ArrayNode arrayNode = allGroupResultsNode.arrayNode();
+    public JsonNode allGroupResults(List<GroupResult> groupResultList) {
+        ArrayNode arrayNode = Json.mapper().createArrayNode();
         for (GroupResult groupResult : groupResultList) {
             ObjectNode groupResultNode = Json.mapper().valueToTree(groupResult);
 
@@ -199,8 +199,7 @@ public class JsonUtils {
 
             arrayNode.add(groupResultNode);
         }
-        allGroupResultsNode.set(DATA, arrayNode);
-        return allGroupResultsNode;
+        return arrayNode;
     }
 
     public ObjectNode studyResultMetadata(StudyResult sr) throws IOException {
@@ -425,26 +424,19 @@ public class JsonUtils {
         return userNode;
     }
 
-    public Map<String, Object> getSingleUserData(User user) {
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("active", user.isActive());
-        userData.put("name", user.getName());
-        userData.put("username", user.getUsername());
-        userData.put("email", user.getEmail());
-        userData.put("roleList", user.getRoleList());
-        userData.put("authMethod", user.getAuthMethod().name());
-        userData.put("studyCount", user.getStudyList().size());
-        userData.put("lastSignin", user.getLastLogin());
-        List<Map<String, Object>> allStudiesData = new ArrayList<>();
+    public ObjectNode getSingleUserData(User user) {
+        ObjectNode userNode = Json.mapper().valueToTree(user);
+        userNode.put("studyCount", user.getStudyList().size());
+        ArrayNode studyArray = Json.mapper().createArrayNode();
         for (Study study : user.getStudyList()) {
-            Map<String, Object> studyData = new HashMap<>();
-            studyData.put("id", study.getId());
-            studyData.put("title", study.getTitle());
-            studyData.put("userSize", study.getUserList().size());
-            allStudiesData.add(studyData);
+            ObjectNode studyNode = Json.newObject()
+                    .put("id", study.getId())
+                    .put("title", study.getTitle())
+                    .put("userSize", study.getUserList().size());
+            studyArray.add(studyNode);
         }
-        userData.put("studyList", allStudiesData);
-        return userData;
+        userNode.set("studyList", studyArray);
+        return userNode;
     }
 
     /**
@@ -573,6 +565,20 @@ public class JsonUtils {
         return componentsNode;
     }
 
+    public JsonNode getStudyLinkData(StudyLink studyLink) {
+        ObjectNode node = Json.mapper().createObjectNode();
+        node.put("studyCode", studyLink.getStudyCode());
+        node.put("batchId", studyLink.getBatch().getId());
+        node.put("type", studyLink.getWorkerType());
+        node.put("comment", studyLink.getWorker().getComment());
+        node.put("active", studyLink.isActive());
+        String studyLinkPath = Common.getJatosUrlBasePath() + "publix/" + studyLink.getStudyCode();
+        node.put("studyLinkPath", studyLinkPath);
+        String studyEntryPath = Common.getJatosUrlBasePath() + "publix/run?code=" + studyLink.getStudyCode();
+        node.put("studyEntryPath", studyEntryPath);
+        return node;
+    }
+
     public JsonNode studyLinksSetupData(Batch batch, Map<String, Integer> studyResultCountsPerWorker,
             Integer personalSingleLinkCount, Integer personalMultipleLinkCount) {
         ObjectNode studyLinkSetupData = Json.mapper().createObjectNode();
@@ -635,6 +641,14 @@ public class JsonUtils {
         return Json.mapper().valueToTree(obj);
     }
 
+    public static ObjectNode asObjectNode(Object obj) {
+        JsonNode node = Json.mapper().valueToTree(obj);
+        if (!node.isObject()) {
+            throw new IllegalArgumentException("Expected JSON object, got: " + node.getNodeType());
+        }
+        return (ObjectNode) node;
+    }
+
     /**
      * Marshals the given study into JSON, adds the current study serial
      * version, and saves it into the given File. It uses the view JsonForIO.
@@ -662,10 +676,18 @@ public class JsonUtils {
      */
     public JsonNode studyAsJsonForApi(Study study, Boolean withComponentProperties, Boolean withBatchProperties)
             throws IOException {
-        ObjectNode studyNode = (ObjectNode) asJsonForApi(study);
+        ObjectNode studyNode = (ObjectNode) asJsonWithStrictViewInclusion(study);
+
+        if (study.getStudyInput() != null) {
+            JsonNode studyInputNode = Json.mapper().readTree(study.getStudyInput());
+            studyNode.set("studyInput", studyInputNode);
+        }
 
         if (withComponentProperties) {
-            ArrayNode componentArray = (ArrayNode) asJsonForApi(study.getComponentList());
+            ArrayNode componentArray = Json.mapper().createArrayNode();
+            for (Component c : study.getComponentList()) {
+                componentArray.add(componentAsJsonForApi(c));
+            }
             studyNode.putArray("components").addAll(componentArray);
         } else {
             ArrayNode components = studyNode.putArray("components");
@@ -673,7 +695,10 @@ public class JsonUtils {
         }
 
         if (withBatchProperties) {
-            ArrayNode batchArray = (ArrayNode) asJsonForApi(study.getBatchList());
+            ArrayNode batchArray = Json.mapper().createArrayNode();
+            for (Batch b : study.getBatchList()) {
+                batchArray.add(batchAsJsonForApi(b));
+            }
             studyNode.putArray("batches").addAll(batchArray);
         } else {
             ArrayNode batches = studyNode.putArray("batches");
@@ -683,19 +708,35 @@ public class JsonUtils {
         ArrayNode members = studyNode.putArray("members");
         for (User u : study.getUserList()) {
             members.addObject()
+                    .put("id", u.getId())
                     .put("username", u.getUsername());
         }
 
         return studyNode;
     }
 
-    public static JsonNode wrapForApi(JsonNode jsonNode) {
-        return wrapForApi(jsonNode, new HashMap<>());
+    /**
+     * Returns JSON of a component intended for the JATOS API
+     */
+    public JsonNode componentAsJsonForApi(Component component) throws IOException {
+        ObjectNode componentNode = (ObjectNode) asJsonWithStrictViewInclusion(component);
+        if (component.getComponentInput() != null) {
+            JsonNode studyInputNode = Json.mapper().readTree(component.getComponentInput());
+            componentNode.set("componentInput", studyInputNode);
+        }
+        return componentNode;
     }
 
-    public static JsonNode wrapForApi(JsonNode jsonNode, Map<String, Object> fields) {
-        fields.put("apiVersion", Common.getJatosApiVersion());
-        return wrapAsDataEnvelope(jsonNode, fields);
+    /**
+     * Returns JSON of a batch intended for the JATOS API
+     */
+    public JsonNode batchAsJsonForApi(Batch batch) throws IOException {
+        ObjectNode batchNode = (ObjectNode) asJsonWithStrictViewInclusion(batch);
+        if (batch.getBatchInput() != null) {
+            JsonNode studyInputNode = Json.mapper().readTree(batch.getBatchInput());
+            batchNode.set("batchInput", studyInputNode);
+        }
+        return batchNode;
     }
 
     /**
@@ -707,14 +748,13 @@ public class JsonUtils {
      *
      * Example:
      *
-     * wrapNodeInObject({ "a": 1 }, Map.of("version", "1"))
-     * // -> { "version": "1", "data": { "a": 1 } }
+     * wrapAsDataEnvelope({ "a": 1 }, Map.of("version", "1")) -> { "version": "1", "data": { "a": 1 } }
      *
      * Values are inserted using {@code putPOJO}, allowing complex objects (e.g., Maps, Lists) to be
      * serialized by Jackson as-is.
      *
      * @param jsonNode the JSON payload to be placed under the {@code "data"} key; may be any JsonNode (including null)
-     * @param fields   additional top-level properties to include in the wrapper; keys must be non-null
+     * @param fields   additional top-level properties (metadata) to include in the wrapper; keys must be non-null
      * @return a new ObjectNode containing the given {@code fields} and the {@code jsonNode} under {@code "data"}
      */
     public static JsonNode wrapAsDataEnvelope(JsonNode jsonNode, Map<String, Object> fields) {

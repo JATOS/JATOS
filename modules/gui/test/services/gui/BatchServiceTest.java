@@ -11,17 +11,15 @@ import models.common.Batch;
 import models.common.Study;
 import models.common.User;
 import models.common.workers.JatosWorker;
+import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
-import models.gui.BatchSession;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.UUID;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -64,14 +62,13 @@ public class BatchServiceTest {
         Batch defaultBatch = new Batch();
         defaultBatch.setId(11L);
         defaultBatch.setUuid(UUID.randomUUID().toString());
-        defaultBatch.setStudy(study);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(defaultBatch)));
+        study.addBatch(defaultBatch);
 
         // One member with JatosWorker
         User user = new User("member", "Member", "m@example.org");
         JatosWorker jw = new JatosWorker(user);
         user.setWorker(jw);
-        study.setUserList(new HashSet<>(Collections.singletonList(user)));
+        study.addUser(user);
         return study;
     }
 
@@ -87,7 +84,7 @@ public class BatchServiceTest {
         original.setMaxTotalWorkers(20);
         original.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
         original.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-        original.setJsonData("{\"a\":1}");
+        original.setBatchInput("{\"a\":1}");
         original.setBatchSessionData("{\"foo\":\"bar\"}");
         original.setBatchSessionVersion(5L);
         // add a worker to ensure worker list is copied
@@ -105,7 +102,7 @@ public class BatchServiceTest {
         assertThat(clone.getMaxTotalWorkers()).isEqualTo(20);
         assertThat(clone.getAllowedWorkerTypes()).contains(JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE);
         assertThat(clone.getWorkerList()).contains(worker);
-        assertThat(clone.getJsonData()).isEqualTo("{\"a\":1}");
+        assertThat(clone.getBatchInput()).isEqualTo("{\"a\":1}");
 
         // new UUID and default session/version (not copied)
         assertThat(clone.getUuid()).isNotEqualTo("orig-uuid");
@@ -115,20 +112,13 @@ public class BatchServiceTest {
 
     @Test
     public void createDefaultBatch_initializesFields_andAddsStudyUsers() {
-        // Given
-        Study study = studyWithOneUserAndDefaultBatch();
-
         // When
-        Batch batch = batchService.createDefaultBatch(study);
+        Batch batch = batchService.createDefaultBatch();
 
         // Then
         assertThat(batch.getTitle()).isEqualTo(BatchProperties.DEFAULT_TITLE);
-        assertThat(batch.getUuid()).isNotNull();
-        assertThat(batch.getAllowedWorkerTypes()).contains(JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE);
-        // All members' JatosWorkers added
-        assertThat(batch.getWorkerList()).hasSize(1);
+        assertThat(batch.getAllowedWorkerTypes()).contains(PersonalMultipleWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE);
         assertThat(batch.getBatchSessionData()).isEqualTo("{}");
-        assertThat(batch.getStudy()).isEqualTo(study);
     }
 
     @Test
@@ -138,15 +128,12 @@ public class BatchServiceTest {
         BatchProperties props = new BatchProperties();
         props.setTitle("NewTitle");
         props.setActive(false);
-        props.setMaxActiveMemberLimited(true);
         props.setMaxActiveMembers(7);
-        props.setMaxTotalMemberLimited(true);
         props.setMaxTotalMembers(15);
-        props.setMaxTotalWorkerLimited(true);
         props.setMaxTotalWorkers(30);
         props.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
         props.setComments("c");
-        props.setJsonData("{x:1}");
+        props.setBatchInput("{x:1}");
 
         // When
         batchService.updateBatch(batch, props);
@@ -159,7 +146,7 @@ public class BatchServiceTest {
         assertThat(batch.getMaxTotalWorkers()).isEqualTo(30);
         assertThat(batch.getAllowedWorkerTypes()).containsOnly(PersonalSingleWorker.WORKER_TYPE);
         assertThat(batch.getComments()).isEqualTo("c");
-        assertThat(batch.getJsonData()).isEqualTo("{x:1}");
+        assertThat(batch.getBatchInput()).isEqualTo("{x:1}");
 
         verify(batchDao, times(1)).update(batch);
     }
@@ -175,12 +162,9 @@ public class BatchServiceTest {
         batch.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
         batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
         batch.setComments("c");
-        batch.setJsonData("{y:2}");
+        batch.setBatchInput("{y:2}");
 
         BatchProperties props = batchService.bindToProperties(batch);
-        assertThat(props.isMaxActiveMemberLimited()).isTrue();
-        assertThat(props.isMaxTotalMemberLimited()).isTrue();
-        assertThat(props.isMaxTotalWorkerLimited()).isTrue();
         assertThat(props.getAllowedWorkerTypes()).contains(JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE);
 
         Batch fromProps = batchService.bindToBatch(props);
@@ -189,53 +173,7 @@ public class BatchServiceTest {
         assertThat(fromProps.getMaxTotalWorkers()).isEqualTo(3);
         assertThat(fromProps.getAllowedWorkerTypes()).contains(JatosWorker.WORKER_TYPE, PersonalSingleWorker.WORKER_TYPE);
         assertThat(fromProps.getComments()).isEqualTo("c");
-        assertThat(fromProps.getJsonData()).contains("{y:2}");
-    }
-
-    @Test
-    public void bindToBatchSession_mapsFields() {
-        Batch batch = new Batch();
-        batch.setBatchSessionVersion(9L);
-        batch.setBatchSessionData("{data}");
-
-        BatchSession session = batchService.bindToBatchSession(batch);
-        assertThat(session.getVersion()).isEqualTo(9L);
-        assertThat(session.getData()).isEqualTo("{data}");
-    }
-
-    @Test
-    public void updateBatchSession_nullOrVersionMismatch_returnsFalse() {
-        // null batch
-        when(batchDao.findById(1L)).thenReturn(null);
-        BatchSession session = new BatchSession();
-        session.setVersion(1L);
-        session.setData("{}");
-        assertThat(batchService.updateBatchSession(1L, session)).isFalse();
-
-        // version mismatch
-        Batch existing = new Batch();
-        existing.setBatchSessionVersion(2L);
-        when(batchDao.findById(2L)).thenReturn(existing);
-        session.setVersion(1L);
-        assertThat(batchService.updateBatchSession(2L, session)).isFalse();
-    }
-
-    @Test
-    public void updateBatchSession_success_incrementsVersion_andNormalizesEmptyData() {
-        Batch existing = new Batch();
-        existing.setBatchSessionVersion(3L);
-        existing.setBatchSessionData("{old}");
-        when(batchDao.findById(5L)).thenReturn(existing);
-
-        BatchSession session = new BatchSession();
-        session.setVersion(3L);
-        session.setData(""); // should become {}
-
-        boolean res = batchService.updateBatchSession(5L, session);
-        assertThat(res).isTrue();
-        assertThat(existing.getBatchSessionVersion()).isEqualTo(4L);
-        assertThat(existing.getBatchSessionData()).isEqualTo("{}");
-        verify(batchDao).update(existing);
+        assertThat(fromProps.getBatchInput()).contains("{y:2}");
     }
 
     @Test
@@ -268,8 +206,7 @@ public class BatchServiceTest {
         study.setId(1L);
         Batch batch = new Batch();
         batch.setId(2L);
-        batch.setStudy(study);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
+        study.addBatch(batch);
 
         // Group results to be removed
         when(groupResultDao.findAllByBatch(batch)).thenReturn(Collections.emptyList());
@@ -279,16 +216,14 @@ public class BatchServiceTest {
         JatosWorker jw = new JatosWorker();
         jw.setId(10L);
         jw.setUser(null);
-        jw.setBatchList(new HashSet<>(Collections.singleton(batch)));
         batch.addWorker(jw);
         // 2) PersonalSingleWorker belonging only to this batch (should be removed)
         PersonalSingleWorker psw = new PersonalSingleWorker();
         psw.setId(11L);
-        psw.setBatchList(new HashSet<>(Collections.singleton(batch)));
         batch.addWorker(psw);
 
         // When
-        batchService.remove(batch, new User("u","n","e@e"));
+        batchService.remove(batch, new User("u", "n", "e@e"));
 
         // Then: study updated and batch removed
         verify(studyDao, times(1)).update(study);

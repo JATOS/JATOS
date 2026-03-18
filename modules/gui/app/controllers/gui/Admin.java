@@ -4,6 +4,7 @@ import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
+import auth.gui.AuthService;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
@@ -11,7 +12,6 @@ import daos.common.UserDao;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
-import models.common.User.Role;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.db.jpa.Transactional;
 import play.http.HttpEntity;
@@ -20,7 +20,6 @@ import play.mvc.Http;
 import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.AdminService;
-import auth.gui.AuthService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
 import utils.common.Helpers;
@@ -37,7 +36,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.*;
+import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.*;
 
 /**
  * Controller class around administration (updates are handled in Updates and user manager in Users)
@@ -76,7 +76,7 @@ public class Admin extends Controller {
      * Returns admin page
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     @SaveLastVisitedPageUrl
     public Result administration(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
@@ -88,7 +88,7 @@ public class Admin extends Controller {
      * Returns the content (all regular file's names) of the logs directory as JSON
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result listLogs() throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(Common.getLogsPath()))) {
             List<String> content = paths
@@ -104,7 +104,7 @@ public class Admin extends Controller {
      * For backward compatibility. Uses logs.
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result log(Integer lineLimit) throws IOException {
         return logs("application.log", lineLimit, true);
     }
@@ -116,7 +116,7 @@ public class Admin extends Controller {
      * If 'reverse' is false it returns the file for download.
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result logs(String filename, Integer lineLimit, boolean reverse) {
         filename = Helpers.urlDecode(filename);
         if (!ioUtils.existsAndSecure(Common.getLogsPath(), filename)) return notFound();
@@ -139,7 +139,7 @@ public class Admin extends Controller {
      * Returns some status values
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result status() {
         return ok(adminService.getAdminStatus());
     }
@@ -148,7 +148,7 @@ public class Admin extends Controller {
      * Returns study manager page
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     @SaveLastVisitedPageUrl
     public Result studyManager(Http.Request request) {
         User signedinUser = authService.getSignedinUser();
@@ -160,7 +160,7 @@ public class Admin extends Controller {
      * Returns table data for study manager page
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result allStudiesData() {
         List<Study> studyList = studyDao.findAll();
         boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyManager();
@@ -175,7 +175,7 @@ public class Admin extends Controller {
      * Returns admin data for all studies that belong to the given user
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
@@ -188,7 +188,7 @@ public class Admin extends Controller {
      * Returns the study assets folder size of one study
      */
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result studyAssetsSize(Long studyId) {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
@@ -201,7 +201,7 @@ public class Admin extends Controller {
      * Returns the result data size of one study
      */
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result resultDataSize(Long studyId) {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
@@ -215,7 +215,7 @@ public class Admin extends Controller {
      * Returns the size of all result files of one study
      */
     @Transactional
-    @Auth(Role.ADMIN)
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result resultFileSize(Long studyId) {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);

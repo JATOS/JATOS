@@ -1,6 +1,5 @@
 package services.gui;
 
-import com.google.common.base.Strings;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
@@ -16,13 +15,14 @@ import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
 import models.gui.BatchProperties;
-import models.gui.BatchSession;
 import play.Logger;
 import play.data.validation.ValidationError;
+import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -69,61 +69,47 @@ public class BatchService {
         clone.setMaxActiveMembers(batch.getMaxActiveMembers());
         clone.setMaxTotalMembers(batch.getMaxTotalMembers());
         clone.setMaxTotalWorkers(batch.getMaxTotalWorkers());
-        batch.getWorkerList().forEach(clone::addWorker);
-        batch.getAllowedWorkerTypes().forEach(clone::addAllowedWorkerType);
-        clone.setJsonData(batch.getJsonData());
+        clone.addAllWorkers(batch.getWorkerList());
+        clone.addAllAllowedWorkerTypes(batch.getAllowedWorkerTypes());
+        clone.setBatchInput(batch.getBatchInput());
         return clone;
-    }
-
-    /**
-     * Initialises Batch. Does NOT persist.
-     */
-    void createBatch(Batch batch, Study study) {
-        initBatch(batch, study);
-        batch.setStudy(study);
     }
 
     /**
      * Create and initialises default Batch. Each Study has a default batch.
      * Does NOT persist.
      */
-    public Batch createDefaultBatch(Study study) {
+    public Batch createDefaultBatch() {
         Batch batch = new Batch();
         batch.setTitle(BatchProperties.DEFAULT_TITLE);
-        initBatch(batch, study);
-        batch.setStudy(study);
-        batch.setBatchSessionData("{}");
+        addDefaultAllowedWorkerTypes(batch);
         return batch;
     }
 
-    /**
-     * Creates batch, initialises it and persists it. Updates study with new
-     * batch.
-     */
-    public void createAndPersistBatch(Batch batch, Study study, User signedinUser) {
-        initBatch(batch, study);
-        batch.setStudy(study);
-        if (!study.hasBatch(batch)) {
-            study.addBatch(batch);
+    public void initBatch(Batch batch, Study study) {
+        if (batch.getUuid() == null) {
+            batch.setUuid(UUID.randomUUID().toString());
         }
+        study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
+        batch.setBatchSessionData("{}");
+    }
+
+    public void initAndPersistBatch(Batch batch, Study study, User signedinUser) {
+        if (batch.getUuid() == null) {
+            batch.setUuid(UUID.randomUUID().toString());
+        }
+        study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
+        batch.setBatchSessionData("{}");
+        study.addBatch(batch);
+
         batchDao.create(batch);
         studyDao.update(study);
         studyLogger.log(study, signedinUser, "Created batch", batch);
     }
 
-    /**
-     * Add default allowed worker types and all study's Jatos worker. Generates
-     * UUID.
-     */
-    private void initBatch(Batch batch, Study study) {
-        if (batch.getUuid() == null) {
-            batch.setUuid(UUID.randomUUID().toString());
-        }
-        batch.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
+    public void addDefaultAllowedWorkerTypes(Batch batch) {
         batch.addAllowedWorkerType(PersonalMultipleWorker.WORKER_TYPE);
         batch.addAllowedWorkerType(PersonalSingleWorker.WORKER_TYPE);
-        study.getUserList().forEach(user -> batch.addWorker(user.getWorker()));
-        batch.setBatchSessionData("{}");
     }
 
     /**
@@ -136,10 +122,12 @@ public class BatchService {
         batch.setMaxTotalMembers(updatedBatchProps.getMaxTotalMembers());
         batch.setMaxTotalWorkers(updatedBatchProps.getMaxTotalWorkers());
         batch.getAllowedWorkerTypes().clear();
-        updatedBatchProps.getAllowedWorkerTypes()
-                .forEach(batch::addAllowedWorkerType);
+        updatedBatchProps.getAllowedWorkerTypes().forEach(type -> {
+            String normalizedWorkerType = WorkerService.extractWorkerType(type);
+            batch.addAllowedWorkerType(normalizedWorkerType);
+        });
         batch.setComments(updatedBatchProps.getComments());
-        batch.setJsonData(updatedBatchProps.getJsonData());
+        batch.setBatchInput(updatedBatchProps.getBatchInput());
         batchDao.update(batch);
     }
 
@@ -150,18 +138,11 @@ public class BatchService {
         props.setTitle(batch.getTitle());
         props.setActive(batch.isActive());
         props.setMaxActiveMembers(batch.getMaxActiveMembers());
-        props.setMaxActiveMemberLimited(batch.getMaxActiveMembers() != null);
         props.setMaxTotalMembers(batch.getMaxTotalMembers());
-        props.setMaxTotalMemberLimited(batch.getMaxTotalMembers() != null);
-        props.setMaxTotalWorkerLimited(batch.getMaxTotalWorkers() != null);
         props.setMaxTotalWorkers(batch.getMaxTotalWorkers());
-        if (batch.getAllowedWorkerTypes() != null) {
-            batch.getAllowedWorkerTypes().forEach(props::addAllowedWorkerType);
-        } else {
-            props.addAllowedWorkerType(JatosWorker.WORKER_TYPE);
-        }
+        props.addAllAllowedWorkerTypes(batch.getAllowedWorkerTypes());
         props.setComments(batch.getComments());
-        props.setJsonData(batch.getJsonData());
+        props.setBatchInput(batch.getBatchInput());
         return props;
     }
 
@@ -169,50 +150,16 @@ public class BatchService {
         Batch batch = new Batch();
         batch.setTitle(props.getTitle());
         batch.setActive(props.isActive());
-        if (props.isMaxActiveMemberLimited()) {
-            batch.setMaxActiveMembers(props.getMaxActiveMembers());
-        } else {
-            batch.setMaxActiveMembers(null);
-        }
-        if (props.isMaxTotalMemberLimited()) {
-            batch.setMaxTotalMembers(props.getMaxTotalMembers());
-        } else {
-            batch.setMaxTotalMembers(null);
-        }
-        if (props.isMaxTotalWorkerLimited()) {
-            batch.setMaxTotalWorkers(props.getMaxTotalWorkers());
-        } else {
-            batch.setMaxTotalWorkers(null);
-        }
-        props.getAllowedWorkerTypes().forEach(batch::addAllowedWorkerType);
+        batch.setMaxActiveMembers(props.getMaxActiveMembers());
+        batch.setMaxTotalMembers(props.getMaxTotalMembers());
+        batch.setMaxTotalWorkers(props.getMaxTotalWorkers());
+        props.getAllowedWorkerTypes().forEach(type -> {
+            String normalizedWorkerType = WorkerService.extractWorkerType(type);
+            batch.addAllowedWorkerType(normalizedWorkerType);
+        });
         batch.setComments(props.getComments());
-        batch.setJsonData(props.getJsonData());
+        batch.setBatchInput(props.getBatchInput());
         return batch;
-    }
-
-    public BatchSession bindToBatchSession(Batch batch) {
-        BatchSession batchSession = new BatchSession();
-        batchSession.setVersion(batch.getBatchSessionVersion());
-        batchSession.setData(batch.getBatchSessionData());
-        return batchSession;
-    }
-
-    public boolean updateBatchSession(long batchId, BatchSession batchSession) {
-        Batch currentBatch = batchDao.findById(batchId);
-        if (currentBatch == null ||
-                !batchSession.getVersion().equals(currentBatch.getBatchSessionVersion())) {
-            return false;
-        }
-
-        currentBatch.setBatchSessionVersion(
-                currentBatch.getBatchSessionVersion() + 1);
-        if (Strings.isNullOrEmpty(batchSession.getData())) {
-            currentBatch.setBatchSessionData("{}");
-        } else {
-            currentBatch.setBatchSessionData(batchSession.getData());
-        }
-        batchDao.update(currentBatch);
-        return true;
     }
 
     /**
@@ -237,11 +184,6 @@ public class BatchService {
      * to the database.
      */
     public void remove(Batch batch, User signedinUser) {
-        // Remove this Batch from its study
-        Study study = batch.getStudy();
-        study.removeBatch(batch);
-        studyDao.update(study);
-
         // Delete all StudyResults and all ComponentResults
         resultRemover.removeAllStudyResults(batch, signedinUser);
 
@@ -257,10 +199,19 @@ public class BatchService {
             removeOrUpdateNonJatosWorkers(batch, worker);
         }
 
+        // Remove this Batch from its study
+        Study study = batch.getStudy();
+        study.removeBatch(batch);
+        studyDao.update(study);
+
         batchDao.remove(batch);
         studyLogger.log(study, signedinUser, "Removed batch", batch);
     }
 
+    /**
+     * Remove or update JatosWorker from batch. This isn't necessary anymore because we don't add the JatosWorker to a
+     * batch anymore. We keep it to clean up old batches that still have a JatosWorker.
+     */
     private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {
         // We can't check type with 'instanceof JatosWorker' because sometimes
         // Hibernate doesn't map the proper type
@@ -268,15 +219,13 @@ public class BatchService {
             return;
         }
 
-        // If worker is part of other batches just remove this batch
+        // If worker is part of other batches do nothing
         if (worker.getBatchList().size() != 1) {
-            worker.removeBatch(batch);
-            workerDao.update(worker);
             return;
         }
 
         // This is a Hibernate issue: If this worker was a JatosWorker
-        // before but its user was already deleted it's not instance of
+        // before but its user was already deleted, it's not instance of
         // JatosWorker anymore. But anyway, since the worker is only in this
         // batch, now it can be removed.
         if (!(worker instanceof JatosWorker)) {
@@ -287,10 +236,10 @@ public class BatchService {
         // Worker is only in this batch
         JatosWorker jatosWorker = (JatosWorker) worker;
         if (jatosWorker.getUser() == null) {
-            // Last one in batch list and User gone -> remove worker
+            // Last one in a batch list and User gone -> remove worker
             workerDao.remove(worker);
         } else {
-            // If the JatosWorker's User still exist don't remove
+            // If the JatosWorker's User still exists don't remove
             worker.removeBatch(batch);
             workerDao.update(worker);
         }
@@ -326,6 +275,23 @@ public class BatchService {
             LOGGER.warn(".validate: " + batchProperties.validate().stream().map(ValidationError::message)
                     .collect(Collectors.joining(", ")));
             throw new ValidationException("Batch is invalid");
+        }
+    }
+
+    public Batch getBatchFromIdOrUuid(String idOrUuid) {
+        Optional<Long> studyId = Helpers.parseLong(idOrUuid.trim());
+        if (studyId.isPresent()) {
+            return batchDao.findById(studyId.get());
+        } else {
+            return batchDao.findByUuid(idOrUuid).orElse(null);
+        }
+    }
+
+    public Batch getBatchOrDefaultBatch(Long batchId, Study study) {
+        if (batchId != null) {
+            return batchDao.findById(batchId);
+        } else {
+            return study.getDefaultBatch();
         }
     }
 

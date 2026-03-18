@@ -59,21 +59,21 @@ public class ResultStreamer {
     private final StudyResultDao studyResultDao;
     private final StudyDao studyDao;
     private final JsonUtils jsonUtils;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final StudyLogger studyLogger;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final JPAApi jpaApi;
 
     @Inject
     ResultStreamer(AuthService authService, ComponentResultDao componentResultDao,
-            StudyResultDao studyResultDao, StudyDao studyDao, JsonUtils jsonUtils, Checker checker,
+            StudyResultDao studyResultDao, StudyDao studyDao, JsonUtils jsonUtils, AuthorizationService authorizationService,
             StudyLogger studyLogger, ComponentResultIdsExtractor componentResultIdsExtractor, JPAApi jpaApi) {
         this.authService = authService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.studyDao = studyDao;
         this.jsonUtils = jsonUtils;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.studyLogger = studyLogger;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.jpaApi = jpaApi;
@@ -298,7 +298,7 @@ public class ResultStreamer {
         List<Long> studyResultIdList = studyResultDao.findIdsByComponentResultIds(componentResultIdList);
         List<Study> studyList = studyDao.findByStudyResultIds(studyResultIdList);
         for (Study study : studyList) {
-            checker.checkStandardForStudy(study, study.getId(), signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
         }
         studyList.forEach(s -> studyLogger.log(s, signedinUser, "Exported result data"));
         return streamComponentResultData(signedinUser, componentResultIdList);
@@ -330,7 +330,7 @@ public class ResultStreamer {
             jpaApi.withTransaction(entityManager -> {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);
                 if (componentResult != null) {
-                    Errors.rethrow().run(() -> checker.checkComponentResult(componentResult, user, false));
+                    Errors.rethrow().run(() -> authorizationService.canUserAccessComponentResult(componentResult, user, false));
                     studies.add(componentResult.getStudyResult().getStudy());
                     Errors.rethrow().run(() -> writeComponentResultData(writer, componentResult));
                 } else {
@@ -454,7 +454,7 @@ public class ResultStreamer {
         List<Long> studyIds = studyDao.findIdsByStudyResultIds(studyResultIds);
         for (Long studyId : studyIds) {
             Study study = studyDao.findById(studyId);
-            checker.checkStandardForStudy(study, studyId, signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
 
             if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                 jGenerator.writeStartObject();

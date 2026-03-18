@@ -9,7 +9,7 @@ import exceptions.gui.NotFoundException;
 import general.common.RequestScope;
 import models.common.Study;
 import models.common.User;
-import models.gui.NewUserModel;
+import models.gui.NewUserProperties;
 import org.fest.assertions.Fail;
 import org.junit.Test;
 import testutils.JatosTest;
@@ -67,11 +67,10 @@ public class UserServiceIntegrationTest extends JatosTest {
 
     @Test
     public void checkBindToUserAndPersist() {
-        NewUserModel userModel = new NewUserModel();
+        NewUserProperties userModel = new NewUserProperties();
         userModel.setUsername("foo@foo.org");
         userModel.setName("Foo Bar");
         userModel.setPassword("blaPw");
-        userModel.setPasswordRepeat("blaPw");
 
         jpaApi.withTransaction(em -> {
             userService.bindToUserAndPersist(userModel);
@@ -259,8 +258,8 @@ public class UserServiceIntegrationTest extends JatosTest {
         jpaApi.withTransaction(em -> {
             // User is removed from the database
             assertThat(userDao.findByUsername("foo@foo.org")).isNull();
-            // User's studies are removed (the user object is still the old before removal)
-            user.getStudyList().forEach(s -> assertThat(studyDao.findById(s.getId())).isNull());
+            // The user is removed from the study
+            studyDao.findById(studyId).getUserList().forEach(u -> assertThat(u).isNotEqualTo(user));
             // User's API tokens are removed
             assertThat(apiTokenDao.findByUser(user)).isEmpty();
         });

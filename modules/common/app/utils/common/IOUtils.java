@@ -18,6 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 /**
  * Utility class that handles access to the system's file system.
  *
@@ -32,9 +34,14 @@ public class IOUtils {
      */
     public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f*?\"\\\\\0/,`<>|:~!§$%&^°]";
 
+    // Allow alphanumeric characters, underscores, and hyphens in study assets directory names
+    public static final String REGEX_ASSETS_DIR_NAME = "^[a-zA-Z0-9_-]+$";
+
     private static final int MAX_FILENAME_LENGTH = 100;
 
-    public static final File TMP_DIR = new File(Common.getTmpPath());
+    public static File tmpDir() {
+        return new File(Common.getTmpPath());
+    }
 
     /**
      * Reads the given file and returns the content as String.
@@ -189,6 +196,10 @@ public class IOUtils {
 
     public static boolean checkFilename(String filename) {
         return !Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME).matcher(filename).find();
+    }
+
+    public static boolean checkAssetsDirName(String dirName) {
+        return dirName.matches(IOUtils.REGEX_ASSETS_DIR_NAME) && checkFilename(dirName);
     }
 
     /**
@@ -504,6 +515,16 @@ public class IOUtils {
         Path dir = Paths.get(getResultUploadsDir(studyResultId, componentResultId));
         if (Files.isDirectory(dir)) {
             FileUtils.deleteDirectory(dir.toFile());
+        }
+    }
+
+    public static boolean moveAndDetectOverwrite(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target);
+            return false;
+        } catch (java.nio.file.FileAlreadyExistsException e) {
+            Files.move(source, target, REPLACE_EXISTING);
+            return true;
         }
     }
 }

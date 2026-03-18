@@ -101,7 +101,7 @@ public class JatosTest {
 
         Result result = route(application, request);
         JsonNode content = Json.parse(contentAsString(result));
-        Long studyId = content.get("id").asLong();
+        Long studyId = content.path("data").path("id").asLong();
         return studyId;
     }
 
@@ -129,7 +129,7 @@ public class JatosTest {
         ApiTokenService apiTokenService = application.injector().instanceOf(ApiTokenService.class);
         return jpaApi.withTransaction((em) -> {
             return apiTokenService.create(user, "test-token", 0);
-        });
+        }).getRight();
     }
 
     public Study getStudy(Long id) {

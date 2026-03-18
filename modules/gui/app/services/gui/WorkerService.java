@@ -4,6 +4,7 @@ import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import models.common.Batch;
 import models.common.workers.*;
+import models.gui.ApiEnvelope.ErrorCode;
 import play.data.validation.ValidationError;
 
 import javax.inject.Inject;
@@ -37,8 +38,7 @@ public class WorkerService {
     }
 
     /**
-     * Retrieves the count of StudyResults for each worker type in a map (
-     * workerType -> count).
+     * Retrieves the count of StudyResults for each worker type in a map ( workerType -> count).
      */
     public Map<String, Integer> retrieveStudyResultCountsPerWorker(Batch batch) {
         Map<String, Integer> resultsPerWorker = new HashMap<>();
@@ -53,33 +53,45 @@ public class WorkerService {
         return resultsPerWorker;
     }
 
-    public String extractWorkerType(String workerType) throws BadRequestException {
+    private static final Map<String, String> WORKER_TYPE_ALIASES = Map.ofEntries(
+            Map.entry("jatos", JatosWorker.WORKER_TYPE),
+            Map.entry("ja", JatosWorker.WORKER_TYPE),
+
+            Map.entry("personalsingle", PersonalSingleWorker.WORKER_TYPE),
+            Map.entry("ps", PersonalSingleWorker.WORKER_TYPE),
+
+            Map.entry("personalmultiple", PersonalMultipleWorker.WORKER_TYPE),
+            Map.entry("pm", PersonalMultipleWorker.WORKER_TYPE),
+
+            Map.entry("generalsingle", GeneralSingleWorker.WORKER_TYPE),
+            Map.entry("gs", GeneralSingleWorker.WORKER_TYPE),
+
+            Map.entry("generalmultiple", GeneralMultipleWorker.WORKER_TYPE),
+            Map.entry("gm", GeneralMultipleWorker.WORKER_TYPE),
+
+            Map.entry("mturk", MTWorker.WORKER_TYPE),
+            Map.entry("mt", MTWorker.WORKER_TYPE),
+
+            Map.entry("mturksandbox", MTSandboxWorker.WORKER_TYPE),
+            Map.entry("mts", MTSandboxWorker.WORKER_TYPE)
+    );
+
+    public static String extractWorkerType(String workerType) {
         if (workerType == null) return null;
-        switch (workerType.toLowerCase()) {
-            case "jatos":
-            case "ja":
-                return JatosWorker.WORKER_TYPE;
-            case "personalsingle":
-            case "ps":
-                return PersonalSingleWorker.WORKER_TYPE;
-            case "personalmultiple":
-            case "pm":
-                return PersonalMultipleWorker.WORKER_TYPE;
-            case "generalsingle":
-            case "gs":
-                return GeneralSingleWorker.WORKER_TYPE;
-            case "generalmultiple":
-            case "gm":
-                return GeneralMultipleWorker.WORKER_TYPE;
-            case "mturk":
-            case "mt":
-                return MTWorker.WORKER_TYPE;
-            case "mturksandbox":
-            case "mts":
-                return MTSandboxWorker.WORKER_TYPE;
-            default:
-                throw new BadRequestException("Unknown worker type");
+        return WORKER_TYPE_ALIASES.get(workerType.toLowerCase());
+    }
+
+    public static String validateAndExtractWorkerType(String workerType) throws BadRequestException {
+        if (workerType == null) return null;
+        String normalized = extractWorkerType(workerType);
+        if (normalized == null) {
+            throw new BadRequestException("Unknown type", ErrorCode.VALIDATION_ERROR);
         }
+        return normalized;
+    }
+
+    public static boolean isValidWorkerType(String workerType) {
+        return extractWorkerType(workerType) != null;
     }
 
 }

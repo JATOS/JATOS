@@ -46,7 +46,7 @@ public class ApiTokenServiceTest {
         hashUtilsMock.when(() -> HashUtils.getHash(expectedToken, HashUtils.SHA_256)).thenReturn(expectedHash);
 
         // When
-        String token = service.create(user, name, expires);
+        String token = service.create(user, name, expires).getRight();
 
         // Then - returned token string
         assertThat(token).isEqualTo(expectedToken);
@@ -89,7 +89,7 @@ public class ApiTokenServiceTest {
         hashUtilsMock.when(() -> HashUtils.getHash(expectedToken, HashUtils.SHA_256)).thenReturn(expectedHash);
 
         // When
-        String token = service.create(user, name, expires);
+        String token = service.create(user, name, expires).getRight();
 
         // Then
         assertThat(token).isEqualTo(expectedToken);

@@ -93,7 +93,10 @@
                     .modal('hide')
                     .one('hidden.bs.modal', () => showStudyLinksDisplayModal(res.data, batch, type, comment));
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study codes")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't get study codes";
+                alerts.error(message);
+            }
         });
     });
 

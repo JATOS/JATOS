@@ -130,7 +130,6 @@ public class StudyV2 {
 
     public StudyV2() {
         // Add default allowed workers
-        addAllowedWorker(JatosWorker.WORKER_TYPE);
         addAllowedWorker(PersonalMultipleWorker.WORKER_TYPE);
         addAllowedWorker(PersonalSingleWorker.WORKER_TYPE);
     }
@@ -347,23 +346,15 @@ public class StudyV2 {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        
-        if (obj == null) return false;
-
         if (!(obj instanceof StudyV2)) return false;
-
         StudyV2 other = (StudyV2) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

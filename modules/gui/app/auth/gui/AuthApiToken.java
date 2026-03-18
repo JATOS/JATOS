@@ -5,6 +5,7 @@ import general.common.Common;
 import general.common.RequestScope;
 import models.common.ApiToken;
 import models.common.User;
+import models.common.User.Role;
 import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import utils.common.HashUtils;
@@ -12,6 +13,7 @@ import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.EnumSet;
 import java.util.Optional;
 
 import static play.mvc.Results.forbidden;
@@ -40,7 +42,12 @@ public class AuthApiToken implements AuthAction.AuthMethod {
     }
 
     @Override
-    public AuthResult authenticate(Http.Request request, User.Role role) {
+    public Type type() {
+        return Type.TOKEN;
+    }
+
+    @Override
+    public AuthResult authenticate(Http.Request request, EnumSet<Role> allowedRoles) {
 
         if (!Helpers.isApiRequest(request)) {
             return AuthResult.wrongMethod();
@@ -83,7 +90,7 @@ public class AuthApiToken implements AuthAction.AuthMethod {
         }
 
         // Check authorization
-        if (!user.hasRole(role)) {
+        if (!user.hasRole(allowedRoles)) {
             return AuthResult.denied(unauthorized("Invalid api token"));
         }
 

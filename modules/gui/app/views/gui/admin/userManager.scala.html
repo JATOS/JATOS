@@ -9,11 +9,14 @@
             <tr>
                 <th class="no-info-icon" data-bs-tooltip="Expand to see all studies that belong to this user">Studies<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="A deactivated user cannot sign in anymore but their studies can still be run by participants (aka workers). To prevent a study from running deactivate it in the study manager.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="id">ID<span class="ordering-icon"></span></th>
                 <th class="username">Username<span class="ordering-icon"></span></th>
                 <th>Name<span class="ordering-icon"></span></th>
                 <th>Email<span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC, ORCID, SRAM or CONEXT">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Roles, e.g. VIEWER, USER, ADMIN, SUPERUSER, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Switch between role VIEWER and USER">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
@@ -86,9 +89,7 @@
                             </legend>
                             <div class="col-sm-9">
                                 <div class="form-check">
-                                    <input class="form-check-input checkbox-admin" type="checkbox" name="authByLdap" id="userCreatorAuthByLdap" value="true" data-bs-toggle="collapse" data-bs-target="#userCreatorPasswordDiv">
-                                    @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
-                                    <input type="hidden" name="authByLdap" value="false" />
+                                    <input class="form-check-input checkbox-admin" type="checkbox" name="authMethod" id="userCreatorAuthByLdap" value="LDAP" data-bs-toggle="collapse" data-bs-target="#userCreatorPasswordDiv">
                                     <label class="form-check-label" for="userCreatorAuthByLdap">
                                         Authenticate this user by your central LDAP service?
                                     </label>
@@ -132,6 +133,7 @@
                 </div>
                 <div class="modal-body">
                     <form class="form-admin" id="userSettingsForm">
+                        <input type="hidden" id="userSettingsUsername" name="username">
                         <div class="row mb-3">
                             <label for="userSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
                             <div class="col-sm-9">
@@ -190,12 +192,13 @@
                 </div>
                 <div class="modal-body">
                     <form class="form-danger" id="deleteUserForm">
+                        <input type="hidden" id="deleteUserTargetUsername" name="username">
                         <div id="deleteUserConfirmationText"></div>
                         @if(signedinUser.isDb() || signedinUser.isLdap()){
                         <input type="password" class="form-control" id="deleteUserAdminPassword" name="password" placeholder="Your password" autocomplete="off" required>
                         <div class="form-text">Confirm with your (@signedinUser.getUsername()) password.</div>
                         } else {
-                        <input type="text" class="form-control" id="deleteUserAdminUsername"  name="username" placeholder="Your username" autocomplete="off" required>
+                        <input type="text" class="form-control" id="deleteUserAdminUsername" name="confirmUsername" placeholder="Your username" autocomplete="off" required>
                         <div class="form-text">Confirm by typing your username (@signedinUser.getUsername()).</div>
                         }
                     </form>
@@ -285,6 +288,10 @@
                     }
                 },
                 {
+                    "data": "id",
+                    "width": "1%"
+                },
+                {
                     "data": "username",
                     "render": function (data, type, full, meta) {
                         if (type === 'export' || type === 'sort') return data;
@@ -320,6 +327,44 @@
                     "render": Helpers.getAuthMethodText
                 },
                 {
+                    "className": "role-list",
+                    "data": "roleList",
+                    "render": function (data, type, full, meta) {
+                        if (type === 'export' || type === 'sort') return data;
+                        return data.join(", ");
+                    }
+                },
+                {
+                    "className": "viewer-or-user",
+                    "data": null,
+                    "defaultContent": '',
+                    "searchable": false,
+                    "render": function (data, type, full, meta) {
+                        const isUser = $.inArray("USER", data.roleList) >= 0;
+                        let isDisabled = false;
+                        let tooltip = "";
+                        if (type === 'export' || type === 'sort') return isUser.toString();
+                        // Special treatment of admin users
+                        if (data.username === "admin") {
+                            isDisabled = true;
+                            tooltip = "User admin's roles cannot be changed.";
+                        } else if (data.username === window.signedinUser.username) {
+                            isDisabled = true;
+                            tooltip = "You cannot change your own roles. Only another user with admin rights can do it.";
+                        } else {
+                            tooltip = "Use this switch to switch between VIEWER and USER role for this user.";
+                        }
+                        const checked = isUser ? "checked" : "";
+                        const disabled = isDisabled ? "disabled" : "";
+                        return `
+                            <label class="switch no-info-icon mt-1" data-bs-tooltip="${tooltip}">
+                                <input type="checkbox" ${checked} ${disabled}>
+                                <span class="slider slider-admin round" ${disabled}></span>
+                            </label>
+                        `;
+                    }
+                },
+                {
                     "className": "superuser",
                     "visible": window.common.isUserRoleAllowSuperuser,
                     "data": null,
@@ -341,7 +386,7 @@
                     "defaultContent": '',
                     "searchable": false,
                     "render": function (data, type, full, meta) {
-                        let isAdmin = $.inArray("ADMIN", data.roleList) >= 0;
+                        const isAdmin = $.inArray("ADMIN", data.roleList) >= 0;
                         let isDisabled = false;
                         let tooltip = "";
                         if (type === 'export' || type === 'sort') return isAdmin.toString();
@@ -434,7 +479,7 @@
                             },
                             "filename": () => { return "jatos_user_all_" + Helpers.getDateTimeYYYYMMDDHHmmss() },
                             "exportOptions": {
-                                "columns": [':not(:last-child)'],
+                                "columns": ':not(:nth-last-child(-n+4))',
                                 "orthogonal": 'export',
                                 "format": {
                                     "header": function ( data, row, column, node ) {
@@ -505,8 +550,8 @@
                 Alerts.warning("The user was not added.", 5000);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#userCreatorForm", response.responseJSON);
-                } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                } else if (response.responseText) {
+                    alerts.error(response.responseText);
                 } else {
                     alerts.error("Couldn't add a new user");
                 }
@@ -600,14 +645,41 @@
         const tr = $(this).closest('tr');
         const user = dataTable.row(tr).data();
         $.ajax({
-            url: window.routes.Users.toggleActive(user.username, isActive),
-            type: "POST",
+            url: window.routes.Api.updateUser(user.id),
+            type: "PATCH",
+            contentType: "application/json",
+            data: JSON.stringify({ "active": isActive }),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => {
                 $(checkbox).prop('checked', isActive);
                 user.active = isActive;
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle user activation")
+        });
+    });
+
+    $('#userManagerTable').on('click', '.viewer-or-user input', function(e) {
+        e.preventDefault();
+        const checkbox = this;
+        const role = $(checkbox).is(':checked') ? "USER" : "VIEWER";
+        const tr = $(this).closest('tr');
+        const user = dataTable.row(tr).data();
+        $.ajax({
+            url: window.routes.Api.changeUserRole(user.id),
+            type: "PATCH",
+            contentType: "application/json",
+            data: JSON.stringify({ "role": role }),
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
+            success: (response) => {
+                user.roleList = response.data.roleList;
+                $(tr).find(".role-list").text(user.roleList.join(", "));
+                const isUser = user.roleList.includes("USER");
+                $(checkbox).prop('checked', isUser);
+            },
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't change user roles";
+                alerts.error(message);
+            }
         });
     });
 
@@ -618,16 +690,15 @@
         const tr = $(this).closest('tr');
         const user = dataTable.row(tr).data();
         $.ajax({
-            url: window.routes.Users.toggleRole(user.username, "SUPERUSER", isSuperuser),
+            url: window.routes.Users.toggleRole("SUPERUSER", isSuperuser),
             type: "POST",
+            data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: (isSuperuser) => {
+            success: (roleList) => {
+                user.roleList = roleList;
+                $(tr).find(".role-list").text(roleList.join(", "));
+                const isSuperuser = roleList.includes("SUPERUSER");
                 $(checkbox).prop('checked', isSuperuser);
-                if (isSuperuser) {
-                    user.roleList.push("SUPERUSER");
-                } else {
-                    user.roleList = user.roleList.filter(item => item !== "SUPERUSER");
-                }
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle superuser role")
         });
@@ -640,16 +711,15 @@
         const tr = $(this).closest('tr');
         const user = dataTable.row(tr).data();
         $.ajax({
-            url: window.routes.Users.toggleRole(user.username, "ADMIN", isAdmin),
+            url: window.routes.Users.toggleRole("ADMIN", isAdmin),
             type: "POST",
+            data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: (isAdmin) => {
+            success: (roleList) => {
+                user.roleList = roleList;
+                $(tr).find(".role-list").text(roleList.join(", "));
+                const isAdmin = roleList.includes("ADMIN");
                 $(checkbox).prop('checked', isAdmin);
-                if (isAdmin) {
-                    user.roleList.push("ADMIN");
-                } else {
-                    user.roleList = user.roleList.filter(item => item !== "ADMIN");
-                }
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle admin rights")
         });
@@ -696,12 +766,13 @@
         Helpers.generateModalSubtitles("#userSettingsModal", {"Username": user.username});
         $('#userSettingsName').val(user.name);
         $('#userSettingsEmail').val(user.email);
+        $('#userSettingsUsername').val(user.username);
         $("#userSettingsModal").modal('show');
 
         $("#userSettingsConfirm").off("click").on("click", function(event) {
             $.ajax({
                 type: 'POST',
-                url: window.routes.Users.edit(user.username),
+                url: window.routes.Users.edit(),
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 data: $('#userSettingsForm').serialize(),
                 success: function() {
@@ -711,10 +782,10 @@
                     user.email = $('#userSettingsEmail').val();
                     dataTable.row(tr).data(user);
                 },
-                error: function(response) {
+                error: function(err) {
                     alerts.warning(`${user.username}'s settings were not changed.`, 5000);
-                    if (Helpers.isJson(response.responseText)) {
-                        FormValidation.show("#userSettingsForm", response.responseJSON);
+                    if (Helpers.isJson(err.responseText)) {
+                        FormValidation.show("#userSettingsForm", err.responseJSON);
                     } else if (err.responseText) {
                         alerts.error(err.responseText);
                     } else {
@@ -737,7 +808,7 @@
                 + ` It must have at least ${window.common.userPasswordMinLength} characters.`);
         $("#changePasswordModal").modal('show');
 
-        $("#changePasswordConfirm").one("click", function(event) {
+        $("#changePasswordConfirm").off("click").on("click", function(event) {
             $.ajax({
                 type: 'POST',
                 url: window.routes.Users.changePasswordByAdmin,
@@ -747,10 +818,10 @@
                     $('#changePasswordModal').modal('hide');
                     Alerts.success(`${user.username}'s password was changed successfully.`);
                 },
-                error: function(response) {
+                error: function(err) {
                     alerts.warning(`${user.username}'s password was not changed.`, 5000);
-                    if (Helpers.isJson(response.responseText)) {
-                        FormValidation.show("#changePasswordForm", response.responseJSON);
+                    if (Helpers.isJson(err.responseText)) {
+                        FormValidation.show("#changePasswordForm", err.responseJSON);
                     } else if (err.responseText) {
                         alerts.error(err.responseText);
                     } else {
@@ -769,12 +840,13 @@
         FormValidation.clear("#deleteUserForm");
         Helpers.generateModalSubtitles("#deleteUserModal", {"Username": user.username});
         $('#deleteUserConfirmationText').html(generateDeleteUserConfirmationHtml(user));
+        $('#deleteUserTargetUsername').val(user.username);
         $("#deleteUserModal").modal('show');
 
-        $("#deleteUserConfirm").one("click", function(event) {
+        $("#deleteUserConfirm").off("click").on("click", function(event) {
             $.ajax({
                 type: 'POST',
-                url: window.routes.Users.remove(user.username),
+                url: window.routes.Users.remove(),
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 data: $('#deleteUserForm').serialize(),
                 success: function(response) {
@@ -782,10 +854,11 @@
                     $('#deleteUserModal').modal('hide');
                     Alerts.success(`User "${user.username}" was deleted successfully.`);
                 },
-                error: function(response) {
+                error: function(err) {
+                    FormValidation.clear("#deleteUserForm");
                     alerts.warning(`User ${user.username} was not deleted.`, 5000);
-                    if (Helpers.isJson(response.responseText)) {
-                        FormValidation.show("#deleteUserForm", response.responseJSON);
+                    if (Helpers.isJson(err.responseText)) {
+                        FormValidation.show("#deleteUserForm", err.responseJSON);
                     } else if (err.responseText) {
                         alerts.error(err.responseText);
                     } else {

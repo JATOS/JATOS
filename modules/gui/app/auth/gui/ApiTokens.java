@@ -20,6 +20,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
 
+import static models.common.User.Role.*;
+
 /**
  * All JATOS GUI endpoints concerning API tokens (personal access tokens)
  *
@@ -42,11 +44,11 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result allTokenDataByUser() {
         User signedinUser = authService.getSignedinUser();
         List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
-        ArrayNode tokenData = Json.newArray();
+        ArrayNode tokenData = Json.mapper().createArrayNode();
         for (ApiToken token : tokenList) {
             tokenData.add(Json.mapper().valueToTree(token));
         }
@@ -55,19 +57,19 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(roles = {USER, ADMIN})
     public Result generate(String name, Integer expires) {
         User signedinUser = authService.getSignedinUser();
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
         if (!Jsoup.isValid(name, Safelist.none())) return badRequest("No HTML allowed");
         if (expires == null || expires < 0) return badRequest("Expiration must be >= 0");
         expires = expires == 0 ? null : expires; // 0 => null and means the token never expires
-        String apiTokenStr = apiTokenService.create(signedinUser, name, expires);
+        String apiTokenStr = apiTokenService.create(signedinUser, name, expires).getRight();
         return ok(apiTokenStr);
     }
 
     @Transactional
-    @Auth
+    @Auth(roles = {USER, ADMIN})
     public Result remove(Long id) {
         User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);
@@ -77,7 +79,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth
+    @Auth(roles = {USER, ADMIN})
     public Result toggleActive(Long id, Boolean active) {
         User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);

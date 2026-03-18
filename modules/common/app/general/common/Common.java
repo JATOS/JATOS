@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -113,6 +114,8 @@ public class Common {
     private static boolean showResultFileSizeInStudyManager;
     private static boolean userRoleAllowSuperuser;
     private static boolean jatosApiAllowed;
+    private static boolean jatosApiTokensApiGenerationAllowed;
+    private static Duration jatosApiTokensApiGenerationExpiresAfter;
     private static String logsPath;
     private static String logsFilename;
     private static String logsAppender;
@@ -124,6 +127,7 @@ public class Common {
     private static boolean groupsCleaningAllowed;
     private static int groupsCleaningInterval;
     private static int groupsCleaningMemberIdleAfter;
+    private static Duration lastSeenDateUpdateThreshold;
     private static boolean openAiAllowed;
     private static String openAiApiKey;
     private static String openAiUrlBasePath;
@@ -131,8 +135,8 @@ public class Common {
     private static int openAiTimeout;
 
     /**
-     * List of regular expressions and their description as Pairs that define password restrictions
-     * (the regexes are from https://stackoverflow.com/questions/19605150)
+     * List of regular expressions and their description as Pairs that define password restrictions (the regexes are
+     * from https://stackoverflow.com/questions/19605150)
      */
     private static final List<Pair<String, String>> userPasswordStrengthRegexList = Arrays.asList(
             Pair.of("The password has no further restrictions on the type of characters.", "^.*$"),
@@ -236,6 +240,8 @@ public class Common {
         showResultFileSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
+        jatosApiTokensApiGenerationAllowed = config.getBoolean("jatos.api.tokens.apiGeneration.allowed");
+        jatosApiTokensApiGenerationExpiresAfter = getDurationWithDefaultUnit(config, "jatos.api.tokens.apiGeneration.expiresAfter");
         logsPath = obtainPath(config, "jatos.logs.path");
         LOGGER.info("Path to logs directory is " + logsPath);
         logsFilename = config.getString("jatos.logs.filename");
@@ -251,6 +257,7 @@ public class Common {
         groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
         groupsCleaningInterval = config.getInt("jatos.groups.cleaning.interval");
         groupsCleaningMemberIdleAfter = config.getInt("jatos.groups.cleaning.memberIdleAfter");
+        lastSeenDateUpdateThreshold = getDurationWithDefaultUnit(config, "jatos.studyResult.lastSeenDate.updateThreshold");
         openAiAllowed = config.getBoolean("jatos.openai.allowed");
         openAiApiKey = config.getString("jatos.openai.apiKey");
         openAiUrlBasePath = config.getString("jatos.openai.urlBasePath");
@@ -259,8 +266,8 @@ public class Common {
     }
 
     /**
-     * Resolves a configured filesystem path into an absolute, canonical path usable by the runtime.
-     * The returned path is always absolute and normalized for the host operating system.
+     * Resolves a configured filesystem path into an absolute, canonical path usable by the runtime. The returned path
+     * is always absolute and normalized for the host operating system.
      */
     private String obtainPath(Config config, String property) {
         String path = config.getString(property);
@@ -316,6 +323,17 @@ public class Common {
         }
     }
 
+    public Duration getDurationWithDefaultUnit(Config config, String path) {
+        if (config.getValue(path).valueType() == ConfigValueType.NUMBER) {
+            // Treat raw numbers as seconds
+            long seconds = config.getLong(path);
+            return Duration.ofSeconds(seconds);
+        } else {
+            // Otherwise, use the standard HOCON duration parsing (e.g., "5m", "10s")
+            return config.getDuration(path);
+        }
+    }
+
     /**
      * JATOS version (full version e.g. v3.5.5-alpha)
      */
@@ -338,9 +356,8 @@ public class Common {
     }
 
     /**
-     * Path in the file system to the study assets root directory. If the
-     * property is defined in the configuration file then use it as the base
-     * path. If property isn't defined, try in default study path instead.
+     * Path in the file system to the study assets root directory. If the property is defined in the configuration file
+     * then use it as the base path. If property isn't defined, try in default study path instead.
      */
     public static String getStudyAssetsRootPath() {
         return studyAssetsRootPath;
@@ -403,16 +420,14 @@ public class Common {
     }
 
     /**
-     * Time in minutes when the Play session will timeout (defined in
-     * application.conf)
+     * Time in minutes when the Play session will timeout (defined in application.conf)
      */
     public static int getUserSessionTimeout() {
         return userSessionTimeout;
     }
 
     /**
-     * Time in minutes a user can be inactive before they will be signed out
-     * (defined in application.conf)
+     * Time in minutes a user can be inactive before they will be signed out (defined in application.conf)
      */
     public static int getUserSessionInactivity() {
         return userSessionInactivity;
@@ -420,8 +435,8 @@ public class Common {
 
     /**
      * If true, the user has the possibility (a checkbox on the GUI's signin page) to keep the user session and to not
-     * get signed out automatically due to user a session timeout (neither through normal timeout nor inactivity).
-     * If set to true and the user chooses to keep being signed in, the user session is kept until the user signs out
+     * get signed out automatically due to user a session timeout (neither through normal timeout nor inactivity). If
+     * set to true and the user chooses to keep being signed in, the user session is kept until the user signs out
      * manually or the session cookie is deleted.
      */
     public static boolean getUserSessionAllowKeepSignedin() {
@@ -798,8 +813,9 @@ public class Common {
     }
 
     /**
-     * SURFconext OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email").
-     * SURFconext ignores scopes other than "openid" (see: https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes)
+     * SURFconext OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email"). SURFconext ignores scopes other than
+     * "openid" (see:
+     * https://servicedesk.surf.nl/wiki/spaces/IAM/pages/128909987/OpenID+Connect+features#OpenIDConnectfeatures-Scopes)
      */
     public static List<String> getConextScope() {
         return conextScope;
@@ -856,7 +872,8 @@ public class Common {
     }
 
     /**
-     * URL where some static HTML can be found that can be shown instead of the default welcome message on the home page
+     * URL where some static HTML can be found that can be shown instead of the default welcome message on the home
+     * page
      */
     public static String getBrandingUrl() {
         return brandingUrl;
@@ -902,21 +919,24 @@ public class Common {
     }
 
     /**
-     * If false, the study assets folder size won't be calculated for the study manager page. Sometimes the filesystem is too slow to allow this.
+     * If false, the study assets folder size won't be calculated for the study manager page. Sometimes the filesystem
+     * is too slow to allow this.
      */
     public static boolean showStudyAssetsSizeInStudyManager() {
         return showStudyAssetsSizeInStudyManager;
     }
 
     /**
-     * If false, the result data size won't be calculated for the study manager page. Sometime the database is too slow to allow this.
+     * If false, the result data size won't be calculated for the study manager page. Sometime the database is too slow
+     * to allow this.
      */
     public static boolean showResultDataSizeInStudyManager() {
         return showResultDataSizeInStudyManager;
     }
 
     /**
-     * If false, the study result file size won't be calculated for the study manager page. Sometimes the filesystem is too slow to allow this.
+     * If false, the study result file size won't be calculated for the study manager page. Sometimes the filesystem is
+     * too slow to allow this.
      */
     public static boolean showResultFileSizeInStudyManager() {
         return showResultFileSizeInStudyManager;
@@ -934,6 +954,21 @@ public class Common {
      */
     public static boolean isJatosApiAllowed() {
         return jatosApiAllowed;
+    }
+
+    /**
+     * Is it allowed to generate new tokens via the API?
+     */
+    public static boolean isJatosApiTokensApiGenerationAllowed() {
+        return jatosApiTokensApiGenerationAllowed;
+    }
+
+    /**
+     * The duration for which a token generated via the API remains valid after its creation. This setting does not
+     * apply to tokens created via the GUI.
+     */
+    public static Duration getJatosApiTokensApiGenerationExpiresAfter() {
+        return jatosApiTokensApiGenerationExpiresAfter;
     }
 
     /**
@@ -1021,6 +1056,13 @@ public class Common {
         return groupsCleaningMemberIdleAfter;
     }
 
+    /**
+     * StudyResult's lastSeenDate is updated only if its current value is older than this threshold (in seconds).
+     */
+    public static Duration getLastSeenDateUpdateThreshold() {
+        return lastSeenDateUpdateThreshold;
+    }
+
     public static boolean isOpenAiAllowed() {
         return openAiAllowed;
     }
@@ -1052,5 +1094,4 @@ public class Common {
     public static int getOpenAiTimeout() {
         return openAiTimeout;
     }
-
 }

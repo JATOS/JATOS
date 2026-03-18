@@ -84,7 +84,7 @@ public class AdminServiceTest {
         // One member
         User member = new User("member", "Member Name", "member@example.org");
         member.setAuthMethod(User.AuthMethod.DB);
-        study.setUserList(new HashSet<>(Collections.singletonList(member)));
+        study.addUser(member);
     }
 
     @Test
@@ -193,7 +193,7 @@ public class AdminServiceTest {
 
         User u = new User("dave", "Dave", "dave@example.org");
         u.setAuthMethod(User.AuthMethod.DB);
-        s.setUserList(new HashSet<>(Collections.singletonList(u)));
+        s.addUser(u);
 
         StudyResultStatus srs = new StudyResultStatus();
         srs.setStudy(s);
