@@ -82,8 +82,9 @@ public class JsonUtils {
         return Json.mapper().readTree(tmpStr);
     }
 
-    public JsonNode asJsonForApi(Object obj) throws IOException {
-        // Unnecessary conversion into a temporary string - better solution with ObjectWriter.writeValueAsTree when available in Jackson
+    public JsonNode asJsonWithStrictViewInclusion(Object obj) throws IOException {
+        // Unnecessary conversion into a temporary string. Better solution with ObjectWriter.writeValueAsTree
+        // when available in later Jackson versions
         String tmpStr = Json.mapper()
                 .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                 .writerWithView(JsonForApi.class)
@@ -675,7 +676,7 @@ public class JsonUtils {
      */
     public JsonNode studyAsJsonForApi(Study study, Boolean withComponentProperties, Boolean withBatchProperties)
             throws IOException {
-        ObjectNode studyNode = (ObjectNode) asJsonForApi(study);
+        ObjectNode studyNode = (ObjectNode) asJsonWithStrictViewInclusion(study);
 
         if (study.getStudyInput() != null) {
             JsonNode studyInputNode = Json.mapper().readTree(study.getStudyInput());
@@ -718,7 +719,7 @@ public class JsonUtils {
      * Returns JSON of a component intended for the JATOS API
      */
     public JsonNode componentAsJsonForApi(Component component) throws IOException {
-        ObjectNode componentNode = (ObjectNode) asJsonForApi(component);
+        ObjectNode componentNode = (ObjectNode) asJsonWithStrictViewInclusion(component);
         if (component.getComponentInput() != null) {
             JsonNode studyInputNode = Json.mapper().readTree(component.getComponentInput());
             componentNode.set("componentInput", studyInputNode);
@@ -730,7 +731,7 @@ public class JsonUtils {
      * Returns JSON of a batch intended for the JATOS API
      */
     public JsonNode batchAsJsonForApi(Batch batch) throws IOException {
-        ObjectNode batchNode = (ObjectNode) asJsonForApi(batch);
+        ObjectNode batchNode = (ObjectNode) asJsonWithStrictViewInclusion(batch);
         if (batch.getBatchInput() != null) {
             JsonNode studyInputNode = Json.mapper().readTree(batch.getBatchInput());
             batchNode.set("batchInput", studyInputNode);

@@ -168,7 +168,7 @@ public class Api extends Controller {
 
         ArrayNode allUserData = Json.mapper().createArrayNode();
         for (User user : userList) {
-            ObjectNode userNode = (ObjectNode) jsonUtils.asJsonForApi(user);
+            ObjectNode userNode = (ObjectNode) jsonUtils.asJsonWithStrictViewInclusion(user);
             List<Long> studyIds = studyIdsByUsername.getOrDefault(user.getUsername(), Collections.emptyList());
             userNode.putPOJO("studyIds", studyIds);
             allUserData.add(userNode);
@@ -197,7 +197,7 @@ public class Api extends Controller {
         User signedinUser = authService.getSignedinUser();
         authorizationService.checkAdminOrSelf(signedinUser, user);
 
-        JsonNode userNode = jsonUtils.asJsonForApi(user);
+        JsonNode userNode = jsonUtils.asJsonWithStrictViewInclusion(user);
         return ok(ApiEnvelope.wrap(userNode).asJsonNode());
     }
 
@@ -211,7 +211,7 @@ public class Api extends Controller {
         authorizationService.checkAuthMethodIsDbOrLdap(props);
 
         User user = userService.registerUser(props);
-        JsonNode userJson = jsonUtils.asJsonForApi(user);
+        JsonNode userJson = jsonUtils.asJsonWithStrictViewInclusion(user);
         return created(ApiEnvelope.wrap(userJson).asJsonNode());
     }
 
@@ -232,7 +232,7 @@ public class Api extends Controller {
 
         userService.updateUser(user, props);
 
-        JsonNode userNode = jsonUtils.asJsonForApi(user);
+        JsonNode userNode = jsonUtils.asJsonWithStrictViewInclusion(user);
         return ok(ApiEnvelope.wrap(userNode).asJsonNode());
     }
 
@@ -253,7 +253,7 @@ public class Api extends Controller {
         user.updateRoles(role);
         userDao.update(user);
 
-        JsonNode userNode = jsonUtils.asJsonForApi(user);
+        JsonNode userNode = jsonUtils.asJsonWithStrictViewInclusion(user);
         return ok(ApiEnvelope.wrap(userNode).asJsonNode());
     }
 
