@@ -1,11 +1,11 @@
 package exceptions.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import models.gui.ApiEnvelope;
-import models.gui.ApiEnvelope.ErrorCode;
+import general.common.ApiEnvelope;
+import general.common.ApiEnvelope.ErrorCode;
 import play.api.libs.json.JsValue;
 
-import static models.gui.ApiEnvelope.ErrorCode.UNSPECIFIED;
+import static general.common.ApiEnvelope.ErrorCode.UNSPECIFIED;
 
 public class JatosException extends Exception {
 

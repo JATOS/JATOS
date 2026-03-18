@@ -4,7 +4,7 @@ import daos.common.StudyResultDao;
 import exceptions.gui.BadRequestException;
 import models.common.Batch;
 import models.common.workers.*;
-import models.gui.ApiEnvelope.ErrorCode;
+import general.common.ApiEnvelope.ErrorCode;
 import play.data.validation.ValidationError;
 
 import javax.inject.Inject;

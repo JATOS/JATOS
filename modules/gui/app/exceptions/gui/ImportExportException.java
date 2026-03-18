@@ -1,6 +1,6 @@
 package exceptions.gui;
 
-import models.gui.ApiEnvelope.ErrorCode;
+import general.common.ApiEnvelope.ErrorCode;
 
 public class ImportExportException extends JatosException {
 

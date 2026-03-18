@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import exceptions.gui.BadRequestException;
 import general.common.MessagesStrings;
-import models.gui.ApiEnvelope;
+import general.common.ApiEnvelope;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import play.libs.Json;

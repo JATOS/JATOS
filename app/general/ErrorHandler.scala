@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.{JsonLocation, JsonParseException}
 import com.fasterxml.jackson.databind.JsonMappingException
 import exceptions.gui.{AuthException, HttpException, ImportExportException, JatosException, JatosGuiException, ValidationException}
 import exceptions.publix.{InternalServerErrorPublixException, PublixException}
-import models.gui.ApiEnvelope
-import models.gui.ApiEnvelope.ErrorCode
+import general.common.ApiEnvelope
+import ApiEnvelope.ErrorCode
 import play.api.Logger
 import play.api.http.HttpErrorHandler
 import play.api.mvc.Results._

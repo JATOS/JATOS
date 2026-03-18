@@ -1,6 +1,6 @@
 package exceptions.gui;
 
-import models.gui.ApiEnvelope.ErrorCode;
+import general.common.ApiEnvelope.ErrorCode;
 import play.data.Form;
 
 public class ValidationException extends JatosException {

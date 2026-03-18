@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.*;
 import exceptions.gui.*;
+import general.common.ApiEnvelope;
+import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import general.common.RequestScope;
 import general.common.StudyLogger;
@@ -17,7 +19,6 @@ import general.gui.StrictJsonMapper;
 import models.common.*;
 import models.common.User.Role;
 import models.gui.*;
-import models.gui.ApiEnvelope.ErrorCode;
 import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
@@ -43,8 +44,8 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static auth.gui.AuthAction.Auth;
-import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
+import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
 import static models.common.User.Role.*;
 

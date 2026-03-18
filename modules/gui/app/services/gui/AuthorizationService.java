@@ -4,7 +4,7 @@ import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import models.common.*;
 import models.common.workers.Worker;
-import models.gui.ApiEnvelope.ErrorCode;
+import general.common.ApiEnvelope.ErrorCode;
 import models.gui.NewUserProperties;
 import models.gui.UserProperties;
 import utils.common.Helpers;

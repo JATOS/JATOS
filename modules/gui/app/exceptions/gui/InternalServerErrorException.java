@@ -1,6 +1,6 @@
 package exceptions.gui;
 
-import models.gui.ApiEnvelope.ErrorCode;
+import general.common.ApiEnvelope.ErrorCode;
 
 import static play.mvc.Http.Status.INTERNAL_SERVER_ERROR;
 

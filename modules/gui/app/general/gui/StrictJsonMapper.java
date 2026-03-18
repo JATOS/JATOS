@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.cfg.CoercionAction;
 import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
 import com.fasterxml.jackson.databind.type.LogicalType;
 import exceptions.gui.BadRequestException;
-import models.gui.ApiEnvelope.ErrorCode;
+import general.common.ApiEnvelope.ErrorCode;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 import play.libs.Json;

@@ -1,8 +1,7 @@
-package models.gui;
+package general.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import general.common.Common;
 import play.api.libs.json.JsValue;
 import play.libs.Json;
 import utils.common.JsonUtils;
@@ -42,6 +41,7 @@ public class ApiEnvelope {
         STUDY_LOCKED,
         TOO_LARGE,
         CLIENT_ERROR,
+        OPENAI_ERROR,
         UNSPECIFIED,
         UNEXPECTED_ERROR,
     }

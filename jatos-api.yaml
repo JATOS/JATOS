@@ -1475,7 +1475,7 @@ paths:
   /jatos/api/v1/studies/{id}/studyCodes:
     get:
       deprecated: true
-      summary: Deprecated - use POST /studyCodes instead
+      summary: Deprecated - use "POST /jatos/api/v1/studies/{id}/studyCodes" instead
       tags: [ study-runs ]
       responses:
         '200':
@@ -1926,7 +1926,9 @@ paths:
   /publix/api/v1/studyResults/{studyResultUuid}/openai:
     get:
       summary: Proxy GET request to OpenAI API
-      description: Proxies a GET request to the OpenAI API for a running study. Does not need an API token.
+      description: >-
+        Proxies a GET request to the OpenAI API for a running study.
+        Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
       parameters:
@@ -1935,13 +1937,15 @@ paths:
         '200':
           description: Successful proxy response from OpenAI
         '403':
-          description: OpenAI not allowed or study not running
+          $ref: "#/components/responses/ForbiddenError"
         '429':
-          description: OpenAI API call limit reached
+          $ref: "#/components/responses/TooManyRequestsError"
 
     post:
       summary: Proxy POST request to OpenAI API
-      description: Proxies a POST request with an optional JSON body to the OpenAI API. Does not need an API token.
+      description: >-
+        Proxies a POST request with an optional JSON body to the OpenAI API.
+        Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
       parameters:
@@ -1955,13 +1959,15 @@ paths:
         '200':
           description: Successful proxy response from OpenAI
         '403':
-          description: OpenAI not allowed or study not running
+          $ref: "#/components/responses/ForbiddenError"
         '429':
-          description: OpenAI API call limit reached
+          $ref: "#/components/responses/TooManyRequestsError"
 
     delete:
       summary: Proxy DELETE request to OpenAI API
-      description: Proxies a DELETE request to the OpenAI API for a running study. Does not need an API token.
+      description: >-
+        Proxies a DELETE request to the OpenAI API for a running study.
+        Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
       parameters:
@@ -1970,16 +1976,16 @@ paths:
         '200':
           description: Successful proxy response from OpenAI
         '403':
-          description: OpenAI not allowed or study not running
+          $ref: "#/components/responses/ForbiddenError"
         '429':
-          description: OpenAI API call limit reached
+          $ref: "#/components/responses/TooManyRequestsError"
 
   /publix/api/v1/studyResults/{studyResultUuid}/openai/{path}:
     get:
       summary: Proxy GET request to specific OpenAI endpoint
       description:  >-
         Proxies a GET request to a specific OpenAI API endpoint specified in the path parameter for a running
-        study. Does not need an API token.
+        study. Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
       parameters:
@@ -1989,15 +1995,15 @@ paths:
         '200':
           description: Successful proxy response from OpenAI
         '403':
-          description: OpenAI not allowed or study not running
+          $ref: "#/components/responses/ForbiddenError"
         '429':
-          description: OpenAI API call limit reached
+          $ref: "#/components/responses/TooManyRequestsError"
 
     post:
       summary: Proxy POST request to specific OpenAI endpoint
       description: >-
         Proxies a POST request to a specific OpenAI API endpoint specified in the path parameter for a running
-        study. Does not need an API token.
+        study. Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
       parameters:
@@ -2012,15 +2018,15 @@ paths:
         '200':
           description: Successful proxy response from OpenAI
         '403':
-          description: OpenAI not allowed or study not running
+          $ref: "#/components/responses/ForbiddenError"
         '429':
-          description: OpenAI API call limit reached
+          $ref: "#/components/responses/TooManyRequestsError"
 
     delete:
       summary: Proxy DELETE request to specific OpenAI endpoint
       description: >-
         Proxies a DELETE request to a specific OpenAI API endpoint specified in the path parameter for a running
-        study. Does not need an API token.
+        study. Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
       parameters:
@@ -2030,9 +2036,9 @@ paths:
         '200':
           description: Successful proxy response from OpenAI
         '403':
-          description: OpenAI not allowed or study not running
+          $ref: "#/components/responses/ForbiddenError"
         '429':
-          description: OpenAI API call limit reached
+          $ref: "#/components/responses/TooManyRequestsError"
 
 security:
   - BearerAuth: [ ]
@@ -2342,6 +2348,13 @@ components:
 
     BadRequestError:
       description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiEnvelopeError"
+
+    TooManyRequestsError:
+      description: Too many requests
       content:
         application/json:
           schema:
