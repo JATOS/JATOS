@@ -620,7 +620,7 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    public Result downloadStudyAssetsFile(String id, String filepath) throws HttpException {
+    public Result downloadStudyAssetsFile(String id, String filepath) throws HttpException, IOException {
         filepath = Helpers.urlDecode(filepath);
         if (filepath.startsWith("/")) filepath = filepath.substring(1);
 
@@ -628,13 +628,8 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
-        File file;
-        try {
-            file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
-            if (!file.isFile()) throw new IOException();
-        } catch (IOException e) {
-            throw new NotFoundException("File '" + filepath + "' couldn't be found.");
-        }
+        File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+        if (!file.isFile()) throw new NotFoundException("File '" + filepath + "' couldn't be found.");
         return ok()
                 .sendFile(file)
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"");
@@ -869,7 +864,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-@Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
     public Result getBatchesByStudy(String studyId) throws HttpException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
@@ -1218,20 +1213,15 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
-    public Result exportSingleResultFile(Long componentResultId, String filename) throws HttpException {
+    public Result exportSingleResultFile(Long componentResultId, String filename) throws HttpException, IOException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User signedinUser = authService.getSignedinUser();
         authorizationService.canUserAccessComponentResult(componentResult, signedinUser, false);
 
-        File file;
-        try {
-            Study study = componentResult.getComponent().getStudy();
-            file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
-            if (!file.exists()) throw new IOException();
-            studyLogger.log(study, signedinUser, "Exported single result file");
-        } catch (IOException e) {
-            throw new NotFoundException("File does not exist");
-        }
+        Study study = componentResult.getComponent().getStudy();
+        File file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
+        if (!file.exists()) throw new NotFoundException("File doesn't exist");
+        studyLogger.log(study, signedinUser, "Exported single result file");
         return ok(file);
     }
 
