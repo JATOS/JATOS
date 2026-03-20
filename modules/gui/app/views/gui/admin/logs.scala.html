@@ -51,19 +51,23 @@
 
     $("#listLogsModal").on('show.bs.modal', function() {
         $.ajax({
-            url: window.routes.Admin.listLogs,
-            success: function(logFiles) {
-                $('#listLgsList').html(generateListLogsHtml(logFiles));
+            url: window.routes.Api.listLogs,
+            success: function(response) {
+                $('#listLgsList').html(generateListLogsHtml(response.data));
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get the logs")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't list logs";
+                alerts.error(message);
+            }
         });
     });
 
     function generateListLogsHtml(logFiles) {
         const listLogsHtml = [];
         listLogsHtml.push("<ul>");
-        logFiles.forEach((filename) => {
-            const url = window.routes.Admin.logs(filename, -1, false);
+        logFiles.forEach((entry) => {
+            const filename = entry.name;
+            const url = window.routes.Api.getLog(filename, -1, false);
             let html = `<li><a href="${url}" download>${filename}</a>`;
             if (!filename.includes(".gz")) {
                 html += `<button type="button" class="btn btn-nav btn-sm show-log ms-2" data-filename="${filename}">Show</button>`;
@@ -84,7 +88,7 @@
     $("#logModal").on('show.bs.modal', function() {
         $('#logModal .modal-body pre code').text("");
         const filename = $(this).data("filename");
-        const url = window.routes.Admin.logs(encodeURIComponent(filename), -1, true);
+        const url = window.routes.Api.getLog(encodeURIComponent(filename), -1, true);
         $.ajax({
             url: url,
             success: function(result) {

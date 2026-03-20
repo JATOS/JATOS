@@ -14,6 +14,8 @@
     window.routes.Api.exportStudy = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}`;
     window.routes.Api.deleteStudy = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}`;
     window.routes.Api.studyLog = (studyId, entryLimit, download) => `${basePath}jatos/api/v1/studies/${studyId}/log?entryLimit=${entryLimit}&download=${download}`;
+    window.routes.Api.listLogs = `${basePath}jatos/api/v1/admin/logs/list`;
+    window.routes.Api.getLog = (filename, limit, reverse) => `${basePath}jatos/api/v1/admin/logs/${filename}?limit=${limit}&reverse=${reverse}`;
     window.routes.Api.exportSingleResultFile = (componentResultId, filename) => `${basePath}jatos/api/v1/results/files/${filename}?componentResultId=${componentResultId}`;
     window.routes.Api.exportResults = (isApiCall) => `${basePath}jatos/api/v1/results?isApiCall=${isApiCall}`;
     window.routes.Api.exportResultData = (asPlainText, isApiCall) => `${basePath}jatos/api/v1/results/data?asPlainText=${asPlainText}&isApiCall=${isApiCall}`;
@@ -130,9 +132,7 @@
     window.routes.Admin = {};
     window.routes.Admin.studyManager = `${basePath}jatos/studyManager`;
     window.routes.Admin.status = `${basePath}jatos/status`;
-    window.routes.Admin.listLogs = `${basePath}jatos/listLogs`;
     window.routes.Admin.allStudiesData = `${basePath}jatos/allStudiesData`;
-    window.routes.Admin.logs = (filename, limit, reverse) => `${basePath}jatos/logs/${filename}?limit=${limit}&reverse=${reverse}`;
     window.routes.Admin.studyAssetsSize = (studyId) => `${basePath}jatos/${studyId}/studyAssetsSize`;
     window.routes.Admin.resultDataSize = (studyId) => `${basePath}jatos/${studyId}/resultDataSize`;
     window.routes.Admin.resultFileSize = (studyId) => `${basePath}jatos/${studyId}/resultFileSize`;

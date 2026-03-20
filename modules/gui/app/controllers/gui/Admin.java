@@ -1,8 +1,5 @@
 package controllers.gui;
 
-import akka.stream.javadsl.FileIO;
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
@@ -12,18 +9,12 @@ import daos.common.UserDao;
 import general.common.Common;
 import models.common.Study;
 import models.common.User;
-import play.core.utils.HttpHeaderParameterEncoding;
 import play.db.jpa.Transactional;
-import play.http.HttpEntity;
 import play.mvc.Controller;
 import play.mvc.Http;
-import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.AdminService;
 import services.gui.BreadcrumbsService;
-import services.gui.LogFileReader;
-import utils.common.Helpers;
-import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
@@ -32,7 +23,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,22 +47,17 @@ public class Admin extends Controller {
     private final StudyDao studyDao;
     private final StudyResultDao studyResultDao;
     private final UserDao userDao;
-    private final LogFileReader logFileReader;
     private final AdminService adminService;
-    private final IOUtils ioUtils;
 
     @Inject
     Admin(AuthService authService, BreadcrumbsService breadcrumbsService, StudyDao studyDao,
-            StudyResultDao studyResultDao, UserDao userDao, LogFileReader logFileReader, AdminService adminService,
-            IOUtils ioUtils) {
+            StudyResultDao studyResultDao, UserDao userDao, AdminService adminService) {
         this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.studyResultDao = studyResultDao;
         this.userDao = userDao;
-        this.logFileReader = logFileReader;
         this.adminService = adminService;
-        this.ioUtils = ioUtils;
     }
 
     /**
@@ -97,41 +85,6 @@ public class Admin extends Controller {
                     .sorted()
                     .collect(Collectors.toList());
             return ok(JsonUtils.asJsonNode(content));
-        }
-    }
-
-    /**
-     * For backward compatibility. Uses logs.
-     */
-    @Transactional
-    @Auth(roles = ADMIN)
-    public Result log(Integer lineLimit) throws IOException {
-        return logs("application.log", lineLimit, true);
-    }
-
-    /**
-     * Returns the log file specified by 'filename'. If 'reverse' is true, it returns the content of the file in
-     * reverse order and as 'Transfer-Encoding:chunked'. It limits the number of lines to the given lineLimit. If the
-     * log file can't be read it still returns with OK but instead of the file content with an error message.
-     * If 'reverse' is false it returns the file for download.
-     */
-    @Transactional
-    @Auth(roles = ADMIN)
-    public Result logs(String filename, Integer lineLimit, boolean reverse) {
-        filename = Helpers.urlDecode(filename);
-        if (!ioUtils.existsAndSecure(Common.getLogsPath(), filename)) return notFound();
-
-        if (reverse) {
-            return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=UTF-8");
-        } else {
-            Path logPath = Paths.get(Common.getLogsPath(), filename);
-            Source<ByteString, ?> source = FileIO.fromPath(logPath);
-            Optional<Long> contentLength = Optional.of(logPath.toFile().length());
-            String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);
-            // We need the "Content-Disposition" header for API calls (not for the GUI)
-            return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
         }
     }
 

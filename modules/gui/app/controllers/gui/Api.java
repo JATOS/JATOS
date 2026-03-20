@@ -61,7 +61,6 @@ public class Api extends Controller {
 
     private static final Logger.ALogger LOGGER = Logger.of(Api.class);
 
-    private final Admin admin;
     private final AdminService adminService;
     private final AuthService authService;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
@@ -82,6 +81,7 @@ public class Api extends Controller {
     private final ResultStreamer resultStreamer;
     private final AuthorizationService authorizationService;
     private final JsonUtils jsonUtils;
+    private final LogFileReader logFileReader;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
     private final UserService userService;
@@ -89,17 +89,16 @@ public class Api extends Controller {
     private final StrictJsonMapper strictJsonMapper;
 
     @Inject
-    Api(Admin admin, AdminService adminService, AuthService authService,
+    Api(AdminService adminService, AuthService authService,
         ComponentResultIdsExtractor componentResultIdsExtractor,
         StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, ApiTokenDao apiTokenDao,
         BatchDao batchDao, StudyLinkDao studyLinkDao, GroupResultDao groupResultDao, StudyService studyService,
         ComponentService componentService, StudyLinkService studyLinkService, BatchService batchService,
         ImportExport importExport, ImportExportService importExportService,
         ResultRemover resultRemover, ResultStreamer resultStreamer, AuthorizationService authorizationService,
-        JsonUtils jsonUtils, StudyLogger studyLogger, IOUtils ioUtils, UserService userService,
+        JsonUtils jsonUtils, LogFileReader logFileReader, StudyLogger studyLogger, IOUtils ioUtils, UserService userService,
         ApiTokenService apiTokenService,
         StrictJsonMapper strictJsonMapper) {
-        this.admin = admin;
         this.adminService = adminService;
         this.authService = authService;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
@@ -120,6 +119,7 @@ public class Api extends Controller {
         this.resultStreamer = resultStreamer;
         this.authorizationService = authorizationService;
         this.jsonUtils = jsonUtils;
+        this.logFileReader = logFileReader;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
         this.userService = userService;
@@ -147,15 +147,41 @@ public class Api extends Controller {
     }
 
     /**
-     * Returns a JATOS application log file. Only with admin tokens.
-     *
-     * @param filename Log's filename
-     * @return Returns the log file
+     * Returns the content of the logs directory as JSON
      */
     @Transactional
     @Auth(roles = ADMIN, types = {TOKEN, SESSION})
-    public Result logs(String filename) {
-        return admin.logs(filename, -1, false);
+    public Result listLogs() throws IOException {
+        File base = Paths.get(Common.getLogsPath()).toFile();
+        JsonNode structure = DirectoryStructureToJson.get(base, true);
+        return ok(ApiEnvelope.wrap(structure).asJsonNode());
+    }
+
+    /**
+     * Returns the log file specified by 'filename'. If 'reverse' is true, it returns the content of the file in reverse
+     * order and as 'Transfer-Encoding:chunked'. It limits the number of lines to the given lineLimit. If 'reverse' is
+     * false, it returns the file for download.
+     */
+    @Transactional
+    @Auth(roles = ADMIN, types = {TOKEN, SESSION})
+    public Result logs(String filename, Integer lineLimit, boolean reverse) throws NotFoundException {
+        filename = Helpers.urlDecode(filename);
+        if (!ioUtils.existsAndSecure(Common.getLogsPath(), filename)) {
+            throw new NotFoundException("Log file not found");
+        }
+
+        if (reverse) {
+            return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=UTF-8");
+        } else {
+            Path logPath = Paths.get(Common.getLogsPath(), filename);
+            Source<ByteString, ?> source = FileIO.fromPath(logPath);
+            Optional<Long> contentLength = Optional.of(logPath.toFile().length());
+            String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);
+            // We need the "Content-Disposition" header for API calls (not for the GUI)
+            return new Result(new ResponseHeader(200, Collections.emptyMap()),
+                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
+        }
     }
 
     /**

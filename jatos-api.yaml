@@ -55,6 +55,25 @@ paths:
         '403':
           $ref: "#/components/responses/ForbiddenError"
 
+  /jatos/api/v1/admin/logs/list:
+    get:
+      summary: List all log files (application logs - not study logs; admin tokens only)
+      tags: [ admin ]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeLogFileList'
+        '400':
+          $ref: "#/components/responses/BadRequestError"
+        '401':
+          $ref: "#/components/responses/UnauthorizedError"
+        '403':
+          $ref: "#/components/responses/ForbiddenError"
+
+
   /jatos/api/v1/admin/logs/{filename}:
     get:
       summary: Get a log file (application logs - not study logs; admin tokens only)
@@ -82,6 +101,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         '403':
           $ref: "#/components/responses/ForbiddenError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
 
   /jatos/api/v1/users:
     get:
@@ -724,13 +745,13 @@ paths:
       summary: Returns the directory structure of a study assets directory in JSON.
       description: |
         Each entry represents a file or directory with the following fields:
-        * `name` – name of the file or directory
-        * `path` – path relative to the study assets directory
-        * `type` – `file` or `directory`
-        * `creation` – creation timestamp
-        * `lastModified` – last modification timestamp
-        * `size` – file size in bytes
-        * `checksum` – Adler-32 checksum (files only)
+        * `name` - name of the file or directory
+        * `path` - path relative to the study assets directory
+        * `type` - `file` or `directory`
+        * `creation` - creation timestamp
+        * `lastModified` - last modification timestamp
+        * `size` - file size in bytes
+        * `checksum` - Adler-32 checksum (files only)
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -775,15 +796,18 @@ paths:
           description: >-
             Path to the file in the study assets directory. This endpoint
             supports nested paths (subdirectories). Because OpenAPI path
-            parameters are typically treated as a single path segment by
-            tooling, clients should URL-encode slashes in `filepath`
-            (encode `/` as `%2F`) when calling this endpoint. Directories
-            cannot be downloaded.
+            parameters are sometimes treated as a single path segment by,
+            clients may, but are not required to, URL-encode slashes in
+            `filepath` (encode `/` as `%2F`). Directories cannot be
+            downloaded.
           examples:
             top-level:
               value: logo.png
               summary: Get a file
               description: Get a top-level file
+            nested-dir:
+              value: images/logo.png
+              summary: Get a file from a subdirectory
             nested-url-encoded:
               value: images%2Flogo.png
               summary: Get a file from a subdirectory (URL-encoded)
@@ -816,22 +840,24 @@ paths:
             type: string
           description: >-
             Target path in the study assets directory. This endpoint supports
-            nested paths (subdirectories). Clients should URL-encode slashes
-            in `filepath` (encode `/` as `%2F`) when calling this endpoint
-            via OpenAPI-generated clients. If `filepath` is just '.', the file
-            will be saved at the top-level of the study assets directory.
-            Non-existing subdirectories will be created. Existing files will
-            be overwritten.
+            nested paths (subdirectories). Clients may, but are not required
+            to, URL-encode slashes in the filepath (encode `/` as `%2F`). If
+            `filepath` is just '.', the file will be saved at the top-level
+            of the study assets directory. Non-existing subdirectories will
+            be created. Existing files will be overwritten.
           examples:
             top-level:
               value: .
               summary: Save in the top-level of the study assets directory
+            nested-dir:
+              value: images/
+              summary: Save in a subdirectory
             nested-dir-url-encoded:
               value: images%2F
               summary: Save in a subdirectory (URL-encoded)
-            nested-rename-url-encoded:
-              value: images%2FnewFilename.png
-              summary: Save in a subdirectory and rename (URL-encoded)
+            nested-rename:
+              value: images/newFilename.png
+              summary: Save in a subdirectory and rename
       requestBody:
         required: true
         content:
@@ -881,14 +907,16 @@ paths:
             type: string
           description: >-
             Path to the file in the study assets directory to delete. This
-            endpoint supports nested paths (subdirectories). Clients should
-            URL-encode slashes in `filepath` (encode `/` as `%2F`) when
-            calling this endpoint via OpenAPI-generated clients. Directories
-            won't be deleted.
+            endpoint supports nested paths (subdirectories). Clients may,
+            but are not required to, URL-encode slashes in `filepath`
+            (encode `/` as `%2F`). Directories won't be deleted.
           examples:
             top-level:
               value: logo.png
               summary: Delete a top-level file
+            nested-dir:
+              value: images/logo.png
+              summary: Delete a file in a subdirectory
             nested-url-encoded:
               value: images%2Flogo.png
               summary: Delete a file in a subdirectory (URL-encoded)
@@ -1211,6 +1239,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         '403':
           $ref: "#/components/responses/ForbiddenError"
+        '404':
+          $ref: "#/components/responses/NotFoundError"
     get:
       summary: List batches of a study
       tags: [ study-runs ]
@@ -1477,6 +1507,8 @@ paths:
       deprecated: true
       summary: Deprecated - use "POST /jatos/api/v1/studies/{id}/studyCodes" instead
       tags: [ study-runs ]
+      parameters:
+        - $ref: '#/components/parameters/StudyIdOrUuidParameter'
       responses:
         '200':
           description: Success
@@ -1884,6 +1916,17 @@ paths:
 
   /jatos/api/v1/results/delete:
     put:
+      summary: Deprecated - use "POST /jatos/api/v1/results/delete" instead
+      deprecated: true
+      tags: [ results ]
+      responses:
+        '200':
+          description: Deleted component result IDs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelopeDeletedComponentResultIds"
+    post:
       summary: Delete results
       description: >-
         **Delete results (including data, metadata and files)** by specifying
@@ -2369,7 +2412,6 @@ components:
         message:
           type: string
       required: [ apiVersion ]
-      additionalProperties: false
 
     ApiEnvelopeError:
       type: object
@@ -2399,6 +2441,7 @@ components:
                 - STUDY_LOCKED
                 - TOO_LARGE
                 - CLIENT_ERROR
+                - OPENAI_ERROR
                 - UNSPECIFIED
                 - UNEXPECTED_ERROR
             message:
@@ -2520,19 +2563,19 @@ components:
           format: int64
           nullable: true
         creationDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
-          description: Token creation timestamp.
+          description: Token creation Unix timestamp in milliseconds
         expiresAfter:
           type: integer
           nullable: true
           description: Expiration time in seconds after creation. Null or <= 0 means no expiration.
         expirationDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
-          description: Calculated expiration timestamp.
+          description: Calculated expiration Unix timestamp in milliseconds.
         isExpired:
           type: boolean
         isAdminToken:
@@ -2584,12 +2627,9 @@ components:
         studyTitle:
           type: string
         time:
-          description: Timestamp as returned by the server (may be a JSON datetime or numeric timestamp).
-          oneOf:
-            - type: string
-              format: date-time
-            - type: integer
-              format: int64
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds
         members:
           type: array
           items:
@@ -2660,12 +2700,12 @@ components:
           type: string
           enum: [ DB, LDAP, OAUTH_GOOGLE, OIDC, ORCID, SRAM, CONEXT ]
         lastSignin:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         lastSeen:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         active:
           type: boolean
@@ -2886,12 +2926,12 @@ components:
           type: integer
           description: activeMemberCount + historyMemberCount
         startDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         endDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
       required: [ id, activeMemberList, historyMemberList, resultCount ]
       additionalProperties: false
@@ -3121,7 +3161,6 @@ components:
               type: boolean
               description: Whether the actual HTML file on disk should be renamed.
               default: false
-      additionalProperties: false
 
     CreateBatch:
       allOf:
@@ -3186,12 +3225,12 @@ components:
         componentUuid:
           type: string
         startDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         endDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         duration:
           type: string
@@ -3241,20 +3280,20 @@ components:
           nullable: true
           description: Only present if worker comment is non-empty.
         startDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         endDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         duration:
           type: string
           nullable: true
           description: Human-readable duration (derived from start/end).
         lastSeenDate:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
           nullable: true
         studyState:
           type: string
@@ -3307,7 +3346,6 @@ components:
               type: string
               description: Human-readable result message.
           required: [ message ]
-          additionalProperties: false
 
     ApiEnvelopeGeneratedApiToken:
       allOf:
@@ -3317,7 +3355,6 @@ components:
             data:
               $ref: '#/components/schemas/ApiTokenWithValue'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeApiTokenMetadata:
       allOf:
@@ -3327,7 +3364,6 @@ components:
             data:
               $ref: '#/components/schemas/ApiTokenMetadata'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeApiTokenMetadataList:
       allOf:
@@ -3339,7 +3375,6 @@ components:
               items:
                 $ref: '#/components/schemas/ApiTokenMetadata'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeTokenActiveToggled:
       allOf:
@@ -3354,7 +3389,6 @@ components:
               required: [ id, active ]
               additionalProperties: false
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeUser:
       allOf:
@@ -3364,7 +3398,6 @@ components:
             data:
               $ref: '#/components/schemas/User'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeUserList:
       allOf:
@@ -3376,7 +3409,6 @@ components:
               items:
                 $ref: '#/components/schemas/UserWithStudyIds'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeAdminStatus:
       allOf:
@@ -3386,7 +3418,6 @@ components:
             data:
               $ref: '#/components/schemas/AdminStatus'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeStudy:
       allOf:
@@ -3396,7 +3427,7 @@ components:
             data:
               $ref: '#/components/schemas/Study'
           required: [ data ]
-          additionalProperties: false
+      additionalProperties: false
 
     ApiEnvelopeStudyList:
       allOf:
@@ -3408,7 +3439,6 @@ components:
               items:
                 $ref: '#/components/schemas/Study'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeStudyActiveToggled:
       allOf:
@@ -3419,7 +3449,6 @@ components:
             data:
               $ref: "#/components/schemas/StudyActiveToggled"
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeComponent:
       allOf:
@@ -3429,7 +3458,6 @@ components:
             data:
               $ref: '#/components/schemas/Component'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeComponentList:
       allOf:
@@ -3441,7 +3469,6 @@ components:
               items:
                 $ref: '#/components/schemas/Component'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeBatch:
       allOf:
@@ -3452,7 +3479,6 @@ components:
             data:
               $ref: '#/components/schemas/Batch'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeBatchList:
       allOf:
@@ -3464,7 +3490,6 @@ components:
               items:
                 $ref: '#/components/schemas/Batch'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeGroupList:
       allOf:
@@ -3477,7 +3502,6 @@ components:
               items:
                 $ref: '#/components/schemas/Group'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeStudyMembers:
       allOf:
@@ -3488,7 +3512,21 @@ components:
             data:
               $ref: '#/components/schemas/StudyMembers'
           required: [ data ]
-          additionalProperties: false
+
+    ApiEnvelopeLogFileList:
+      allOf:
+        - $ref: "#/components/schemas/ApiEnvelopeSuccess"
+        - type: object
+          description: >-
+            Envelope containing the logs directory structure.
+          properties:
+            data:
+              oneOf:
+                - $ref: '#/components/schemas/DirectoryEntry'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/DirectoryEntry'
+          required: [ data ]
 
     ApiEnvelopeStudyAssetsStructure:
       allOf:
@@ -3505,7 +3543,6 @@ components:
                   items:
                     $ref: '#/components/schemas/DirectoryEntry'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeSessionVersion:
       allOf:
@@ -3521,7 +3558,6 @@ components:
               required: [ version ]
               additionalProperties: false
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeBatchOrGroupSession:
       allOf:
@@ -3532,7 +3568,6 @@ components:
             data:
               $ref: '#/components/schemas/BatchOrGroupSession'
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeStudyCode:
       allOf:
@@ -3543,7 +3578,6 @@ components:
             data:
               $ref: '#/components/schemas/StudyCodeInfo'
           required: [ data ]
-          additionalProperties: false
 
     ResultsMetadataStudyList:
       type: object
@@ -3560,7 +3594,6 @@ components:
           items:
             $ref: "#/components/schemas/ResultsMetadataStudyResultList"
       required: [ studyId, studyUuid, studyTitle, studyResults ]
-      additionalProperties: false
 
     ApiEnvelopeResultsMetadata:
       allOf:
@@ -3573,7 +3606,6 @@ components:
               items:
                 $ref: "#/components/schemas/ResultsMetadataStudyList"
           required: [ data ]
-          additionalProperties: false
 
     ApiEnvelopeDeletedComponentResultIds:
       allOf:
@@ -3587,4 +3619,3 @@ components:
                 type: integer
                 format: int64
           required: [ data ]
-          additionalProperties: false
