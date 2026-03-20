@@ -45,6 +45,7 @@ public class ComponentResultIdsExtractor {
             switch (field) {
                 case "studyId": {
                     List<Long> studyIds = Arrays.stream(map.get("studyId"))
+                            .filter(s -> s != null && s.matches("-?\\d+"))
                             .map(Long::parseLong)
                             .collect(Collectors.toList());
                     componentResultIds.addAll(componentResultDao.findIdsByStudyIds(studyIds));
@@ -52,12 +53,14 @@ public class ComponentResultIdsExtractor {
                 }
                 case "studyUuid": {
                     List<String> studyUuids = Arrays.stream(map.get("studyUuid"))
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList());
                     componentResultIds.addAll(componentResultDao.findIdsByStudyUuids(studyUuids));
                     break;
                 }
                 case "componentId": {
                     List<Long> componentIds = Arrays.stream(map.get("componentId"))
+                            .filter(s -> s != null && s.matches("-?\\d+"))
                             .map(Long::parseLong)
                             .collect(Collectors.toList());
                     componentResultIds.addAll(componentResultDao.findIdsByComponentIds(componentIds));
@@ -65,12 +68,14 @@ public class ComponentResultIdsExtractor {
                 }
                 case "componentUuid": {
                     List<String> componentUuids = Arrays.stream(map.get("componentUuid"))
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList());
                     componentResultIds.addAll(componentResultDao.findIdsByComponentUuids(componentUuids));
                     break;
                 }
                 case "componentResultId": {
                     List<Long> crids = Arrays.stream(map.get("componentResultId"))
+                            .filter(s -> s != null && s.matches("-?\\d+"))
                             .map(Long::parseLong)
                             .collect(Collectors.toList());
                     componentResultIds.addAll(componentResultDao.findIdsByComponentResultIds(crids));
@@ -78,6 +83,7 @@ public class ComponentResultIdsExtractor {
                 }
                 case "studyResultId": {
                     List<Long> srids = Arrays.stream(map.get("studyResultId"))
+                            .filter(s -> s != null && s.matches("-?\\d+"))
                             .map(Long::parseLong)
                             .collect(Collectors.toList());
                     componentResultIds.addAll(componentResultDao.findOrderedIdsByOrderedStudyResultIds(srids));
@@ -85,6 +91,7 @@ public class ComponentResultIdsExtractor {
                 }
                 case "batchId": {
                     List<Long> batchIds = Arrays.stream(map.get("batchId"))
+                            .filter(s -> s != null && s.matches("-?\\d+"))
                             .map(Long::parseLong)
                             .collect(Collectors.toList());
                     List<Long> srids = studyResultDao.findIdsByBatchIds(batchIds);
@@ -93,6 +100,7 @@ public class ComponentResultIdsExtractor {
                 }
                 case "groupId": {
                     List<Long> groupIds = Arrays.stream(map.get("groupId"))
+                            .filter(s -> s != null && s.matches("-?\\d+"))
                             .map(Long::parseLong)
                             .collect(Collectors.toList());
                     List<Long> srids = studyResultDao.findIdsByGroupIds(groupIds);
@@ -136,7 +144,7 @@ public class ComponentResultIdsExtractor {
                     break;
                 }
                 case "componentUuids": {
-                    List<String> componentUuids = extractUuids(json.get("studyUuids"));
+                    List<String> componentUuids = extractUuids(json.get("componentUuids"));
                     componentResultIds.addAll(componentResultDao.findIdsByComponentUuids(componentUuids));
                     break;
                 }
