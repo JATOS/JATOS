@@ -82,8 +82,8 @@ class ErrorHandler @Inject()() extends HttpErrorHandler {
 
       case e: AuthException =>
         logger.info(s"AuthException during call ${request.method} ${request.uri}: ${e.getMessage}")
-        if (api) Forbidden(e.asApiJsValue())
-        else Forbidden(e.getMessage)
+        if (api) Unauthorized(e.asApiJsValue())
+        else Unauthorized(e.getMessage)
 
       case e: HttpException =>
         logger.info(s"HttpException during call ${request.method} ${request.uri}: ${e.getMessage}")
