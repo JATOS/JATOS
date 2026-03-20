@@ -85,14 +85,14 @@ class StudyAssets @Inject()(components: ControllerComponents,
       case e: PublixException =>
         val errorMsg = e.getMessage
         logger.info(".viaAssetsPath: " + errorMsg)
-        if (Helpers.isAjax) Forbidden(errorMsg)
-        else Forbidden(views.html.publix.error.render(errorMsg))
+        if (Helpers.isHtmlRequest(request.asJava)) Forbidden(views.html.publix.error.render(errorMsg))
+        else Forbidden(errorMsg)
       case _: IOException =>
         logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}" +
           s"${File.separator}$filePath")
         val errorMsg = s"Resource '$filePath' couldn't be found."
-        if (Helpers.isAjax) NotFound(errorMsg)
-        else NotFound(views.html.publix.error.render(errorMsg))
+        if (Helpers.isHtmlRequest(request.asJava)) NotFound(views.html.publix.error.render(errorMsg))
+        else NotFound(errorMsg)
     }
   }
 
