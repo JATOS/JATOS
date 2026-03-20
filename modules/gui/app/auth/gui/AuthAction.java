@@ -3,6 +3,8 @@ package auth.gui;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthAction.AuthMethod.AuthResult;
 import auth.gui.AuthAction.AuthMethod.Type;
+import exceptions.gui.AuthException;
+import exceptions.gui.ForbiddenException;
 import general.gui.RequestScopeMessaging;
 import models.common.User;
 import models.common.User.Role;
@@ -162,7 +164,7 @@ public class AuthAction extends Action<Auth> {
             RequestScopeMessaging.error("Failed authentication");
             return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin()));
         } else {
-            return CompletableFuture.completedFuture(unauthorized("Failed authentication"));
+            return CompletableFuture.failedStage(new AuthException("Failed authentication"));
         }
     }
 
