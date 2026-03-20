@@ -27,7 +27,8 @@ import static play.mvc.Results.*;
  * <p>
  * It checks Play's session cookie and does authorization. It has several layers of security:
  * <p>
- * 1) First, it checks if a username is in Play's session cookie and if this username belongs to a user in the database.
+ * 1) First, it checks if a username is in Play's session cookie and if this username belongs to a user in the
+ * database.
  * <p>
  * 2) Check if the session timed out. The time span is defined in the application.conf.
  * <p>
@@ -39,8 +40,8 @@ import static play.mvc.Results.*;
  * <p>
  * 5) It checks if the user was deactivated by an admin.
  * <p>
- * The {@link AuthAction.Auth} annotation does not check the user's password. This is
- * done once during signing in (class {@link Signin}).
+ * The {@link AuthAction.Auth} annotation does not check the user's password. This is done once during signing in (class
+ * {@link Signin}).
  * <p>
  * The {@link User} object is put in the {@link RequestScope} for later use during request processing.
  *
@@ -78,23 +79,23 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         // since we need it later anyway. Storing it in the RequestScope now saves us some database requests later.
         User signedinUser = authService.getSignedinUserBySessionCookie(request.session());
         if (signedinUser == null) {
-            return callUnauthorizedDueToAuthentication(request.remoteAddress(), request.path());
+            return callUnauthorizedDueToAuthentication(request);
         }
         RequestScope.put(AuthService.SIGNEDIN_USER, signedinUser);
 
         // Check session timeout and inactivity timeout (only if keepSignedin flag is not set)
         if (!authService.isSessionKeepSignedin(request.session())) {
             if (authService.isSessionTimeout(request.session())) {
-                return callForbiddenDueToSessionTimeout(signedinUser.getUsername());
+                return callForbiddenDueToSessionTimeout(request, signedinUser.getUsername());
             }
             if (authService.isInactivityTimeout(request.session())) {
-                return callForbiddenDueToInactivityTimeout(signedinUser.getUsername());
+                return callForbiddenDueToInactivityTimeout(request, signedinUser.getUsername());
             }
         }
 
         // Check user deactivated by admin
         if (!signedinUser.isActive()) {
-            return callForbiddenDueToUserDeactivated(signedinUser.getUsername());
+            return callForbiddenDueToUserDeactivated(request, signedinUser.getUsername());
         }
 
         // Check authorization
@@ -108,61 +109,59 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         return AuthResult.authenticated(postHook);
     }
 
-    private AuthResult callUnauthorizedDueToAuthentication(String remoteAddress, String urlPath) {
+    private AuthResult callUnauthorizedDueToAuthentication(Http.Request request) {
+        String remoteAddress = request.remoteAddress();
+        String urlPath = request.path();
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " tried to access page " + urlPath);
         String msg = "You are not allowed to access this page. Please sign in.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(unauthorized(msg));
-        }
         if (!urlPath.isEmpty() && !urlPath.matches("(/|/jatos|/jatos/)")) {
             FlashScopeMessaging.error(msg);
         }
-        return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
+        if (Helpers.isHtmlRequest(request)) {
+            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
+        }
+        return AuthResult.denied(unauthorized(msg));
     }
 
-    private AuthResult callForbiddenDueToSessionTimeout(String normalizedUsername) {
+    private AuthResult callForbiddenDueToSessionTimeout(Http.Request request, String normalizedUsername) {
         LOGGER.info("Session of user " + normalizedUsername + " has expired and the user has been signed out.");
         String msg = "Your session has expired. You have been signed out. Please sign in again.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
-        } else {
+        if (Helpers.isHtmlRequest(request)) {
             FlashScopeMessaging.success(msg);
             return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
         }
+        return AuthResult.denied(forbidden(msg));
     }
 
-    private AuthResult callForbiddenDueToInactivityTimeout(String normalizedUsername) {
+    private AuthResult callForbiddenDueToInactivityTimeout(Http.Request request, String normalizedUsername) {
         LOGGER.info("User " + normalizedUsername + " has been signed out due to inactivity.");
         String msg = "You have been signed out due to inactivity.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
-        } else {
+        if (Helpers.isHtmlRequest(request)) {
             FlashScopeMessaging.success(msg);
             return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
         }
+        return AuthResult.denied(forbidden(msg));
     }
 
-    private AuthResult callForbiddenDueToUserDeactivated(String normalizedUsername) {
+    private AuthResult callForbiddenDueToUserDeactivated(Http.Request request, String normalizedUsername) {
         LOGGER.info("User " + normalizedUsername + " has been signed out because an admin deactivated this user.");
         String msg = "Your user was deactivated by an admin.";
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(forbidden(msg));
-        } else {
+        if (Helpers.isHtmlRequest(request)) {
             FlashScopeMessaging.warning(msg);
             return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()).withNewSession());
         }
+        return AuthResult.denied(forbidden(msg));
     }
 
     private AuthResult callUnauthorizedDueToAuthorization(Http.Request request, String normalizedUsername, String urlPath) {
         String msg = "User " + normalizedUsername + " isn't allowed to access page " + urlPath + ".";
         LOGGER.warn(msg);
         // Do not clear the session cookie - do not sign out
-        if (Helpers.isAjax()) {
-            return AuthResult.denied(unauthorized(msg));
-        } else {
+        if (Helpers.isHtmlRequest(request)) {
             RequestScopeMessaging.error(msg);
             return AuthResult.denied(homeProvider.get().home(request, Http.Status.UNAUTHORIZED));
         }
+        return AuthResult.denied(unauthorized(msg));
     }
 
 }
