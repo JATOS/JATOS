@@ -162,14 +162,16 @@ public class ImportExport extends Controller {
             return internalServerError(errorMsg);
         }
 
-        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_study_" + study.getUuid() + "." + Common.getStudyArchiveSuffix());
+        String cdHeader = "attachment; "
+                + HttpHeaderParameterEncoding.encode("filename", "jatos_study_"
+                + study.getUuid() + "." + Common.getStudyArchiveSuffix());
         // We need the "Content-Disposition" header for API calls (not for the GUI)
         //noinspection ResultOfMethodCallIgnored
         return ok().streamed(
                         Helpers.okFileStreamed(zipFile, zipFile::delete),
                         Optional.of(zipFile.length()),
                         Optional.of("application/zip"))
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
     }
 
 }

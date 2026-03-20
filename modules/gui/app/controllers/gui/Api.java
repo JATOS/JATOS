@@ -176,11 +176,12 @@ public class Api extends Controller {
             Path logPath = Paths.get(Common.getLogsPath(), filename);
             Source<ByteString, ?> source = FileIO.fromPath(logPath);
             Optional<Long> contentLength = Optional.of(logPath.toFile().length());
-            String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);
+            String cdHeader = "attachment; "
+                    + HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);
             // We need the "Content-Disposition" header for API calls (not for the GUI)
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
                     new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
         }
     }
 
@@ -657,9 +658,10 @@ public class Api extends Controller {
 
         File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
         if (!file.isFile()) throw new NotFoundException("File '" + filepath + "' couldn't be found.");
+        String cdHeader = "attachment; " + HttpHeaderParameterEncoding.encode("filename", file.getName());
         return ok()
                 .sendFile(file)
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"");
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
     }
 
     /**
@@ -803,10 +805,12 @@ public class Api extends Controller {
 
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
             Optional<Long> contentLength = Optional.of(studyLogPath.toFile().length());
-            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_studylog_" + studyLogger.getFilename(study));
+            String cdHeader = "attachment; "
+                    + HttpHeaderParameterEncoding.encode("filename", "jatos_studylog_"
+                    + studyLogger.getFilename(study));
             return new Result(new ResponseHeader(200, Collections.emptyMap()),
                     new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
         } else {
             return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/x-ndjson");
         }
@@ -1143,10 +1147,11 @@ public class Api extends Controller {
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.COMBINED,
                 wrapperObject);
 
-        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_"
+        String cdHeader = "attachment; "
+                + HttpHeaderParameterEncoding.encode("filename", "jatos_results_"
                 + Helpers.getDateTimeYyyyMMddHHmmss() + "." + Common.getResultsArchiveSuffix());
         return ok().chunked(dataSource).as("application/zip")
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
     }
 
     /**
@@ -1173,9 +1178,10 @@ public class Api extends Controller {
                 Optional.of(file.length()),
                 Optional.of("application/json"));
         if (download) {
-            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
+            String cdHeader = "attachment; "
+                    + HttpHeaderParameterEncoding.encode("filename", "jatos_results_metadata_"
                     + Helpers.getDateTimeYyyyMMddHHmmss() + ".json");
-            result = result.withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+            result = result.withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
         }
         return result;
     }
@@ -1198,9 +1204,10 @@ public class Api extends Controller {
             Source<ByteString, ?> dataSource = resultStreamer.streamComponentResultData(request);
             Result result = ok().chunked(dataSource).as("text/plain; charset=UTF-8");
             if (download) {
-                String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
+                String cdHeader = "attachment; "
+                        + HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
                         + Helpers.getDateTimeYyyyMMddHHmmss() + ".txt");
-                result = result.withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                result = result.withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
             }
             return result;
         } else {
@@ -1209,10 +1216,11 @@ public class Api extends Controller {
                     : Collections.emptyMap();
             Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.DATA_ONLY,
                     wrapperObject);
-            String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
+            String cdHeader = "attachment; "
+                    + HttpHeaderParameterEncoding.encode("filename", "jatos_results_data_"
                     + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
             return ok().chunked(dataSource).as("application/zip")
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
         }
     }
 
@@ -1226,10 +1234,11 @@ public class Api extends Controller {
     public Result exportResultFiles(Http.Request request) throws BadRequestException {
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
-        String filename = HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
+        String cdHeader = "attachment; "
+                + HttpHeaderParameterEncoding.encode("filename", "jatos_results_files_"
                 + Helpers.getDateTimeYyyyMMddHHmmss() + ".zip");
         return ok().chunked(dataSource).as("application/zip")
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filename);
+                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
     }
 
     /**
@@ -1262,10 +1271,8 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    @BodyParser.Of(BodyParser.Raw.class)
-    public Result removeResults(Http.Request request) throws HttpException, IOException {
-        JsonNode json = ApiService.getJsonFromBody(request);
-        List<Long> crids = componentResultIdsExtractor.extract(json);
+    public Result removeResults(Http.Request request) throws HttpException {
+        List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
 
         // The check, that the user is a member of the study or a superuser, and that the study is not locked, is done
