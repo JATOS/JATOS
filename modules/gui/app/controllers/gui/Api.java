@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.*;
 import exceptions.gui.*;
 import general.common.ApiEnvelope;
-import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import general.common.RequestScope;
 import general.common.StudyLogger;
@@ -26,6 +25,7 @@ import play.db.jpa.Transactional;
 import play.http.HttpEntity;
 import play.libs.Json;
 import play.mvc.*;
+import play.mvc.Http.MultipartFormData.FilePart;
 import scala.Option;
 import services.gui.*;
 import utils.common.DirectoryStructureToJson;
@@ -37,16 +37,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 
 import static auth.gui.AuthAction.Auth;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static controllers.gui.actionannotations.ApiAccessLoggingAction.ApiAccessLogging;
+import static general.common.ApiEnvelope.ErrorCode.*;
 import static models.common.User.Role.*;
 
 /**
@@ -306,7 +304,7 @@ public class Api extends Controller {
     @BodyParser.Of(BodyParser.Json.class)
     public Result generateApiToken(Http.Request request, Long userId) throws HttpException {
         if (!Common.isJatosApiTokensApiGenerationAllowed()) {
-            throw new ForbiddenException("API token generation is not allowed", ErrorCode.CONFIG_ERROR);
+            throw new ForbiddenException("API token generation is not allowed", CONFIG_ERROR);
         }
 
         User user = userDao.findById(userId);
@@ -463,13 +461,12 @@ public class Api extends Controller {
             User signedinUser = authService.getSignedinUser();
             JsonNode json = request.body().asJson();
             if (json == null) {
-                throw new BadRequestException("Request body is empty or not valid JSON", ErrorCode.INVALID_JSON);
+                throw new BadRequestException("Request body is empty or not valid JSON", INVALID_JSON);
             }
             return createStudyFromJson(signedinUser, json, renameAssets);
         }
 
-        return status(415, ApiEnvelope.wrap("Wrong 'Content-Type' " + contentType,
-                ErrorCode.WRONG_CONTENT_TYPE).asJsonNode());
+        return status(415, ApiEnvelope.wrap("Wrong 'Content-Type' " + contentType, WRONG_CONTENT_TYPE).asJsonNode());
     }
 
     private Result createStudyFromJson(User signedinUser, JsonNode json, boolean renameAssets)
@@ -656,7 +653,7 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
-        File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+        File file = IOUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
         if (!file.isFile()) throw new NotFoundException("File '" + filepath + "' couldn't be found.");
         String cdHeader = "attachment; " + HttpHeaderParameterEncoding.encode("filename", file.getName());
         return ok()
@@ -677,16 +674,22 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath) throws HttpException, IOException {
+    public Result uploadStudyAssetsFile(Http.Request request, String id, String filepath) throws HttpException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        List<String> allowedContentTypes = Collections.singletonList("application/octet-stream");
-        File uploadedFile = ApiService.extractFile(request, "studyAssetsFile", allowedContentTypes);
+        if (request.body().asMultipartFormData() == null) {
+            throw new BadRequestException("File missing", MISSING_FILE);
+        }
+        FilePart<Object> filePart = request.body().asMultipartFormData().getFile("studyAssetsFile");
+        if (filePart == null) {
+            throw new BadRequestException("File missing", MISSING_FILE);
+        }
+        File uploadedFile = (File) filePart.getFile();
 
         try {
-            Path assetsFilePath = ioUtils.getAssetsFilePath(filepath, uploadedFile.getName(), study);
+            Path assetsFilePath = ApiService.getAssetsFilePath(filepath, filePart.getFilename(), study);
             Path parent = assetsFilePath.getParent();
             if (parent != null) {
                 // Make sure the directory that will contain the uploaded file exists.
@@ -694,10 +697,11 @@ public class Api extends Controller {
             }
 
             boolean overwritten = IOUtils.moveAndDetectOverwrite(uploadedFile.toPath(), assetsFilePath);
-
             String msg = overwritten ? "File overwritten successfully" : "File uploaded successfully";
             JsonNode envelope = ApiEnvelope.wrap(msg).asJsonNode();
             return overwritten ? ok(envelope) : created(envelope);
+        } catch (FileAlreadyExistsException e) {
+            throw new BadRequestException("File already exists but is of a different type", FILE_ALREADY_EXISTS);
         } catch (IOException e) {
             LOGGER.info(".uploadStudyAssetsFile: " + e.getLocalizedMessage());
             throw new InternalServerErrorException("Error writing file");
@@ -722,7 +726,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, user, true);
 
         try {
-            File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+            File file = IOUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
             if (file.isDirectory()) throw new IOException("Directories can't be deleted.");
             Files.delete(file.toPath());
         } catch (NoSuchFileException e) {

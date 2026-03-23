@@ -229,7 +229,7 @@ public class ImportExportService {
         File studyAsJsonFile = File.createTempFile(studyFileName, ".jas");
         studyAsJsonFile.deleteOnExit();
         jsonUtils.studyAsJsonForIO(study, studyAsJsonFile);
-        Path studyAssetsDir = Paths.get(ioUtils.generateStudyAssetsPath(study.getDirName()));
+        Path studyAssetsDir = Paths.get(IOUtils.generateStudyAssetsPath(study.getDirName()));
 
         List<Path> filesToZip = new ArrayList<>();
         filesToZip.add(studyAssetsDir);

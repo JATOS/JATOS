@@ -6,28 +6,34 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import exceptions.gui.BadRequestException;
-import general.common.MessagesStrings;
 import general.common.ApiEnvelope;
+import general.common.MessagesStrings;
+import models.common.Study;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import play.libs.Json;
 import play.mvc.Http;
+import utils.common.Helpers;
+import utils.common.IOUtils;
 
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static general.common.ApiEnvelope.ErrorCode.VALIDATION_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@Singleton
 public class ApiService {
 
     public static void validateProps(Constraints.Validatable<List<ValidationError>> props) throws BadRequestException {
         List<ValidationError> errors = props.validate();
         if (errors != null && !errors.isEmpty()) {
             String msg = "Error in field '" + errors.get(0).key() + "' - " + errors.get(0).message();
-            throw new BadRequestException(msg, ApiEnvelope.ErrorCode.VALIDATION_ERROR);
+            throw new BadRequestException(msg, VALIDATION_ERROR);
         }
     }
 
@@ -166,5 +172,45 @@ public class ApiService {
         return sessionNode;
     }
 
+    /**
+     * Get a Path to a file in a study assets directory.
+     *
+     * @param filepath Filepath to the file.
+     *
+     *                 If it points to a directory (indicated by a trailing '/'), the returned Path consists of filepath
+     *                 + filename.
+     *
+     *                 If it does not point to a directory, it is treated as a path to a file and returned without taken
+     *                 the filename parameter into account. This can be used to rename a file.
+     *
+     *                 This parameter is optional and can be null to signal the path to the file is supposed to be in
+     *                 the root of the study assets directory. Another option to signal the root is a single '/'.
+     *
+     *                 A leading '/' gets removed.
+     *
+     *                 It can be URL encoded but doesn't have to be.
+     * @param filename Filename of the file (without a path).
+     * @param study    Study where the study assets belong to
+     * @return Path to the file in the study assets
+     */
+    public static Path getAssetsFilePath(String filepath, String filename, Study study) throws BadRequestException {
+        String assetsFilePathStr;
+        if (!Strings.isNullOrEmpty(filepath)) {
+            filepath = Helpers.urlDecode(filepath).trim();
+            if (filepath.startsWith("/")) filepath = filepath.substring(1); // remove leading '/'
+
+            if (filepath.endsWith("/")) assetsFilePathStr = filepath + filename;
+            else if (filepath.isEmpty()) assetsFilePathStr = filename;
+            else assetsFilePathStr = filepath;
+        } else {
+            assetsFilePathStr = filename;
+        }
+
+        try {
+            return IOUtils.getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr).toPath();
+        } catch (IOException e) {
+            throw new BadRequestException("Invalid path: " + assetsFilePathStr, VALIDATION_ERROR);
+        }
+    }
 
 }

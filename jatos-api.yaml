@@ -835,36 +835,29 @@ paths:
         - in: path
           name: filepath
           required: true
-          allowReserved: true
+          allowReserved: false
           schema:
             type: string
           description: >-
             Target path in the study assets directory. This endpoint supports
             nested paths (subdirectories). Clients may, but are not required
             to, URL-encode slashes in the filepath (encode `/` as `%2F`). If
-            `filepath` is just '.', the file will be saved at the top-level
+            `filepath` is just '/', the file will be saved at the top-level
             of the study assets directory. Non-existing subdirectories will
             be created. Existing files will be overwritten.
           examples:
             top-level:
-              value: .
+              value: /
               summary: Save in the top-level of the study assets directory
             nested-dir:
-              value: images/
+              value: /images/
               summary: Save in a subdirectory
-            nested-dir-url-encoded:
-              value: images%2F
-              summary: Save in a subdirectory (URL-encoded)
             nested-rename:
-              value: images/newFilename.png
+              value: /images/newFilename.png
               summary: Save in a subdirectory and rename
       requestBody:
         required: true
         content:
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
           multipart/form-data:
             schema:
               type: object
@@ -941,17 +934,14 @@ paths:
       summary: Upload a file to the study assets
       description: >-
         The file will be saved at the top-level of the study assets directory.
-        Existing files will be overwritten.
+        Existing files will be overwritten. Use `POST /jatos/api/v1/studies/{id}/assets/{filepath}`
+        to upload a file to a subdirectory or save it under a different filename.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
       requestBody:
         required: true
         content:
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
           multipart/form-data:
             schema:
               type: object

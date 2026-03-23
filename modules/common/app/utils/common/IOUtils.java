@@ -1,6 +1,5 @@
 package utils.common;
 
-import com.google.common.base.Strings;
 import general.common.Common;
 import general.common.MessagesStrings;
 import models.common.Study;
@@ -13,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,8 +34,10 @@ public class IOUtils {
      */
     public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f*?\"\\\\\0/,`<>|:~!§$%&^°]";
 
-    // Allow alphanumeric characters, underscores, and hyphens in study assets directory names
-    public static final String REGEX_ASSETS_DIR_NAME = "^[a-zA-Z0-9_-]+$";
+    /*
+     * No spaces, no nulls, must start with '/'
+     */
+    public static final String REGEX_ILLEGAL_IN_PATH = "[^/([^ \\x00/]+/?)+$]";
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
@@ -64,7 +66,7 @@ public class IOUtils {
      * Gets the File object (can be an directory) while preventing a path traversal attack. path and filePath together
      * build the full path (like path/filePath). path must be a directory.
      */
-    private File getFileSecurely(String baseDirPathStr, String filePathStr) throws IOException {
+    private static File getFileSecurely(String baseDirPathStr, String filePathStr) throws IOException {
         Path baseDirPath = Paths.get(baseDirPathStr);
         Path filePath = Paths.get(filePathStr);
         if (!baseDirPath.isAbsolute()) {
@@ -81,6 +83,10 @@ public class IOUtils {
         // Make sure the resulting path is still within the required directory.
         // (In the example above, "/foo/bar/attack" is not.)
         if (!resolvedPath.startsWith(baseDirPath)) {
+            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePathStr));
+        }
+        // Check for spaces and nulls in the path
+        if (!checkPath(resolvedPath.toString())) {
             throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePathStr));
         }
 
@@ -154,12 +160,28 @@ public class IOUtils {
     /**
      * Gets the File object which resides under filePath within the study assets' directory.
      */
-    public File getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
+    public static File getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
         if (filePath == null || filePath.trim().isEmpty()) {
             throw new IOException(MessagesStrings.FILE_MISSING);
         }
         String studyAssetsPath = generateStudyAssetsPath(dirName);
         return getFileSecurely(studyAssetsPath, filePath);
+    }
+
+    public static Path getSafePath(Study study, String untrustedFileName) {
+        // 1. Normalize to remove "." and ".."
+        Path path = Paths.get(untrustedFileName).normalize();
+
+        // 2. Resolve against your base directory
+        String baseDir = IOUtils.generateStudyAssetsPath(study.getDirName());
+        Path resolvedPath = Path.of(baseDir).resolve(path).normalize();
+
+        // 3. Security Check: Ensure the resolved path is still inside the base directory
+        if (!resolvedPath.startsWith(baseDir)) {
+            throw new SecurityException("Invalid file path: Potential traversal attack!");
+        }
+
+        return resolvedPath;
     }
 
     /**
@@ -198,8 +220,8 @@ public class IOUtils {
         return !Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME).matcher(filename).find();
     }
 
-    public static boolean checkAssetsDirName(String dirName) {
-        return dirName.matches(IOUtils.REGEX_ASSETS_DIR_NAME) && checkFilename(dirName);
+    public static boolean checkPath(String path) {
+        return !Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_PATH).matcher(path).find();
     }
 
     /**
@@ -212,7 +234,7 @@ public class IOUtils {
     /**
      * Generates a study assets directory path.
      */
-    public String generateStudyAssetsPath(String dirName) {
+    public static String generateStudyAssetsPath(String dirName) {
         return Common.getStudyAssetsRootPath() + File.separator + dirName;
     }
 
@@ -228,33 +250,6 @@ public class IOUtils {
             throw new IOException(MessagesStrings.dirPathIsntDir(dir.getName()));
         }
         FileUtils.deleteDirectory(dir);
-    }
-
-    /**
-     * Get a Path to a file in a study assets directory.
-     *
-     * @param filepath Filepath to the file. If it points to a directory (indicated by a trailing '/') the returned Path
-     *                 consists of filepath + filename. If it does not point to a directory it is treated as Path to a
-     *                 file and returned as Path (without the filename parameter). This parameter is optional and can be
-     *                 null to signal the Path to the file is supposed to be in the root of the study assets directory.
-     *                 If it has a leading '/' it gets removed. It can be URL encoded but doesn't have to be.
-     * @param filename Filename of the file (without path).
-     * @param study    Study where the study assets belong to
-     * @return Path to the file in the study assets
-     */
-    public Path getAssetsFilePath(String filepath, String filename, Study study) throws IOException {
-        String assetsFilePathStr;
-        if (!Strings.isNullOrEmpty(filepath)) {
-            filepath = Helpers.urlDecode(filepath);
-            if (filepath.startsWith("/")) filepath = filepath.substring(1); // remove leading '/'
-
-            if (filepath.endsWith("/")) assetsFilePathStr = filepath + filename;
-            else if (filepath.isEmpty()) assetsFilePathStr = filename;
-            else assetsFilePathStr = filepath;
-        } else {
-            assetsFilePathStr = filename;
-        }
-        return getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr).toPath();
     }
 
     /**
@@ -522,7 +517,7 @@ public class IOUtils {
         try {
             Files.move(source, target);
             return false;
-        } catch (java.nio.file.FileAlreadyExistsException e) {
+        } catch (FileAlreadyExistsException e) {
             Files.move(source, target, REPLACE_EXISTING);
             return true;
         }

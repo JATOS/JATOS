@@ -123,7 +123,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
   @throws[NotFoundPublixException]
   def retrieveComponentHtmlFile(studyDirName: String, componentHtmlFilePath: String): Result = {
     try {
-      val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
+      val file = IOUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
       Ok.sendFile(file).as("text/html; charset=utf-8")
         .withHeaders("Cache-Control" -> "no-cache, no-store")
     } catch {
