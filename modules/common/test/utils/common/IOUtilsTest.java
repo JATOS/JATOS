@@ -68,9 +68,7 @@ public class IOUtilsTest {
 
         // Very long name (should be truncated to 100 chars)
         StringBuilder longName = new StringBuilder();
-        for (int i = 0; i < 200; i++) {
-            longName.append('a');
-        }
+        longName.append("a".repeat(200));
         filename = ioUtils.generateFileName(longName.toString());
         assertEquals(100, filename.length());
 
@@ -148,7 +146,7 @@ public class IOUtilsTest {
         String dirName = "studyA";
         ioUtils.createStudyAssetsDir(dirName);
         assertTrue(ioUtils.checkStudyAssetsDirExists(dirName));
-        assertEquals(new File(assetsRoot, dirName).getAbsolutePath(), ioUtils.generateStudyAssetsPath(dirName));
+        assertEquals(new File(assetsRoot, dirName).getAbsolutePath(), IOUtils.generateStudyAssetsPath(dirName));
 
         // findNonExistingStudyAssetsDirName
         assertEquals("studyA_2", ioUtils.findNonExistingStudyAssetsDirName("studyA"));

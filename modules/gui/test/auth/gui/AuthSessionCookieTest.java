@@ -1,7 +1,6 @@
 package auth.gui;
 
 import auth.gui.AuthAction.AuthMethod.AuthResult;
-import controllers.gui.Home;
 import models.common.User;
 import org.junit.After;
 import org.junit.Before;
@@ -13,8 +12,6 @@ import play.mvc.Result;
 import services.gui.UserService;
 import testutils.gui.ContextMocker;
 import utils.common.Helpers;
-
-import javax.inject.Provider;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -35,8 +32,6 @@ public class AuthSessionCookieTest {
 
     private AuthService authService;
     private UserService userService;
-    private Provider<Home> homeProvider;
-    private Home home;
 
     private AuthSessionCookie authSessionCookie;
 
@@ -50,14 +45,7 @@ public class AuthSessionCookieTest {
         authService = mock(AuthService.class);
         userService = mock(UserService.class);
 
-        // Mock Home.home() to return a forbidden result
-        home = mock(Home.class);
-        //noinspection unchecked
-        homeProvider = (Provider<Home>) mock(Provider.class);
-        when(homeProvider.get()).thenReturn(home);
-        when(home.home(any(Http.Request.class), anyInt())).thenAnswer(inv -> forbidden("home-forbidden"));
-
-        authSessionCookie = new AuthSessionCookie(homeProvider, authService, userService);
+        authSessionCookie = new AuthSessionCookie(null, authService, userService);
 
         helpersMock = Mockito.mockStatic(Helpers.class);
         // Default: this is a session-cookie GUI request and not Ajax
@@ -153,8 +141,7 @@ public class AuthSessionCookieTest {
 
         assertThat(res.state).isEqualTo(AuthResult.State.DENIED);
         assertThat(res.result).isNotNull();
-        verify(homeProvider, times(1)).get();
-        verify(home, times(1)).home(any(Http.Request.class), eq(Http.Status.UNAUTHORIZED));
+        assertThat(res.result.status()).isEqualTo(Http.Status.UNAUTHORIZED);
         verify(userService, never()).setLastSeen(any());
     }
 

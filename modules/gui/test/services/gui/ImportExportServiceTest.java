@@ -220,7 +220,7 @@ public class ImportExportServiceTest {
         // Ensure study assets path resolves to an existing directory
         Path assets = Files.createTempDirectory("assetsDir1");
         when(ioUtils.generateFileName("Cool Study")).thenReturn("Cool_Study");
-        when(ioUtils.generateStudyAssetsPath("dir1")).thenReturn(assets.toString());
+        when(IOUtils.generateStudyAssetsPath("dir1")).thenReturn(assets.toString());
 
         // We simulate that jsonUtils writes out a file successfully. The service creates a temp file and
         // calls jsonUtils.studyAsJsonForIO(study, thatFile). We don't need to do anything besides verify.
