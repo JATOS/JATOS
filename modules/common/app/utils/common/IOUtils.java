@@ -2,7 +2,6 @@ package utils.common;
 
 import general.common.Common;
 import general.common.MessagesStrings;
-import models.common.Study;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +36,8 @@ public class IOUtils {
     /*
      * No spaces, no nulls, must start with '/'
      */
-    public static final String REGEX_ILLEGAL_IN_PATH = "[^/([^ \\x00/]+/?)+$]";
+//    public static final String REGEX_ILLEGAL_IN_PATH = "[^/([^ \\x00/]+/?)+$]";
+    public static final String REGEX_ILLEGAL_IN_PATH = "^/[^\\x00\\s]*$";
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
@@ -66,7 +66,7 @@ public class IOUtils {
      * Gets the File object (can be an directory) while preventing a path traversal attack. path and filePath together
      * build the full path (like path/filePath). path must be a directory.
      */
-    private static File getFileSecurely(String baseDirPathStr, String filePathStr) throws IOException {
+    private File getFileSecurely(String baseDirPathStr, String filePathStr) throws IOException {
         Path baseDirPath = Paths.get(baseDirPathStr);
         Path filePath = Paths.get(filePathStr);
         if (!baseDirPath.isAbsolute()) {
@@ -160,28 +160,12 @@ public class IOUtils {
     /**
      * Gets the File object which resides under filePath within the study assets' directory.
      */
-    public static File getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
+    public File getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
         if (filePath == null || filePath.trim().isEmpty()) {
             throw new IOException(MessagesStrings.FILE_MISSING);
         }
         String studyAssetsPath = generateStudyAssetsPath(dirName);
         return getFileSecurely(studyAssetsPath, filePath);
-    }
-
-    public static Path getSafePath(Study study, String untrustedFileName) {
-        // 1. Normalize to remove "." and ".."
-        Path path = Paths.get(untrustedFileName).normalize();
-
-        // 2. Resolve against your base directory
-        String baseDir = IOUtils.generateStudyAssetsPath(study.getDirName());
-        Path resolvedPath = Path.of(baseDir).resolve(path).normalize();
-
-        // 3. Security Check: Ensure the resolved path is still inside the base directory
-        if (!resolvedPath.startsWith(baseDir)) {
-            throw new SecurityException("Invalid file path: Potential traversal attack!");
-        }
-
-        return resolvedPath;
     }
 
     /**
@@ -221,7 +205,7 @@ public class IOUtils {
     }
 
     public static boolean checkPath(String path) {
-        return !Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_PATH).matcher(path).find();
+        return Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_PATH).matcher(path).find();
     }
 
     /**

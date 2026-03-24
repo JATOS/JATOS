@@ -59,6 +59,7 @@ public class Api extends Controller {
 
     private static final Logger.ALogger LOGGER = Logger.of(Api.class);
 
+    private final ApiService apiService;
     private final AdminService adminService;
     private final AuthService authService;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
@@ -87,7 +88,7 @@ public class Api extends Controller {
     private final StrictJsonMapper strictJsonMapper;
 
     @Inject
-    Api(AdminService adminService, AuthService authService,
+    Api(ApiService apiService, AdminService adminService, AuthService authService,
         ComponentResultIdsExtractor componentResultIdsExtractor,
         StudyDao studyDao, ComponentResultDao componentResultDao, UserDao userDao, ApiTokenDao apiTokenDao,
         BatchDao batchDao, StudyLinkDao studyLinkDao, GroupResultDao groupResultDao, StudyService studyService,
@@ -95,8 +96,8 @@ public class Api extends Controller {
         ImportExport importExport, ImportExportService importExportService,
         ResultRemover resultRemover, ResultStreamer resultStreamer, AuthorizationService authorizationService,
         JsonUtils jsonUtils, LogFileReader logFileReader, StudyLogger studyLogger, IOUtils ioUtils, UserService userService,
-        ApiTokenService apiTokenService,
-        StrictJsonMapper strictJsonMapper) {
+        ApiTokenService apiTokenService, StrictJsonMapper strictJsonMapper) {
+        this.apiService = apiService;
         this.adminService = adminService;
         this.authService = authService;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
@@ -231,9 +232,9 @@ public class Api extends Controller {
     @Auth(roles = ADMIN, types = {TOKEN, SESSION})
     @BodyParser.Of(BodyParser.Raw.class)
     public Result createUser(Http.Request request) throws HttpException, IOException, AuthException {
-        JsonNode json = ApiService.getJsonFromBody(request);
+        JsonNode json = apiService.getJsonFromBody(request);
         NewUserProperties props = strictJsonMapper.getMapper().treeToValue(json, NewUserProperties.class);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
         authorizationService.checkAuthMethodIsDbOrLdap(props);
 
         User user = userService.registerUser(props);
@@ -251,9 +252,9 @@ public class Api extends Controller {
         authorizationService.checkAdminOrSelf(signedinUser, user);
 
         UserProperties props = userService.bindToProperties(user);
-        JsonNode json = ApiService.getJsonFromBody(request);
+        JsonNode json = apiService.getJsonFromBody(request);
         props = strictJsonMapper.updateFromJson(props, json);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
         authorizationService.checkSignedinUserAllowedToChangeUser(props, signedinUser, user);
 
         userService.updateUser(user, props);
@@ -271,7 +272,7 @@ public class Api extends Controller {
         authorizationService.checkNotYourself(signedinUser, user);
 
         JsonNode json = request.body().asJson();
-        Role role = ApiService.getFieldFromJson(json, "role", Role.class);
+        Role role = apiService.getFieldFromJson(json, "role", Role.class);
         if (!Arrays.asList(VIEWER, USER).contains(role)) {
             throw new BadRequestException("Invalid role: " + role);
         }
@@ -312,7 +313,7 @@ public class Api extends Controller {
         authorizationService.checkSignedinUserAllowedToAccessUser(user, signedinUser);
 
         JsonNode json = request.body().asJson();
-        String name = ApiService.getFieldFromJson(json, "name", String.class);
+        String name = apiService.getFieldFromJson(json, "name", String.class);
 
         int expires = (int) Common.getJatosApiTokensApiGenerationExpiresAfter().getSeconds();
 
@@ -366,7 +367,7 @@ public class Api extends Controller {
         authorizationService.checkUserAllowedToAccessApiToken(token, signedinUser);
 
         JsonNode json = request.body().asJson();
-        boolean active = ApiService.getActiveFlagFromJson(json);
+        boolean active = apiService.getActiveFlagFromJson(json);
         token.setActive(active);
         apiTokenDao.update(token);
 
@@ -430,7 +431,7 @@ public class Api extends Controller {
     @BodyParser.Of(BodyParser.Raw.class)
     public Result createStudy(Http.Request request) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
-        JsonNode json = ApiService.getJsonFromBody(request);
+        JsonNode json = apiService.getJsonFromBody(request);
         return createStudyFromJson(signedinUser, json, false);
     }
 
@@ -471,9 +472,9 @@ public class Api extends Controller {
 
     private Result createStudyFromJson(User signedinUser, JsonNode json, boolean renameAssets)
             throws IOException, HttpException {
-        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "studyInput");
+        ObjectNode jsonObj = apiService.normalizeJsonInputField(json, "studyInput");
         StudyProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, StudyProperties.class);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
 
         Study study = studyService.createAndPersistStudyAndAssetsDir(signedinUser, props, renameAssets);
 
@@ -510,7 +511,7 @@ public class Api extends Controller {
         User signedinUser = authService.getSignedinUser();
 
         List<String> allowedContentTypes = Arrays.asList("application/zip", "application/jzip", "application/octet-stream");
-        File file = ApiService.extractFile(request, Study.STUDY, allowedContentTypes);
+        File file = apiService.extractFile(request, Study.STUDY, allowedContentTypes);
 
         try {
             Map<String, Object> importInfo = importExportService.importStudy(signedinUser, file);
@@ -571,12 +572,12 @@ public class Api extends Controller {
         boolean isMemberOrSuperuser = study.hasUser(signedinUser) || Helpers.isAllowedSuperuser(signedinUser);
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
 
-        JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "studyInput");
+        JsonNode json = apiService.getJsonFromBody(request);
+        ObjectNode jsonObj = apiService.normalizeJsonInputField(json, "studyInput");
 
         // Admins who are not members: only allow toggling "active"
         if (isAdminNonMember) {
-            boolean active = ApiService.getActiveFlagFromJson(jsonObj);
+            boolean active = apiService.getActiveFlagFromJson(jsonObj);
             study.setActive(active);
             studyDao.update(study);
 
@@ -591,7 +592,7 @@ public class Api extends Controller {
 
         StudyProperties props = studyService.bindToProperties(study);
         props = strictJsonMapper.updateFromJson(props, jsonObj);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
 
         studyService.updateStudyAndRenameAssets(study, props, signedinUser);
 
@@ -653,7 +654,7 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
-        File file = IOUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+        File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
         if (!file.isFile()) throw new NotFoundException("File '" + filepath + "' couldn't be found.");
         String cdHeader = "attachment; " + HttpHeaderParameterEncoding.encode("filename", file.getName());
         return ok()
@@ -689,7 +690,7 @@ public class Api extends Controller {
         File uploadedFile = (File) filePart.getFile();
 
         try {
-            Path assetsFilePath = ApiService.getAssetsFilePath(filepath, filePart.getFilename(), study);
+            Path assetsFilePath = apiService.getAssetsFilePath(filepath, filePart.getFilename(), study);
             Path parent = assetsFilePath.getParent();
             if (parent != null) {
                 // Make sure the directory that will contain the uploaded file exists.
@@ -726,7 +727,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, user, true);
 
         try {
-            File file = IOUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+            File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
             if (file.isDirectory()) throw new IOException("Directories can't be deleted.");
             Files.delete(file.toPath());
         } catch (NoSuchFileException e) {
@@ -831,10 +832,10 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "componentInput");
+        JsonNode json = apiService.getJsonFromBody(request);
+        ObjectNode jsonObj = apiService.normalizeJsonInputField(json, "componentInput");
         ComponentProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, ComponentProperties.class);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
 
         Component component = componentService.createAndPersistComponent(study, props);
 
@@ -875,11 +876,11 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessComponent(component, user, true);
 
-        JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "componentInput");
+        JsonNode json = apiService.getJsonFromBody(request);
+        ObjectNode jsonObj = apiService.normalizeJsonInputField(json, "componentInput");
         ComponentProperties props = componentService.bindToProperties(component);
         props = strictJsonMapper.updateFromJson(props, jsonObj);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
 
         componentService.renameHtmlFilePath(component, props.getHtmlFilePath(), props.isHtmlFileRename());
         componentService.updateComponentAfterEdit(component, props);
@@ -931,10 +932,10 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user, true);
 
-        JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "batchInput");
+        JsonNode json = apiService.getJsonFromBody(request);
+        ObjectNode jsonObj = apiService.normalizeJsonInputField(json, "batchInput");
         BatchProperties props = strictJsonMapper.getMapper().treeToValue(jsonObj, BatchProperties.class);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
 
         Batch batch = batchService.bindToBatch(props);
         batchService.initAndPersistBatch(batch, study, user);
@@ -952,10 +953,10 @@ public class Api extends Controller {
         authorizationService.canUserAccessBatch(batch, user, true);
 
         BatchProperties props = batchService.bindToProperties(batch);
-        JsonNode json = ApiService.getJsonFromBody(request);
-        ObjectNode jsonObj = ApiService.normalizeJsonInputField(json, "batchInput");
+        JsonNode json = apiService.getJsonFromBody(request);
+        ObjectNode jsonObj = apiService.normalizeJsonInputField(json, "batchInput");
         props = strictJsonMapper.updateFromJson(props, jsonObj);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
 
         batchService.updateBatch(batch, props);
         batchDao.update(batch);
@@ -981,7 +982,7 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user, true);
 
-        ObjectNode session = ApiService.getSessionNode(batch.getBatchSessionData(), batch.getBatchSessionVersion(), asText);
+        ObjectNode session = apiService.getSessionNode(batch.getBatchSessionData(), batch.getBatchSessionVersion(), asText);
         return ok(ApiEnvelope.wrap(session).asJsonNode());
     }
 
@@ -997,7 +998,7 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessBatch(batch, user);
 
-        String sessionData = ApiService.getSessionDataFromBody(request);
+        String sessionData = apiService.getSessionDataFromBody(request);
 
         Long currentVersion = version.getOrElse(batch::getBatchSessionVersion);
         Long newVersion = batchDao.updateBatchSession(batch.getId(), currentVersion, sessionData);
@@ -1029,7 +1030,7 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessGroupResult(groupResult, user);
 
-        ObjectNode session = ApiService.getSessionNode(groupResult.getGroupSessionData(), groupResult.getGroupSessionVersion(), asText);
+        ObjectNode session = apiService.getSessionNode(groupResult.getGroupSessionData(), groupResult.getGroupSessionVersion(), asText);
         return ok(ApiEnvelope.wrap(session).asJsonNode());
     }
 
@@ -1045,7 +1046,7 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessGroupResult(groupResult, user);
 
-        String sessionData = ApiService.getSessionDataFromBody(request);
+        String sessionData = apiService.getSessionDataFromBody(request);
 
         Long currentVersion = version.getOrElse(groupResult::getGroupSessionVersion);
         Long newVersion = groupResultDao.updateGroupSession(groupResult.getId(), currentVersion, sessionData);
@@ -1077,16 +1078,16 @@ public class Api extends Controller {
         JsonNode json = request.body().asJson();
         Long batchId = batchIdOption.nonEmpty()
                 ? batchIdOption.get()
-                : ApiService.getFieldFromJson(json, "batchId", Long.class, null);
+                : apiService.getFieldFromJson(json, "batchId", Long.class, null);
         type = type != null
                 ? type
-                : ApiService.getFieldFromJson(json, "type", String.class, null);
+                : apiService.getFieldFromJson(json, "type", String.class, null);
         comment = comment != null
                 ? comment
-                : ApiService.getFieldFromJson(json, "comment", String.class, null);
+                : apiService.getFieldFromJson(json, "comment", String.class, null);
         int amount = amountOption.nonEmpty()
                 ? amountOption.get()
-                : ApiService.getFieldFromJson(json, "amount", Integer.class, 1);
+                : apiService.getFieldFromJson(json, "amount", Integer.class, 1);
 
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User user = authService.getSignedinUser();
@@ -1099,7 +1100,7 @@ public class Api extends Controller {
         props.setType(WorkerService.validateAndExtractWorkerType(type));
         props.setComment(comment);
         props.setAmount(amount);
-        ApiService.validateProps(props);
+        apiService.validateProps(props);
 
         List<String> studyCodeList = studyLinkService.getStudyCodes(batch, props);
         return ok(ApiEnvelope.wrap(studyCodeList).asJsonNode());
@@ -1125,7 +1126,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudyLink(studyLink, user);
 
         JsonNode json = request.body().asJson();
-        boolean active = ApiService.getActiveFlagFromJson(json);
+        boolean active = apiService.getActiveFlagFromJson(json);
         studyLink.setActive(active);
         studyLinkDao.update(studyLink);
 

@@ -192,7 +192,7 @@ public class ComponentService {
         // What if current HTML file doesn't exist
         File currentFile = null;
         if (!component.getHtmlFilePath().trim().isEmpty()) {
-            currentFile = IOUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(),
+            currentFile = ioUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(),
                     component.getHtmlFilePath());
         }
         if (currentFile == null || !currentFile.exists()) {

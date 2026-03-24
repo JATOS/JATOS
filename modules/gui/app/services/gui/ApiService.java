@@ -16,6 +16,7 @@ import play.mvc.Http;
 import utils.common.Helpers;
 import utils.common.IOUtils;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +30,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Singleton
 public class ApiService {
 
-    public static void validateProps(Constraints.Validatable<List<ValidationError>> props) throws BadRequestException {
+    private final IOUtils ioUtils;
+
+    @Inject
+    private ApiService(IOUtils ioUtils) {
+        this.ioUtils = ioUtils;
+    }
+
+    public void validateProps(Constraints.Validatable<List<ValidationError>> props) throws BadRequestException {
         List<ValidationError> errors = props.validate();
         if (errors != null && !errors.isEmpty()) {
             String msg = "Error in field '" + errors.get(0).key() + "' - " + errors.get(0).message();
@@ -37,7 +45,7 @@ public class ApiService {
         }
     }
 
-    public static <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType) throws BadRequestException {
+    public <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType) throws BadRequestException {
         if (json == null || json.get(fieldName) == null) {
             throw new BadRequestException("Missing " + fieldName + " field", ApiEnvelope.ErrorCode.INVALID_REQUEST);
         }
@@ -51,14 +59,14 @@ public class ApiService {
         }
     }
 
-    public static <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType, T defaultValue) throws BadRequestException {
+    public <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType, T defaultValue) throws BadRequestException {
         if (json == null || json.get(fieldName) == null) {
             return defaultValue;
         }
         return getFieldFromJson(json, fieldName, fieldType);
     }
 
-    public static boolean getActiveFlagFromJson(JsonNode json) throws BadRequestException {
+    public boolean getActiveFlagFromJson(JsonNode json) throws BadRequestException {
         return getFieldFromJson(json, "active", Boolean.class);
     }
 
@@ -66,7 +74,7 @@ public class ApiService {
      * Controller method needs to be annotated with @BodyParser.Of(BodyParser.Raw.class) for this method to work
      * properly
      */
-    public static JsonNode getJsonFromBody(Http.Request request) throws BadRequestException, JsonProcessingException {
+    public JsonNode getJsonFromBody(Http.Request request) throws BadRequestException, JsonProcessingException {
         Http.RawBuffer raw = request.body().asRaw();
         byte[] bytes = raw != null ? raw.asBytes().toArray() : null;
         if (bytes == null || bytes.length == 0) {
@@ -81,7 +89,7 @@ public class ApiService {
      * Controller method needs to be annotated with @BodyParser.Of(BodyParser.Raw.class) for this method to work
      * properly
      */
-    public static String getSessionDataFromBody(Http.Request request) throws JsonProcessingException {
+    public String getSessionDataFromBody(Http.Request request) throws JsonProcessingException {
         Http.RawBuffer raw = request.body().asRaw();
         byte[] bytes = raw != null ? raw.asBytes().toArray() : null;
         String body;
@@ -101,7 +109,7 @@ public class ApiService {
      * if the field is an object or an array. If the JSON object has a field 'jsonData' (deprecated name), this is used
      * instead. If the field is missing or already a string, no changes are made.
      */
-    public static ObjectNode normalizeJsonInputField(JsonNode json, String fieldName)
+    public ObjectNode normalizeJsonInputField(JsonNode json, String fieldName)
             throws BadRequestException, JsonProcessingException {
         if (!json.isObject()) {
             throw new BadRequestException("Request body is not a JSON object", ApiEnvelope.ErrorCode.INVALID_JSON);
@@ -122,7 +130,7 @@ public class ApiService {
      * Extracts a file from the request body. It can handle different content type headers. It always tries
      * "multipart/form-data". Additionally, it tries all content types in the list "allowedRawTypes".
      */
-    public static File extractFile(Http.Request request, String filePartName, List<String> allowedRawTypes)
+    public File extractFile(Http.Request request, String filePartName, List<String> allowedRawTypes)
             throws BadRequestException, IOException {
         String contentType = request.contentType().orElse("").toLowerCase();
 
@@ -159,7 +167,7 @@ public class ApiService {
                 "Unsupported Content-Type '" + contentType + "'. Use multipart/form-data, " + allowedRawTypes);
     }
 
-    public static ObjectNode getSessionNode(String sessionData, Long version, boolean asText) throws JsonProcessingException {
+    public ObjectNode getSessionNode(String sessionData, Long version, boolean asText) throws JsonProcessingException {
         String sessionDataNormalized = sessionData != null ? sessionData : "{}";
         ObjectNode sessionNode = Json.newObject()
                 .put("version", version);
@@ -193,7 +201,7 @@ public class ApiService {
      * @param study    Study where the study assets belong to
      * @return Path to the file in the study assets
      */
-    public static Path getAssetsFilePath(String filepath, String filename, Study study) throws BadRequestException {
+    public Path getAssetsFilePath(String filepath, String filename, Study study) throws BadRequestException {
         String assetsFilePathStr;
         if (!Strings.isNullOrEmpty(filepath)) {
             filepath = Helpers.urlDecode(filepath).trim();
@@ -207,7 +215,7 @@ public class ApiService {
         }
 
         try {
-            return IOUtils.getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr).toPath();
+            return ioUtils.getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr).toPath();
         } catch (IOException e) {
             throw new BadRequestException("Invalid path: " + assetsFilePathStr, VALIDATION_ERROR);
         }
