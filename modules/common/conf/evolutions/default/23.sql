@@ -1,5 +1,5 @@
 # --- Add secondary numeric ID to User migrate references
-# --- Add row quotaReached to StudyResult table
+# --- Add row openAiApiCount to StudyResult table
 
 # --- !Ups
 
