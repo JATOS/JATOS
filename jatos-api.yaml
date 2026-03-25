@@ -279,7 +279,7 @@ paths:
 
   /jatos/api/v1/users/{id}/tokens:
     post:
-      summary: Generate an API token for a user (admin or self)
+      summary: Generate an API token for a user (admin or self). Tokens generated via the API are by default valid for 1h.
       tags: [ admin ]
       parameters:
         - in: path
