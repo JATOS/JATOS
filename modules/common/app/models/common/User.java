@@ -240,6 +240,14 @@ public class User {
         return roleList.stream().anyMatch(roles::contains);
     }
 
+    public boolean isUser() {
+        return hasRole(Role.USER);
+    }
+
+    public boolean isViewer() {
+        return hasRole(Role.VIEWER);
+    }
+
     public boolean isAdmin() {
         return hasRole(Role.ADMIN);
     }
