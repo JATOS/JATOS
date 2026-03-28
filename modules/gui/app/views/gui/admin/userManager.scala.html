@@ -15,8 +15,8 @@
                 <th>Email<span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC, ORCID, SRAM or CONEXT">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Roles, e.g. VIEWER, USER, ADMIN, SUPERUSER, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Switch between role VIEWER and USER">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Roles, e.g. Viewer, Viewer, Admin, Superuser, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Switch between role Viewer and Viewer">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
@@ -60,7 +60,7 @@
                                 Username<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" id="userCreatorUsername" name="username" autocapitalize="none" required>
+                                <input type="text" class="form-control" id="userCreatorUsername" name="username" autocapitalize="none" autocomplete="off" required>
                                 <span class="form-text">What will be the username of the new user? Username and password are used for authentication. E.g., email address.</span>
                             </div>
                         </div>
@@ -70,7 +70,7 @@
                                 Name<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" id="userCreatorName" name="name" required>
+                                <input type="text" class="form-control" id="userCreatorName" name="name" autocomplete="off" required>
                                 <span class="form-text">The name is not used for authentication and only further describes the user.</span>
                             </div>
                         </div>
@@ -78,7 +78,7 @@
                         <div class="row mb-3">
                             <label class="col-sm-3 col-form-label" for="userCreatorEmail">Email</label>
                             <div class="col-sm-9">
-                                <input type="email" class="form-control" id="userCreatorEmail" name="email">
+                                <input type="email" class="form-control" id="userCreatorEmail" name="email" autocomplete="off">
                                 <span class="form-text">Optional email address of the user. This field is not used for authentication.</span>
                             </div>
                         </div>
@@ -133,11 +133,11 @@
                 </div>
                 <div class="modal-body">
                     <form class="form-admin" id="userSettingsForm">
-                        <input type="hidden" id="userSettingsUsername" name="username">
+                        <input type="hidden" id="userSettingsUsername" name="username" autocomplete="off">
                         <div class="row mb-3">
                             <label for="userSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" id="userSettingsName" name="name">
+                                <input type="text" class="form-control" id="userSettingsName" name="name" autocomplete="off">
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -171,7 +171,7 @@
                             <button class="btn btn-nav password-visibility-toggle" type="button"><i></i></button>
                         </div>
                         <span class="form-text" id="changePasswordStrengthDescription">xxx</span>
-                        <input type="hidden" id="changePasswordUsername" name="username" required>
+                        <input type="hidden" id="changePasswordUsername" name="username" autocomplete="off" required>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -192,7 +192,7 @@
                 </div>
                 <div class="modal-body">
                     <form class="form-danger" id="deleteUserForm">
-                        <input type="hidden" id="deleteUserTargetUsername" name="username">
+                        <input type="hidden" id="deleteUserTargetUsername" name="username" autocomplete="off">
                         <div id="deleteUserConfirmationText"></div>
                         @if(signedinUser.isDb() || signedinUser.isLdap()){
                         <input type="password" class="form-control" id="deleteUserAdminPassword" name="password" placeholder="Your password" autocomplete="off" required>
@@ -331,7 +331,7 @@
                     "data": "roleList",
                     "render": function (data, type, full, meta) {
                         if (type === 'export' || type === 'sort') return data;
-                        return data.join(", ");
+                        return data.map((r) => Helpers.getUserRoleText(r)).join(", ");
                     }
                 },
                 {
@@ -352,7 +352,7 @@
                             isDisabled = true;
                             tooltip = "You cannot change your own roles. Only another user with admin rights can do it.";
                         } else {
-                            tooltip = "Use this switch to switch between VIEWER and USER role for this user.";
+                            tooltip = "Use this switch to switch between Viewer and Viewer role for this user.";
                         }
                         const checked = isUser ? "checked" : "";
                         const disabled = isDisabled ? "disabled" : "";
@@ -672,7 +672,7 @@
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: (response) => {
                 user.roleList = response.data.roleList;
-                $(tr).find(".role-list").text(user.roleList.join(", "));
+                $(tr).find(".role-list").text(user.roleList.map((r) => Helpers.getUserRoleText(r)).join(", "));
                 const isUser = user.roleList.includes("USER");
                 $(checkbox).prop('checked', isUser);
             },
@@ -696,7 +696,7 @@
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: (roleList) => {
                 user.roleList = roleList;
-                $(tr).find(".role-list").text(roleList.join(", "));
+                $(tr).find(".role-list").text(user.roleList.map((r) => Helpers.getUserRoleText(r)).join(", "));
                 const isSuperuser = roleList.includes("SUPERUSER");
                 $(checkbox).prop('checked', isSuperuser);
             },
@@ -717,7 +717,7 @@
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: (roleList) => {
                 user.roleList = roleList;
-                $(tr).find(".role-list").text(roleList.join(", "));
+                $(tr).find(".role-list").text(user.roleList.map((r) => Helpers.getUserRoleText(r)).join(", "));
                 const isAdmin = roleList.includes("ADMIN");
                 $(checkbox).prop('checked', isAdmin);
             },
