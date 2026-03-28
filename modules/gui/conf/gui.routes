@@ -211,4 +211,4 @@ POST     /jatos/import/studyConfirmed                                       @con
 GET      /openapi.yaml                                                      controllers.gui.OpenApiController.openapi()
 
 # General assets
-GET      /assets/*file                                                      controllers.Assets.versioned(path="/public/lib/gui", file: Asset)
+GET      /assets/*file                                                      controllers.Assets.versioned(path="/public", file: Asset)

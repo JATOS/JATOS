@@ -1,8 +1,8 @@
 export { Toolbars }
 
-import * as Alerts from '../alerts.js';
-import * as Helpers from '../helpers.js';
-import * as WaitingModal from "../waitingModal.js";
+import * as Alerts from 'alerts';
+import * as Helpers from 'helpers';
+import * as WaitingModal from "waitingModal";
 
 /*
  * Handles toolbars in the result pages (study, component, worker). Draws two rows (upper and lower) with buttons for

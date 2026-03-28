@@ -4,7 +4,7 @@
 
 export { onClick }
 
-import * as Helpers from "./helpers.js";
+import * as Helpers from "helpers";
 
 // Add the copy-to-clipboard event listener to every ".btn-clipboard". But we need the ".off" in case this library is
 // imported multiple times on the same page

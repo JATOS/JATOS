@@ -10,6 +10,7 @@ export {
     getWorkerTypeUIName,
     isLocalhost,
     getAuthMethodText,
+    getUserRoleText,
     generateOrcidLink,
     generateFullUserString,
     generateMembersHtml,
@@ -174,6 +175,22 @@ function getAuthMethodText(authMethod) {
         case "SRAM": return "SRAM";
         case "CONEXT": return "CONEXT";
         default: return authMethod;
+    }
+}
+
+/**
+ * Returns the GUI name of the user role
+ *
+ * @param {string} role - User role
+ */
+function getUserRoleText(role) {
+    switch(role) {
+        case "VIEWER": return "Viewer";
+        case "USER": return "User";
+        case "ADMIN": return "Admin";
+        case "SUPERUSER": return "Superuser";
+        case "STUDY_MANAGER": return "Study Manager";
+        default: return role;
     }
 }
 

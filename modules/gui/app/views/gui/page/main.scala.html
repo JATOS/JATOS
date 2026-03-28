@@ -8,6 +8,7 @@
         <title>JATOS</title>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        @views.html.gui.importmapVersionedAssets()
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/colorThemeToggler.js")"></script>
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("/favicon-96x96.png")" sizes="96x96">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("/favicon-16x16.png")" sizes="16x16">
@@ -15,7 +16,7 @@
         <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/DataTables/datatables.min.css")">
         <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.3/bootstrap.min.css")">
         <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/bootstrap-icons-1.11.2/font/bootstrap-icons.min.css")">
-        <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/main.css?v=" + Common.getJatosVersion())">
+        <link rel="stylesheet" href="@routes.Assets.versioned("lib/jatos-gui/stylesheets/main.css")">
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/jquery-3.7.1.min.js")"></script>
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/DataTables/datatables.min.js")"></script>
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/easy.qrcode.js")"></script>

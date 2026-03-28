@@ -4,7 +4,7 @@
 
 export { drawButton, drawUserImg }
 
-import * as Helpers from "./helpers.js";
+import * as Helpers from "helpers";
 
 let initialized = false;
 let buttonWidth = 300;

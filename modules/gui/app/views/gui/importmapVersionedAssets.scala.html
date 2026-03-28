@@ -1,0 +1,26 @@
+@*
+* Import map that can be used to import versioned assets from the outside of Twirl templates
+*@
+
+<script @{helper.CSPNonce.attr} type="importmap">
+    {
+      "imports": {
+        "helpers": "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")",
+        "alerts": "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")",
+        "confirmationModal": "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")",
+        "copyToClipboard": "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")",
+        "editor": "@routes.Assets.versioned("lib/jatos-gui/javascripts/editor.js")",
+        "fileSystemAccess": "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")",
+        "formValidation": "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")",
+        "googleSignin": "@routes.Assets.versioned("lib/jatos-gui/javascripts/googleSignin.js")",
+        "infoCard": "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")",
+        "passwordVisibilityToggle": "@routes.Assets.versioned("lib/jatos-gui/javascripts/passwordVisibilityToggle.js")",
+        "qrCodeModal": "@routes.Assets.versioned("lib/jatos-gui/javascripts/qrCodeModal.js")",
+        "sessionTimoutChecker": "@routes.Assets.versioned("lib/jatos-gui/javascripts/sessionTimoutChecker.js")",
+        "studyLinks": "@routes.Assets.versioned("lib/jatos-gui/javascripts/studyLinks.js")",
+        "waitingModal": "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")",
+        "colorThemeToggler": "@routes.Assets.versioned("lib/jatos-gui/javascripts/colorThemeToggler.js")",
+        "timeago": "@routes.Assets.versioned("lib/jatos-gui/javascripts/timeago.min.js")"
+      }
+    }
+</script>

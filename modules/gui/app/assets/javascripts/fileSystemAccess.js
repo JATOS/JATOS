@@ -4,9 +4,9 @@
 export {downloadFileStream, abortFileDownload}
 
 import { fileSave, supported } from '../browser-fs-access-0.35.0/src/index.js';
-import * as WaitingModal from './waitingModal.js';
-import * as Alerts from './alerts.js';
-import * as Helpers from './helpers.js';
+import * as WaitingModal from 'waitingModal';
+import * as Alerts from 'alerts';
+import * as Helpers from 'helpers';
 
 if (supported) {
     console.log('browser-fs-access: Using the File System Access API.');

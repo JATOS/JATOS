@@ -1,6 +1,6 @@
 export { show, hide }
 
-import * as FileSystemAccess from "./fileSystemAccess.js";
+import * as FileSystemAccess from "fileSystemAccess";
 
 // The waiting modal might be shown multiple times, so we have an array with all timeouts and when we hide the modal we
 // clear them all. We are using timeouts because Bootstrap's 'data-bs-delay' attribute didn't seem to work.

@@ -1,9 +1,9 @@
 export { ComponentResultInfo, getResultDataShort }
 
-import * as Alerts from '../alerts.js';
-import * as Helpers from '../helpers.js';
-import * as WaitingModal from "../waitingModal.js";
-import * as CopyToClipboard from "../copyToClipboard.js";
+import * as Alerts from 'alerts';
+import * as Helpers from 'helpers';
+import * as WaitingModal from "waitingModal";
+import * as CopyToClipboard from "copyToClipboard";
 
 class ComponentResultInfo {
     constructor(dataTable) {

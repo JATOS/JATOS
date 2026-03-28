@@ -4,8 +4,8 @@
 
 export { setup, getValue, focus };
 
-import * as Alerts from "./alerts.js";
-import * as Helpers from "./helpers.js";
+import * as Alerts from "alerts";
+import * as Helpers from "helpers";
 
 // Store multiple editors and use the DOM selector as the key
 const editors = {};
