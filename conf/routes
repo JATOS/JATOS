@@ -11,7 +11,6 @@ GET     /favicon-32x32.png                 controllers.Assets.at(path="/public",
 GET     /favicon-96x96.png                 controllers.Assets.at(path="/public", file="favicon-96x96.png")
 GET     /assets/javascripts/jatos.js       controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.js")
 GET     /assets/javascripts/jatos.min.js   controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.min.js")
-GET     /assets/*file                      controllers.Assets.at(path="/public", file)
 GET     /assets/*file                      controllers.Assets.versioned(path="/public", file: Asset)
 GET     /ping                              controllers.Ping.ping()
 
