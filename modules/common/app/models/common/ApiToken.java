@@ -2,12 +2,14 @@ package models.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import models.common.User.Role;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * DB entity of an API token (Personal Access Token, PAT). Used to authenticate/authorize JATOS API.
@@ -75,9 +77,9 @@ public class ApiToken {
         return Instant.now().isAfter(creationDate.toInstant().plusSeconds(expires));
     }
 
-    @JsonProperty("isAdminToken")
-    public boolean isAdminToken() {
-        return user.isAdmin();
+    @JsonProperty("roles")
+    public Set<Role> roles() {
+        return user.getRoleList();
     }
 
     /**
@@ -104,6 +106,7 @@ public class ApiToken {
         this.id = id;
     }
 
+    @JsonIgnore
     public String getTokenHash() {
         return tokenHash;
     }

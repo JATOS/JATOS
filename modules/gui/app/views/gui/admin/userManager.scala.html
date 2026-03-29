@@ -328,7 +328,7 @@
                 },
                 {
                     "className": "role-list",
-                    "data": "roleList",
+                    "data": "roles",
                     "render": function (data, type, full, meta) {
                         if (type === 'export' || type === 'sort') return data;
                         return data.map((r) => Helpers.getUserRoleText(r)).join(", ");
@@ -340,7 +340,7 @@
                     "defaultContent": '',
                     "searchable": false,
                     "render": function (data, type, full, meta) {
-                        const isUser = $.inArray("USER", data.roleList) >= 0;
+                        const isUser = $.inArray("USER", data.roles) >= 0;
                         let isDisabled = false;
                         let tooltip = "";
                         if (type === 'export' || type === 'sort') return isUser.toString();
@@ -370,7 +370,7 @@
                     "data": null,
                     "searchable": false,
                     "render": function (data, type, full, meta) {
-                        const isSuperuser = $.inArray("SUPERUSER", data.roleList) >= 0;
+                        const isSuperuser = $.inArray("SUPERUSER", data.roles) >= 0;
                         if (type === 'export' || type === 'sort') return isSuperuser.toString();
                         return `
                             <label class="switch no-info-icon mt-1" data-bs-tooltip="Use this switch to de-/activate the superuser role for this user.">
@@ -386,7 +386,7 @@
                     "defaultContent": '',
                     "searchable": false,
                     "render": function (data, type, full, meta) {
-                        const isAdmin = $.inArray("ADMIN", data.roleList) >= 0;
+                        const isAdmin = $.inArray("ADMIN", data.roles) >= 0;
                         let isDisabled = false;
                         let tooltip = "";
                         if (type === 'export' || type === 'sort') return isAdmin.toString();
@@ -671,9 +671,9 @@
             data: JSON.stringify({ "role": role }),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: (response) => {
-                user.roleList = response.data.roleList;
-                $(tr).find(".role-list").text(user.roleList.map((r) => Helpers.getUserRoleText(r)).join(", "));
-                const isUser = user.roleList.includes("USER");
+                user.roles = response.data.roles;
+                $(tr).find(".role-list").text(user.roles.map((r) => Helpers.getUserRoleText(r)).join(", "));
+                const isUser = user.roles.includes("USER");
                 $(checkbox).prop('checked', isUser);
             },
             error: (err) => {
@@ -694,10 +694,10 @@
             type: "POST",
             data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: (roleList) => {
-                user.roleList = roleList;
-                $(tr).find(".role-list").text(user.roleList.map((r) => Helpers.getUserRoleText(r)).join(", "));
-                const isSuperuser = roleList.includes("SUPERUSER");
+            success: (roles) => {
+                user.roles = roles;
+                $(tr).find(".role-list").text(user.roles.map((r) => Helpers.getUserRoleText(r)).join(", "));
+                const isSuperuser = roles.includes("SUPERUSER");
                 $(checkbox).prop('checked', isSuperuser);
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle superuser role")
@@ -715,10 +715,10 @@
             type: "POST",
             data: { username: user.username },
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success: (roleList) => {
-                user.roleList = roleList;
-                $(tr).find(".role-list").text(user.roleList.map((r) => Helpers.getUserRoleText(r)).join(", "));
-                const isAdmin = roleList.includes("ADMIN");
+            success: (roles) => {
+                user.roles = roles;
+                $(tr).find(".role-list").text(user.roles.map((r) => Helpers.getUserRoleText(r)).join(", "));
+                const isAdmin = roles.includes("ADMIN");
                 $(checkbox).prop('checked', isAdmin);
             },
             error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle admin rights")

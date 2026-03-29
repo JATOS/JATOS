@@ -73,6 +73,7 @@ public class User {
      * otherwise Hibernate has problems with the Worker's inheritance.
      */
     @JsonView({JsonForApi.class})
+    @JsonProperty("roles")
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     private Set<Role> roleList = EnumSet.of(Role.NONE);
@@ -240,18 +241,20 @@ public class User {
         return roleList.stream().anyMatch(roles::contains);
     }
 
+    @JsonIgnore
     public boolean isUser() {
         return hasRole(Role.USER);
     }
-
+    @JsonIgnore
     public boolean isViewer() {
         return hasRole(Role.VIEWER);
     }
-
+    @JsonIgnore
     public boolean isAdmin() {
         return hasRole(Role.ADMIN);
     }
 
+    @JsonIgnore
     public boolean isSuperuser() {
         return hasRole(Role.SUPERUSER);
     }
@@ -260,6 +263,7 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
+    @JsonIgnore
     public String getPasswordHash() {
         return this.passwordHash;
     }
