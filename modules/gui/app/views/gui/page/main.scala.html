@@ -23,7 +23,7 @@
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/bootstrap-5.3.3/bootstrap.bundle.min.js")"></script>
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/javascripts/minidenticons.min.js")" type="module"></script>
         <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/showdown-2.1.0/showdown.min.js")"></script>
-        <script @{helper.CSPNonce.attr} src="@routes.Assets.versioned("lib/jatos-gui/ace-1.5.0/ace.js")"></script>
+        <script @{helper.CSPNonce.attr} src="@routes.Assets.at("lib/jatos-gui/ace-1.5.0/ace.js")"></script>
         @views.html.gui.settings(request, studyOption, Some(signedinUser), workerOption)
         @views.html.gui.routes()
         @if(Common.isOauthGoogleAllowed()) {
