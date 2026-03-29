@@ -70,11 +70,11 @@
                 alerts.success("The component was added successfully.");
                 $('#componentsTable').DataTable().ajax.reload();
             },
-            error : function(response) {
+            error : function(err) {
                 FormValidation.clear("#componentCreatorForm");
                 alerts.warning("The component was not saved.", 5000);
-                if (Helpers.isJson(response.responseText)) {
-                    FormValidation.show("#componentCreatorForm", response.responseJSON);
+                if (Helpers.isJson(err.responseText)) {
+                    FormValidation.show("#componentCreatorForm", err.responseJSON);
                 } else if (err.responseText) {
                     alerts.error(err.responseText);
                 } else {

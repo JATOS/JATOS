@@ -186,11 +186,11 @@
                 Alerts.success("The component properties were changed successfully.");
                 $('#componentsTable').DataTable().ajax.reload();
             },
-            error : function(response) {
+            error : function(err) {
                 FormValidation.clear("#componentPropertiesForm");
                 alerts.warning("The component was not saved.");
-                if (Helpers.isJson(response.responseText)) {
-                    FormValidation.show("#componentPropertiesForm", response.responseJSON);
+                if (Helpers.isJson(err.responseText)) {
+                    FormValidation.show("#componentPropertiesForm", err.responseJSON);
                 } else if (err.responseText) {
                     alerts.error(err.responseText);
                 } else {
