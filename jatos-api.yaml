@@ -2568,11 +2568,14 @@ components:
           description: Calculated expiration Unix timestamp in milliseconds.
         isExpired:
           type: boolean
-        isAdminToken:
-          type: boolean
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [ VIEWER, USER, ADMIN, SUPERUSER ]
         active:
           type: boolean
-      required: [ id, isExpired, isAdminToken, active ]
+      required: [ id, isExpired, roles, active ]
 
     ApiTokenWithValue:
       description: Generated token (token value is returned only on creation).
@@ -2681,7 +2684,7 @@ components:
         email:
           type: string
           nullable: true
-        roleList:
+        roles:
           type: array
           items:
             type: string
@@ -2699,7 +2702,7 @@ components:
           nullable: true
         active:
           type: boolean
-      required: [ id, username, name, roleList, authMethod, active ]
+      required: [ id, username, name, roles, authMethod, active ]
 
     UserWithStudyIds:
       allOf:
