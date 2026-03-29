@@ -243,7 +243,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth(roles = {USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateUser(Http.Request request, Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
@@ -285,7 +285,7 @@ public class Api extends Controller {
     }
 
     @Transactional
-    @Auth(roles = {USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
     public Result deleteUser(Long id) throws IOException, HttpException {
         User user = userDao.findById(id);
         User signedinUser = authService.getSignedinUser();
@@ -301,7 +301,7 @@ public class Api extends Controller {
      * Generate API tokens. It returns the token and the token metadata.
      */
     @Transactional
-    @Auth(roles = {USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
     @BodyParser.Of(BodyParser.Json.class)
     public Result generateApiToken(Http.Request request, Long userId) throws HttpException {
         if (!Common.isJatosApiTokensApiGenerationAllowed()) {
@@ -359,7 +359,7 @@ public class Api extends Controller {
      * admins) can update their own tokens.
      */
     @Transactional
-    @Auth(roles = {USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
     @BodyParser.Of(BodyParser.Json.class)
     public Result toggleApiTokenActive(Http.Request request, Long id) throws HttpException {
         ApiToken token = apiTokenDao.find(id);
@@ -381,7 +381,7 @@ public class Api extends Controller {
      * Admins can delete tokens of non-admin users. Users (including admins) can delete their own tokens.
      */
     @Transactional
-    @Auth(roles = {USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
     public Result deleteApiToken(Long id) throws NotFoundException, ForbiddenException {
         ApiToken token = apiTokenDao.find(id);
         User signedinUser = authService.getSignedinUser();

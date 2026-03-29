@@ -1,9 +1,9 @@
 package auth.gui;
 
+import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
-import auth.gui.AuthAction.Auth;
 import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ApiTokenDao;
 import models.common.ApiToken;
@@ -57,7 +57,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth(roles = {USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result generate(String name, Integer expires) {
         User signedinUser = authService.getSignedinUser();
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
@@ -69,7 +69,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth(roles = {USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result remove(Long id) {
         User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);
@@ -79,7 +79,7 @@ public class ApiTokens extends Controller {
     }
 
     @Transactional
-    @Auth(roles = {USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result toggleActive(Long id, Boolean active) {
         User signedinUser = authService.getSignedinUser();
         ApiToken token = apiTokenDao.find(id);
