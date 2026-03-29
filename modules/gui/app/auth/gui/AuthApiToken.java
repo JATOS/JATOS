@@ -1,6 +1,7 @@
 package auth.gui;
 
 import daos.common.ApiTokenDao;
+import general.common.ApiEnvelope;
 import general.common.Common;
 import general.common.RequestScope;
 import models.common.ApiToken;
@@ -16,6 +17,8 @@ import javax.inject.Singleton;
 import java.util.EnumSet;
 import java.util.Optional;
 
+import static general.common.ApiEnvelope.ErrorCode.AUTH_ERROR;
+import static general.common.ApiEnvelope.ErrorCode.INVALID_API_TOKEN;
 import static play.mvc.Results.forbidden;
 import static play.mvc.Results.unauthorized;
 
@@ -54,7 +57,7 @@ public class AuthApiToken implements AuthAction.AuthMethod {
         }
 
         if (!Common.isJatosApiAllowed()) {
-            return AuthResult.denied(forbidden("JATOS' current settings do not allow API usage"));
+            return AuthResult.denied(forbidden(ApiEnvelope.wrap("JATOS' current settings do not allow API usage", AUTH_ERROR).asJsonNode()));
         }
 
         // Check token checksum
@@ -65,20 +68,20 @@ public class AuthApiToken implements AuthAction.AuthMethod {
         String calculatedChecksum = HashUtils.getChecksum(cleanedToken);
         String givenChecksum = fullTokenStr.substring(fullTokenStr.length() - 6);
         if (!givenChecksum.equals(calculatedChecksum)) {
-            return AuthResult.denied(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized(ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode()));
         }
 
         // Search token by its hash in the database
         String tokenHash = HashUtils.getHash(fullTokenStr, HashUtils.SHA_256);
         Optional<ApiToken> apiTokenOptional = jpa.withTransaction(() -> apiTokenDao.findByHash(tokenHash));
-        if (!apiTokenOptional.isPresent()) {
-            return AuthResult.denied(unauthorized("Invalid api token"));
+        if (apiTokenOptional.isEmpty()) {
+            return AuthResult.denied(unauthorized(ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode()));
         }
         ApiToken apiToken = apiTokenOptional.get();
 
         // Tokens can be deactivated
         if (!apiToken.isActive()) {
-            return AuthResult.denied(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized(ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode()));
         }
 
         // Check the token's user: since these are personal access tokens and the user which belongs to the token can
@@ -86,17 +89,17 @@ public class AuthApiToken implements AuthAction.AuthMethod {
         User user = apiToken.getUser();
         RequestScope.put(AuthService.SIGNEDIN_USER, user);
         if (!user.isActive()) {
-            return AuthResult.denied(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized(ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode()));
         }
 
         // Check authorization
         if (!user.hasRole(allowedRoles)) {
-            return AuthResult.denied(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized(ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode()));
         }
 
         // Check if the token is expired
         if (apiToken.isExpired()) {
-            return AuthResult.denied(unauthorized("Invalid api token"));
+            return AuthResult.denied(unauthorized(ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode()));
         }
 
         RequestScope.put(API_TOKEN, apiToken);

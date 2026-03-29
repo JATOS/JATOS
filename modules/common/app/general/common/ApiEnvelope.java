@@ -28,6 +28,7 @@ public class ApiEnvelope {
         INVALID_REQUEST,
         INVALID_JSON,
         INVALID_AUTH_METHOD,
+        INVALID_API_TOKEN,
         NOT_FOUND,
         FILE_ALREADY_EXISTS,
         IMPORT_EXPORT_ERROR,
