@@ -87,7 +87,7 @@ public class ComponentServiceTest {
         // same fields
         assertThat(clone.getStudy()).isEqualTo(s);
         assertThat(clone.getTitle()).isEqualTo("Comp A");
-        assertThat(clone.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
+        assertThat(clone.getHtmlFilePath()).isEqualTo("a/index.html");
         assertThat(clone.isReloadable()).isTrue();
         assertThat(clone.isActive()).isTrue();
         assertThat(clone.getComponentInput()).isEqualTo("{\"x\":1}");

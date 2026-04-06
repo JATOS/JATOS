@@ -34,10 +34,10 @@ public class IOUtils {
     public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f*?\"\\\\\0/,`<>|:~!§$%&^°]";
 
     /*
-     * No spaces, no nulls, must start with '/'
+     * No spaces, no nulls
      */
 //    public static final String REGEX_ILLEGAL_IN_PATH = "[^/([^ \\x00/]+/?)+$]";
-    public static final String REGEX_ILLEGAL_IN_PATH = "^/[^\\x00\\s]*$";
+    public static final String REGEX_ILLEGAL_IN_PATH = "^[^\\x00\\s]+$";
 
     private static final int MAX_FILENAME_LENGTH = 100;
 

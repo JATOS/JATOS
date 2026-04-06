@@ -141,11 +141,7 @@ public class Component {
     }
 
     public String getHtmlFilePath() {
-        if (htmlFilePath != null) {
-            return this.htmlFilePath.replace('/', File.separatorChar);
-        } else {
-            return null;
-        }
+        return this.htmlFilePath;
     }
 
     public void setComments(String comments) {
