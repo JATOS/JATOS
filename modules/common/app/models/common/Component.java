@@ -61,7 +61,6 @@ public class Component {
      * Local path to component's HTML file in the study assets' dir. File separators are persisted as '/'.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
-    @JoinColumn(name = "viewUrl")
     private String htmlFilePath;
 
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
