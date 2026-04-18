@@ -29,7 +29,6 @@ import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Singleton;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Timestamp;
@@ -152,7 +151,7 @@ public abstract class Publix extends Controller implements IPublix {
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) {
+        if (componentResult.isEmpty()) {
             LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
                     + "componentId " + component.getId() + " - " + "Can't fetch current ComponentResult");
             return forbidden("Impossible to put result data to component result");
@@ -200,7 +199,7 @@ public abstract class Publix extends Controller implements IPublix {
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) {
+        if (componentResult.isEmpty()) {
             LOGGER.info(getLogForUploadResultFile(studyResult, component, filename,
                     "Can't fetch current ComponentResult"));
             return forbidden("Impossible to upload result file to component result");
@@ -232,8 +231,7 @@ public abstract class Publix extends Controller implements IPublix {
                 return badRequest("Bad filename");
             }
 
-            Path destFile = ioUtils.getResultUploadFileSecurely(
-                    studyResult.getId(), componentResult.get().getId(), filename).toPath();
+            Path destFile = ioUtils.getResultUploadFileSecurely(studyResult.getId(), componentResult.get().getId(), filename);
             tmpFile.moveFileTo(destFile, true);
 
             studyResultDao.updateLastSeenDateIfOlderThan(studyResult.getId(), Common.getLastSeenDateUpdateThreshold());
@@ -264,7 +262,7 @@ public abstract class Publix extends Controller implements IPublix {
             component = publixUtils.retrieveComponent(study, Long.parseLong(componentId));
             publixUtils.checkComponentBelongsToStudy(study, component);
         }
-        Optional<File> file = publixUtils.retrieveLastUploadedResultFile(studyResult, component, filename);
+        Optional<Path> file = publixUtils.retrieveLastUploadedResultFile(studyResult, component, filename);
         return file.isPresent() ? ok(file.get(), false) : notFound("Result file not found: " + filename);
     }
 

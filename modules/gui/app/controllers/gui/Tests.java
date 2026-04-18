@@ -13,7 +13,8 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,12 +61,12 @@ public class Tests extends Controller {
         return ok(JsonUtils.asJsonNode(folderAccessResults));
     }
 
-    private boolean testFolder(String path) {
+    private boolean testFolder(String pathStr) {
         try {
-            File studyAssetsRoot = new File(path);
-            if (!studyAssetsRoot.canRead()
-                    || !studyAssetsRoot.canWrite()
-                    || !studyAssetsRoot.isDirectory()) {
+            Path path = Path.of(pathStr);
+            if (!Files.isReadable(path)
+                    || !Files.isWritable(path)
+                    || !Files.isDirectory(path)) {
                 return false;
             }
         } catch (Exception e) {

@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mockStatic;
@@ -29,7 +30,7 @@ public class IOUtilsTest {
     @BeforeClass
     public static void initStatics() {
         // Ensure temp and assets paths are inside a disposable temp dir
-        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
+        String tmp = Path.of(System.getProperty("java.io.tmpdir"), "jatos-test").toString();
         commonStatic = mockStatic(Common.class);
         commonStatic.when(Common::getTmpPath).thenReturn(tmp);
     }
@@ -43,13 +44,235 @@ public class IOUtilsTest {
     public TemporaryFolder tmp = new TemporaryFolder();
 
     @Test
-    public void testReadFile() throws IOException {
-        String testContent = "This is test content for IOUtils unit test.";
-        File testFile = tmp.newFile("test.txt");
-        Files.write(testFile.toPath(), testContent.getBytes());
+    public void testDeleteRecursivelyDeletesNestedDirectoryTree() throws Exception {
+        Path root = tmp.newFolder("deleteRoot").toPath();
+        Path nestedDir = root.resolve("a/b/c");
+        Files.createDirectories(nestedDir);
 
-        String content = ioUtils.readFile(testFile);
-        assertEquals(testContent + System.lineSeparator(), content);
+        Path file1 = root.resolve("root.txt");
+        Path file2 = root.resolve("a/b/file.txt");
+        Path file3 = nestedDir.resolve("deep.txt");
+
+        Files.write(file1, "root".getBytes(StandardCharsets.UTF_8));
+        Files.write(file2, "nested".getBytes(StandardCharsets.UTF_8));
+        Files.write(file3, "deep".getBytes(StandardCharsets.UTF_8));
+
+        assertTrue(Files.exists(file1));
+        assertTrue(Files.exists(file2));
+        assertTrue(Files.exists(file3));
+
+        IOUtils.deleteRecursively(root);
+
+        assertFalse(Files.exists(file1));
+        assertFalse(Files.exists(file2));
+        assertFalse(Files.exists(file3));
+        assertFalse(Files.exists(root));
+    }
+
+    @Test
+    public void testDeleteRecursivelyDeletesSingleFile() throws Exception {
+        Path file = tmp.newFile("single.txt").toPath();
+        Files.write(file, "content".getBytes(StandardCharsets.UTF_8));
+
+        assertTrue(Files.exists(file));
+
+        IOUtils.deleteRecursively(file);
+
+        assertFalse(Files.exists(file));
+    }
+
+    @Test
+    public void testDeleteRecursivelyMissingPathThrows() {
+        Path missing = tmp.getRoot().toPath().resolve("does-not-exist");
+
+        try {
+            IOUtils.deleteRecursively(missing);
+            fail("Expected NoSuchFileException or IOException");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testCopyRecursivelyCopiesNestedTree() throws Exception {
+        Path source = tmp.newFolder("copySource").toPath();
+        Path target = tmp.newFolder("copyTarget").toPath();
+
+        Path nestedDir = source.resolve("a/b");
+        Files.createDirectories(nestedDir);
+        Path file1 = source.resolve("root.txt");
+        Path file2 = source.resolve("a/child.txt");
+        Path file3 = nestedDir.resolve("deep.txt");
+
+        Files.write(file1, "root-content".getBytes(StandardCharsets.UTF_8));
+        Files.write(file2, "child-content".getBytes(StandardCharsets.UTF_8));
+        Files.write(file3, "deep-content".getBytes(StandardCharsets.UTF_8));
+
+        IOUtils.copyRecursively(source, target);
+
+        Path copied1 = target.resolve("root.txt");
+        Path copied2 = target.resolve("a/child.txt");
+        Path copied3 = target.resolve("a/b/deep.txt");
+
+        assertTrue(Files.exists(target));
+        assertTrue(Files.isDirectory(target.resolve("a")));
+        assertTrue(Files.isDirectory(target.resolve("a/b")));
+        assertTrue(Files.exists(copied1));
+        assertTrue(Files.exists(copied2));
+        assertTrue(Files.exists(copied3));
+
+        assertEquals("root-content", Files.readString(copied1));
+        assertEquals("child-content", Files.readString(copied2));
+        assertEquals("deep-content", Files.readString(copied3));
+    }
+
+    @Test
+    public void testCopyRecursivelyWithFilterCopiesOnlyMatchingFiles() throws Exception {
+        Path source = tmp.newFolder("copySourceFiltered").toPath();
+        Path target = tmp.newFolder("copyTargetFiltered").toPath();
+
+        Path nestedDir = source.resolve("x/y");
+        Files.createDirectories(nestedDir);
+        Path keep1 = source.resolve("keep.txt");
+        Path drop1 = source.resolve("drop.log");
+        Path keep2 = nestedDir.resolve("keep2.txt");
+        Path drop2 = nestedDir.resolve("drop2.md");
+
+        Files.write(keep1, "k1".getBytes(StandardCharsets.UTF_8));
+        Files.write(drop1, "d1".getBytes(StandardCharsets.UTF_8));
+        Files.write(keep2, "k2".getBytes(StandardCharsets.UTF_8));
+        Files.write(drop2, "d2".getBytes(StandardCharsets.UTF_8));
+
+        IOUtils.copyRecursively(source, target, path -> path.getFileName().toString().endsWith(".txt"));
+
+        assertTrue(Files.exists(target.resolve("keep.txt")));
+        assertTrue(Files.exists(target.resolve("x/y/keep2.txt")));
+
+        assertFalse(Files.exists(target.resolve("drop.log")));
+        assertFalse(Files.exists(target.resolve("x/y/drop2.md")));
+    }
+
+    @Test
+    public void testCopyRecursivelyOverwritesExistingTargetFiles() throws Exception {
+        Path source = tmp.newFolder("copySourceOverwrite").toPath();
+        Path target = tmp.newFolder("copyTargetOverwrite").toPath();
+
+        Files.createDirectories(source.resolve("dir"));
+        Files.write(source.resolve("dir/file.txt"), "source".getBytes(StandardCharsets.UTF_8));
+
+        Files.createDirectories(target.resolve("dir"));
+        Files.write(target.resolve("dir/file.txt"), "old-target".getBytes(StandardCharsets.UTF_8));
+
+        IOUtils.copyRecursively(source, target);
+
+        assertEquals("source", Files.readString(target.resolve("dir/file.txt")));
+    }
+
+    @Test
+    public void testGetExistingFileSecurelyReturnsExistingFile() throws Exception {
+        Path base = tmp.newFolder("secureBase").toPath();
+        Path sub = base.resolve("sub");
+        Files.createDirectories(sub);
+
+        Path file = sub.resolve("file.txt");
+        Files.write(file, "secure".getBytes(StandardCharsets.UTF_8));
+
+        Path result = ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), "sub/file.txt");
+
+        assertEquals(file.toAbsolutePath(), result.toAbsolutePath());
+        assertTrue(Files.exists(result));
+        assertFalse(Files.isDirectory(result));
+    }
+
+    @Test
+    public void testGetExistingFileSecurelyRejectsMissingFile() throws Exception {
+        Path base = tmp.newFolder("secureBaseMissing").toPath();
+        Files.createDirectories(base.resolve("sub"));
+
+        try {
+            ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), "sub/missing.txt");
+            fail("Expected IOException for missing file");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetExistingFileSecurelyRejectsDirectory() throws Exception {
+        Path base = tmp.newFolder("secureBaseDir").toPath();
+        Path dir = base.resolve("subdir");
+        Files.createDirectories(dir);
+
+        try {
+            ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), "subdir");
+            fail("Expected IOException for directory path");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetExistingFileSecurelyRejectsPathTraversalAttack() throws Exception {
+        Path base = tmp.newFolder("secureBaseTraversal").toPath();
+        Path outside = tmp.newFolder("outsideTraversal").toPath();
+
+        Path secret = outside.resolve("secret.txt");
+        Files.write(secret, "secret".getBytes(StandardCharsets.UTF_8));
+
+        Files.createDirectories(base.resolve("sub"));
+
+        try {
+            ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), "../outsideTraversal/secret.txt");
+            fail("Expected IOException for path traversal attempt");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetExistingFileSecurelyRejectsAbsoluteFilePath() throws Exception {
+        Path base = tmp.newFolder("secureBaseAbsolute").toPath();
+        Path file = tmp.newFile("absolute.txt").toPath();
+        Files.write(file, "absolute".getBytes(StandardCharsets.UTF_8));
+
+        try {
+            ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), file.toAbsolutePath().toString());
+            fail("Expected IOException for absolute file path");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetExistingFileSecurelyRejectsBasePathThatIsNotAbsolute() throws Exception {
+        Path relativeBase = Path.of("relative-base-test");
+        Path file = tmp.newFile("relativeBaseFile.txt").toPath();
+
+        try {
+            ioUtils.getExistingFileSecurely(relativeBase.toString(), file.getFileName().toString());
+            fail("Expected IOException for non-absolute base path");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetExistingFileSecurelyRejectsTraversalEvenIfTargetExists() throws Exception {
+        Path base = tmp.newFolder("secureBaseTraversalExisting").toPath();
+        Path outside = tmp.newFolder("outsideTraversalExisting").toPath();
+
+        Path secret = outside.resolve("secret.txt");
+        Files.write(secret, "secret".getBytes(StandardCharsets.UTF_8));
+
+        // Create a path that would exist if traversal were allowed
+        Files.createDirectories(base.resolve("sub"));
+
+        try {
+            ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), "../" + outside.getFileName() + "/secret.txt");
+            fail("Expected IOException for traversal attempt");
+        } catch (IOException expected) {
+            // ok
+        }
     }
 
     @Test
@@ -100,18 +323,18 @@ public class IOUtilsTest {
     }
 
     @Test
-    public void testGetResultsPath() {
+    public void testGetResultsPathForJson() {
         Long studyResultId = 123L;
         Long componentResultId = 456L;
 
-        String path = IOUtils.getResultsPath(studyResultId, componentResultId);
-        String expected = File.separator + "study_result_123" + File.separator + "comp-result_456";
+        String path = IOUtils.getResultsPathForJson(studyResultId, componentResultId);
+        String expected = Path.of("/", "study_result_123", "comp-result_456").toString();
 
         assertEquals(expected, path);
     }
 
     @Test
-    public void testGetResultsPathForZip() {
+    public void testGetResultsPathForJsonForZip() {
         Long studyResultId = 123L;
         Long componentResultId = 456L;
 
@@ -123,82 +346,162 @@ public class IOUtilsTest {
 
     @Test
     public void testExistsAndSecure() throws Exception {
-        File base = tmp.newFolder("base");
-        File sub = new File(base, "sub");
-        assertTrue(sub.mkdirs());
-        File f = new File(sub, "test.txt");
-        Files.write(f.toPath(), "abc".getBytes(StandardCharsets.UTF_8));
+        Path base = tmp.newFolder("base").toPath();
+        Path sub = base.resolve("sub");
+        Files.createDirectories(sub);
+        Path f = sub.resolve("test.txt");
+        Files.write(f, "abc".getBytes(StandardCharsets.UTF_8));
 
-        assertTrue(ioUtils.existsAndSecure(base.getAbsolutePath(), "sub/test.txt"));
-        assertFalse(ioUtils.existsAndSecure(base.getAbsolutePath(), "sub/missing.txt"));
+        assertTrue(ioUtils.existsAndSecure(base.toAbsolutePath().toString(), "sub/test.txt"));
+        assertFalse(ioUtils.existsAndSecure(base.toAbsolutePath().toString(), "sub/missing.txt"));
         // Path traversal should be rejected
-        assertFalse(ioUtils.existsAndSecure(base.getAbsolutePath(), "../etc/passwd"));
+        assertFalse(ioUtils.existsAndSecure(base.toAbsolutePath().toString(), "../etc/passwd"));
         // Absolute paths should be rejected
-        assertFalse(ioUtils.existsAndSecure(base.getAbsolutePath(), f.getAbsolutePath()));
+        assertFalse(ioUtils.existsAndSecure(base.toAbsolutePath().toString(), f.toAbsolutePath().toString()));
     }
 
     @Test
     public void testStudyAssetsDirOperations() throws Exception {
-        File assetsRoot = tmp.newFolder("assetsRoot");
-        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.getAbsolutePath());
+        Path assetsRoot = tmp.newFolder("assetsRoot").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
 
         // createStudyAssetsDir + check + generateStudyAssetsPath
         String dirName = "studyA";
         ioUtils.createStudyAssetsDir(dirName);
         assertTrue(ioUtils.checkStudyAssetsDirExists(dirName));
-        assertEquals(new File(assetsRoot, dirName).getAbsolutePath(), IOUtils.generateStudyAssetsPath(dirName));
+        assertEquals(assetsRoot.resolve(dirName), IOUtils.generateStudyAssetsPath(dirName));
 
         // findNonExistingStudyAssetsDirName
         assertEquals("studyA_2", ioUtils.findNonExistingStudyAssetsDirName("studyA"));
 
         // getStudyAssetsDir
-        File dir = ioUtils.getStudyAssetsDir(dirName);
-        assertTrue(dir.exists());
+        Path dir = ioUtils.getStudyAssetsDir(dirName);
+        assertTrue(Files.exists(dir));
 
         // findFiles / findDirectories
-        File subdir = new File(dir, "sub");
-        assertTrue(subdir.mkdirs());
-        Files.write(new File(dir, "a_pre_1_suf.txt").toPath(), new byte[]{1});
-        Files.write(new File(dir, "pre_mid_suf").toPath(), new byte[]{1});
-        Files.write(new File(dir, "nopre.txt").toPath(), new byte[]{1});
-        File[] files = ioUtils.findFiles(dir, "pre", "suf");
+        Path subdir = dir.resolve("sub");
+        Files.createDirectories(subdir);
+        Files.write(dir.resolve("a_pre_1_suf.txt"), new byte[]{1});
+        Files.write(dir.resolve("pre_mid_suf"), new byte[]{1});
+        Files.write(dir.resolve("nopre.txt"), new byte[]{1});
+        Path[] files = ioUtils.findFiles(dir, "pre", "suf");
         assertEquals(1, files.length);
-        File[] dirs = ioUtils.findDirectories(dir);
-        // Note: current implementation returns all entries (files and directories)
-        assertEquals(4, dirs.length);
+        Path[] dirs = ioUtils.findDirectories(dir);
+        assertEquals(1, dirs.length);
 
         // renameStudyAssetsDir: rename to new name
         ioUtils.renameStudyAssetsDir("studyA", "studyB");
-        assertFalse(new File(assetsRoot, "studyA").exists());
-        assertTrue(new File(assetsRoot, "studyB").exists());
+        assertFalse(Files.exists(assetsRoot.resolve("studyA")));
+        assertTrue(Files.exists(assetsRoot.resolve("studyB")));
 
         // renameStudyAssetsDir: renaming to same name is a no-op
         ioUtils.renameStudyAssetsDir("studyB", "studyB");
-        assertTrue(new File(assetsRoot, "studyB").exists());
+        assertTrue(Files.exists(assetsRoot.resolve("studyB")));
 
         // removeStudyAssetsDir
         ioUtils.removeStudyAssetsDir("studyB");
-        assertFalse(new File(assetsRoot, "studyB").exists());
+        assertFalse(Files.exists(assetsRoot.resolve("studyB")));
     }
 
     @Test
     public void testGetFileInStudyAssetsDir_andExisting() throws Exception {
-        File assetsRoot = tmp.newFolder("assetsRoot2");
-        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.getAbsolutePath());
+        Path assetsRoot = tmp.newFolder("assetsRoot2").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
         ioUtils.createStudyAssetsDir("studyX");
-        File target = new File(new File(assetsRoot, "studyX"), "nested/file.txt");
-        assertTrue(target.getParentFile().mkdirs());
-        Files.write(target.toPath(), "x".getBytes(StandardCharsets.UTF_8));
+        Path target = assetsRoot.resolve("studyX").resolve("nested/file.txt");
+        Files.createDirectories(target.getParent());
+        Files.write(target, "x".getBytes(StandardCharsets.UTF_8));
 
-        File byPath = ioUtils.getFileInStudyAssetsDir("studyX", "nested/file.txt");
-        assertEquals(target.getAbsolutePath(), byPath.getAbsolutePath());
+        Path byPath = ioUtils.getFileInStudyAssetsDir("studyX", "nested/file.txt");
+        assertEquals(target.toAbsolutePath(), byPath.toAbsolutePath());
 
-        File existing = ioUtils.getExistingFileInStudyAssetsDir("studyX", "nested/file.txt");
+        Path existing = ioUtils.getExistingFileInStudyAssetsDir("studyX", "nested/file.txt");
         assertNotNull(existing);
 
-        File notExisting = ioUtils.getExistingFileInStudyAssetsDir("studyX", "nested/missing.txt");
+        Path notExisting = ioUtils.getExistingFileInStudyAssetsDir("studyX", "nested/missing.txt");
         assertNotNull(notExisting);
-        assertFalse(notExisting.exists());
+        assertFalse(Files.exists(notExisting));
+    }
+
+    @Test
+    public void testGetFileInStudyAssetsDirRejectsMissingFilePath() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootGetFileMissing").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        ioUtils.createStudyAssetsDir("studyMissing");
+
+        try {
+            ioUtils.getFileInStudyAssetsDir("studyMissing", null);
+            fail("Expected IOException for null file path");
+        } catch (IOException expected) {
+            // ok
+        }
+
+        try {
+            ioUtils.getFileInStudyAssetsDir("studyMissing", "");
+            fail("Expected IOException for empty file path");
+        } catch (IOException expected) {
+            // ok
+        }
+
+        try {
+            ioUtils.getFileInStudyAssetsDir("studyMissing", "   ");
+            fail("Expected IOException for blank file path");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetFileInStudyAssetsDirRejectsPathTraversalAttack() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootGetFileTraversal").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        ioUtils.createStudyAssetsDir("studyTraversal");
+        Path outside = tmp.newFolder("outsideTraversalGetFile").toPath();
+        Path secret = outside.resolve("secret.txt");
+        Files.write(secret, "secret".getBytes(StandardCharsets.UTF_8));
+
+        try {
+            ioUtils.getFileInStudyAssetsDir("studyTraversal", "../outsideTraversalGetFile/secret.txt");
+            fail("Expected IOException for path traversal attempt");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetFileInStudyAssetsDirRejectsAbsoluteFilePath() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootGetFileAbsolute").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        ioUtils.createStudyAssetsDir("studyAbsolute");
+        Path absolute = tmp.newFile("absoluteGetFile.txt").toPath();
+        Files.write(absolute, "abs".getBytes(StandardCharsets.UTF_8));
+
+        try {
+            ioUtils.getFileInStudyAssetsDir("studyAbsolute", absolute.toAbsolutePath().toString());
+            fail("Expected IOException for absolute file path");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testGetFileInStudyAssetsDirAllowsRelativeSubdirectoryPath() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootGetFileRelative").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        ioUtils.createStudyAssetsDir("studyRelative");
+        Path target = assetsRoot.resolve("studyRelative").resolve("subdir/file.txt");
+        Files.createDirectories(target.getParent());
+        Files.write(target, "relative".getBytes(StandardCharsets.UTF_8));
+
+        Path result = ioUtils.getFileInStudyAssetsDir("studyRelative", "subdir/file.txt");
+
+        assertEquals(target.toAbsolutePath(), result.toAbsolutePath());
+        assertTrue(Files.exists(result));
     }
 
     @Test
@@ -218,6 +521,104 @@ public class IOUtilsTest {
     }
 
     @Test
+    public void testCloneComponentHtmlFileClonesRootHtmlFile() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootCloneRoot").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        String studyDir = "studyDir";
+        ioUtils.createStudyAssetsDir(studyDir);
+
+        Path original = assetsRoot.resolve(studyDir).resolve("index.html");
+        Files.write(original, "<html>original</html>".getBytes(StandardCharsets.UTF_8));
+
+        String clonedLocalPath = ioUtils.cloneComponentHtmlFile(studyDir, "index.html");
+
+        assertEquals("index_clone.html", clonedLocalPath);
+        Path cloned = assetsRoot.resolve(studyDir).resolve(clonedLocalPath);
+
+        assertTrue(Files.exists(original));
+        assertTrue(Files.exists(cloned));
+        assertEquals("<html>original</html>", Files.readString(cloned));
+    }
+
+    @Test
+    public void testCloneComponentHtmlFileClonesNestedHtmlFile() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootCloneNested").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        String studyDir = "studyNested";
+        ioUtils.createStudyAssetsDir(studyDir);
+
+        Path original = assetsRoot.resolve(studyDir).resolve("comp/sub/index.html");
+        Files.createDirectories(original.getParent());
+        Files.write(original, "<html>nested</html>".getBytes(StandardCharsets.UTF_8));
+
+        String clonedLocalPath = ioUtils.cloneComponentHtmlFile(studyDir, "comp/sub/index.html");
+
+        assertEquals("comp/sub/index_clone.html", clonedLocalPath);
+        Path cloned = assetsRoot.resolve(studyDir).resolve(clonedLocalPath);
+
+        assertTrue(Files.exists(original));
+        assertTrue(Files.exists(cloned));
+        assertEquals("<html>nested</html>", Files.readString(cloned));
+    }
+
+    @Test
+    public void testCloneComponentHtmlFileCreatesNumericSuffixWhenCloneExists() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootCloneSuffix").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        String studyDir = "studySuffix";
+        ioUtils.createStudyAssetsDir(studyDir);
+
+        Path original = assetsRoot.resolve(studyDir).resolve("index.html");
+        Files.write(original, "<html>original</html>".getBytes(StandardCharsets.UTF_8));
+
+        Path firstClone = assetsRoot.resolve(studyDir).resolve("index_clone.html");
+        Files.write(firstClone, "<html>existing clone</html>".getBytes(StandardCharsets.UTF_8));
+
+        String clonedLocalPath = ioUtils.cloneComponentHtmlFile(studyDir, "index.html");
+
+        assertEquals("index_1.html", clonedLocalPath);
+        Path cloned = assetsRoot.resolve(studyDir).resolve(clonedLocalPath);
+
+        assertTrue(Files.exists(cloned));
+        assertEquals("<html>original</html>", Files.readString(cloned));
+    }
+
+    @Test
+    public void testCloneComponentHtmlFileThrowsIfSourceIsMissing() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootCloneMissing").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        ioUtils.createStudyAssetsDir("studyMissing");
+
+        try {
+            ioUtils.cloneComponentHtmlFile("studyMissing", "missing.html");
+            fail("Expected IOException for missing source file");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
+    public void testCloneComponentHtmlFileThrowsIfSourceIsDirectory() throws Exception {
+        Path assetsRoot = tmp.newFolder("assetsRootCloneDir").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
+
+        String studyDir = "studyDir";
+        ioUtils.createStudyAssetsDir(studyDir);
+        Files.createDirectories(assetsRoot.resolve(studyDir).resolve("comp"));
+
+        try {
+            ioUtils.cloneComponentHtmlFile(studyDir, "comp");
+            fail("Expected IOException because source is a directory");
+        } catch (IOException expected) {
+            // ok
+        }
+    }
+
+    @Test
     public void testRenameHtmlFile() throws Exception {
         File assetsRoot = tmp.newFolder("assetsRoot4");
         commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.getAbsolutePath());
@@ -228,7 +629,7 @@ public class IOUtilsTest {
         assertTrue(src.getParentFile().mkdirs());
         Files.write(src.toPath(), "<html>1</html>".getBytes(StandardCharsets.UTF_8));
 
-        // Successful rename
+        // Successfully rename
         ioUtils.renameHtmlFile("comp/index.html", "comp/new.html", dirName);
         assertFalse(src.exists());
         assertTrue(new File(base, "comp/new.html").exists());
@@ -247,13 +648,6 @@ public class IOUtilsTest {
         } catch (IOException expected) {
             // ok
         }
-    }
-
-    @Test
-    public void testCreateDir() throws Exception {
-        File dir = new File(tmp.getRoot(), "created/inner");
-        IOUtils.createDir(dir);
-        assertTrue(dir.isDirectory());
     }
 
     @Test
@@ -284,32 +678,111 @@ public class IOUtilsTest {
 
     @Test
     public void testResultUploadsHelpers() throws Exception {
-        File uploadsRoot = tmp.newFolder("uploadsRoot");
-        commonStatic.when(Common::getResultUploadsPath).thenReturn(uploadsRoot.getAbsolutePath());
+        Path uploadsRoot = tmp.newFolder("uploadsRoot").toPath();
+        commonStatic.when(Common::getResultUploadsPath).thenReturn(uploadsRoot.toAbsolutePath().toString());
 
         long srId = 11L;
         long crId = 22L;
 
         // getResultUploadsDir (static) with mocked Common
-        String dir1 = IOUtils.getResultUploadsDir(srId);
-        String dir2 = IOUtils.getResultUploadsDir(srId, crId);
-        assertEquals(new File(uploadsRoot, "study-result_" + srId).getAbsolutePath(), dir1);
-        assertEquals(new File(uploadsRoot, "study-result_" + srId + File.separator + "comp-result_" + crId).getAbsolutePath(), dir2);
+        Path dir1 = IOUtils.getResultUploadsDir(srId);
+        Path dir2 = IOUtils.getResultUploadsDir(srId, crId);
+        assertEquals(uploadsRoot.resolve("study-result_" + srId).toAbsolutePath(), dir1);
+        assertEquals(uploadsRoot.resolve(Path.of("study-result_" + srId, "comp-result_" + crId)).toAbsolutePath(), dir2);
 
         // getResultUploadFileSecurely prepares base dir; returned file may be in nested path
-        File secure = ioUtils.getResultUploadFileSecurely(srId, crId, "a/b/file.txt");
-        assertTrue(new File(dir2).exists());
+        Path secure = ioUtils.getResultUploadFileSecurely(srId, crId, "a/b/file.txt");
+        assertTrue(Files.exists(dir2));
         // Ensure nested path exists before writing
-        assertTrue(secure.getParentFile().mkdirs() || secure.getParentFile().exists());
+        Files.createDirectories(secure.getParent());
+        assertTrue(Files.exists(secure.getParent()));
         // Write a file and test size computing
-        Files.write(secure.toPath(), new byte[9]);
+        Files.write(secure, new byte[9]);
         long size = ioUtils.getResultUploadDirSize(srId);
         assertEquals(9, size);
 
         // removeResultUploadsDir (both overloads)
         ioUtils.removeResultUploadsDir(srId, crId);
-        assertFalse(new File(dir2).exists());
+        assertFalse(Files.exists(dir2));
         ioUtils.removeResultUploadsDir(srId);
-        assertFalse(new File(dir1).exists());
+        assertFalse(Files.exists(dir1));
+    }
+
+    @Test
+    public void testMoveAndDetectOverwriteMovesWithoutOverwrite() throws Exception {
+        Path sourceDir = tmp.newFolder("moveSourceNoOverwrite").toPath();
+        Path targetDir = tmp.newFolder("moveTargetNoOverwriteParent").toPath();
+
+        Path source = sourceDir.resolve("source.txt");
+        Path target = targetDir.resolve("target.txt");
+
+        Files.write(source, "source-content".getBytes(StandardCharsets.UTF_8));
+
+        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
+
+        assertFalse(overwritten);
+        assertFalse(Files.exists(source));
+        assertTrue(Files.exists(target));
+        assertEquals("source-content", Files.readString(target));
+    }
+
+    @Test
+    public void testMoveAndDetectOverwriteOverwritesExistingTarget() throws Exception {
+        Path sourceDir = tmp.newFolder("moveSourceOverwrite").toPath();
+        Path targetDir = tmp.newFolder("moveTargetOverwriteParent").toPath();
+
+        Path source = sourceDir.resolve("source.txt");
+        Path target = targetDir.resolve("target.txt");
+
+        Files.write(source, "new-content".getBytes(StandardCharsets.UTF_8));
+        Files.write(target, "old-content".getBytes(StandardCharsets.UTF_8));
+
+        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
+
+        assertTrue(overwritten);
+        assertFalse(Files.exists(source));
+        assertTrue(Files.exists(target));
+        assertEquals("new-content", Files.readString(target));
+    }
+
+    @Test
+    public void testMoveAndDetectOverwriteWorksForDirectories() throws Exception {
+        Path sourceParent = tmp.newFolder("moveSourceDir").toPath();
+        Path targetParent = tmp.newFolder("moveTargetDirParent").toPath();
+
+        Path source = sourceParent.resolve("dirToMove");
+        Path target = targetParent.resolve("dirMoved");
+
+        Files.createDirectories(source.resolve("nested"));
+        Files.write(source.resolve("nested/file.txt"), "dir-content".getBytes(StandardCharsets.UTF_8));
+
+        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
+
+        assertFalse(overwritten);
+        assertFalse(Files.exists(source));
+        assertTrue(Files.exists(target.resolve("nested/file.txt")));
+        assertEquals("dir-content", Files.readString(target.resolve("nested/file.txt")));
+    }
+
+    @Test
+    public void testMoveAndDetectOverwriteOverwritesExistingDirectory() throws Exception {
+        Path sourceParent = tmp.newFolder("moveSourceDirOverwrite").toPath();
+        Path targetParent = tmp.newFolder("moveTargetDirOverwriteParent").toPath();
+
+        Path source = sourceParent.resolve("dirToMove");
+        Path target = targetParent.resolve("dirMoved");
+
+        Files.createDirectories(source.resolve("nested"));
+        Files.write(source.resolve("nested/file.txt"), "new-dir-content".getBytes(StandardCharsets.UTF_8));
+
+        Files.createDirectories(target.resolve("nested"));
+        Files.write(target.resolve("nested/file.txt"), "old-dir-content".getBytes(StandardCharsets.UTF_8));
+
+        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
+
+        assertTrue(overwritten);
+        assertFalse(Files.exists(source));
+        assertTrue(Files.exists(target.resolve("nested/file.txt")));
+        assertEquals("new-dir-content", Files.readString(target.resolve("nested/file.txt")));
     }
 }

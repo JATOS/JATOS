@@ -18,7 +18,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
@@ -92,7 +91,7 @@ public class StudyLogger {
 
     private void create(Study study, String msg) {
         if (!Common.isStudyLogsEnabled()) return;
-        Path studyLogPath = Paths.get(getPath(study));
+        Path studyLogPath = Path.of(getPath(study));
         try {
             if (Files.exists(studyLogPath)) {
                 LOGGER.error("A study log with " + studyLogPath + " exists already.");
@@ -106,8 +105,7 @@ public class StudyLogger {
             jsonObj.put(SERVERS_MAC, Common.getMac());
             jsonObj.put(HASH_FUNCTION, HashUtils.SHA_256);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
-            byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
-            Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.CREATE_NEW);
+            Files.writeString(studyLogPath, logEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
             LOGGER.error("Study log couldn't be created: " + studyLogPath, e);
         }
@@ -116,8 +114,8 @@ public class StudyLogger {
     public String retire(Study study) {
         if (!Common.isStudyLogsEnabled()) return null;
         log(study, null, "Last entry of the study log", Pair.of(STUDY_UUID, study.getUuid()));
-        Path logPath = Paths.get(getPath(study));
-        Path retiredLogPath = Paths.get(getRetiredPath(study));
+        Path logPath = Path.of(getPath(study));
+        Path retiredLogPath = Path.of(getRetiredPath(study));
         if (Files.exists(logPath)) {
             try {
                 Files.move(logPath, retiredLogPath);
@@ -217,7 +215,7 @@ public class StudyLogger {
      */
     private void log(Study study, User user, ObjectNode jsonObj) {
         if (!Common.isStudyLogsEnabled()) return;
-        Path studyLogPath = Paths.get(getPath(study));
+        Path studyLogPath = Path.of(getPath(study));
         if (Files.notExists(studyLogPath)) {
             LOGGER.info("Couldn't find log for study with UUID " + study.getUuid() + " in " + studyLogPath
                     + ". Create new log file.");
@@ -227,8 +225,7 @@ public class StudyLogger {
             if (user != null) jsonObj.put(USER_NAME, user.getName());
             jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
-            byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
-            Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.APPEND);
+            Files.writeString(studyLogPath, logEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.APPEND);
         } catch (IOException e) {
             LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
         }

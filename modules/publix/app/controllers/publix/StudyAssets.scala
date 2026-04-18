@@ -73,13 +73,13 @@ class StudyAssets @Inject()(components: ControllerComponents,
     try {
       checkProperAssets(urlPath) // Windows needs URL path
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
-      logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
+      logger.debug(s".viaAssetsPath: loading file ${file}.")
       if (request.headers.hasHeader(RANGE)) {
         // Support range requests (needed for videos in Safari)
         // https://www.playframework.com/documentation/2.7.x/AssetsOverview#Range-requests-support
-        RangeResult.ofFile(file, request.headers.get(RANGE), Option.empty)
+        RangeResult.ofPath(file, request.headers.get(RANGE), Option.empty)
       } else {
-        Ok.sendFile(file, inline = true).withHeaders("Cache-Control" -> "private")
+        Ok.sendPath(file, inline = true).withHeaders("Cache-Control" -> "private")
       }
     } catch {
       case e: PublixException =>
@@ -124,7 +124,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
   def retrieveComponentHtmlFile(studyDirName: String, componentHtmlFilePath: String): Result = {
     try {
       val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
-      Ok.sendFile(file).as("text/html; charset=utf-8")
+      Ok.sendPath(file).as("text/html; charset=utf-8")
         .withHeaders("Cache-Control" -> "no-cache, no-store")
     } catch {
       case _: IOException =>
@@ -158,10 +158,10 @@ class StudyAssets @Inject()(components: ControllerComponents,
       else if (ioUtils.checkFileInStudyAssetsDirExists(studyResult.getStudy.getDirName, "endPage.html")) {
         // Redirect to endPage.html from study assets
         confirmationCode match {
-          case Some(cc) => Ok.sendFile(ioUtils
+          case Some(cc) => Ok.sendPath(ioUtils
             .getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
             .withCookies(confirmationCodeCookie(cc)).bakeCookies()
-          case None => Ok.sendFile(ioUtils
+          case None => Ok.sendPath(ioUtils
             .getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
         }
       }

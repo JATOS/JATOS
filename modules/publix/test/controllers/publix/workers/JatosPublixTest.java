@@ -30,7 +30,7 @@ import utils.common.Helpers;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
-import java.io.File;
+import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -49,7 +49,7 @@ public class JatosPublixTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void initStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
+        String tmp = Path.of(System.getProperty("java.io.tmpdir"), "jatos-test").toString();
         commonStatic = mockStatic(Common.class);
         commonStatic.when(Common::getTmpPath).thenReturn(tmp);
         commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/");

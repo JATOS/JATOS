@@ -10,10 +10,9 @@ import play.mvc.Http;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -248,7 +247,7 @@ public class Common {
         logsAppender = config.getString("jatos.logs.appender");
         multiNode = config.getBoolean("jatos.multiNode");
         tmpPath = config.getIsNull("jatos.tmpPath")
-                ? System.getProperty("java.io.tmpdir") + File.separator + "jatos"
+                ? Path.of(System.getProperty("java.io.tmpdir"), "jatos").toString()
                 : obtainPath(config, "jatos.tmpPath");
         LOGGER.info("Path to tmp directory is " + tmpPath);
         threadPoolSize = config.getString("jatos.threadPool.size");
@@ -270,22 +269,18 @@ public class Common {
      * is always absolute and normalized for the host operating system.
      */
     private String obtainPath(Config config, String property) {
-        String path = config.getString(property);
+        String pathStr = config.getString(property);
         // Replace ~ with actual home directory
-        path = path.replace("~", System.getProperty("user.home"));
+        pathStr = pathStr.replace("~", System.getProperty("user.home"));
         // Replace Unix-like file separator with the actual system's one
-        path = path.replace("/", File.separator);
+        Path path = Path.of(pathStr);
         // If it is a relative path, add JATOS' base path as a prefix
-        if (!(new File(path).isAbsolute())) {
-            path = basepath + File.separator + path;
+        if (!(path.isAbsolute())) {
+            path = Path.of(basepath, path.toString());
         }
         // Turn into a canonical path (e.g., remove '.' and '..')
-        try {
-            path = new File(path).getCanonicalFile().toString();
-        } catch (IOException e) {
-            throw new RuntimeException("Error in config property " + property + "=" + path);
-        }
-        return path;
+        path = path.normalize();
+        return path.toString();
     }
 
     private String fillMac() {

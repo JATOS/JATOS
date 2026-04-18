@@ -22,7 +22,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,7 +77,7 @@ public class Admin extends Controller {
     @Transactional
     @Auth(roles = ADMIN)
     public Result listLogs() throws IOException {
-        try (Stream<Path> paths = Files.walk(Paths.get(Common.getLogsPath()))) {
+        try (Stream<Path> paths = Files.walk(Path.of(Common.getLogsPath()))) {
             List<String> content = paths
                     .filter(Files::isRegularFile)
                     .map(file -> file.getFileName().toString())
@@ -114,7 +113,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(roles = ADMIN)
-    public Result allStudiesData() {
+    public Result allStudiesData() throws IOException {
         List<Study> studyList = studyDao.findAll();
         boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyManager();
         boolean resultDataSizeFlag = Common.showResultDataSizeInStudyManager();
@@ -129,7 +128,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(roles = ADMIN)
-    public Result studiesDataByUser(String username) {
+    public Result studiesDataByUser(String username) throws IOException {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
         Set<Study> studyList = user.getStudyList();
@@ -142,7 +141,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(roles = {VIEWER, USER, ADMIN})
-    public Result studyAssetsSize(Long studyId) {
+    public Result studyAssetsSize(Long studyId) throws IOException {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");

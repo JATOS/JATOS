@@ -2,8 +2,6 @@ package utils.common;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -32,8 +30,8 @@ public class HashUtils {
     }
 
     /**
-     * Calculates hash with the given hash function. Uses ISO_8859_1 charset. Converts the byte
-     * array into an String of hexadecimal characters.
+     * Calculates hash with the given hash function. Uses ISO_8859_1 charset. Converts the byte array into an String of
+     * hexadecimal characters.
      */
     public static String getHash(String str, String hashFunction) {
         try {
@@ -53,6 +51,7 @@ public class HashUtils {
             MessageDigest digest = MessageDigest.getInstance(hashFunction);
             try (InputStream is = Files.newInputStream(file);
                  DigestInputStream dis = new DigestInputStream(is, digest)) {
+                //noinspection StatementWithEmptyBody - intentionally empty
                 while ((dis.read()) != -1) {
                 }
 
@@ -74,8 +73,7 @@ public class HashUtils {
     }
 
     /**
-     * Generates a random string that can be used for passwords or tokens
-     * https://stackoverflow.com/a/31260788/1278769
+     * Generates a random string that can be used for passwords or tokens https://stackoverflow.com/a/31260788/1278769
      */
     public static String generateSecureRandomString(int length) {
         char[] possibleCharacters = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789").toCharArray();
@@ -93,14 +91,15 @@ public class HashUtils {
     /**
      * Uses Adler32 to calculate a checksum of a file
      */
-    public static long getChecksum(File file) throws IOException {
+    public static long getChecksum(Path file) throws IOException {
         byte[] tempBuf = new byte[128];
-        FileInputStream is = new FileInputStream(file);
-        CheckedInputStream cis = new CheckedInputStream(is, new Adler32());
-        //noinspection StatementWithEmptyBody - intentionally empty
-        while (cis.read(tempBuf) >= 0) {
+        try (InputStream is = Files.newInputStream(file);
+             CheckedInputStream cis = new CheckedInputStream(is, new Adler32())) {
+            //noinspection StatementWithEmptyBody - intentionally empty
+            while (cis.read(tempBuf) >= 0) {
+            }
+            return cis.getChecksum().getValue();
         }
-        return cis.getChecksum().getValue();
     }
 
 }

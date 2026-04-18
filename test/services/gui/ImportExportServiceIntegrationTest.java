@@ -8,6 +8,7 @@ import daos.common.StudyDao;
 import exceptions.gui.ForbiddenException;
 import exceptions.gui.NotFoundException;
 import exceptions.gui.ValidationException;
+import general.common.Common;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -20,12 +21,11 @@ import testutils.JatosTest;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Map;
-import java.util.Objects;
+import java.util.stream.Stream;
 
 import static com.pivovarit.function.ThrowingConsumer.unchecked;
 import static org.fest.assertions.Assertions.assertThat;
@@ -56,18 +56,18 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
     @Inject
     private StudyService studyService;
 
-    private File exampleStudyArchive() {
-        String path = general.common.Common.getBasepath() + TEST_RESOURCES_POTATO_COMPASS_JZIP;
-        return new File(path);
+    private Path exampleStudyArchive() {
+        return Path.of(Common.getBasepath() + TEST_RESOURCES_POTATO_COMPASS_JZIP);
     }
 
     @Test
     public void importStudy_newStudy_returnsExpectedJsonAndSetsSession() {
         // Ensure Play context exists for session handling
         ContextMocker.mock();
-        File file = exampleStudyArchive();
+        Path file = exampleStudyArchive();
 
-        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+                importExportService.importStudy(admin, file)));
 
         assertThat((Boolean) response.get("studyExists")).isFalse();
         assertThat(response.get("uuid").toString()).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
@@ -78,8 +78,8 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         // Session should contain a temp dir name and that dir should exist in tmp
         String tempDirName = Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
         assertThat(tempDirName).isNotEmpty();
-        File tmpDir = new File(IOUtils.tmpDir(), tempDirName);
-        assertThat(tmpDir.exists()).isTrue();
+        Path tmpDir = IOUtils.tmpDir().resolve(tempDirName);
+        assertThat(Files.exists(tmpDir)).isTrue();
 
         // Cleanup temp dir and session
         importExportService.cleanupAfterStudyImport();
@@ -89,7 +89,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
     @Test
     public void importStudy_whenStudyExistsAndUserNotMember_forbidden() {
-        // First import the study via API to persist it
+        // First, import the study via API to persist it
         Long studyId = importExampleStudy();
         Study existing = getStudy(studyId);
 
@@ -152,8 +152,9 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         ContextMocker.mock();
 
         // Import part 1: call importStudy()
-        File file = exampleStudyArchive();
-        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Path file = exampleStudyArchive();
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+                importExportService.importStudy(admin, file)));
 
         // Check returned JSON object
         assertThat((Boolean) response.get("studyExists")).isFalse();
@@ -190,7 +191,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         alterStudy(studyId);
 
         // Import part 1: call importStudy()
-        File file = exampleStudyArchive();
+        Path file = exampleStudyArchive();
         Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
                 importExportService.importStudy(admin, file)));
 
@@ -228,7 +229,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         alterStudy(studyId);
 
         // Import part 1: call importStudy()
-        File file = exampleStudyArchive();
+        Path file = exampleStudyArchive();
         jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
 
         // Import part 2: call importStudyConfirmed(): Keep properties but allow assets to be overwritten
@@ -261,7 +262,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         alterStudy(studyId);
 
         // Import part 1: call importStudy()
-        File file = exampleStudyArchive();
+        Path file = exampleStudyArchive();
         jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
 
         // Import part 2: call importStudyConfirmed(): Keep properties but allow assets to be overwritten
@@ -312,8 +313,9 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         });
 
         // Import part 1: call importStudy()
-        File file = exampleStudyArchive();
-        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, file)));
+        Path file = exampleStudyArchive();
+        Map<String, Object> response = jpaApi.withTransaction(ThrowingFunction.unchecked((em) ->
+                importExportService.importStudy(admin, file)));
 
         // Check returned JSON object
         assertThat((Boolean) response.get("studyExists")).isFalse();
@@ -340,8 +342,8 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         ContextMocker.mock();
         jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> importExportService.importStudy(admin, exampleStudyArchive())));
         String tempDirName = Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
-        File tmpDir = new File(IOUtils.tmpDir(), tempDirName);
-        assertThat(tmpDir.exists()).isTrue();
+        Path tmpDir = IOUtils.tmpDir().resolve(tempDirName);
+        assertThat(Files.exists(tmpDir)).isTrue();
 
         importExportService.cleanupAfterStudyImport();
 
@@ -353,16 +355,16 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
     public void createStudyExportZipFile_createsZip() throws Exception {
         Long studyId = importExampleStudy();
 
-        File zip = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> {
+        Path zip = jpaApi.withTransaction(ThrowingFunction.unchecked((em) -> {
             Study study = studyDao.findById(studyId);
             return importExportService.createStudyExportZipFile(study);
         }));
         assertThat(zip).isNotNull();
-        assertThat(zip.exists()).isTrue();
-        assertThat(zip.length()).isGreaterThan(0L);
+        assertThat(Files.exists(zip)).isTrue();
+        assertThat(Files.size(zip)).isGreaterThan(0L);
         // sanity: it should be a ZIP file by extension and magic bytes
-        assertThat(zip.getName()).endsWith("." + general.common.Common.getStudyArchiveSuffix());
-        byte[] header = Files.readAllBytes(Paths.get(zip.getAbsolutePath()));
+        assertThat(zip.getFileName().toString()).endsWith("." + Common.getStudyArchiveSuffix());
+        byte[] header = Files.readAllBytes(Path.of(zip.toAbsolutePath().toString()));
         // ZIP files start with 'PK' signature
         assertThat(header[0]).isEqualTo((byte) 'P');
         assertThat(header[1]).isEqualTo((byte) 'K');
@@ -386,8 +388,11 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
             assertThat(ioUtils.checkStudyAssetsDirExists(updatedStudy.getDirName())).isTrue();
 
             // Check the number of files and directories in the study assets
-            String[] fileList = ioUtils.getStudyAssetsDir(updatedStudy.getDirName()).list();
-            assertThat(Objects.requireNonNull(fileList).length).isEqualTo(6);
+            Path studyAssetsDir = ioUtils.getStudyAssetsDir(updatedStudy.getDirName());
+            try (Stream<Path> stream = Files.list(studyAssetsDir)) {
+                long count = stream.count();
+                assertThat(count).isEqualTo(6);
+            }
         }));
     }
 

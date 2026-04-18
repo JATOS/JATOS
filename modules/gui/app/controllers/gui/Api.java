@@ -37,7 +37,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.*;
 
 import static auth.gui.AuthAction.Auth;
@@ -151,7 +154,7 @@ public class Api extends Controller {
     @Transactional
     @Auth(roles = ADMIN, types = {TOKEN, SESSION})
     public Result listLogs() throws IOException {
-        File base = Paths.get(Common.getLogsPath()).toFile();
+        Path base = Path.of(Common.getLogsPath());
         JsonNode structure = DirectoryStructureToJson.get(base, true);
         return ok(ApiEnvelope.wrap(structure).asJsonNode());
     }
@@ -172,7 +175,7 @@ public class Api extends Controller {
         if (reverse) {
             return ok().chunked(logFileReader.read(filename, lineLimit)).as("text/plain; charset=UTF-8");
         } else {
-            Path logPath = Paths.get(Common.getLogsPath(), filename);
+            Path logPath = Path.of(Common.getLogsPath(), filename);
             Source<ByteString, ?> source = FileIO.fromPath(logPath);
             Optional<Long> contentLength = Optional.of(logPath.toFile().length());
             String cdHeader = "attachment; "
@@ -511,7 +514,7 @@ public class Api extends Controller {
         User signedinUser = authService.getSignedinUser();
 
         List<String> allowedContentTypes = Arrays.asList("application/zip", "application/jzip", "application/octet-stream");
-        File file = apiService.extractFile(request, Study.STUDY, allowedContentTypes);
+        Path file = apiService.extractFile(request, Study.STUDY, allowedContentTypes);
 
         try {
             Map<String, Object> importInfo = importExportService.importStudy(signedinUser, file);
@@ -533,7 +536,7 @@ public class Api extends Controller {
      */
     @Transactional
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    public Result exportStudy(String id) throws HttpException {
+    public Result exportStudy(String id) throws HttpException, IOException {
         return importExport.exportStudy(id);
     }
 
@@ -627,7 +630,7 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
-        File base;
+        Path base;
         try {
             base = ioUtils.getStudyAssetsDir(study.getDirName());
         } catch (IOException e) {
@@ -654,11 +657,11 @@ public class Api extends Controller {
         User user = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, user);
 
-        File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
-        if (!file.isFile()) throw new NotFoundException("File '" + filepath + "' couldn't be found.");
-        String cdHeader = "attachment; " + HttpHeaderParameterEncoding.encode("filename", file.getName());
+        Path file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+        if (!Files.isRegularFile(file)) throw new NotFoundException("File '" + filepath + "' couldn't be found.");
+        String cdHeader = "attachment; " + HttpHeaderParameterEncoding.encode("filename", file.getFileName().toString());
         return ok()
-                .sendFile(file)
+                .sendPath(file)
                 .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
     }
 
@@ -687,7 +690,7 @@ public class Api extends Controller {
         if (filePart == null) {
             throw new BadRequestException("File missing", MISSING_FILE);
         }
-        File uploadedFile = (File) filePart.getFile();
+        Path uploadedFile = ((File) filePart.getFile()).toPath();
 
         try {
             Path assetsFilePath = apiService.getAssetsFilePath(filepath, filePart.getFilename(), study);
@@ -697,7 +700,7 @@ public class Api extends Controller {
                 Files.createDirectories(parent);
             }
 
-            boolean overwritten = IOUtils.moveAndDetectOverwrite(uploadedFile.toPath(), assetsFilePath);
+            boolean overwritten = IOUtils.moveAndDetectOverwrite(uploadedFile, assetsFilePath);
             String msg = overwritten ? "File overwritten successfully" : "File uploaded successfully";
             JsonNode envelope = ApiEnvelope.wrap(msg).asJsonNode();
             return overwritten ? ok(envelope) : created(envelope);
@@ -727,9 +730,9 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, user, true);
 
         try {
-            File file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
-            if (file.isDirectory()) throw new IOException("Directories can't be deleted.");
-            Files.delete(file.toPath());
+            Path file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), filepath);
+            if (Files.isDirectory(file)) throw new IOException("Directories can't be deleted.");
+            Files.delete(file);
         } catch (NoSuchFileException e) {
             throw new NotFoundException("File '" + filepath + "' couldn't be found.");
         } catch (IOException e) {
@@ -805,7 +808,7 @@ public class Api extends Controller {
         authorizationService.canUserAccessStudy(study, signedinUser);
 
         if (download) {
-            Path studyLogPath = Paths.get(studyLogger.getPath(study));
+            Path studyLogPath = Path.of(studyLogger.getPath(study));
             if (Files.notExists(studyLogPath)) throw new NotFoundException("Study log file doesn't exist");
 
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
@@ -1175,12 +1178,10 @@ public class Api extends Controller {
                 : Collections.emptyMap();
 
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
-        File file = resultStreamer.writeResultMetadata(request, wrapperObject);
-
-        //noinspection ResultOfMethodCallIgnored
+        Path file = resultStreamer.writeResultMetadata(request, wrapperObject);
         Result result = ok().streamed(
-                Helpers.okFileStreamed(file, file::delete),
-                Optional.of(file.length()),
+                Helpers.okFileStreamed(file, Helpers.deleteFile(file)),
+                Optional.of(Files.size(file)),
                 Optional.of("application/json"));
         if (download) {
             String cdHeader = "attachment; "
@@ -1260,8 +1261,8 @@ public class Api extends Controller {
         authorizationService.canUserAccessComponentResult(componentResult, signedinUser, false);
 
         Study study = componentResult.getComponent().getStudy();
-        File file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
-        if (!file.exists()) throw new NotFoundException("File doesn't exist");
+        Path file = ioUtils.getResultUploadFileSecurely(componentResult.getStudyResult().getId(), componentResultId, filename);
+        if (!Files.exists(file)) throw new NotFoundException("File doesn't exist");
         studyLogger.log(study, signedinUser, "Exported single result file");
         return ok(file);
     }

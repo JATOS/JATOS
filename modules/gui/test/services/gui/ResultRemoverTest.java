@@ -14,6 +14,7 @@ import play.data.validation.ValidationError;
 import testutils.gui.ContextMocker;
 import utils.common.IOUtils;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +34,7 @@ public class ResultRemoverTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @org.junit.BeforeClass
     public static void initCommonStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + java.io.File.separator + "jatos-test";
+        String tmp = Path.of(System.getProperty("java.io.tmpdir"), "jatos-test").toString();
         commonStatic = org.mockito.Mockito.mockStatic(general.common.Common.class);
         commonStatic.when(general.common.Common::getTmpPath).thenReturn(tmp);
         commonStatic.when(general.common.Common::getStudyAssetsRootPath).thenReturn(tmp);

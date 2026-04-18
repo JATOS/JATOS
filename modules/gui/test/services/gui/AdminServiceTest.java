@@ -19,6 +19,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import utils.common.IOUtils;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -39,7 +41,7 @@ public class AdminServiceTest {
     @BeforeClass
     public static void initCommonStatics() {
         // Mock Common's static getters used by IOUtils and others
-        String tmp = System.getProperty("java.io.tmpdir") + java.io.File.separator + "jatos-test";
+        String tmp = Path.of(System.getProperty("java.io.tmpdir"), "jatos-test").toString();
         commonStatic = Mockito.mockStatic(Common.class);
         commonStatic.when(Common::getTmpPath).thenReturn(tmp);
         commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(tmp);
@@ -88,7 +90,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void getStudiesData_allFlagsTrue_andLastStartedPresent() {
+    public void getStudiesData_allFlagsTrue_andLastStartedPresent() throws IOException {
         // Given
         when(studyResultDao.countByStudy(study)).thenReturn(4);
         when(ioUtils.getStudyAssetsDirSize("dir-1")).thenReturn(2_000L); // 2.0 kB
@@ -135,7 +137,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void getStudiesData_flagsFalse_putsDisabledStrings() {
+    public void getStudiesData_flagsFalse_putsDisabledStrings() throws IOException {
         when(studyResultDao.countByStudy(study)).thenReturn(0);
         when(studyResultDao.findLastStarted(study)).thenReturn(Optional.empty());
 

@@ -5,12 +5,10 @@ import general.common.MessagesStrings;
 import models.common.Study;
 import models.common.legacy.StudyV2;
 import play.libs.Json;
-import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
-import javax.inject.Inject;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Deserialization of an JSON file to a study. The study's JSON string can be in
@@ -20,20 +18,13 @@ import java.io.IOException;
  */
 public class StudyDeserializer {
 
-    private final IOUtils ioUtils;
-
-    @Inject
-    StudyDeserializer(IOUtils ioUtils) {
-        this.ioUtils = ioUtils;
-    }
-
     /**
      * Accepts a file with the content of a JSON String and turns the data object within this JSON String into an object
      * of type Study. It can handle different versions of the study model. The version is determined by the version
      * field in the JSON string.
      */
-    public Study deserialize(File file) throws IOException {
-        String jsonStr = ioUtils.readFile(file);
+    public Study deserialize(Path file) throws IOException {
+        String jsonStr = Files.readString(file);
 
         JsonNode node = Json.mapper().readTree(jsonStr).findValue("version");
         int version = node.asInt();

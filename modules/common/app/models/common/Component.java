@@ -9,7 +9,6 @@ import utils.common.JsonUtils.JsonForIO;
 import utils.common.JsonUtils.JsonForPublix;
 
 import javax.persistence.*;
-import java.io.File;
 import java.sql.Timestamp;
 import java.util.UUID;
 
@@ -140,11 +139,7 @@ public class Component {
     }
 
     public String getHtmlFilePath() {
-        if (htmlFilePath != null) {
-            return this.htmlFilePath.replace('/', File.separatorChar);
-        } else {
-            return null;
-        }
+        return this.htmlFilePath;
     }
 
     public void setComments(String comments) {

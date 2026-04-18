@@ -17,11 +17,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
-import static org.fest.assertions.Assertions.assertThat;
 import static com.pivovarit.function.ThrowingConsumer.unchecked;
+import static org.fest.assertions.Assertions.assertThat;
 
 /**
  * @author Kristian Lange
@@ -38,7 +37,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
     public void checkCreate() throws IOException {
         Study study = importAndGetExampleStudy();
         // Check that the log is created
-        Path studyLogPath = Paths.get(studyLogger.getPath(study));
+        Path studyLogPath = Path.of(studyLogger.getPath(study));
         assertThat(Files.isReadable(studyLogPath)).isTrue();
         checkInitEntry(study);
     }
@@ -48,7 +47,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
         Study study = importAndGetExampleStudy();
 
         // Check that the log is created
-        Path studyLogPath = Paths.get(studyLogger.getPath(study));
+        Path studyLogPath = Path.of(studyLogger.getPath(study));
         assertThat(Files.isReadable(studyLogPath)).isTrue();
 
         // Now delete the log
@@ -69,13 +68,13 @@ public class StudyLoggerIntegrationTest extends JatosTest {
         Study study = importAndGetExampleStudy();
 
         // Check that the log is created
-        Path logPath = Paths.get(studyLogger.getPath(study));
+        Path logPath = Path.of(studyLogger.getPath(study));
         assertThat(Files.isReadable(logPath)).isTrue();
 
         String retiredLogFilename = studyLogger.retire(study);
 
         // Check that the log is renamed
-        Path retiredLogPath = Paths.get(Common.getStudyLogsPath() + File.separator + retiredLogFilename);
+        Path retiredLogPath = Path.of(Common.getStudyLogsPath() + File.separator + retiredLogFilename);
         assertThat(Files.notExists(logPath)).isTrue();
         assertThat(Files.exists(retiredLogPath)).isTrue();
 
@@ -87,12 +86,12 @@ public class StudyLoggerIntegrationTest extends JatosTest {
     }
 
     @Test
-    public void checkLog() throws IOException {
+    public void checkLog() {
         Long studyId = importExampleStudy();
         jpaApi.withTransaction(unchecked((em) -> {
             Study study = studyDao.findById(studyId);
 
-            Path logPath = Paths.get(studyLogger.getPath(study));
+            Path logPath = Path.of(studyLogger.getPath(study));
             StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
 
             // Use all log() methods
@@ -134,7 +133,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
 
             studyLogger.logResultDataStoring(componentResult, data, false);
 
-            Path logPath = Paths.get(studyLogger.getPath(study));
+            Path logPath = Path.of(studyLogger.getPath(study));
             List<String> content = Files.readAllLines(logPath);
             JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
@@ -160,11 +159,11 @@ public class StudyLoggerIntegrationTest extends JatosTest {
             ComponentResult componentResult = new ComponentResult(study.getFirstComponent().get());
             componentResult.setStudyResult(studyResult);
             studyResult.addComponentResult(componentResult);
-            Path uploadedFile = Paths.get("test/resources/example.png");
+            Path uploadedFile = Path.of("test/resources/example.png");
 
             studyLogger.logResultUploading(uploadedFile, componentResult);
 
-            Path logPath = Paths.get(studyLogger.getPath(study));
+            Path logPath = Path.of(studyLogger.getPath(study));
             List<String> content = Files.readAllLines(logPath);
             JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
@@ -182,7 +181,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
     }
 
     private void checkInitEntry(Study study) throws IOException {
-        Path logPath = Paths.get(studyLogger.getPath(study));
+        Path logPath = Path.of(studyLogger.getPath(study));
         List<String> content = Files.readAllLines(logPath);
         JsonNode json = Json.parse(content.get(1)); // First line is empty, second line is init msg
         assertThat(json.has("msg")).isTrue();

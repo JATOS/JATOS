@@ -9,9 +9,6 @@ import akka.util.ByteString;
 import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang3.SystemUtils;
 import play.Environment;
 import play.Logger;
@@ -26,16 +23,12 @@ import utils.common.ZipUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -45,6 +38,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * This class handles JATOS updates
@@ -246,7 +240,7 @@ public class JatosUpdater {
     /**
      * Determine the path and name of the directory where the update files will be stored.
      */
-    private final Supplier<File> tmpJatosDir = () -> new File(IOUtils.tmpDir(),
+    private final Supplier<Path> tmpJatosDir = () -> IOUtils.tmpDir().resolve(
             "jatos-" + currentReleaseInfo.versionFull);
 
     private final WSClient ws;
@@ -385,9 +379,9 @@ public class JatosUpdater {
             state = UpdateState.DOWNLOADING;
             String url = currentReleaseInfo.isDifferentJava ? currentReleaseInfo.zipJavaUrl : currentReleaseInfo.zipUrl;
             String downloadFilename = "jatos-" + currentReleaseInfo.versionFull + ".zip";
-            CompletionStage<File> future = downloadAsync(url, downloadFilename);
+            CompletionStage<Path> future = downloadAsync(url, downloadFilename);
             future.thenAccept(zipFile -> Errors.rethrow().get(() -> {
-                File file = ZipUtil.unzip(zipFile, tmpJatosDir.get());
+                Path file = ZipUtil.unzip(zipFile, tmpJatosDir.get());
                 state = UpdateState.DOWNLOADED;
                 scheduleStateReset();
                 LOGGER.info("Downloaded and unzipped new JATOS " + downloadFilename);
@@ -402,25 +396,26 @@ public class JatosUpdater {
         }
     }
 
-    private CompletionStage<File> downloadAsync(String url, String filename) throws IOException {
-        File file = new File(IOUtils.tmpDir(), filename);
-        OutputStream outputStream = Files.newOutputStream(file.toPath());
-        LOGGER.info("Download " + url);
-        CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET")
-                .setRequestTimeout(Duration.ofHours(1))
-                .stream();
-        return futureResponse.thenCompose(res -> {
-            Source<ByteString, ?> responseBody = res.getBodyAsSource();
-            Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
-                    bytes -> outputStream.write(bytes.toArray()));
-            return responseBody.runWith(outputWriter, materializer).whenComplete((value, error) -> {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    LOGGER.error("Couldn't close stream after downloading " + url, e);
-                }
-            }).thenApply(v -> file);
-        });
+    private CompletionStage<Path> downloadAsync(String url, String filename) throws IOException {
+        Path file = IOUtils.tmpDir().resolve(filename);
+        try (OutputStream outputStream = Files.newOutputStream(file)) {
+            LOGGER.info("Download " + url);
+            CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET")
+                    .setRequestTimeout(Duration.ofHours(1))
+                    .stream();
+            return futureResponse.thenCompose(res -> {
+                Source<ByteString, ?> responseBody = res.getBodyAsSource();
+                Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
+                        bytes -> outputStream.write(bytes.toArray()));
+                return responseBody.runWith(outputWriter, materializer).whenComplete((value, error) -> {
+                    try {
+                        outputStream.close();
+                    } catch (IOException e) {
+                        LOGGER.error("Couldn't close stream after downloading " + url, e);
+                    }
+                }).thenApply(v -> file);
+            });
+        }
     }
 
     /**
@@ -447,9 +442,9 @@ public class JatosUpdater {
         if (state != UpdateState.DOWNLOADED) {
             throw new IllegalStateException("Wrong update state (" + state + ")");
         }
-        if (!tmpJatosDir.get().isDirectory()) {
+        if (!Files.isDirectory(tmpJatosDir.get())) {
             state = UpdateState.SLEEPING;
-            throw new IOException("JATOS update directory couldn't be found in " + tmpJatosDir.get().getAbsolutePath());
+            throw new IOException("JATOS update directory couldn't be found in " + tmpJatosDir.get().toAbsolutePath());
         }
 
         if (!environment.isProd()) {
@@ -492,55 +487,61 @@ public class JatosUpdater {
      */
     private void backupCurrentJatosFiles(boolean backupAll) throws IOException {
         String bkpDirName = BACKUP_DIR_PREFIX + Common.getJatosVersion();
-        Path bkpDir = Paths.get(Common.getBasepath(), bkpDirName);
+        Path bkpDir = Path.of(Common.getBasepath(), bkpDirName);
         int i = 2;
         while (Files.exists(bkpDir)) {
-            bkpDir = Paths.get(Common.getBasepath(), bkpDirName + "_" + i);
+            bkpDir = Path.of(Common.getBasepath(), bkpDirName + "_" + i);
             i++;
         }
         Files.createDirectories(bkpDir);
 
         if (backupAll) {
-            IOFileFilter filter = FileFilterUtils.notFileFilter(FileFilterUtils
-                    .or(FileFilterUtils.nameFileFilter("RUNNING_PID"),
-                            FileFilterUtils.prefixFileFilter(BACKUP_DIR_PREFIX)));
-            FileUtils.copyDirectory(new File(Common.getBasepath()), bkpDir.toFile(), filter);
+            DirectoryStream.Filter<Path> filter = entry -> {
+                String name = entry.getFileName().toString();
+                return !name.equals("RUNNING_PID") && !name.startsWith(BACKUP_DIR_PREFIX);
+            };
+            IOUtils.copyRecursively(Path.of(Common.getBasepath()), bkpDir, filter);
             LOGGER.info("Backup of current JATOS files into " + bkpDir.getFileName());
         } else {
-            FileUtils.copyDirectory(FileUtils.getFile(Common.getBasepath(), "conf"), bkpDir.resolve("conf").toFile());
-            Files.copy(Paths.get(Common.getBasepath(), "loader.sh"), bkpDir.resolve("loader.sh"));
+            IOUtils.copyRecursively(Path.of(Common.getBasepath(), "conf"), bkpDir.resolve("conf"));
+            Files.copy(Path.of(Common.getBasepath(), "loader.sh"), bkpDir.resolve("loader.sh"));
             // JATOS Docker has no loader.bat
-            if (Files.exists(Paths.get(Common.getBasepath(), "loader.bat"))) {
-                Files.copy(Paths.get(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
+            if (Files.exists(Path.of(Common.getBasepath(), "loader.bat"))) {
+                Files.copy(Path.of(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
             }
             LOGGER.info("Backup of current version of loader scripts and conf/ into " + bkpDir.getFileName());
         }
     }
 
     private void updateFiles() throws IOException {
-        Path srcUpdateDir = Files.list(tmpJatosDir.get().toPath()).findFirst().orElseThrow(
-                () -> new FileNotFoundException("JATOS update directory seems to be corrupted."));
-        Path dstUpdateDir = Paths.get(Common.getBasepath(), "update-" + currentReleaseInfo.versionFull);
+        Path srcUpdateDir;
+        try (Stream<Path> stream = Files.list(tmpJatosDir.get())) {
+            srcUpdateDir = stream.findFirst().orElseThrow(
+                    () -> new FileNotFoundException("JATOS update directory seems to be corrupted."));
+        }
+
+        Path dstUpdateDir = Path.of(Common.getBasepath(), "update-" + currentReleaseInfo.versionFull);
         if (Files.exists(dstUpdateDir)) {
-            FileUtils.deleteDirectory(dstUpdateDir.toFile());
+            IOUtils.deleteRecursively(dstUpdateDir);
             LOGGER.info("Deleted old update directory " + dstUpdateDir);
         }
-        FileUtils.copyDirectory(srcUpdateDir.toFile(), dstUpdateDir.toFile());
+
+        IOUtils.copyRecursively(srcUpdateDir, dstUpdateDir);
         LOGGER.info("Copied JATOS update files into JATOS installation folder under " + dstUpdateDir);
 
         updateLoaderScripts(dstUpdateDir);
 
-        FileUtils.deleteDirectory(tmpJatosDir.get());
+        IOUtils.deleteRecursively(tmpJatosDir.get());
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private static void updateLoaderScripts(Path srcDir) throws IOException {
-        Files.move(srcDir.resolve("loader.sh"), Paths.get(Common.getBasepath(), "loader.sh"),
+        Files.move(srcDir.resolve("loader.sh"), Path.of(Common.getBasepath(), "loader.sh"),
                 StandardCopyOption.REPLACE_EXISTING);
-        Files.move(srcDir.resolve("loader.bat"), Paths.get(Common.getBasepath(), "loader.bat"),
+        Files.move(srcDir.resolve("loader.bat"), Path.of(Common.getBasepath(), "loader.bat"),
                 StandardCopyOption.REPLACE_EXISTING);
-        Paths.get(Common.getBasepath(), "loader.sh").toFile().setExecutable(true);
-        Paths.get(Common.getBasepath(), "loader.bat").toFile().setExecutable(true);
+        Path.of(Common.getBasepath(), "loader.sh").toFile().setExecutable(true);
+        Path.of(Common.getBasepath(), "loader.bat").toFile().setExecutable(true);
         LOGGER.info("Replaced loader scripts with newer version.");
     }
 
@@ -560,7 +561,7 @@ public class JatosUpdater {
 
         // Get loader script with path and 'update' argument
         String loaderName = isOsUx() ? "loader.sh" : "loader.bat";
-        String loader = Common.getBasepath() + File.separator + loaderName;
+        String loader = Path.of(Common.getBasepath(), loaderName).toString();
         cmd.add(loader);
         cmd.add("update");
 

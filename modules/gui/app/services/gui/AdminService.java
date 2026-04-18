@@ -16,6 +16,7 @@ import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,7 +49,7 @@ public class AdminService {
     }
 
     public List<Map<String, Object>> getStudiesData(Collection<Study> studyList,
-            boolean studyAssetsSizeFlag, boolean resultDataSizeFlag, boolean resultFileSizeFlag) {
+            boolean studyAssetsSizeFlag, boolean resultDataSizeFlag, boolean resultFileSizeFlag) throws IOException {
         List<Map<String, Object>> studies = new ArrayList<>();
         for (Study study : studyList) {
             int studyResultCount = studyResultDao.countByStudy(study);
@@ -89,7 +90,7 @@ public class AdminService {
         return studies;
     }
 
-    public Map<String, Object> getStudyAssetDirSize(Study study) {
+    public Map<String, Object> getStudyAssetDirSize(Study study) throws IOException {
         long size = ioUtils.getStudyAssetsDirSize(study.getDirName());
         return ImmutableMap.of(
                 "humanReadable", Helpers.humanReadableByteCount(size),

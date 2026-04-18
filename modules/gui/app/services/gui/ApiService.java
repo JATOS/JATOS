@@ -130,7 +130,7 @@ public class ApiService {
      * Extracts a file from the request body. It can handle different content type headers. It always tries
      * "multipart/form-data". Additionally, it tries all content types in the list "allowedRawTypes".
      */
-    public File extractFile(Http.Request request, String filePartName, List<String> allowedRawTypes)
+    public Path extractFile(Http.Request request, String filePartName, List<String> allowedRawTypes)
             throws BadRequestException, IOException {
         String contentType = request.contentType().orElse("").toLowerCase();
 
@@ -142,7 +142,7 @@ public class ApiService {
             if (filePart == null) {
                 throw new BadRequestException(MessagesStrings.FILE_MISSING, ApiEnvelope.ErrorCode.MISSING_FILE);
             }
-            return (File) filePart.getFile();
+            return ((File) filePart.getFile()).toPath();
         }
 
         if (allowedRawTypes.stream().anyMatch(contentType::startsWith) || contentType.isEmpty()) {
@@ -153,7 +153,7 @@ public class ApiService {
             // Prefer a temp file if Play stored it on disk (common for larger uploads)
             File rawFile = raw.asFile();
             if (rawFile != null && rawFile.exists() && rawFile.length() > 0) {
-                return rawFile;
+                return rawFile.toPath();
             }
             // Fallback: raw bytes (small uploads); write to a temp file
             if (raw.asBytes() == null || raw.asBytes().isEmpty()) {
@@ -161,7 +161,7 @@ public class ApiService {
             }
             Path tmp = Files.createTempFile("jatos-file-upload-", ".tmp");
             Files.write(tmp, raw.asBytes().toArray());
-            return tmp.toFile();
+            return tmp;
         }
         throw new BadRequestException(
                 "Unsupported Content-Type '" + contentType + "'. Use multipart/form-data, " + allowedRawTypes);
@@ -215,7 +215,7 @@ public class ApiService {
         }
 
         try {
-            return ioUtils.getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr).toPath();
+            return ioUtils.getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr);
         } catch (IOException e) {
             throw new BadRequestException("Invalid path: " + assetsFilePathStr, VALIDATION_ERROR);
         }

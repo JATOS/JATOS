@@ -12,12 +12,12 @@ import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 import utils.common.JsonUtils;
 
-import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.*;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 
 /**
  * Model of component properties for UI (not persisted in DB). Only used together with an HTML form that creates a new
@@ -25,11 +25,6 @@ import static com.fasterxml.jackson.annotation.JsonProperty.Access.*;
  */
 @Constraints.Validate
 public class ComponentProperties implements Validatable<List<ValidationError>> {
-
-    /**
-     * Version of this model used for serialisation (e.g. JSON marshaling)
-     */
-    public static final int SERIAL_VERSION = 1;
 
     public static final String ID = "id";
     public static final String UUID = "uuid";
@@ -45,7 +40,7 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
     private Long id;
 
     /**
-     * Universally, (world-wide) unique ID. Used for import/export between different JATOS instances. A study can have
+     * Universally, (worldwide) unique ID. Used for import/export between different JATOS instances. A study can have
      * only one component with the same UUID, although it is allowed to have other studies that have this component with
      * this UUID.
      */
@@ -149,11 +144,7 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
     }
 
     public String getHtmlFilePath() {
-        if (htmlFilePath != null) {
-            return this.htmlFilePath.replace('/', File.separatorChar);
-        } else {
-            return null;
-        }
+        return this.htmlFilePath;
     }
 
     public boolean isHtmlFileRename() {

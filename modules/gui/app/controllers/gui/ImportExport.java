@@ -28,6 +28,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
@@ -82,7 +84,7 @@ public class ImportExport extends Controller {
         }
 
         try {
-            File file = (File) filePart.getFile();
+            Path file = ((File) filePart.getFile()).toPath();
             Map<String, Object> resultInfo = importExportService.importStudy(signedinUser, file);
             return ok(JsonUtils.asJsonNode(resultInfo));
         } catch (Exception e) {
@@ -143,20 +145,20 @@ public class ImportExport extends Controller {
     }
 
     /**
-     * GET request that exports a JATOS study archive. The archive is a zip compressed file that contains
-     * the study asset directory and the study properties as JSON saved in a .jas file.
+     * GET request that exports a JATOS study archive. The archive is a zip compressed file that contains the study
+     * asset directory and the study properties as JSON saved in a .jas file.
      */
     @Transactional
     @Auth(roles = USER)
-    public Result exportStudy(String id) throws ForbiddenException, NotFoundException {
+    public Result exportStudy(String id) throws ForbiddenException, NotFoundException, IOException {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = authService.getSignedinUser();
         authorizationService.canUserAccessStudy(study, signedinUser);
 
-        File zipFile;
+        Path zipFile;
         try {
             zipFile = importExportService.createStudyExportZipFile(study);
-        } catch (IOException e) {
+        } catch (Exception e) {
             String errorMsg = MessagesStrings.studyExportFailure(study.getId(), study.getTitle());
             LOGGER.error(".exportStudy: " + errorMsg, e);
             return internalServerError(errorMsg);
@@ -165,13 +167,17 @@ public class ImportExport extends Controller {
         String cdHeader = "attachment; "
                 + HttpHeaderParameterEncoding.encode("filename", "jatos_study_"
                 + study.getUuid() + "." + Common.getStudyArchiveSuffix());
-        // We need the "Content-Disposition" header for API calls (not for the GUI)
-        //noinspection ResultOfMethodCallIgnored
-        return ok().streamed(
-                        Helpers.okFileStreamed(zipFile, zipFile::delete),
-                        Optional.of(zipFile.length()),
-                        Optional.of("application/zip"))
-                .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
+        try {
+            // We need the "Content-Disposition" header for API calls (not for the GUI)
+            return ok().streamed(
+                            Helpers.okFileStreamed(zipFile, Helpers.deleteFile(zipFile)),
+                            Optional.of(Files.size(zipFile)),
+                            Optional.of("application/zip"))
+                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, cdHeader);
+        } catch (Exception e) {
+            Helpers.deleteFile(zipFile).run();
+            throw e;
+        }
     }
 
 }

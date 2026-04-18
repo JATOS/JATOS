@@ -12,17 +12,20 @@ import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
+import play.Logger;
+import play.Logger.ALogger;
 import play.mvc.Controller;
 import play.mvc.Http;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.lang.management.*;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.CharacterIterator;
 import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
@@ -37,6 +40,8 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("deprecation")
 public class Helpers {
+
+    private static final ALogger LOGGER = Logger.of(Helpers.class);
 
     /**
      * Check if the request was made via Ajax or not.
@@ -78,24 +83,12 @@ public class Helpers {
     }
 
     public static String urlEncode(String str) {
-        String encodedStr = "";
-        try {
-            encodedStr = URLEncoder.encode(str, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            // Do nothing
-        }
-        return encodedStr;
+        return URLEncoder.encode(str, StandardCharsets.UTF_8);
     }
 
     public static String urlDecode(String str) {
         if (str == null) return null;
-        String decodedStr = null;
-        try {
-            decodedStr = URLDecoder.decode(str, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            // Do nothing
-        }
-        return decodedStr;
+        return URLDecoder.decode(str, StandardCharsets.UTF_8);
     }
 
     /**
@@ -269,13 +262,20 @@ public class Helpers {
     /**
      * Helper function to allow an action after a file was sent (e.g. delete the file)
      */
-    public static Source<ByteString, CompletionStage<IOResult>> okFileStreamed(final File file, final Runnable handler) {
-        final Source<ByteString, CompletionStage<IOResult>> fileSource = FileIO.fromFile(file)
-                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "));
-        @SuppressWarnings("UnnecessaryLocalVariable")
-        Source<ByteString, CompletionStage<IOResult>> wrap = fileSource.mapMaterializedValue(
-                action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
-        return wrap;
+    public static Source<ByteString, CompletionStage<IOResult>> okFileStreamed(final Path file, final Runnable handler) {
+        return FileIO.fromPath(file)
+                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
+                .mapMaterializedValue(action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
+    }
+
+    public static Runnable deleteFile(Path file) {
+        return () -> {
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException e) {
+                LOGGER.warn(".deleteFile: failed to delete file " + file, e);
+            }
+        };
     }
 
     public static Optional<Long> parseLong(String str) {

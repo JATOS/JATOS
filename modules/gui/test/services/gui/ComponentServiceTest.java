@@ -14,8 +14,9 @@ import org.mockito.Mockito;
 import testutils.gui.ContextMocker;
 import utils.common.IOUtils;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -34,7 +35,7 @@ public class ComponentServiceTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void initCommonStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
+        String tmp = Path.of(System.getProperty("java.io.tmpdir"), "jatos-test").toString();
         commonStatic = Mockito.mockStatic(general.common.Common.class);
         commonStatic.when(general.common.Common::getTmpPath).thenReturn(tmp);
         commonStatic.when(general.common.Common::getStudyAssetsRootPath).thenReturn(tmp);
@@ -87,7 +88,7 @@ public class ComponentServiceTest {
         // same fields
         assertThat(clone.getStudy()).isEqualTo(s);
         assertThat(clone.getTitle()).isEqualTo("Comp A");
-        assertThat(clone.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
+        assertThat(clone.getHtmlFilePath()).isEqualTo(Path.of("a", "index.html").toString());
         assertThat(clone.isReloadable()).isTrue();
         assertThat(clone.isActive()).isTrue();
         assertThat(clone.getComponentInput()).isEqualTo("{\"x\":1}");
@@ -113,7 +114,7 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(clone.getTitle()).isEqualTo("Comp A (clone)");
-        assertThat(clone.getHtmlFilePath()).isEqualTo("a" + File.separator + "index_cloned.html");
+        assertThat(clone.getHtmlFilePath()).isEqualTo(Path.of("a", "index_cloned.html").toString());
         assertThat(clone.getStudy()).isEqualTo(s);
         assertThat(clone.getUuid()).isNotEqualTo(original.getUuid());
     }
@@ -154,7 +155,7 @@ public class ComponentServiceTest {
         assertThat(props.getTitle()).isEqualTo("Comp A");
         assertThat(props.getId()).isEqualTo(42L);
         assertThat(props.getStudyId()).isEqualTo(3L);
-        assertThat(props.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
+        assertThat(props.getHtmlFilePath()).isEqualTo(Path.of("a", "index.html").toString());
         assertThat(props.isHtmlFileExists()).isTrue();
         assertThat(props.getComponentInput()).isEqualTo("{\"x\":1}");
         assertThat(props.getComments()).isEqualTo("note");
@@ -182,7 +183,7 @@ public class ComponentServiceTest {
         assertThat(c.getComments()).isEqualTo("c2");
         assertThat(c.getComponentInput()).isEqualTo("{\"y\":2}");
         // unchanged
-        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
+        assertThat(c.getHtmlFilePath()).isEqualTo(Path.of("a", "index.html").toString());
         assertThat(c.isActive()).isTrue();
         verify(componentDao).update(c);
     }
@@ -230,13 +231,13 @@ public class ComponentServiceTest {
         // Given
         Study s = new Study();
         Component c = exampleComponent(s);
-        when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(new File("/does/not/exist"));
+        when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(Path.of("/does/not/exist"));
 
         // When
         componentService.renameHtmlFilePath(c, "a/new.html", true);
 
         // Then
-        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new.html");
+        assertThat(c.getHtmlFilePath()).isEqualTo(Path.of("a", "new.html").toString());
         verify(componentDao).update(c);
         verify(ioUtils, never()).renameHtmlFile(anyString(), anyString(), anyString());
     }
@@ -246,23 +247,22 @@ public class ComponentServiceTest {
         // Given
         Study s = new Study();
         Component c = exampleComponent(s);
-        File fake = Mockito.mock(File.class);
-        when(fake.exists()).thenReturn(true);
+        Path fake = Files.createTempFile("component-service-test", ".html");
         when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(fake);
 
         // When
         componentService.renameHtmlFilePath(c, "a/new2.html", true);
 
         // Then
-        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new2.html");
-        verify(ioUtils).renameHtmlFile("a" + File.separator + "index.html", "a/new2.html", s.getDirName());
+        assertThat(c.getHtmlFilePath()).isEqualTo(Path.of("a", "new2.html").toString());
+        verify(ioUtils).renameHtmlFile(Path.of("a", "index.html").toString(), "a/new2.html", s.getDirName());
         verify(componentDao).update(c);
 
-        // And when rename not requested
+        // And when rename aren't requested
         componentService.renameHtmlFilePath(c, "a/new3.html", false);
-        verify(ioUtils, never()).renameHtmlFile("a" + File.separator + "new2.html", "a/new3.html", s.getDirName());
+        verify(ioUtils, never()).renameHtmlFile(Path.of("a", "new2.html").toString(), "a/new3.html", s.getDirName());
         verify(componentDao, times(2)).update(c);
-        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "new3.html");
+        assertThat(c.getHtmlFilePath()).isEqualTo(Path.of("a", "new3.html").toString());
     }
 
     @Test

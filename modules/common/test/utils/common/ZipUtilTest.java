@@ -12,7 +12,6 @@ import org.mockito.Mockito;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -48,25 +47,25 @@ public class ZipUtilTest {
     @Test
     public void testZipFilesAndUnzip_roundtrip() throws Exception {
         // Create two files to zip
-        File f1 = temp.newFile("a.txt");
-        File f2 = temp.newFile("b.txt");
-        Files.write(f1.toPath(), "hello".getBytes());
-        Files.write(f2.toPath(), "world".getBytes());
+        Path f1 = temp.newFile("a.txt").toPath();
+        Path f2 = temp.newFile("b.txt").toPath();
+        Files.write(f1, "hello".getBytes());
+        Files.write(f2, "world".getBytes());
 
-        File zip = temp.newFile("files.zip");
-        ZipUtil.zipFiles(Arrays.asList(f1.toPath(), f2.toPath()), zip);
+        Path zip = temp.newFile("files.zip").toPath();
+        ZipUtil.zipFiles(Arrays.asList(f1, f2), zip);
 
         // Verify zip contains both entries
-        try (ZipFile zf = new ZipFile(zip)) {
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
             assertNotNull(zf.getEntry("a.txt"));
             assertNotNull(zf.getEntry("b.txt"));
         }
 
         // Unzip and verify content
-        File dest = temp.newFolder("unzipped1");
+        Path dest = temp.newFolder("unzipped1").toPath();
         ZipUtil.unzip(zip, dest);
-        assertEquals("hello", new String(Files.readAllBytes(dest.toPath().resolve("a.txt"))));
-        assertEquals("world", new String(Files.readAllBytes(dest.toPath().resolve("b.txt"))));
+        assertEquals("hello", new String(Files.readAllBytes(dest.resolve("a.txt"))));
+        assertEquals("world", new String(Files.readAllBytes(dest.resolve("b.txt"))));
     }
 
     @Test
@@ -83,7 +82,7 @@ public class ZipUtilTest {
         File zip = temp.newFile("structure.zip");
         try (ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(zip.toPath())))) {
             // Purposefully pass a zipRoot containing a backslash to ensure normalization in entries
-            Path zipRoot = Paths.get("root\\folder");
+            Path zipRoot = Path.of("root\\folder");
             ZipUtil.addToZip(out, zipRoot, dir.toPath());
             out.flush();
         }
@@ -105,10 +104,10 @@ public class ZipUtilTest {
         }
 
         // Unzip and verify paths exist
-        File dest = temp.newFolder("unzipped2");
-        ZipUtil.unzip(zip, dest);
-        assertTrue(new File(dest, "root/folder/root.txt").isFile());
-        assertTrue(new File(dest, "root/folder/sub/nested.txt").isFile());
+        Path dest = temp.newFolder("unzipped2").toPath();
+        ZipUtil.unzip(zip.toPath(), dest);
+        assertTrue(Files.isRegularFile(dest.resolve(Path.of("root/folder/root.txt"))));
+        assertTrue(Files.isRegularFile(dest.resolve(Path.of("root/folder/sub/nested.txt"))));
     }
 
     @Test
@@ -118,7 +117,7 @@ public class ZipUtilTest {
         File zip = temp.newFile("rootfile.zip");
 
         try (ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(zip.toPath())))) {
-            ZipUtil.addFileToZip(out, Paths.get("someRoot"), file.toPath());
+            ZipUtil.addFileToZip(out, Path.of("someRoot"), file.toPath());
         }
 
         try (ZipFile zf = new ZipFile(zip)) {
@@ -131,18 +130,18 @@ public class ZipUtilTest {
     @Test
     public void testAddFileToZip_withCustomNameAndRoot() throws Exception {
         File file = temp.newFile("x.bin");
-        Files.write(file.toPath(), new byte[]{1,2,3});
+        Files.write(file.toPath(), new byte[]{1, 2, 3});
         File zip = temp.newFile("customname.zip");
 
         try (ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(zip.toPath())))) {
-            ZipUtil.addFileToZip(out, Paths.get("root"), Paths.get("custom/path.bin"), file.toPath());
+            ZipUtil.addFileToZip(out, Path.of("root"), Path.of("custom/path.bin"), file.toPath());
         }
 
         try (ZipFile zf = new ZipFile(zip)) {
             ZipEntry entry = zf.getEntry("root/custom/path.bin");
             assertNotNull(entry);
             byte[] bytes = readAllBytes(zf, entry.getName());
-            assertArrayEquals(new byte[]{1,2,3}, bytes);
+            assertArrayEquals(new byte[]{1, 2, 3}, bytes);
         }
     }
 
@@ -163,14 +162,14 @@ public class ZipUtilTest {
     @Test
     public void testUnzip_preventsPathTraversal() throws Exception {
         // Create a malicious zip with an entry trying to escape the destination directory
-        File zip = temp.newFile("malicious.zip");
-        try (ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(zip.toPath())))) {
+        Path zip = temp.newFile("malicious.zip").toPath();
+        try (ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(zip)))) {
             out.putNextEntry(new ZipEntry("../evil.txt"));
             out.write("evil".getBytes());
             out.closeEntry();
         }
 
-        File dest = temp.newFolder("unzipped3");
+        Path dest = temp.newFolder("unzipped3").toPath();
         try {
             ZipUtil.unzip(zip, dest);
             fail("Expected IOException due to path traversal");
@@ -179,7 +178,7 @@ public class ZipUtilTest {
         }
 
         // Ensure file wasn't written
-        assertFalse(new File(dest.getParentFile(), "evil.txt").exists());
+        assertTrue(Files.notExists(dest.getParent().resolve("evil.txt")));
     }
 
     private static String readEntry(ZipFile zf, String name) throws IOException {

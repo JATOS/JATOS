@@ -27,7 +27,7 @@ import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
-import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -65,7 +65,7 @@ public class PublixTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void initStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
+        String tmp = Path.of(System.getProperty("java.io.tmpdir"), "jatos-test").toString();
         commonStatic = mockStatic(Common.class);
         // Ensure IOUtils static initialization (TMP_DIR) can access a valid tmp path
         commonStatic.when(Common::getTmpPath).thenReturn(tmp);
@@ -104,10 +104,9 @@ public class PublixTest {
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         studyLogger = mock(StudyLogger.class);
-        ioUtils = null; // Not needed for tested paths and heavy to initialize
 
         publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, null);
     }
 
     private static StudyResult newStudyResult(Study study, Batch batch, Worker worker) {
@@ -155,7 +154,9 @@ public class PublixTest {
         StudyResult sr = newStudyResult(study, batch, worker);
 
         // publixUtils.startComponent throws -> should redirect to finishStudy
-        when(publixUtils.startComponent(any(), any(), any())).thenAnswer(inv -> { throw new ForbiddenReloadException("nope"); });
+        when(publixUtils.startComponent(any(), any(), any())).thenAnswer(inv -> {
+            throw new ForbiddenReloadException("nope");
+        });
 
         // Act
         Result result = publix.startComponent(mockTextRequest(""), sr, component, "msg");
@@ -413,7 +414,7 @@ public class PublixTest {
         play.libs.Files.TemporaryFile tmp = mock(play.libs.Files.TemporaryFile.class);
         Http.Request req = mockMultipartRequestWithFile(1L, tmp);
 
-        File dstFile = new File("/tmp/uploaded-ok.bin");
+        Path dstFile = Path.of("/tmp/uploaded-ok.bin");
         when(ioUtils.getResultUploadDirSize(sr.getId())).thenReturn(0L);
         when(ioUtils.getResultUploadFileSecurely(sr.getId(), cr.getId(), "good.bin")).thenReturn(dstFile);
 
@@ -473,8 +474,7 @@ public class PublixTest {
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
 
         Component comp = newComponent(77L);
-        File file = File.createTempFile("uploaded-ok", ".bin");
-        file.deleteOnExit();
+        Path file = Files.createTempFile("uploaded-ok", ".bin");
         when(publixUtils.retrieveComponent(study, 77L)).thenReturn(comp);
         when(publixUtils.retrieveLastUploadedResultFile(eq(sr), eq(comp), eq("file.txt")))
                 .thenReturn(Optional.of(file));
@@ -482,14 +482,18 @@ public class PublixTest {
         Result result = publix.downloadResultFile(mockTextRequest(""), sr, "file.txt", "77");
 
         assertEquals(OK, result.status());
+        Files.deleteIfExists(file);
     }
 
     @Test
     public void log_sanitizesAndReturnsOk() throws PublixException {
-        Study study = new Study(); study.setId(9L);
-        Batch batch = new Batch(); batch.setId(8L);
+        Study study = new Study();
+        study.setId(9L);
+        Batch batch = new Batch();
+        batch.setId(8L);
         Component component = newComponent(7L);
-        Worker worker = new GeneralSingleWorker(); worker.setId(6L);
+        Worker worker = new GeneralSingleWorker();
+        worker.setId(6L);
         StudyResult sr = newStudyResult(study, batch, worker);
 
         Result result = publix.log(mockTextRequest("Hello\nWorld\t  !!  "), sr, component);

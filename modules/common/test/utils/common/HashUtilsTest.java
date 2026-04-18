@@ -2,7 +2,6 @@ package utils.common;
 
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -70,15 +69,14 @@ public class HashUtilsTest {
         // Create a temporary file with test content
         Path tempFile = Files.createTempFile("checksumtest", ".txt");
         Files.write(tempFile, TEST_STRING.getBytes(StandardCharsets.UTF_8));
-        File file = tempFile.toFile();
 
         try {
-            long checksum = HashUtils.getChecksum(file);
+            long checksum = HashUtils.getChecksum(tempFile);
             assertTrue(checksum > 0);
 
             // Test with empty file
             Files.write(tempFile, new byte[0]);
-            long emptyChecksum = HashUtils.getChecksum(file);
+            long emptyChecksum = HashUtils.getChecksum(tempFile);
             assertEquals(1, emptyChecksum); // Adler32 of empty file is 1
         } finally {
             // Clean up

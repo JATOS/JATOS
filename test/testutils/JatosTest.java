@@ -28,14 +28,12 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.ApiTokenService;
-import services.gui.StudyService;
 import services.gui.UserService;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.CompletionStage;
 
@@ -90,7 +88,7 @@ public class JatosTest {
     public Long importExampleStudy() {
         TemporaryFileCreator temporaryFileCreator = application.injector().instanceOf(TemporaryFileCreator.class);
         Materializer materializer = application.injector().instanceOf(Materializer.class);
-        Path studyPath = Paths.get(Common.getBasepath(), TEST_RESOURCES_POTATO_COMPASS_JZIP);
+        Path studyPath = Path.of(Common.getBasepath(), TEST_RESOURCES_POTATO_COMPASS_JZIP);
         Source<ByteString, CompletionStage<IOResult>> source = FileIO.fromPath(studyPath);
         Http.MultipartFormData.FilePart<Source<ByteString, ?>> part = new Http.MultipartFormData.FilePart<>("study", "filename", "text/plain", source);
         Http.RequestBuilder request = new Http.RequestBuilder()
@@ -148,17 +146,6 @@ public class JatosTest {
         jpaApi.withTransaction(em -> {
             em.createNativeQuery("DROP ALL OBJECTS").executeUpdate();
             return null;
-        });
-    }
-
-    /**
-     * Remove all studies in the database and delete their study assets and result files
-     */
-    public void removeAllStudies() {
-        StudyDao studyDao = application.injector().instanceOf(StudyDao.class);
-        StudyService studyService = application.injector().instanceOf(StudyService.class);
-        jpaApi.withTransaction((em) -> {
-            studyDao.findAll().forEach(unchecked((study) -> studyService.removeStudyInclAssets(study, getAdmin())));
         });
     }
 

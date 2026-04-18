@@ -17,12 +17,11 @@ import play.libs.Json;
 import utils.common.JsonUtils.SidebarStudy.SidebarComponent;
 
 import javax.inject.Singleton;
-import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -295,7 +294,7 @@ public class JsonUtils {
         metadata.put("endDate", cr.getEndDate());
         metadata.put("duration", getDurationPretty(cr.getStartDate(), cr.getEndDate()));
         metadata.put("componentState", cr.getComponentState());
-        metadata.put("path", IOUtils.getResultsPath(cr.getStudyResult().getId(), cr.getId()));
+        metadata.put("path", IOUtils.getResultsPathForJson(cr.getStudyResult().getId(), cr.getId()));
         Map<String, Object> dataMap = new LinkedHashMap<>();
         dataMap.put("size", cr.getDataSize());
         dataMap.put("sizeHumanReadable", Helpers.humanReadableByteCount(cr.getDataSize()));
@@ -338,8 +337,7 @@ public class JsonUtils {
     }
 
     private List<Map<String, Object>> getResultUploadFiles(ComponentResult componentResult) {
-        Path dir = Paths.get(
-                IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(), componentResult.getId()));
+        Path dir = IOUtils.getResultUploadsDir(componentResult.getStudyResult().getId(), componentResult.getId());
         if (Files.isDirectory(dir)) {
             try (Stream<Path> paths = Files.list(dir)) {
                 return paths.map(this::getResultUploadFileNode).collect(Collectors.toList());
@@ -367,7 +365,7 @@ public class JsonUtils {
     }
 
     private boolean hasResultUploadFiles(StudyResult studyResult) {
-        Path dir = Paths.get(IOUtils.getResultUploadsDir(studyResult.getId()));
+        Path dir = IOUtils.getResultUploadsDir(studyResult.getId());
         if (Files.isDirectory(dir)) {
             try (Stream<Path> entries = Files.list(dir)) {
                 return entries.findFirst().isPresent();
@@ -653,7 +651,7 @@ public class JsonUtils {
      * Marshals the given study into JSON, adds the current study serial
      * version, and saves it into the given File. It uses the view JsonForIO.
      */
-    public void studyAsJsonForIO(Study study, File file) throws IOException {
+    public void studyAsJsonForIO(Study study, Path file) throws IOException {
         ObjectNode studyNode = (ObjectNode) asJsonForIO(study);
 
         // Add components
@@ -668,7 +666,9 @@ public class JsonUtils {
                 "version", String.valueOf(Study.SERIAL_VERSION)));
 
         // Write to file
-        Json.mapper().writeValue(file, nodeForIO);
+        try (OutputStream out = Files.newOutputStream(file)) {
+            Json.mapper().writeValue(out, nodeForIO);
+        }
     }
 
     /**

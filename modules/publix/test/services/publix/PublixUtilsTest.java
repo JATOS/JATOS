@@ -24,8 +24,9 @@ import play.mvc.Http;
 import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -46,7 +47,7 @@ public class PublixUtilsTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void initStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
+        String tmp = Path.of(System.getProperty("java.io.tmpdir"), "jatos-test").toString();
         commonStatic = mockStatic(Common.class);
         commonStatic.when(Common::getTmpPath).thenReturn(tmp);
         commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(tmp);
@@ -483,16 +484,15 @@ public class PublixUtilsTest {
         ComponentResult cr2 = newComponentResult(sr, c, ComponentState.FINISHED);
 
         // The list is [cr1, cr2]; logic reverses it and checks cr2 first
-        File f1 = File.createTempFile("jatos-test1", ".txt");
-        File f2 = File.createTempFile("jatos-test2", ".txt");
+        Path f1 = Files.createTempFile("jatos-test1", ".txt");
+        Path f2 = Files.createTempFile("jatos-test2", ".txt");
         // Simulate first check returns non-existent, second exists
         when(ioUtils.getResultUploadFileSecurely(sr.getId(), cr1.getId(), "x.txt")).thenReturn(f1);
         when(ioUtils.getResultUploadFileSecurely(sr.getId(), cr2.getId(), "x.txt")).thenReturn(f2);
         // Delete f1 to make exists() false
-        //noinspection ResultOfMethodCallIgnored
-        f2.delete();
+        Files.delete(f2);
 
-        Optional<File> res = publixUtils.retrieveLastUploadedResultFile(sr, c, "x.txt");
+        Optional<Path> res = publixUtils.retrieveLastUploadedResultFile(sr, c, "x.txt");
         assertTrue(res.isPresent());
         assertEquals(f1, res.get());
     }

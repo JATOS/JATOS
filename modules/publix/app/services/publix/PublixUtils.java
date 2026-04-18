@@ -20,8 +20,9 @@ import utils.common.IOUtils;
 import utils.common.JsonUtils;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -271,7 +272,7 @@ public class PublixUtils {
         while (component.isPresent() && !component.get().isActive()) {
             component = study.getNextComponent(component.get());
         }
-        if (!component.isPresent()) {
+        if (component.isEmpty()) {
             throw new NotFoundPublixException(PublixErrorMessages
                     .studyHasNoActiveComponents(study.getId()));
         }
@@ -373,7 +374,7 @@ public class PublixUtils {
      * reloaded components) it returns the file uploaded last. If component is not given (equals null) it searches all
      * component results of this study result for a file with this filename and returns the one that was uploaded last.
      */
-    public Optional<File> retrieveLastUploadedResultFile(StudyResult studyResult, Component component,
+    public Optional<Path> retrieveLastUploadedResultFile(StudyResult studyResult, Component component,
             String filename) {
         List<ComponentResult> componentResultList;
         if (component != null) {
@@ -387,8 +388,8 @@ public class PublixUtils {
 
         try {
             for (ComponentResult cr : componentResultList) {
-                File file = ioUtils.getResultUploadFileSecurely(studyResult.getId(), cr.getId(), filename);
-                if (file.exists()) return Optional.of(file);
+                Path file = ioUtils.getResultUploadFileSecurely(studyResult.getId(), cr.getId(), filename);
+                if (Files.exists(file)) return Optional.of(file);
             }
         } catch (IOException ignore) {}
         return Optional.empty();

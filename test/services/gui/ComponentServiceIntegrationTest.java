@@ -16,8 +16,9 @@ import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.validation.ValidationException;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static com.pivovarit.function.ThrowingConsumer.unchecked;
 import static org.fest.assertions.Assertions.assertThat;
@@ -153,8 +154,8 @@ public class ComponentServiceIntegrationTest extends JatosTest {
 
             Component reloaded = componentDao.findById(component.getId());
             assertThat(reloaded.getHtmlFilePath()).isEqualTo("foo.html");
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
-            assertThat(htmlFile.exists());
+            Path htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
+            assertThat(Files.exists(htmlFile));
         }));
     }
 
@@ -165,8 +166,8 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Component component = study.getFirstComponent().get();
 
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
+            Path htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
+            assertThat(Files.exists(htmlFile));
 
             String existingHtmlFileName = study.getLastComponent().get().getHtmlFilePath();
             try {
@@ -178,8 +179,8 @@ public class ComponentServiceIntegrationTest extends JatosTest {
 
             // Everything is unchanged
             Component reloaded = componentDao.findById(component.getId());
-            assertThat(reloaded.getHtmlFilePath()).isEqualTo(htmlFile.getName());
-            assertThat(htmlFile.exists());
+            assertThat(reloaded.getHtmlFilePath()).isEqualTo(htmlFile.getFileName().toString());
+            assertThat(Files.exists(htmlFile));
         }));
     }
 
@@ -190,14 +191,13 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Component component = study.getFirstComponent().get();
 
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
+            Path htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
+            assertThat(Files.exists(htmlFile));
 
             // Create subfolder
-            File subfolder = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder");
-            //noinspection ResultOfMethodCallIgnored
-            subfolder.mkdir();
-            assertThat(subfolder.exists());
+            Path subfolder = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder");
+            Files.createDirectories(subfolder);
+            assertThat(Files.exists(subfolder));
 
             // Changing the file path into a subfolder is possible
             componentService.renameHtmlFilePath(component, "subfolder/foo.html", true);
@@ -205,8 +205,8 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             // Check renaming into a subfolder
             htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "subfolder/foo.html");
             assertThat(component.getHtmlFilePath()).isEqualTo("subfolder/foo.html");
-            assertThat(htmlFile.exists());
-            assertThat(htmlFile.getParentFile().getName()).isEqualTo("subfolder");
+            assertThat(Files.exists(htmlFile));
+            assertThat(htmlFile.getParent().getFileName().toString()).isEqualTo("subfolder");
 
             // Changing the file path back into the root of the study assets is also possible
             componentService.renameHtmlFilePath(component, "foo.html", true);
@@ -214,7 +214,7 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             // Check renaming back into the root of the study assets
             htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
             assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
-            assertThat(htmlFile.exists());
+            assertThat(Files.exists(htmlFile));
         }));
     }
 
@@ -225,21 +225,20 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Component component = study.getFirstComponent().get();
 
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
+            Path htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
+            assertThat(Files.exists(htmlFile));
 
             // Remove current HTML file
-            //noinspection ResultOfMethodCallIgnored
-            htmlFile.delete();
-            assertThat(!htmlFile.exists());
+            Files.delete(htmlFile);
+            assertThat(!Files.exists(htmlFile));
 
-            // Rename to non-existing file AND current file doesn't exist
+            // Rename to non-existing file, AND current file doesn't exist
             // -> new file name must be set and file still doesn't existing
             componentService.renameHtmlFilePath(component, "foo.html", true);
 
             htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), "foo.html");
             assertThat(component.getHtmlFilePath()).isEqualTo("foo.html");
-            assertThat(htmlFile.exists()).isFalse();
+            assertThat(Files.exists(htmlFile)).isFalse();
         }));
     }
 
@@ -250,24 +249,23 @@ public class ComponentServiceIntegrationTest extends JatosTest {
             Study study = studyDao.findById(studyId);
             Component component = study.getFirstComponent().get();
 
-            File htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
-            assertThat(htmlFile.exists());
+            Path htmlFile = ioUtils.getFileInStudyAssetsDir(study.getDirName(), component.getHtmlFilePath());
+            assertThat(Files.exists(htmlFile));
 
-            File differentHtmlFile = ioUtils.getFileInStudyAssetsDir(
+            Path differentHtmlFile = ioUtils.getFileInStudyAssetsDir(
                     study.getDirName(), study.getLastComponent().get().getHtmlFilePath());
-            assertThat(differentHtmlFile.exists());
+            assertThat(Files.exists(differentHtmlFile));
 
             // Remove current HTML file
-            //noinspection ResultOfMethodCallIgnored
-            htmlFile.delete();
-            assertThat(!htmlFile.exists());
+            Files.delete(htmlFile);
+            assertThat(!Files.exists(htmlFile));
 
             // Rename to existing file AND current file doesn't exist
             // -> new file name must be set and file still existing
             componentService.renameHtmlFilePath(component, study.getLastComponent().get().getHtmlFilePath(), true);
 
             assertThat(component.getHtmlFilePath()).isEqualTo(study.getLastComponent().get().getHtmlFilePath());
-            assertThat(differentHtmlFile.exists());
+            assertThat(Files.exists(differentHtmlFile));
         }));
     }
 

@@ -17,8 +17,9 @@ import utils.common.IOUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -190,12 +191,11 @@ public class ComponentService {
         }
 
         // What if current HTML file doesn't exist
-        File currentFile = null;
+        Path currentFile = null;
         if (!component.getHtmlFilePath().trim().isEmpty()) {
-            currentFile = ioUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(),
-                    component.getHtmlFilePath());
+            currentFile = ioUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(), component.getHtmlFilePath());
         }
-        if (currentFile == null || !currentFile.exists()) {
+        if (currentFile == null || !Files.exists(currentFile)) {
             component.setHtmlFilePath(newHtmlFilePath);
             componentDao.update(component);
             return;
