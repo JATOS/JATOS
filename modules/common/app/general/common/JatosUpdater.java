@@ -15,7 +15,6 @@ import play.Logger;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import play.libs.ws.WSClient;
-import play.libs.ws.WSResponse;
 import scala.compat.java8.FutureConverters;
 import scala.concurrent.ExecutionContext;
 import utils.common.IOUtils;
@@ -28,7 +27,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.nio.file.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -75,7 +77,7 @@ public class JatosUpdater {
     private static final Logger.ALogger LOGGER = Logger.of(JatosUpdater.class);
     private static final String BACKUP_DIR_PREFIX = "backup_";
 
-    private enum UpdateState {
+    enum UpdateState {
         SLEEPING, // most of the time
         DOWNLOADING, // Currently downloading new release
         DOWNLOADED, // Finished downloading and unzipping successfully
@@ -88,14 +90,14 @@ public class JatosUpdater {
     /**
      * Initial state after every JATOS start is SLEEPING, unless Initializer sets it to SUCCESS or FAILED
      */
-    private UpdateState state = UpdateState.SLEEPING;
+    UpdateState state = UpdateState.SLEEPING;
 
     /**
      * Last time the release info was requested from GitHub
      */
     private LocalTime lastTimeAskedReleaseInfo;
 
-    private ReleaseInfo currentReleaseInfo;
+    ReleaseInfo currentReleaseInfo;
 
     /**
      * Contains all info about an JATOS update. It's also send as JSON to the GUI. Fields have to be public for JSON
@@ -396,26 +398,27 @@ public class JatosUpdater {
         }
     }
 
-    private CompletionStage<Path> downloadAsync(String url, String filename) throws IOException {
+    private CompletionStage<Path> downloadAsync(String url, String filename) {
         Path file = IOUtils.tmpDir().resolve(filename);
-        try (OutputStream outputStream = Files.newOutputStream(file)) {
-            LOGGER.info("Download " + url);
-            CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET")
-                    .setRequestTimeout(Duration.ofHours(1))
-                    .stream();
-            return futureResponse.thenCompose(res -> {
-                Source<ByteString, ?> responseBody = res.getBodyAsSource();
-                Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
-                        bytes -> outputStream.write(bytes.toArray()));
-                return responseBody.runWith(outputWriter, materializer).whenComplete((value, error) -> {
-                    try {
-                        outputStream.close();
-                    } catch (IOException e) {
-                        LOGGER.error("Couldn't close stream after downloading " + url, e);
-                    }
-                }).thenApply(v -> file);
-            });
-        }
+        LOGGER.info("Download " + url);
+
+        return ws.url(url)
+                .setMethod("GET")
+                .setRequestTimeout(Duration.ofHours(1))
+                .stream()
+                .thenCompose(res -> {
+                    Source<ByteString, ?> responseBody = res.getBodyAsSource();
+                    return CompletableFuture.supplyAsync(() -> {
+                        try (OutputStream outputStream = Files.newOutputStream(file)) {
+                            Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
+                                    bytes -> outputStream.write(bytes.toArray()));
+                            responseBody.runWith(outputWriter, materializer).toCompletableFuture().join();
+                            return file;
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                });
     }
 
     /**
