@@ -15,8 +15,8 @@
                 <th>Email<span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Last successful sign-in of this user">Last sign-in<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC, ORCID, SRAM or CONEXT">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Roles, e.g. Viewer, Viewer, Admin, Superuser, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Switch between role Viewer and Viewer">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Roles, e.g. Viewer, User, Admin, Superuser, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Switch between role Viewer and User">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
@@ -352,7 +352,7 @@
                             isDisabled = true;
                             tooltip = "You cannot change your own roles. Only another user with admin rights can do it.";
                         } else {
-                            tooltip = "Use this switch to switch between Viewer and Viewer role for this user.";
+                            tooltip = "Use this switch to switch between Viewer and User role for this user.";
                         }
                         const checked = isUser ? "checked" : "";
                         const disabled = isDisabled ? "disabled" : "";
