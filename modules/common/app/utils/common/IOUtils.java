@@ -81,7 +81,7 @@ public class IOUtils {
     }
 
     public static void deleteRecursivelyIfExists(Path root) throws IOException {
-        if (Files.exists(root)) {
+        if (root != null && Files.exists(root)) {
             deleteRecursively(root);
         }
     }
