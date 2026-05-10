@@ -62,10 +62,12 @@ function getLocalTimeSimple(timestamp) {
  * @param {string} type - DataTables type
  */
 function getLocalTimeDataTables(timestamp, type) {
+    const date = new Date(timestamp);
     if (type === 'sort') return timestamp;
-    if (type === 'filter') return new Date(timestamp).toISOString();
+    // date.toISOString throws an error if timestamp is undefined
+    if (type === 'filter') return Number.isNaN(date.getTime()) ? '' : date.toISOString();
     return timestamp
-        ? `<span class="no-info-icon" data-bs-tooltip="in local time ${timezoneAbbr} (${timezone}), with locale '${locale}'">${getLocalTimeSimple(timestamp)}</span>`
+        ? `<span class="no-info-icon" data-bs-tooltip="in local time ${timezoneAbbr} (${timezone}), with locale '${locale}'">${date.toLocaleString(locale)}</span>`
         : '<span class="text-body text-opacity-50">never</span>';
 }
 
