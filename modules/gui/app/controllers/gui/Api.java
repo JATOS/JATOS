@@ -700,7 +700,7 @@ public class Api extends Controller {
                 Files.createDirectories(parent);
             }
 
-            boolean overwritten = IOUtils.moveAndDetectOverwrite(uploadedFile, assetsFilePath);
+            boolean overwritten = IOUtils.moveFileAndDetectOverwrite(uploadedFile, assetsFilePath);
             String msg = overwritten ? "File overwritten successfully" : "File uploaded successfully";
             JsonNode envelope = ApiEnvelope.wrap(msg).asJsonNode();
             return overwritten ? ok(envelope) : created(envelope);

@@ -9,6 +9,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -29,7 +30,7 @@ public class IOUtils {
     /*
      * No spaces, no nulls
      */
-    public static final String REGEX_ILLEGAL_IN_PATH = "^[^\\x00\\s]+$";
+    public static final String REGEX_LEGAL_IN_PATH = "^[^\\x00\\s]+$";
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
@@ -62,6 +63,152 @@ public class IOUtils {
                 return FileVisitResult.CONTINUE;
             }
         });
+    }
+
+    /**
+     * Moves a regular file to target. If source and target are on different file stores, it falls back to copy + delete.
+     * For cross-file-store moves, it first copies to a temporary sibling of the target and only then moves the temporary
+     * file into the final target path.
+     *
+     * @param source          Existing regular file to move.
+     * @param target          Target file path.
+     * @param replaceExisting If true, an existing target file is replaced. Directories are never replaced.
+     */
+    public static void moveFile(Path source, Path target, boolean replaceExisting) throws IOException {
+        if (!Files.exists(source)) {
+            throw new NoSuchFileException(source.toString());
+        }
+        if (!Files.isRegularFile(source)) {
+            throw new IOException("Source is not a regular file: " + source);
+        }
+        if (Files.isDirectory(target)) {
+            throw new FileAlreadyExistsException(target.toString(), null, "Target is a directory");
+        }
+        if (Files.exists(target) && !replaceExisting) {
+            throw new FileAlreadyExistsException(target.toString());
+        }
+
+        Path absoluteTarget = target.toAbsolutePath();
+        Path targetParent = absoluteTarget.getParent();
+        if (targetParent == null) {
+            throw new IOException("Target has no parent directory: " + target);
+        }
+        Files.createDirectories(targetParent);
+
+        if (isSameFileStore(source, targetParent)) {
+            if (replaceExisting) {
+                Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                Files.move(source, target);
+            }
+            return;
+        }
+
+        Path tempTarget = createTemporarySibling(absoluteTarget);
+        boolean finalTargetCreated = false;
+        try {
+            Files.copy(source, tempTarget, StandardCopyOption.COPY_ATTRIBUTES);
+
+            try {
+                if (replaceExisting) {
+                    Files.move(tempTarget, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    Files.move(tempTarget, target, StandardCopyOption.ATOMIC_MOVE);
+                }
+            } catch (AtomicMoveNotSupportedException e) {
+                if (replaceExisting) {
+                    Files.move(tempTarget, target, StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    Files.move(tempTarget, target);
+                }
+            }
+            finalTargetCreated = true;
+
+            Files.delete(source);
+        } catch (IOException e) {
+            if (!finalTargetCreated) {
+                try {
+                    Files.deleteIfExists(tempTarget);
+                } catch (IOException cleanupException) {
+                    e.addSuppressed(cleanupException);
+                }
+            }
+            throw e;
+        }
+    }
+
+    public static boolean moveFileAndDetectOverwrite(Path source, Path target) throws IOException {
+        try {
+            moveFile(source, target, false);
+            return false;
+        } catch (FileAlreadyExistsException e) {
+            moveFile(source, target, true);
+            return true;
+        }
+    }
+
+    /**
+     * Moves a source to target. If source and target are on different file stores, it falls back to copy + delete. For
+     * cross-file-store moves, it first copies to a temporary sibling of the target and only then moves the temporary
+     * path into the final target path.
+     */
+    public static void moveRecursively(Path source, Path target) throws IOException {
+        if (Files.exists(target)) {
+            throw new FileAlreadyExistsException(target.toString());
+        }
+
+        Path targetParent = target.getParent();
+        if (targetParent != null) {
+            Files.createDirectories(targetParent);
+        }
+
+        if (isSameFileStore(source, targetParent != null ? targetParent : target.toAbsolutePath().getParent())) {
+            Files.move(source, target);
+            return;
+        }
+
+        Path tempTarget = createTemporarySibling(target);
+        try {
+            if (Files.isDirectory(source)) {
+                copyRecursively(source, tempTarget);
+            } else {
+                Files.copy(source, tempTarget, StandardCopyOption.COPY_ATTRIBUTES);
+            }
+
+            try {
+                Files.move(tempTarget, target, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tempTarget, target);
+            }
+
+            deleteRecursively(source);
+        } catch (IOException e) {
+            try {
+                deleteRecursivelyIfExists(tempTarget);
+            } catch (IOException cleanupException) {
+                e.addSuppressed(cleanupException);
+            }
+            throw e;
+        }
+    }
+
+    private static boolean isSameFileStore(Path source, Path targetParent) throws IOException {
+        if (targetParent == null) {
+            return false;
+        }
+        return Files.getFileStore(source).equals(Files.getFileStore(targetParent));
+    }
+
+    private static Path createTemporarySibling(Path target) {
+        Path targetParent = target.getParent();
+        String targetName = target.getFileName().toString();
+
+        Path tempTarget;
+        do {
+            tempTarget = targetParent.resolve("." + targetName + ".tmp-" + UUID.randomUUID());
+        } while (Files.exists(tempTarget));
+
+        return tempTarget;
     }
 
     public static void deleteRecursively(Path root) throws IOException {
@@ -226,7 +373,7 @@ public class IOUtils {
     }
 
     public static boolean checkPath(String path) {
-        return Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_PATH).matcher(path).find();
+        return Pattern.compile(IOUtils.REGEX_LEGAL_IN_PATH).matcher(path).find();
     }
 
     /**
@@ -348,7 +495,7 @@ public class IOUtils {
         if (Files.exists(targetDir)) {
             throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getFileName().toString()));
         }
-        Files.move(srcDir, targetDir);
+        moveRecursively(srcDir, targetDir);
     }
 
     /**
@@ -406,7 +553,7 @@ public class IOUtils {
             createStudyAssetsDir(newDirName);
             return;
         }
-        Files.move(oldDir, newDir);
+        moveRecursively(oldDir, newDir);
     }
 
     /**
@@ -451,7 +598,7 @@ public class IOUtils {
             throw new IOException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
         }
 
-        Files.move(oldHtmlFile, newHtmlFile);
+        moveFile(oldHtmlFile, newHtmlFile, false);
     }
 
     /**
@@ -520,21 +667,6 @@ public class IOUtils {
         Path dir = getResultUploadsDir(studyResultId, componentResultId);
         if (Files.isDirectory(dir)) {
             deleteRecursively(dir);
-        }
-    }
-
-    public static boolean moveAndDetectOverwrite(Path source, Path target) throws IOException {
-        try {
-            Files.move(source, target);
-            return false;
-        } catch (FileAlreadyExistsException e) {
-            if (Files.isDirectory(target)) {
-                deleteRecursively(target);
-            } else {
-                Files.deleteIfExists(target);
-            }
-            Files.move(source, target);
-            return true;
         }
     }
 }

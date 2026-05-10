@@ -79,7 +79,7 @@ public class ImportExportService {
     public Map<String, Object> importStudy(User signedinUser, Path file)
             throws IOException, ForbiddenException, ValidationException, ImportExportException {
         Path tempUnzippedStudyDir = unzipUploadedFile(file);
-        Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, false);
+        Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir);
 
         // Remember study assets' dir name
         Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, tempUnzippedStudyDir.getFileName().toString());
@@ -153,7 +153,7 @@ public class ImportExportService {
             LOGGER.error(".importStudyConfirmed: missing unzipped study directory in temp directory");
             throw new IOException("Missing unzipped study directory in tmp directory");
         }
-        Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir, true);
+        Study uploadedStudy = deserializeStudy(tempUnzippedStudyDir);
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
 
         // 1) study exists  -  udir exists - udir == cdir
@@ -183,7 +183,7 @@ public class ImportExportService {
         Path tempUnzippedStudyDir = getUnzippedStudyDir();
         try {
             IOUtils.deleteRecursivelyIfExists(tempUnzippedStudyDir);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("cleanupAfterStudyImport: deleting temp directory failed", e);
         }
         Controller.session().remove(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
@@ -337,7 +337,7 @@ public class ImportExportService {
         return destDir;
     }
 
-    private Study deserializeStudy(Path tempDir, boolean deleteAfterwards) throws IOException, ValidationException {
+    private Study deserializeStudy(Path tempDir) throws IOException, ValidationException {
         Path[] studyFileList = ioUtils.findFiles(tempDir, "", "jas");
         if (studyFileList.length != 1) {
             throw new ValidationException("File is not a valid JATOS study");
@@ -349,9 +349,6 @@ public class ImportExportService {
         study.getComponentList().forEach(componentService::validate);
         study.getBatchList().forEach(batchService::validate);
 
-        if (deleteAfterwards) {
-            Files.delete(studyFile);
-        }
         return study;
     }
 

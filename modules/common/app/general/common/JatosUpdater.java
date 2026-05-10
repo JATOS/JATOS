@@ -539,10 +539,8 @@ public class JatosUpdater {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private static void updateLoaderScripts(Path srcDir) throws IOException {
-        Files.move(srcDir.resolve("loader.sh"), Path.of(Common.getBasepath(), "loader.sh"),
-                StandardCopyOption.REPLACE_EXISTING);
-        Files.move(srcDir.resolve("loader.bat"), Path.of(Common.getBasepath(), "loader.bat"),
-                StandardCopyOption.REPLACE_EXISTING);
+        IOUtils.moveFile(srcDir.resolve("loader.sh"), Path.of(Common.getBasepath(), "loader.sh"),true);
+        IOUtils.moveFile(srcDir.resolve("loader.bat"), Path.of(Common.getBasepath(), "loader.bat"),true);
         Path.of(Common.getBasepath(), "loader.sh").toFile().setExecutable(true);
         Path.of(Common.getBasepath(), "loader.bat").toFile().setExecutable(true);
         LOGGER.info("Replaced loader scripts with newer version.");

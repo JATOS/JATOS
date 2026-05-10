@@ -274,8 +274,6 @@ public class ImportExportServiceTest {
         // components updating called (we verify the interactions of componentService indirectly)
         verify(componentService, atLeastOnce()).updateProperties(any(Component.class), any(Component.class));
         verify(studyDao).update(eq(current));
-        // cleanup isn't called here (separate method), ensure jas file delete attempted via actual code
-        assertThat(Files.exists(temp.jasFile)).isFalse();
 
         // no rename of assets dir should be tried in overwritten case
         verify(ioUtils, never()).findNonExistingStudyAssetsDirName(anyString());

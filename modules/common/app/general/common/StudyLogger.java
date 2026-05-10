@@ -12,6 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.libs.Json;
 import utils.common.HashUtils;
+import utils.common.IOUtils;
 
 import javax.inject.Singleton;
 import java.io.*;
@@ -122,7 +123,7 @@ public class StudyLogger {
         Path retiredLogPath = Path.of(getRetiredPath(study));
         if (Files.exists(logPath)) {
             try {
-                Files.move(logPath, retiredLogPath);
+                IOUtils.moveFile(logPath, retiredLogPath, false);
             } catch (IOException e) {
                 LOGGER.error("Study log couldn't be moved from " + logPath + " to " + retiredLogPath, e);
             }

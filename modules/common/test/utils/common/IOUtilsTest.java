@@ -718,7 +718,7 @@ public class IOUtilsTest {
 
         Files.write(source, "source-content".getBytes(StandardCharsets.UTF_8));
 
-        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
+        boolean overwritten = IOUtils.moveFileAndDetectOverwrite(source, target);
 
         assertFalse(overwritten);
         assertFalse(Files.exists(source));
@@ -737,7 +737,7 @@ public class IOUtilsTest {
         Files.write(source, "new-content".getBytes(StandardCharsets.UTF_8));
         Files.write(target, "old-content".getBytes(StandardCharsets.UTF_8));
 
-        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
+        boolean overwritten = IOUtils.moveFileAndDetectOverwrite(source, target);
 
         assertTrue(overwritten);
         assertFalse(Files.exists(source));
@@ -745,44 +745,4 @@ public class IOUtilsTest {
         assertEquals("new-content", Files.readString(target));
     }
 
-    @Test
-    public void testMoveAndDetectOverwriteWorksForDirectories() throws Exception {
-        Path sourceParent = tmp.newFolder("moveSourceDir").toPath();
-        Path targetParent = tmp.newFolder("moveTargetDirParent").toPath();
-
-        Path source = sourceParent.resolve("dirToMove");
-        Path target = targetParent.resolve("dirMoved");
-
-        Files.createDirectories(source.resolve("nested"));
-        Files.write(source.resolve("nested/file.txt"), "dir-content".getBytes(StandardCharsets.UTF_8));
-
-        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
-
-        assertFalse(overwritten);
-        assertFalse(Files.exists(source));
-        assertTrue(Files.exists(target.resolve("nested/file.txt")));
-        assertEquals("dir-content", Files.readString(target.resolve("nested/file.txt")));
-    }
-
-    @Test
-    public void testMoveAndDetectOverwriteOverwritesExistingDirectory() throws Exception {
-        Path sourceParent = tmp.newFolder("moveSourceDirOverwrite").toPath();
-        Path targetParent = tmp.newFolder("moveTargetDirOverwriteParent").toPath();
-
-        Path source = sourceParent.resolve("dirToMove");
-        Path target = targetParent.resolve("dirMoved");
-
-        Files.createDirectories(source.resolve("nested"));
-        Files.write(source.resolve("nested/file.txt"), "new-dir-content".getBytes(StandardCharsets.UTF_8));
-
-        Files.createDirectories(target.resolve("nested"));
-        Files.write(target.resolve("nested/file.txt"), "old-dir-content".getBytes(StandardCharsets.UTF_8));
-
-        boolean overwritten = IOUtils.moveAndDetectOverwrite(source, target);
-
-        assertTrue(overwritten);
-        assertFalse(Files.exists(source));
-        assertTrue(Files.exists(target.resolve("nested/file.txt")));
-        assertEquals("new-dir-content", Files.readString(target.resolve("nested/file.txt")));
-    }
 }
