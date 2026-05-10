@@ -22,6 +22,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 
 /**
  * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created while the study is
@@ -41,6 +42,8 @@ import java.util.concurrent.CompletableFuture;
 public class StudyLogger {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLogger.class);
+
+    private static final Pattern NON_ISO_8859_1 = Pattern.compile("[^\\u0000-\\u00FF]");
 
     /**
      * JSON key names used in study log
@@ -105,7 +108,8 @@ public class StudyLogger {
             jsonObj.put(SERVERS_MAC, Common.getMac());
             jsonObj.put(HASH_FUNCTION, HashUtils.SHA_256);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
-            Files.writeString(studyLogPath, logEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.CREATE_NEW);
+            String sanitizedLogEntry = sanitizeForIso88591(logEntry);
+            Files.writeString(studyLogPath, sanitizedLogEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
             LOGGER.error("Study log couldn't be created: " + studyLogPath, e);
         }
@@ -225,7 +229,8 @@ public class StudyLogger {
             if (user != null) jsonObj.put(USER_NAME, user.getName());
             jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
-            Files.writeString(studyLogPath, logEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.APPEND);
+            String sanitizedLogEntry = sanitizeForIso88591(logEntry);
+            Files.writeString(studyLogPath, sanitizedLogEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.APPEND);
         } catch (IOException e) {
             LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
         }
@@ -278,6 +283,11 @@ public class StudyLogger {
 
     private boolean hasNextLine(String nextLine, int lineLimit, int lineNumber) {
         return nextLine != null && (lineLimit == -1 || lineNumber <= lineLimit);
+    }
+
+    public String sanitizeForIso88591(String str) {
+        if (str == null) return null;
+        return NON_ISO_8859_1.matcher(str).replaceAll("?");
     }
 
 }
