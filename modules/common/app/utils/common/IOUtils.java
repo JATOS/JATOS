@@ -30,7 +30,7 @@ public class IOUtils {
     /*
      * No spaces, no nulls
      */
-    public static final String REGEX_LEGAL_IN_PATH = "^[^\\x00\\s]+$";
+    public static final String REGEX_LEGAL_IN_PATH = "^[^\\x00-\\x1F\\x7F\\\\<>:\"|?*]+$";
 
     private static final int MAX_FILENAME_LENGTH = 100;
 
@@ -373,7 +373,7 @@ public class IOUtils {
     }
 
     public static boolean checkPath(String path) {
-        return Pattern.compile(IOUtils.REGEX_LEGAL_IN_PATH).matcher(path).find();
+        return path != null && Pattern.compile(IOUtils.REGEX_LEGAL_IN_PATH).matcher(path).matches();
     }
 
     /**
