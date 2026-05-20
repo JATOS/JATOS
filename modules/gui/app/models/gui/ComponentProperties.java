@@ -72,7 +72,6 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
     /**
      * Does the html file exists in the file system?
      */
-    @JsonIgnore
     private boolean htmlFileExists = false;
 
     /**
