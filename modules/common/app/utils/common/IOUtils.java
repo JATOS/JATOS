@@ -66,9 +66,9 @@ public class IOUtils {
     }
 
     /**
-     * Moves a regular file to target. If source and target are on different file stores, it falls back to copy + delete.
-     * For cross-file-store moves, it first copies to a temporary sibling of the target and only then moves the temporary
-     * file into the final target path.
+     * Moves a regular file to target. If source and target are on different file stores, it falls back to copy +
+     * delete. For cross-file-store moves, it first copies to a temporary sibling of the target and only then moves the
+     * temporary file into the final target path.
      *
      * @param source          Existing regular file to move.
      * @param target          Target file path.
@@ -560,18 +560,20 @@ public class IOUtils {
      * Returns the disk size in Bytes of all files inside the given study assets directory. It does not count the size
      * of directories themselves (e.g., on Linux, each directory takes 4kB).
      */
-    public long getStudyAssetsDirSize(String dirName) throws IOException {
-        Path path = getStudyAssetsDir(dirName);
-        if (!Files.exists(path)) return 0;
+    public long getStudyAssetsDirSize(String dirName) {
+        try {
+            Path path = getStudyAssetsDir(dirName);
+            if (!Files.exists(path)) return 0;
 
-        try (Stream<Path> stream = Files.walk(path)) {
-            long sum = 0L;
-            for (Path p : (Iterable<Path>) stream::iterator) {
-                if (Files.isRegularFile(p)) {
-                    sum += Files.size(p);
+            try (Stream<Path> stream = Files.walk(path)) {
+                long sum = 0L;
+                for (Path p : (Iterable<Path>) stream::iterator) {
+                    if (Files.isRegularFile(p)) {
+                        sum += Files.size(p);
+                    }
                 }
+                return sum;
             }
-            return sum;
         } catch (IOException e) {
             return 0;
         }
@@ -634,16 +636,18 @@ public class IOUtils {
      * the size of directories themselves (e.g. on Linux each directory takes 4kB).
      */
     public long getResultUploadDirSize(Long studyResultId) {
-        Path path = IOUtils.getResultUploadsDir(studyResultId);
-        if (!Files.exists(path)) return 0;
-        try (Stream<Path> stream = Files.walk(path)) {
-            long size = 0L;
-            for (Path p : (Iterable<Path>) stream::iterator) {
-                if (Files.isRegularFile(p)) {
-                    size += Files.size(p);
+        try {
+            Path path = IOUtils.getResultUploadsDir(studyResultId);
+            if (!Files.exists(path)) return 0;
+            try (Stream<Path> stream = Files.walk(path)) {
+                long size = 0L;
+                for (Path p : (Iterable<Path>) stream::iterator) {
+                    if (Files.isRegularFile(p)) {
+                        size += Files.size(p);
+                    }
                 }
+                return size;
             }
-            return size;
         } catch (IOException e) {
             return 0;
         }

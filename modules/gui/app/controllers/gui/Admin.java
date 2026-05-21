@@ -113,7 +113,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(roles = ADMIN)
-    public Result allStudiesData() throws IOException {
+    public Result allStudiesData() {
         List<Study> studyList = studyDao.findAll();
         boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyManager();
         boolean resultDataSizeFlag = Common.showResultDataSizeInStudyManager();
@@ -128,7 +128,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(roles = ADMIN)
-    public Result studiesDataByUser(String username) throws IOException {
+    public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
         Set<Study> studyList = user.getStudyList();
@@ -141,7 +141,7 @@ public class Admin extends Controller {
      */
     @Transactional
     @Auth(roles = {VIEWER, USER, ADMIN})
-    public Result studyAssetsSize(Long studyId) throws IOException {
+    public Result studyAssetsSize(Long studyId) {
         User signedinUser = authService.getSignedinUser();
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");

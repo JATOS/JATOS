@@ -19,7 +19,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import utils.common.IOUtils;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -90,7 +89,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void getStudiesData_allFlagsTrue_andLastStartedPresent() throws IOException {
+    public void getStudiesData_allFlagsTrue_andLastStartedPresent() {
         // Given
         when(studyResultDao.countByStudy(study)).thenReturn(4);
         when(ioUtils.getStudyAssetsDirSize("dir-1")).thenReturn(2_000L); // 2.0 kB
@@ -137,7 +136,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void getStudiesData_flagsFalse_putsDisabledStrings() throws IOException {
+    public void getStudiesData_flagsFalse_putsDisabledStrings() {
         when(studyResultDao.countByStudy(study)).thenReturn(0);
         when(studyResultDao.findLastStarted(study)).thenReturn(Optional.empty());
 
