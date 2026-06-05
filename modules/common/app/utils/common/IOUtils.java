@@ -28,7 +28,7 @@ public class IOUtils {
     public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f*?\"\\\\\0/,`<>|:~!§$%&^°]";
 
     /*
-     * No spaces, no nulls
+     * No ASCII control characters (NUL, DEL), no backslash, no < > : " | ? *
      */
     public static final String REGEX_LEGAL_IN_PATH = "^[^\\x00-\\x1F\\x7F\\\\<>:\"|?*]+$";
 
