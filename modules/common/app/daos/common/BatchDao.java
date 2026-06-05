@@ -51,7 +51,8 @@ public class BatchDao extends AbstractDao {
      * Atomically updates batchSessionData and increments batchSessionVersion, but only if the current version matches
      * the expectedVersion (compare-and-set).
      *
-     * @return The new batchSessionVersion if the update succeeded (exactly one row updated), null if the version mismatched
+     * @return The new batchSessionVersion if the update succeeded (exactly one row updated), null if the version
+     * mismatched
      */
     public Long updateBatchSession(Long batchId, Long expectedVersion, String sessionData) {
         String query =
@@ -68,6 +69,45 @@ public class BatchDao extends AbstractDao {
                 .executeUpdate();
 
         return updated == 1 ? expectedVersion + 1 : null;
+    }
+
+    /**
+     * Returns the number of Workers belonging to the given Batch.
+     */
+    public int countWorkers(Batch batch) {
+        Number result = (Number) jpa.em()
+                .createNativeQuery("SELECT COUNT(*) FROM BatchWorkerMap WHERE batch_id = :batchId")
+                .setParameter("batchId", batch.getId())
+                .getSingleResult();
+        return result != null ? result.intValue() : 0;
+    }
+
+    /**
+     * Checks if the maximum number of workers is reached for this batch.
+     */
+    public boolean isMaxTotalReached(Batch batch) {
+        if (batch.getMaxTotalWorkers() == null) return false;
+
+        int currentCount = countWorkers(batch);
+        return currentCount > batch.getMaxTotalWorkers();
+    }
+
+    public void addWorkerToBatch(Long batchId, Long workerId) {
+        jpa.em().createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) "
+                        + "SELECT :batchId, :workerId "
+                        + "WHERE NOT EXISTS ("
+                        + "SELECT 1 FROM BatchWorkerMap "
+                        + "WHERE batch_id = :batchId AND worker_id = :workerId)")
+                .setParameter("batchId", batchId)
+                .setParameter("workerId", workerId)
+                .executeUpdate();
+    }
+
+    public void removeWorkerFromBatch(Long batchId, Long workerId) {
+        jpa.em().createNativeQuery("DELETE FROM BatchWorkerMap WHERE batch_id = :batchId AND worker_id = :workerId")
+                .setParameter("batchId", batchId)
+                .setParameter("workerId", workerId)
+                .executeUpdate();
     }
 
 }
