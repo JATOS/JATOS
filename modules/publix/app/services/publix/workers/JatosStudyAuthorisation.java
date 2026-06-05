@@ -31,7 +31,7 @@ public class JatosStudyAuthorisation extends StudyAuthorisation {
         if (!batch.isActive()) {
             throw new ForbiddenPublixException(PublixErrorMessages.batchInactive(batch.getId()));
         }
-        checkMaxTotalWorkers(batch, worker);
+        checkMaxTotalWorkers(batch);
         checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 

@@ -1,14 +1,18 @@
 package services.publix;
 
+import daos.common.BatchDao;
 import exceptions.publix.ForbiddenPublixException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.Worker;
 import play.mvc.Http;
 
-import java.util.Set;
+import javax.inject.Inject;
 
 public abstract class StudyAuthorisation {
+
+    @Inject
+    private BatchDao batchDao;
 
     /**
      * Checks whether the given worker is allowed to start this study in this
@@ -27,16 +31,10 @@ public abstract class StudyAuthorisation {
             Batch batch) throws ForbiddenPublixException;
 
     /**
-     * Check if the max total worker number is reached for this batch. Only
-     * non-JatosWorker count here.
+     * Check if the max total worker number is reached for this batch. Only non-JatosWorker count here.
      */
-    public void checkMaxTotalWorkers(Batch batch, Worker worker) throws ForbiddenPublixException {
-        Set<Worker> workerSet = batch.getWorkerList();
-        // Add the worker who wants to run the study (he might have run it already)
-        workerSet.add(worker);
-        int potentialWorkerNumber = workerSet.size();
-        if (batch.getMaxTotalWorkers() != null
-                && potentialWorkerNumber > batch.getMaxTotalWorkers()) {
+    public void checkMaxTotalWorkers(Batch batch) throws ForbiddenPublixException {
+        if (batchDao.isMaxTotalReached(batch)) {
             throw new ForbiddenPublixException(PublixErrorMessages
                     .batchMaxTotalWorkerReached(batch.getId()));
         }
