@@ -72,14 +72,13 @@ public class StudyLinkService {
                     throw new BadRequestException("Unknown worker type");
             }
             workerService.validateWorker(worker);
-            batch.addWorker(worker);
             workerDao.create(worker);
+            batchDao.addWorkerToBatch(batch.getId(), worker.getId());
 
             StudyLink studyLink = new StudyLink(batch, worker);
             studyLinkDao.create(studyLink);
             studyCodeList.add(studyLink.getStudyCode());
 
-            batchDao.update(batch);
             amount--;
         }
         return studyCodeList;

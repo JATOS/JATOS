@@ -3,6 +3,7 @@ package services.gui;
 import auth.gui.AuthService;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
@@ -42,18 +43,20 @@ public class StudyService {
     private final ComponentService componentService;
     private final StudyDao studyDao;
     private final UserDao userDao;
+    private final BatchDao batchDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
     private final AuthService authService;
 
     @Inject
     StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
-            UserDao userDao, IOUtils ioUtils,
+            UserDao userDao, BatchDao batchDao, IOUtils ioUtils,
             StudyLogger studyLogger, AuthService authService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
         this.userDao = userDao;
+        this.batchDao = batchDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
         this.authService = authService;
@@ -107,7 +110,7 @@ public class StudyService {
 
     /**
      * Changes the member user in the study. Additionally changes the user's worker in all of the study's batches.
-     * Persisting.
+     * Persisting. The batch-worker relationship is updated in the database only - not in memory.
      */
     public void changeUserMember(Study study, User userToChange, boolean isMember) throws ForbiddenException {
         Set<User> userList = study.getUserList();
@@ -116,7 +119,8 @@ public class StudyService {
                 return;
             }
             study.addUser(userToChange);
-            study.getBatchList().forEach(b -> b.addWorker(userToChange.getWorker()));
+            Worker workerToAdd = userToChange.getWorker();
+            study.getBatchList().forEach(b -> batchDao.addWorkerToBatch(b.getId(), workerToAdd.getId()));
         } else {
             if (!userList.contains(userToChange)) {
                 return;
@@ -126,23 +130,24 @@ public class StudyService {
             }
             study.removeUser(userToChange);
             Worker workerToRemove = userToChange.getWorker();
-            study.getBatchList().forEach(b -> b.removeWorker(workerToRemove));
+            study.getBatchList().forEach(b -> batchDao.removeWorkerFromBatch(b.getId(), workerToRemove.getId()));
         }
         studyDao.update(study);
-        userDao.update(userToChange);
     }
 
     /**
      * Adds all users as members to the given study. Additionally adds all user's Jatos workers to the study's batches.
+     * The batch-worker relationship is updated in the database only - not in memory.
      */
     public void addAllUserMembers(Study study) {
         List<User> userList = userDao.findAll();
         study.addAllUsers(userList);
         List<Worker> usersWorkerList = userList.stream().map(User::getWorker).collect(Collectors.toList());
-        study.getBatchList().forEach(b -> b.addAllWorkers(usersWorkerList));
+        study.getBatchList().forEach(batch ->
+                usersWorkerList.forEach(worker ->
+                        batchDao.addWorkerToBatch(batch.getId(), worker.getId())));
 
         studyDao.update(study);
-        userList.forEach(userDao::update);
     }
 
     /**
@@ -151,16 +156,19 @@ public class StudyService {
      */
     public void removeAllUserMembers(Study study) {
         List<User> usersToRemove = userDao.findAll();
+
+        // Never remove the signed-in user
         User signedInUser = authService.getSignedinUser();
         usersToRemove.remove(signedInUser);
 
         List<Worker> usersWorkerList = usersToRemove.stream().map(User::getWorker).collect(Collectors.toList());
-        study.getBatchList().forEach(b -> b.removeAllWorkers(usersWorkerList));
+        study.getBatchList().forEach(batch ->
+                usersWorkerList.forEach(worker ->
+                        batchDao.removeWorkerFromBatch(batch.getId(), worker.getId())));
 
         study.removeAllUsers(usersToRemove);
 
         studyDao.update(study);
-        usersToRemove.forEach(userDao::update);
     }
 
     /**

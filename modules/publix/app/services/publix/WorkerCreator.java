@@ -37,9 +37,8 @@ public class WorkerCreator {
         } else {
             worker = new MTWorker(mtWorkerId);
         }
-        batch.addWorker(worker);
         workerDao.create(worker);
-        batchDao.update(batch);
+        batchDao.addWorkerToBatch(batch.getId(), worker.getId());
         return worker;
     }
 
@@ -48,9 +47,8 @@ public class WorkerCreator {
      */
     public GeneralSingleWorker createAndPersistGeneralSingleWorker(Batch batch) {
         GeneralSingleWorker worker = new GeneralSingleWorker();
-        batch.addWorker(worker);
         workerDao.create(worker);
-        batchDao.update(batch);
+        batchDao.addWorkerToBatch(batch.getId(), worker.getId());
         return worker;
     }
 
@@ -59,9 +57,8 @@ public class WorkerCreator {
      */
     public GeneralMultipleWorker createAndPersistGeneralMultipleWorker(Batch batch) {
         GeneralMultipleWorker worker = new GeneralMultipleWorker();
-        batch.addWorker(worker);
         workerDao.create(worker);
-        batchDao.update(batch);
+        batchDao.addWorkerToBatch(batch.getId(), worker.getId());
         return worker;
     }
 

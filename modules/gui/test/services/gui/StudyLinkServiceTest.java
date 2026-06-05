@@ -63,7 +63,6 @@ public class StudyLinkServiceTest {
         study.addBatch(batch);
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-y")).thenReturn(study);
-//        when(workerService.extractWorkerType("PersonalSingle")).thenReturn(PersonalSingleWorker.WORKER_TYPE);
 
         // Capture created worker to assert a decoded comment
         ArgumentCaptor<Worker> workerCaptor = ArgumentCaptor.forClass(Worker.class);
@@ -83,7 +82,7 @@ public class StudyLinkServiceTest {
         assertEquals("Hello World", created.getComment());
 
         verify(studyLinkDao, times(2)).create(any(StudyLink.class));
-        verify(batchDao, times(2)).update(eq(batch));
+        verify(batchDao, times(2)).addWorkerToBatch(eq(batch.getId()), eq(created.getId()));
         verifyNoMoreInteractions(authorizationService); // no batchId -> no checker call
     }
 

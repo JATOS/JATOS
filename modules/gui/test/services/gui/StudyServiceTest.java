@@ -1,6 +1,7 @@
 package services.gui;
 
 import auth.gui.AuthService;
+import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.gui.BadRequestException;
@@ -33,6 +34,7 @@ public class StudyServiceTest {
     private ComponentService componentService;
     private UserDao userDao;
     private StudyDao studyDao;
+    private BatchDao batchDao;
     private IOUtils ioUtils;
     private StudyLogger studyLogger;
     private AuthService authService;
@@ -45,11 +47,12 @@ public class StudyServiceTest {
         componentService = mock(ComponentService.class);
         userDao = mock(UserDao.class);
         studyDao = mock(StudyDao.class);
+        batchDao = mock(BatchDao.class);
         ioUtils = mock(IOUtils.class);
         studyLogger = mock(StudyLogger.class);
         authService = mock(AuthService.class);
 
-        studyService = new StudyService(batchService, componentService, studyDao, userDao,
+        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao,
                 ioUtils, studyLogger, authService);
     }
 
@@ -265,9 +268,8 @@ public class StudyServiceTest {
         studyService.changeUserMember(study, user, true);
 
         assertThat(study.getUserList().contains(user)).isTrue();
-        verify(b).addWorker(worker);
+        verify(batchDao).addWorkerToBatch(b.getId(), worker.getId());
         verify(studyDao).update(study);
-        verify(userDao).update(user);
     }
 
     @Test
@@ -300,9 +302,8 @@ public class StudyServiceTest {
         studyService.changeUserMember(study, toRemove, false);
 
         assertThat(study.getUserList().contains(toRemove)).isFalse();
-        verify(b).removeWorker(worker);
+        verify(batchDao).removeWorkerFromBatch(b.getId(), worker.getId());
         verify(studyDao).update(study);
-        verify(userDao).update(toRemove);
     }
 
     @Test(expected = ForbiddenException.class)
@@ -333,10 +334,8 @@ public class StudyServiceTest {
         studyService.addAllUserMembers(study);
 
         assertThat(study.getUserList()).contains(u1, u2);
-        verify(b).addAllWorkers(Arrays.asList(w1, w2));
+        verify(batchDao, times(2)).addWorkerToBatch(anyLong(), anyLong());
         verify(studyDao).update(study);
-        verify(userDao).update(u1);
-        verify(userDao).update(u2);
     }
 
     @Test
@@ -363,12 +362,10 @@ public class StudyServiceTest {
         assertThat(study.getUserList()).contains(signedIn);
         assertThat(study.getUserList()).excludes(other);
 
-        verify(b).removeAllWorkers(Collections.singletonList(otherWorker));
+        verify(batchDao).removeWorkerFromBatch(anyLong(), anyLong());
         verify(other).removeStudy(study);
 
         verify(studyDao).update(study);
-        verify(userDao, never()).update(signedIn);
-        verify(userDao).update(other);
     }
 
     @Test
