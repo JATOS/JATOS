@@ -68,8 +68,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
     // Set Http.Context used in Play with Java. Needed by IdCookieService
     play.mvc.Http.Context.current.set(play.core.j.JavaHelpers.createJavaContext(request, JavaHelpers.createContextComponents()))
 
-    val urlDecodedPath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8.name())
-    val filePath = urlDecodedPath.replace(URL_PATH_SEPARATOR, File.separator)
+    val filePath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8.name())
     try {
       checkProperAssets(urlPath) // Windows needs URL path
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
