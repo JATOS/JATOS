@@ -111,9 +111,9 @@ public class ComponentService {
         Component clone = clone(component);
         clone.setTitle(cloneTitle(component.getTitle()));
         try {
-            String clonedHtmlFileName = ioUtils.cloneComponentHtmlFile(component.getStudy().getDirName(),
+            String clonedHtmlFilePath = ioUtils.cloneComponentHtmlFile(component.getStudy().getDirName(),
                     component.getHtmlFilePath());
-            clone.setHtmlFilePath(clonedHtmlFileName);
+            clone.setHtmlFilePath(clonedHtmlFilePath);
         } catch (IOException e) {
             // Just log it and give a warning - a component is allowed to have
             // no HTML file
