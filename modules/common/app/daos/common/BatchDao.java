@@ -2,7 +2,6 @@ package daos.common;
 
 import models.common.Batch;
 import models.common.Study;
-import models.common.workers.Worker;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
@@ -75,33 +74,6 @@ public class BatchDao extends AbstractDao {
                     .stream().findFirst();
         });
         return batch.orElse(null);
-    }
-
-    /**
-     * Checks if the maximum number of workers is reached for this batch. If the given worker is already in the batch,
-     * it returns false (because a worker can run study multiple times in a batch).
-     */
-    // todo why never called?
-    public boolean isMaxTotalReached(Batch batch, Worker worker) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
-            if (batch.getMaxTotalWorkers() == null) return false;
-
-            // Check if this specific worker is already a member
-            String memberQuery = "SELECT COUNT(b) FROM Batch b JOIN b.workerList w " +
-                    "WHERE b = :batch AND w = :worker";
-            Number isMember = (Number) em.createQuery(memberQuery)
-                    .setParameter("batch", batch)
-                    .setParameter("worker", worker)
-                    .getSingleResult();
-
-            if (isMember != null && isMember.intValue() > 0) {
-                return false;
-            }
-
-            // If not a member, check if adding them would exceed the limit
-            int currentCount = countWorkers(batch);
-            return currentCount >= batch.getMaxTotalWorkers();
-        });
     }
 
     /**
