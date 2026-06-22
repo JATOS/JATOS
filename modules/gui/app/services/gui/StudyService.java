@@ -165,7 +165,7 @@ public class StudyService {
 
         // Never remove the signed-in user
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        usersToRemove.remove(signedInUser);
+        usersToRemove.remove(signedinUser);
 
         List<Worker> usersWorkerList = usersToRemove.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(batch ->

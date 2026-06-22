@@ -78,22 +78,10 @@ public class BatchDao extends AbstractDao {
     }
 
     /**
-     * Returns the number of Workers belonging to the given Batch.
-     */
-    public int countWorkers(Batch batch) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
-            String hql = "SELECT COUNT(w) FROM Batch b JOIN b.workerList w WHERE b = :batch";
-            Number result = (Number) em.createQuery(hql)
-                    .setParameter("batch", batch)
-                    .getSingleResult();
-            return result != null ? result.intValue() : 0;
-        });
-    }
-
-    /**
      * Checks if the maximum number of workers is reached for this batch. If the given worker is already in the batch,
      * it returns false (because a worker can run study multiple times in a batch).
      */
+    // todo why never called?
     public boolean isMaxTotalReached(Batch batch, Worker worker) {
         return jpa.withTransaction("default", true, (EntityManager em) -> {
             if (batch.getMaxTotalWorkers() == null) return false;
@@ -146,11 +134,13 @@ public class BatchDao extends AbstractDao {
      * Returns the number of Workers belonging to the given Batch.
      */
     public int countWorkers(Batch batch) {
-        Number result = (Number) jpa.em()
-                .createNativeQuery("SELECT COUNT(*) FROM BatchWorkerMap WHERE batch_id = :batchId")
-                .setParameter("batchId", batch.getId())
-                .getSingleResult();
-        return result != null ? result.intValue() : 0;
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            Number result = (Number) em
+                    .createNativeQuery("SELECT COUNT(*) FROM BatchWorkerMap WHERE batch_id = :batchId")
+                    .setParameter("batchId", batch.getId())
+                    .getSingleResult();
+            return result != null ? result.intValue() : 0;
+        });
     }
 
     /**
@@ -164,18 +154,22 @@ public class BatchDao extends AbstractDao {
     }
 
     public void addWorkerToBatch(Long batchId, Long workerId) {
-        jpa.em().createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) "
-                        + "VALUES (:batchId, :workerId)")
-                .setParameter("batchId", batchId)
-                .setParameter("workerId", workerId)
-                .executeUpdate();
+        jpa.withTransaction("default", true, (EntityManager em) -> {
+            em.createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) "
+                            + "VALUES (:batchId, :workerId)")
+                    .setParameter("batchId", batchId)
+                    .setParameter("workerId", workerId)
+                    .executeUpdate();
+        });
     }
 
     public void removeWorkerFromBatch(Long batchId, Long workerId) {
-        jpa.em().createNativeQuery("DELETE FROM BatchWorkerMap WHERE batch_id = :batchId AND worker_id = :workerId")
-                .setParameter("batchId", batchId)
-                .setParameter("workerId", workerId)
-                .executeUpdate();
+        jpa.withTransaction("default", true, (EntityManager em) -> {
+            em.createNativeQuery("DELETE FROM BatchWorkerMap WHERE batch_id = :batchId AND worker_id = :workerId")
+                    .setParameter("batchId", batchId)
+                    .setParameter("workerId", workerId)
+                    .executeUpdate();
+        });
     }
 
 }

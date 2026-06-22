@@ -4,8 +4,8 @@ import daos.common.StudyResultDao
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
 import executor.common.StudyAssetsExecutor
 import filters.publix.IdCookieFilter.IdCookies
-import http.common.Http.Context
 import general.common.{Common, MessagesStrings}
+import http.common.Http.Context
 import http.common.HttpUtils
 import play.api.Logger
 import play.api.libs.json.Json
@@ -13,7 +13,7 @@ import play.api.mvc._
 import play.db.jpa.JPAApi
 import services.publix.idcookie.IdCookieService
 import services.publix.{PublixErrorMessages, PublixHelpers}
-import utils.common.{StringUtils, IOUtils}
+import utils.common.IOUtils
 
 import java.io.{File, IOException}
 import java.net.URLDecoder
@@ -89,7 +89,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
   private def sendAssetFile(request: Request[AnyContent], urlPath: String): Result = {
     try {
       checkProperAssets(urlPath)
-      val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
+      val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, urlPath)
       logger.debug(s".viaAssetsPath: loading file $file.")
       if (request.headers.hasHeader(RANGE)) {
         RangeResult.ofPath(file, request.headers.get(RANGE), Option.empty)
@@ -104,8 +104,8 @@ class StudyAssets @Inject()(components: ControllerComponents,
         if (HttpUtils.isHtmlRequest) Forbidden(views.html.publix.error.render(errorMsg))
         else Forbidden(errorMsg)
       case _: IOException =>
-        logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}${File.separator}$filePath")
-        val errorMsg = s"Resource '$filePath' couldn't be found."
+        logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}${File.separator}$urlPath")
+        val errorMsg = s"Resource '$urlPath' couldn't be found."
         if (HttpUtils.isHtmlRequest) NotFound(views.html.publix.error.render(errorMsg))
         else NotFound(errorMsg)
     }

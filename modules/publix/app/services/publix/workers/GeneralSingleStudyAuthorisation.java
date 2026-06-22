@@ -45,7 +45,7 @@ public class GeneralSingleStudyAuthorisation extends StudyAuthorisation {
         }
 
         checkMaxTotalWorkers(batch);
-        checkWorkerAllowedToDoStudy(session, worker, study, batch);
+        checkWorkerAllowedToDoStudy(worker, study, batch);
     }
 
     @Override
