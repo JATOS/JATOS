@@ -44,8 +44,8 @@ public class GeneralSingleStudyAuthorisation extends StudyAuthorisation {
             throw new ForbiddenException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
 
-        checkMaxTotalWorkers(batch, worker);
-        checkWorkerAllowedToDoStudy(worker, study, batch);
+        checkMaxTotalWorkers(batch);
+        checkWorkerAllowedToDoStudy(session, worker, study, batch);
     }
 
     @Override

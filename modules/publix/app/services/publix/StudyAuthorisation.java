@@ -28,8 +28,8 @@ public abstract class StudyAuthorisation {
     /**
      * Check if the max total worker number is reached for this batch. Only non-JatosWorker count here.
      */
-    public void checkMaxTotalWorkers(Batch batch, Worker worker) {
-        if (batchDao.isMaxTotalReached(batch, worker)) {
+    public void checkMaxTotalWorkers(Batch batch) {
+        if (batchDao.isMaxTotalReached(batch)) {
             throw new ForbiddenException(PublixErrorMessages.batchMaxTotalWorkerReached(batch.getId()));
         }
     }

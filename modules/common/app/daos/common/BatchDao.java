@@ -142,4 +142,40 @@ public class BatchDao extends AbstractDao {
         });
     }
 
+    /**
+     * Returns the number of Workers belonging to the given Batch.
+     */
+    public int countWorkers(Batch batch) {
+        Number result = (Number) jpa.em()
+                .createNativeQuery("SELECT COUNT(*) FROM BatchWorkerMap WHERE batch_id = :batchId")
+                .setParameter("batchId", batch.getId())
+                .getSingleResult();
+        return result != null ? result.intValue() : 0;
+    }
+
+    /**
+     * Checks if the maximum number of workers is reached for this batch.
+     */
+    public boolean isMaxTotalReached(Batch batch) {
+        if (batch.getMaxTotalWorkers() == null) return false;
+
+        int currentCount = countWorkers(batch);
+        return currentCount > batch.getMaxTotalWorkers();
+    }
+
+    public void addWorkerToBatch(Long batchId, Long workerId) {
+        jpa.em().createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) "
+                        + "VALUES (:batchId, :workerId)")
+                .setParameter("batchId", batchId)
+                .setParameter("workerId", workerId)
+                .executeUpdate();
+    }
+
+    public void removeWorkerFromBatch(Long batchId, Long workerId) {
+        jpa.em().createNativeQuery("DELETE FROM BatchWorkerMap WHERE batch_id = :batchId AND worker_id = :workerId")
+                .setParameter("batchId", batchId)
+                .setParameter("workerId", workerId)
+                .executeUpdate();
+    }
+
 }

@@ -94,12 +94,12 @@ public class StudyLinkServiceTest {
         batch.setId(101L);
         Study study = new Study();
         study.setId(201L);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
-        batch.setStudy(study);
+        study.addBatch(batch);
 
         when(studyService.getStudyFromIdOrUuid("study-uuid-y")).thenReturn(study);
-        when(batchDao.findById(101L)).thenReturn(batch);
-        when(workerService.extractWorkerType("PersonalSingle")).thenReturn(PersonalSingleWorker.WORKER_TYPE);
+
+        // Capture created worker to assert a decoded comment
+        ArgumentCaptor<Worker> workerCaptor = ArgumentCaptor.forClass(Worker.class);
 
         scala.Option<Long> batchId = new scala.Some<>(101L);
         JsonNode node = studyLinkService.getStudyCodes("study-uuid-y", batchId, "PersonalSingle", null, 2);
@@ -108,8 +108,14 @@ public class StudyLinkServiceTest {
         assertThat(node.size()).isEqualTo(2);
         assertThat(node.get(0).asText().length()).isEqualTo(11);
 
-        // Checker called with batch and its study and the id
-        verify(checker, times(1)).checkStandardForBatch(eq(batch), eq(study), eq(101L));
+        // Worker creation happened with a decoded comment
+        verify(workerDao, times(2)).create(workerCaptor.capture());
+        Worker created = workerCaptor.getValue();
+        assertEquals("Hello World", created.getComment());
+
+        verify(studyLinkDao, times(2)).create(any(StudyLink.class));
+        verify(batchDao, times(2)).addWorkerToBatch(eq(batch.getId()), eq(created.getId()));
+        verifyNoMoreInteractions(authorizationService); // no batchId -> no checker call
     }
 
     @Test

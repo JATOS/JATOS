@@ -35,7 +35,10 @@ public class IOUtils {
     public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f*?\"\\\\\0/,`<>|:~!§$%&^°]";
 
     /*
-     * No spaces, no nulls
+     * Portable relative path policy:
+     * - no ASCII control characters (NUL, DEL)
+     * - no Windows separators or reserved filename characters: \ < > : " | ? *
+     * - '/' is allowed as the cross-platform separator; Java Path accepts it on Windows too
      */
     public static final String REGEX_LEGAL_IN_PATH = "^[^\\x00-\\x1F\\x7F\\\\<>:\"|?*]+$";
 
@@ -242,13 +245,19 @@ public class IOUtils {
 
     /**
      * Gets the File object (can be a directory) while preventing a path traversal attack. baseDirPath and filePathStr
-     * together build the full path (like path/filePath). baseDirPath must be a directory.
+     * together build the full path (like path/filePath). baseDirPath must be a directory. Accepts '/' only as a file
+     * separator - Windows' '\' leads to an IOException.
      */
     private Path getFileSecurely(Path baseDirPath, String filePathStr) throws IOException {
-        Path filePath = Path.of(filePathStr);
         if (!baseDirPath.isAbsolute()) {
             throw new IOException(MessagesStrings.pathNotAbsolute(baseDirPath.toString()));
         }
+        // Check for characters that are illegal or unsafe in imported relative paths
+        if (!checkPath(filePathStr)) {
+            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePathStr));
+        }
+
+        Path filePath = Path.of(filePathStr);
         if (filePath.isAbsolute()) {
             throw new IOException(MessagesStrings.pathNotRelative(filePath.toString()));
         }
@@ -260,10 +269,6 @@ public class IOUtils {
         // Make sure the resulting path is still within the required directory.
         // (In the example above, "/foo/bar/attack" is not.)
         if (!resolvedPath.startsWith(baseDirPath)) {
-            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePath.toString()));
-        }
-        // Check for spaces and nulls in the path
-        if (!checkPath(resolvedPath.toString())) {
             throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePath.toString()));
         }
 
@@ -426,13 +431,12 @@ public class IOUtils {
             throw new JatosException(MessagesStrings.filePathIsntFile(htmlFile.getFileName().toString()));
         }
 
-        try {
-            Path clonedHtmlFile = generateCloneFile(htmlFile);
-            Files.copy(htmlFile, clonedHtmlFile);
-            return generateLocalFilePathInStudyAssets(clonedHtmlFile, studyAssetsDirName);
-        } catch (IOException e) {
-            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
-        }
+        Path clonedHtmlFile = generateCloneFile(htmlFile);
+        Files.copy(htmlFile, clonedHtmlFile);
+
+        // Get the relative path of the HTML file in the study assets directory.
+        Path studyAssetsPath = generateStudyAssetsPath(studyAssetsDirName);
+        return studyAssetsPath.relativize(clonedHtmlFile).toString();
     }
 
     /**

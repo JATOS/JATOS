@@ -31,7 +31,8 @@ public class WorkerCreator {
     /**
      * Creates and persists a MTWorker or an MTSandboxWorker.
      */
-    public MTWorker createAndPersistMTWorker(String mtWorkerId, boolean mTurkSandbox, Batch batch) {
+    public MTWorker createAndPersistMTWorker(String mtWorkerId,
+            boolean mTurkSandbox, Batch batch) {
         return jpa.withTransaction(em -> {
             MTWorker worker;
             if (mTurkSandbox) {
@@ -39,9 +40,8 @@ public class WorkerCreator {
             } else {
                 worker = new MTWorker(mtWorkerId);
             }
-            batch.addWorker(worker);
             workerDao.persist(worker);
-            batchDao.merge(batch);
+            batchDao.addWorkerToBatch(batch.getId(), worker.getId());
             return worker;
         });
     }
@@ -52,9 +52,8 @@ public class WorkerCreator {
     public GeneralSingleWorker createAndPersistGeneralSingleWorker(Batch batch) {
         return jpa.withTransaction(em -> {
             GeneralSingleWorker worker = new GeneralSingleWorker();
-            batch.addWorker(worker);
             workerDao.persist(worker);
-            batchDao.merge(batch);
+            batchDao.addWorkerToBatch(batch.getId(), worker.getId());
             return worker;
         });
     }
@@ -65,9 +64,8 @@ public class WorkerCreator {
     public GeneralMultipleWorker createAndPersistGeneralMultipleWorker(Batch batch) {
         return jpa.withTransaction(em -> {
             GeneralMultipleWorker worker = new GeneralMultipleWorker();
-            batch.addWorker(worker);
             workerDao.persist(worker);
-            batchDao.merge(batch);
+            batchDao.addWorkerToBatch(batch.getId(), worker.getId());
             return worker;
         });
     }

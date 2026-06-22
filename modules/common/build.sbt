@@ -1,5 +1,5 @@
 name := "jatos-common"
-version := "3.10.3"
+version := "3.10.4"
 organization := "org.jatos"
 scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"

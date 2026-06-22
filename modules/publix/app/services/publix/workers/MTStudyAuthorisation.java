@@ -24,7 +24,7 @@ public class MTStudyAuthorisation extends StudyAuthorisation {
         if (!batch.isActive()) {
             throw new ForbiddenException(PublixErrorMessages.batchInactive(batch.getId()));
         }
-        checkMaxTotalWorkers(batch, worker);
+        checkMaxTotalWorkers(batch);
         checkWorkerAllowedToDoStudy(worker, study, batch);
     }
 

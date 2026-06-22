@@ -71,9 +71,9 @@ class StudyAssets @Inject()(components: ControllerComponents,
     }
 
   /**
-   * Action called while routing. Translates the given file path from the URL into a file path
-   * of the OS's file system and returns the file.
-   */
+    * Action called while routing. Translates the given file path from the URL into a file path
+    * of the OS's file system and returns the file.
+    */
   @IdCookies
   def viaAssetsPath(urlPath: String): Action[AnyContent] =
     Action.async { implicit request =>
@@ -87,7 +87,6 @@ class StudyAssets @Inject()(components: ControllerComponents,
    * Shared logic to find and render a file from the study assets
    */
   private def sendAssetFile(request: Request[AnyContent], urlPath: String): Result = {
-    val filePath = urlPath.replace(URL_PATH_SEPARATOR, File.separator)
     try {
       checkProperAssets(urlPath)
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
