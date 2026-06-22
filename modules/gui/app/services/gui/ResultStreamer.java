@@ -1,6 +1,8 @@
 package services.gui;
 
-import general.common.Http.Context;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope.ErrorCode;
+import http.common.Http.Context;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
@@ -23,15 +25,17 @@ import play.db.jpa.JPAApi;
 import play.libs.Json;
 import play.mvc.Http;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
+import json.common.JsonUtils;
 import utils.common.ZipUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -43,8 +47,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ResultStreamer {
@@ -55,7 +57,7 @@ public class ResultStreamer {
     private final StudyResultDao studyResultDao;
     private final StudyDao studyDao;
     private final JsonUtils jsonUtils;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final StudyLogger studyLogger;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
     private final JPAApi jpaApi;
@@ -65,7 +67,7 @@ public class ResultStreamer {
                    StudyResultDao studyResultDao,
                    StudyDao studyDao,
                    JsonUtils jsonUtils,
-                   Checker checker,
+                   AuthorizationService authorizationService,
                    StudyLogger studyLogger,
                    ComponentResultIdsExtractor componentResultIdsExtractor,
                    JPAApi jpaApi) {
@@ -73,7 +75,7 @@ public class ResultStreamer {
         this.studyResultDao = studyResultDao;
         this.studyDao = studyDao;
         this.jsonUtils = jsonUtils;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.studyLogger = studyLogger;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
         this.jpaApi = jpaApi;
@@ -298,7 +300,7 @@ public class ResultStreamer {
         List<Long> studyResultIdList = studyResultDao.findIdsByComponentResultIds(componentResultIdList);
         List<Study> studyList = studyDao.findByStudyResultIds(studyResultIdList);
         for (Study study : studyList) {
-            checker.checkStandardForStudy(study, study.getId(), signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
         }
         studyList.forEach(s -> studyLogger.log(s, signedinUser, "Exported result data"));
         return streamComponentResultData(componentResultIdList);
@@ -331,7 +333,7 @@ public class ResultStreamer {
             jpaApi.withTransaction(entityManager -> {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);
                 if (componentResult != null) {
-                    Errors.rethrow().run(() -> checker.checkComponentResult(componentResult, user, false));
+                    Errors.rethrow().run(() -> authorizationService.canUserAccessComponentResult(componentResult, user, false));
                     studies.add(componentResult.getStudyResult().getStudy());
                     Errors.rethrow().run(() -> writeComponentResultData(writer, componentResult));
                 } else {
@@ -419,7 +421,7 @@ public class ResultStreamer {
     /**
      * Returns a file with metadata
      */
-    public File writeResultMetadata(Http.Request request, Map<String, Object> wrapObject) {
+    public Path writeResultMetadata(Http.Request request, Map<String, Object> wrapObject) {
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
         Collections.sort(crids);
@@ -432,7 +434,7 @@ public class ResultStreamer {
      * metadata in JSON format. The content of what is written into the ZipOutputStream can be specified by a
      * ResultsType.
      */
-    private File writeResults(List<Long> componentResultIds, User signedinUser, ZipOutputStream zipOut,
+    private Path writeResults(List<Long> componentResultIds, User signedinUser, ZipOutputStream zipOut,
                               ResultType resultsType, Map<String, Object> wrapObject) {
         try {
             List<Long> studyResultIds = studyResultDao.findIdsByComponentResultIds(componentResultIds);
@@ -456,7 +458,7 @@ public class ResultStreamer {
             List<Long> studyIds = studyDao.findIdsByStudyResultIds(studyResultIds);
             for (Long studyId : studyIds) {
                 Study study = studyDao.findById(studyId);
-                checker.checkStandardForStudy(study, studyId, signedinUser);
+                authorizationService.canUserAccessStudy(study, signedinUser);
 
                 if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                     jGenerator.writeStartObject();
@@ -485,12 +487,12 @@ public class ResultStreamer {
             }
 
             if (resultsType == ResultType.COMBINED) {
-                ZipUtil.addFileToZip(zipOut, Paths.get(""), Paths.get("metadata.json"), metadataFile);
+                ZipUtil.addFileToZip(zipOut, Path.of(""), Path.of("metadata.json"), metadataFile);
                 Files.delete(metadataFile);
             }
-            return resultsType == ResultType.METADATA_ONLY ? metadataFile.toFile() : null;
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+            return resultsType == ResultType.METADATA_ONLY ? metadataFile: null;
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -515,8 +517,8 @@ public class ResultStreamer {
                     }
                 }
             }
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -562,10 +564,9 @@ public class ResultStreamer {
     }
 
     private void addFilesToZip(ZipOutputStream zipOut, Long studyResultId, Long componentResultId) {
-
-        Path pathInFileSystem = Paths.get(IOUtils.getResultUploadsDir(studyResultId, componentResultId));
+        Path pathInFileSystem = IOUtils.getResultUploadsDir(studyResultId, componentResultId);
         if (Files.exists(pathInFileSystem)) {
-            Path pathInZip = Paths.get(IOUtils.getResultsPathForZip(studyResultId, componentResultId), "files");
+            Path pathInZip = Path.of(IOUtils.getResultsPathForZip(studyResultId, componentResultId), "files");
             ZipUtil.addToZip(zipOut, pathInZip, pathInFileSystem);
         }
     }

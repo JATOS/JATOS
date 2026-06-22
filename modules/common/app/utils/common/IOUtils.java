@@ -1,25 +1,29 @@
 package utils.common;
 
+import akka.stream.IOResult;
+import akka.stream.javadsl.FileIO;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import com.google.common.base.Strings;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope;
+import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import general.common.MessagesStrings;
-import models.common.Study;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
-
 import javax.inject.Singleton;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Utility class that handles access to the system's file system.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class IOUtils {
@@ -30,41 +34,223 @@ public class IOUtils {
      */
     public static final String REGEX_ILLEGAL_IN_FILENAME = "[\\s\\n\\r\\t\\f*?\"\\\\\0/,`<>|:~!§$%&^°]";
 
+    /*
+     * No spaces, no nulls
+     */
+    public static final String REGEX_LEGAL_IN_PATH = "^[^\\x00-\\x1F\\x7F\\\\<>:\"|?*]+$";
+
     private static final int MAX_FILENAME_LENGTH = 100;
 
-    public static final File TMP_DIR = new File(Common.getTmpPath());
+    public static Path tmpDir() {
+        return Path.of(Common.getTmpPath());
+    }
+
+    public static void copyRecursively(Path source, Path target) throws IOException {
+        copyRecursively(source, target, null);
+    }
+
+    public static void copyRecursively(Path source, Path target, DirectoryStream.Filter<Path> filter) throws IOException {
+        Files.walkFileTree(source, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                Path relative = source.relativize(dir);
+                Path destDir = target.resolve(relative);
+                Files.createDirectories(destDir);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (filter != null && !filter.accept(file)) {
+                    return FileVisitResult.CONTINUE;
+                }
+                Path relative = source.relativize(file);
+                Path destFile = target.resolve(relative);
+                Files.copy(file, destFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
 
     /**
-     * Reads the given file and returns the content as String.
+     * Moves a regular file to target. If source and target are on different file stores, it falls back to copy +
+     * delete. For cross-file-store moves, it first copies to a temporary sibling of the target and only then moves the
+     * temporary file into the final target path.
+     *
+     * @param source          Existing regular file to move.
+     * @param target          Target file path.
+     * @param replaceExisting If true, an existing target file is replaced. Directories are never replaced.
      */
-    public String readFile(File file) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            StringBuilder sb = new StringBuilder();
-            String content = reader.readLine();
+    public static void moveFile(Path source, Path target, boolean replaceExisting) throws IOException {
+        if (!Files.exists(source)) {
+            throw new NoSuchFileException(source.toString());
+        }
+        if (!Files.isRegularFile(source)) {
+            throw new JatosException("Source is not a regular file: " + source);
+        }
+        if (Files.isDirectory(target)) {
+            throw new FileAlreadyExistsException(target.toString(), null, "Target is a directory");
+        }
+        if (Files.exists(target) && !replaceExisting) {
+            throw new FileAlreadyExistsException(target.toString());
+        }
 
-            while (content != null) {
-                sb.append(content);
-                sb.append(System.lineSeparator());
-                content = reader.readLine();
+        Path absoluteTarget = target.toAbsolutePath();
+        Path targetParent = absoluteTarget.getParent();
+        if (targetParent == null) {
+            throw new JatosException("Target has no parent directory: " + target);
+        }
+        Files.createDirectories(targetParent);
+
+        if (isSameFileStore(source, targetParent)) {
+            if (replaceExisting) {
+                Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                Files.move(source, target);
             }
-            return sb.toString();
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+            return;
+        }
+
+        Path tempTarget = createTemporarySibling(absoluteTarget);
+        boolean finalTargetCreated = false;
+        try {
+            Files.copy(source, tempTarget, StandardCopyOption.COPY_ATTRIBUTES);
+
+            try {
+                if (replaceExisting) {
+                    Files.move(tempTarget, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    Files.move(tempTarget, target, StandardCopyOption.ATOMIC_MOVE);
+                }
+            } catch (AtomicMoveNotSupportedException e) {
+                if (replaceExisting) {
+                    Files.move(tempTarget, target, StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    Files.move(tempTarget, target);
+                }
+            }
+            finalTargetCreated = true;
+
+            Files.delete(source);
+        } catch (IOException e) {
+            if (!finalTargetCreated) {
+                try {
+                    Files.deleteIfExists(tempTarget);
+                } catch (IOException cleanupException) {
+                    e.addSuppressed(cleanupException);
+                }
+            }
+            throw e;
+        }
+    }
+
+    public static boolean moveFileAndDetectOverwrite(Path source, Path target) throws IOException {
+        try {
+            moveFile(source, target, false);
+            return false;
+        } catch (FileAlreadyExistsException e) {
+            moveFile(source, target, true);
+            return true;
         }
     }
 
     /**
-     * Gets the File object (can be an directory) while preventing a path traversal attack. path and filePath together
-     * build the full path (like path/filePath). path must be a directory.
+     * Moves a source to target. If source and target are on different file stores, it falls back to copy + delete. For
+     * cross-file-store moves, it first copies to a temporary sibling of the target and only then moves the temporary
+     * path into the final target path.
      */
-    private File getFileSecurely(String baseDirPathStr, String filePathStr) {
-        Path baseDirPath = Paths.get(baseDirPathStr);
-        Path filePath = Paths.get(filePathStr);
+    public static void moveRecursively(Path source, Path target) throws IOException {
+        if (Files.exists(target)) {
+            throw new FileAlreadyExistsException(target.toString());
+        }
+
+        Path targetParent = target.getParent();
+        if (targetParent != null) {
+            Files.createDirectories(targetParent);
+        }
+
+        if (isSameFileStore(source, targetParent != null ? targetParent : target.toAbsolutePath().getParent())) {
+            Files.move(source, target);
+            return;
+        }
+
+        Path tempTarget = createTemporarySibling(target);
+        try {
+            if (Files.isDirectory(source)) {
+                copyRecursively(source, tempTarget);
+            } else {
+                Files.copy(source, tempTarget, StandardCopyOption.COPY_ATTRIBUTES);
+            }
+
+            try {
+                Files.move(tempTarget, target, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tempTarget, target);
+            }
+
+            deleteRecursively(source);
+        } catch (IOException e) {
+            try {
+                deleteRecursivelyIfExists(tempTarget);
+            } catch (IOException cleanupException) {
+                e.addSuppressed(cleanupException);
+            }
+            throw e;
+        }
+    }
+
+    private static boolean isSameFileStore(Path source, Path targetParent) throws IOException {
+        if (targetParent == null) {
+            return false;
+        }
+        return Files.getFileStore(source).equals(Files.getFileStore(targetParent));
+    }
+
+    private static Path createTemporarySibling(Path target) {
+        Path targetParent = target.getParent();
+        String targetName = target.getFileName().toString();
+
+        Path tempTarget;
+        do {
+            tempTarget = targetParent.resolve("." + targetName + ".tmp-" + UUID.randomUUID());
+        } while (Files.exists(tempTarget));
+
+        return tempTarget;
+    }
+
+    public static void deleteRecursively(Path root) throws IOException {
+        Files.walkFileTree(root, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    public static void deleteRecursivelyIfExists(Path root) throws IOException {
+        if (root != null && Files.exists(root)) {
+            deleteRecursively(root);
+        }
+    }
+
+    /**
+     * Gets the File object (can be a directory) while preventing a path traversal attack. baseDirPath and filePathStr
+     * together build the full path (like path/filePath). baseDirPath must be a directory.
+     */
+    private Path getFileSecurely(Path baseDirPath, String filePathStr) throws IOException {
+        Path filePath = Path.of(filePathStr);
         if (!baseDirPath.isAbsolute()) {
-            throw new exceptions.common.IOException(MessagesStrings.pathNotAbsolute(baseDirPathStr));
+            throw new IOException(MessagesStrings.pathNotAbsolute(baseDirPath.toString()));
         }
         if (filePath.isAbsolute()) {
-            throw new exceptions.common.IOException(MessagesStrings.pathNotRelative(filePathStr));
+            throw new IOException(MessagesStrings.pathNotRelative(filePath.toString()));
         }
 
         // Join the two paths together, then normalize so that any ".." elements
@@ -74,48 +260,49 @@ public class IOUtils {
         // Make sure the resulting path is still within the required directory.
         // (In the example above, "/foo/bar/attack" is not.)
         if (!resolvedPath.startsWith(baseDirPath)) {
-            throw new exceptions.common.IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePathStr));
+            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePath.toString()));
+        }
+        // Check for spaces and nulls in the path
+        if (!checkPath(resolvedPath.toString())) {
+            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePath.toString()));
         }
 
-        return resolvedPath.toFile();
+        return resolvedPath;
     }
 
     /**
      * Gets the File object of the directory while preventing a path traversal attack and checks if the directory
      * actually exists.
      */
-    private File getExistingDirSecurely(String fullPathStr) {
-        Path fullPath = Paths.get(fullPathStr);
+    private Path getExistingDirSecurely(Path fullPath) throws IOException {
         if (!fullPath.isAbsolute()) {
-            throw new exceptions.common.IOException(MessagesStrings.pathNotAbsolute(fullPathStr));
+            throw new IOException(MessagesStrings.pathNotAbsolute(fullPath.toString()));
         }
 
         // Normalize so that any ".." gets removed
         // (e.g. "/foo/bar/baz/../attack" -> "/foo/bar/attack")
         // and check that the normalized path is equal to the original one
         if (!fullPath.normalize().equals(fullPath)) {
-            throw new exceptions.common.IOException(MessagesStrings.couldntGeneratePathToFileOrDir(fullPathStr));
+            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(fullPath.toString()));
         }
-        File file = fullPath.toFile();
-        if (!file.exists() || !file.isDirectory()) {
-            throw new exceptions.common.IOException(MessagesStrings.dirPathIsntDir(fullPathStr));
+        if (!Files.exists(fullPath) || !Files.isDirectory(fullPath)) {
+            throw new IOException(MessagesStrings.dirPathIsntDir(fullPath.toString()));
         }
-        return file;
+        return fullPath;
     }
 
     public boolean checkStudyAssetsDirExists(String dirName) {
-        File studyAssetsDir = new File(generateStudyAssetsPath(dirName));
-        return studyAssetsDir.exists();
+        return Files.exists(generateStudyAssetsPath(dirName));
     }
 
     public boolean checkFileInStudyAssetsDirExists(String dirName, String filePath) {
-        if (filePath == null || filePath.trim().isEmpty()) {
+        if (Strings.isNullOrEmpty(filePath)) {
             return false;
         }
-        String studyAssetsPath = generateStudyAssetsPath(dirName);
+        Path studyAssetsPath = generateStudyAssetsPath(dirName);
         try {
-            return getFileSecurely(studyAssetsPath, filePath).exists();
-        } catch (exceptions.common.IOException e) {
+            return Files.exists(getFileSecurely(studyAssetsPath, filePath));
+        } catch (IOException e) {
             return false;
         }
     }
@@ -124,10 +311,11 @@ public class IOUtils {
      * Gets the File object while preventing a path traversal attack and checks whether the file exists and is no
      * directory.
      */
-    public File getExistingFileSecurely(String path, String filePath) {
-        File file = getFileSecurely(path, filePath);
-        if (!file.exists() || file.isDirectory()) {
-            throw new exceptions.common.IOException(MessagesStrings.FILE_NOT_EXIST_OR_DIR);
+    public Path getExistingFileSecurely(String pathStr, String filePathStr) throws IOException {
+        Path path = Path.of(pathStr);
+        Path file = getFileSecurely(path, filePathStr);
+        if (!Files.exists(file) || Files.isDirectory(file)) {
+            throw new IOException(MessagesStrings.FILE_NOT_EXIST_OR_DIR);
         }
         return file;
     }
@@ -139,7 +327,7 @@ public class IOUtils {
         try {
             getExistingFileSecurely(path, filePath);
             return true;
-        } catch (exceptions.common.IOException e) {
+        } catch (IOException e) {
             return false;
         }
     }
@@ -147,22 +335,22 @@ public class IOUtils {
     /**
      * Gets the File object which resides under filePath within the study assets' directory.
      */
-    public File getFileInStudyAssetsDir(String dirName, String filePath) {
+    public Path getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new exceptions.common.IOException(MessagesStrings.FILE_MISSING);
+            throw new JatosException(MessagesStrings.FILE_MISSING);
         }
-        String studyAssetsPath = generateStudyAssetsPath(dirName);
+        Path studyAssetsPath = generateStudyAssetsPath(dirName);
         return getFileSecurely(studyAssetsPath, filePath);
     }
 
     /**
      * Gets the File object which resides under filePath within the study assets' directory.
      */
-    public File getExistingFileInStudyAssetsDir(String dirName, String filePath) {
-        String studyAssetsPath = generateStudyAssetsPath(dirName);
+    public Path getExistingFileInStudyAssetsDir(String dirName, String filePath) {
+        Path studyAssetsPath = generateStudyAssetsPath(dirName);
         try {
             return getFileSecurely(studyAssetsPath, filePath);
-        } catch (exceptions.common.IOException e) {
+        } catch (IOException e) {
             return null;
         }
     }
@@ -170,8 +358,8 @@ public class IOUtils {
     /**
      * Gets the study assets with the given directory name.
      */
-    public File getStudyAssetsDir(String dirName) {
-        String studyAssetsPath = generateStudyAssetsPath(dirName);
+    public Path getStudyAssetsDir(String dirName) throws IOException {
+        Path studyAssetsPath = generateStudyAssetsPath(dirName);
         return getExistingDirSecurely(studyAssetsPath);
     }
 
@@ -191,6 +379,10 @@ public class IOUtils {
         return !Pattern.compile(IOUtils.REGEX_ILLEGAL_IN_FILENAME).matcher(filename).find();
     }
 
+    public static boolean checkPath(String path) {
+        return path != null && Pattern.compile(IOUtils.REGEX_LEGAL_IN_PATH).matcher(path).matches();
+    }
+
     /**
      * Generates a filename from a name in a specified length.
      */
@@ -201,53 +393,23 @@ public class IOUtils {
     /**
      * Generates a study assets directory path.
      */
-    public String generateStudyAssetsPath(String dirName) {
-        return Common.getStudyAssetsRootPath() + File.separator + dirName;
+    public static Path generateStudyAssetsPath(String dirName) {
+        return Path.of(Common.getStudyAssetsRootPath(), dirName);
     }
 
     /**
      * Remove study assets' directory if exists.
      */
-    public void removeStudyAssetsDir(String dirName) {
-        File dir = getFileSecurely(Common.getStudyAssetsRootPath(), dirName);
-        if (!dir.exists()) {
+    public void removeStudyAssetsDir(String dirName) throws IOException {
+        Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
+        Path dir = getFileSecurely(studyAssetsRootPath, dirName);
+        if (!Files.exists(dir)) {
             return;
         }
-        if (!dir.isDirectory()) {
-            throw new exceptions.common.IOException(MessagesStrings.dirPathIsntDir(dir.getName()));
+        if (!Files.isDirectory(dir)) {
+            throw new JatosException(MessagesStrings.dirPathIsntDir(dir.getFileName().toString()));
         }
-        try {
-            FileUtils.deleteDirectory(dir);
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
-        }
-    }
-
-    /**
-     * Get a Path to a file in a study assets directory.
-     *
-     * @param filepath Filepath to the file. If it points to a directory (indicated by a trailing '/') the returned Path
-     *                 consists of filepath + filename. If it does not point to a directory it is treated as Path to a
-     *                 file and returned as Path (without the filename parameter). This parameter is optional and can be
-     *                 null to signal the Path to the file is supposed to be in the root of the study assets directory.
-     *                 If it has a leading '/' it gets removed. It can be URL encoded but doesn't have to be.
-     * @param filename Filename of the file (without path).
-     * @param study    Study where the study assets belong to
-     * @return Path to the file in the study assets
-     */
-    public Path getAssetsFilePath(String filepath, String filename, Study study) {
-        String assetsFilePathStr;
-        if (!Strings.isNullOrEmpty(filepath)) {
-            filepath = Helpers.urlDecode(filepath);
-            if (filepath.startsWith("/")) filepath = filepath.substring(1); // remove leading '/'
-
-            if (filepath.endsWith("/")) assetsFilePathStr = filepath + filename;
-            else if (filepath.isEmpty()) assetsFilePathStr = filename;
-            else assetsFilePathStr = filepath;
-        } else {
-            assetsFilePathStr = filename;
-        }
-        return getFileInStudyAssetsDir(study.getDirName(), assetsFilePathStr).toPath();
+        deleteRecursively(dir);
     }
 
     /**
@@ -258,18 +420,18 @@ public class IOUtils {
      *                           directory.
      * @return Name of the new file.
      */
-    public String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath) {
-        File htmlFile = getFileInStudyAssetsDir(studyAssetsDirName, htmlFilePath);
-        if (!htmlFile.isFile()) {
-            throw new exceptions.common.IOException(MessagesStrings.filePathIsntFile(htmlFile.getName()));
+    public String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath) throws IOException {
+        Path htmlFile = getFileInStudyAssetsDir(studyAssetsDirName, htmlFilePath);
+        if (!Files.isRegularFile(htmlFile)) {
+            throw new JatosException(MessagesStrings.filePathIsntFile(htmlFile.getFileName().toString()));
         }
 
         try {
-            File clonedHtmlFile = generateCloneFile(htmlFile);
-            FileUtils.copyFile(htmlFile, clonedHtmlFile);
+            Path clonedHtmlFile = generateCloneFile(htmlFile);
+            Files.copy(htmlFile, clonedHtmlFile);
             return generateLocalFilePathInStudyAssets(clonedHtmlFile, studyAssetsDirName);
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -277,48 +439,45 @@ public class IOUtils {
      * Removes the part from the file's path that is the study assets path. The remaining string is only the local path
      * within the study assets directory.
      */
-    private String generateLocalFilePathInStudyAssets(File localFile, String studyAssetsDirName) {
-        String studyAssetsPath = generateStudyAssetsPath(studyAssetsDirName) + File.separator;
-        return localFile.getAbsolutePath().replace(studyAssetsPath, "");
+    private String generateLocalFilePathInStudyAssets(Path localFile, String studyAssetsDirName) {
+        Path studyAssetsPath = generateStudyAssetsPath(studyAssetsDirName);
+        return studyAssetsPath.relativize(localFile).toString();
     }
 
     /**
      * Copies study assets' directory. Adds suffix '_clone' to the name of the new assets dir. If a dir with suffix
-     * '_clone' already exists it adds '_' + number instead.
+     * '_clone' already exists, it adds '_' + number instead.
      */
-    public String cloneStudyAssetsDirectory(String srcDirName) {
-        File srcDir = getFileSecurely(Common.getStudyAssetsRootPath(), srcDirName);
-        if (!srcDir.isDirectory()) {
-            throw new exceptions.common.IOException(MessagesStrings.dirPathIsntDir(srcDir.getName()));
+    public String cloneStudyAssetsDirectory(String srcDirName) throws IOException {
+        Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
+        Path srcDir = getFileSecurely(studyAssetsRootPath, srcDirName);
+        if (!Files.isDirectory(srcDir)) {
+            throw new JatosException(MessagesStrings.dirPathIsntDir(srcDir.getFileName().toString()));
         }
 
-        try {
-            File destDir = generateCloneFile(srcDir);
-            FileUtils.copyDirectory(srcDir, destDir);
-            return destDir.getName();
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
-        }
+        Path destDir = generateCloneFile(srcDir);
+        copyRecursively(srcDir, destDir);
+        return destDir.getFileName().toString();
     }
 
     /**
      * Generates a filename for a clone of the given file. It tries to add the suffix '_clone'. If the file already
-     * exists in the file system it tries to add numbers starting with 1. It works with files or directories. It keeps a
-     * file extension.
+     * exists in the file system, it tries to add numbers starting with 1. It works with files or directories. It keeps
+     * a file extension.
      */
-    private File generateCloneFile(File file) {
-        String fileExtension = "";
-        if (!FilenameUtils.getExtension(file.getName()).isEmpty()) {
-            fileExtension = "." + FilenameUtils.getExtension(file.getName());
-        }
-        String cloneFileName = FilenameUtils.removeExtension(file.getName()) + "_clone" + fileExtension;
+    private Path generateCloneFile(Path file) throws IOException {
+        String name = file.getFileName().toString();
+        int dot = name.lastIndexOf('.');
+        String baseName = (dot > 0) ? name.substring(0, dot) : name;
+        String fileExtension = (dot >= 0 && dot < name.length() - 1) ? "." + name.substring(dot + 1) : "";
+        String cloneFileName = baseName + "_clone" + fileExtension;
 
-        File parentDir = file.getParentFile();
-        File clonedFile = null;
+        Path parentDir = file.getParent();
+        Path clonedFile = null;
         int i = 1;
-        while (clonedFile == null || clonedFile.exists()) {
-            clonedFile = getFileSecurely(parentDir.getAbsolutePath(), cloneFileName);
-            cloneFileName = FilenameUtils.removeExtension(file.getName()) + "_" + i + fileExtension;
+        while (clonedFile == null || Files.exists(clonedFile)) {
+            clonedFile = getFileSecurely(parentDir, cloneFileName);
+            cloneFileName = baseName + "_" + i + fileExtension;
             i++;
         }
         return clonedFile;
@@ -340,16 +499,13 @@ public class IOUtils {
      * @param srcDir        The source dir File can be anywhere in the file system.
      * @param targetDirName Name of the target dir within the assets root dir
      */
-    public void moveStudyAssetsDir(File srcDir, String targetDirName) {
-        File targetDir = getFileSecurely(Common.getStudyAssetsRootPath(), targetDirName);
-        if (targetDir.exists()) {
-            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getName()));
+    public void moveStudyAssetsDir(Path srcDir, String targetDirName) throws IOException {
+        Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
+        Path targetDir = getFileSecurely(studyAssetsRootPath, targetDirName);
+        if (Files.exists(targetDir)) {
+            throw new JatosException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getFileName().toString()));
         }
-        try {
-            FileUtils.moveDirectory(srcDir, targetDir);
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
-        }
+        moveRecursively(srcDir, targetDir);
     }
 
     /**
@@ -357,52 +513,57 @@ public class IOUtils {
      *
      * @param dirName Name of the new study assets dir.
      */
-    public void createStudyAssetsDir(String dirName) {
-        File dir = getFileSecurely(Common.getStudyAssetsRootPath(), dirName);
-        if (dir.exists()) {
-            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dir.getName()));
+    public void createStudyAssetsDir(String dirName) throws IOException {
+        Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
+        Path dir = getFileSecurely(studyAssetsRootPath, dirName);
+        if (Files.exists(dir)) {
+            throw new JatosException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dirName));
         }
-        boolean result = dir.mkdirs();
-        if (!result) {
-            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotCreated(dir.getName()));
-        }
+        Files.createDirectories(dir);
     }
 
     /**
      * Returns all files within this directory that have the prefix and the suffix.
      */
-    public File[] findFiles(File dir, final String prefix, final String suffix) {
-        return dir.listFiles((file, name) -> name.startsWith(prefix) && name.endsWith(suffix));
+    public Path[] findFiles(Path dir, final String prefix, final String suffix) throws IOException {
+        try (Stream<Path> stream = Files.list(dir)) {
+            return stream
+                    .filter(path -> {
+                        String name = path.getFileName().toString();
+                        return name.startsWith(prefix) && name.endsWith(suffix);
+                    })
+                    .toArray(Path[]::new);
+        }
     }
 
     /**
      * Returns all directories within this directory.
      */
-    public File[] findDirectories(File dir) {
-        return dir.listFiles((file, name) -> file.isDirectory());
+    public Path[] findDirectories(Path dir) throws IOException {
+        try (Stream<Path> stream = Files.list(dir)) {
+            return stream
+                    .filter(Files::isDirectory)
+                    .toArray(Path[]::new);
+        }
     }
 
     /**
      * Renames a study assets dir.
      */
-    public void renameStudyAssetsDir(String oldDirName, String newDirName) {
-        File oldDir = new File(generateStudyAssetsPath(oldDirName));
-        File newDir = new File(generateStudyAssetsPath(newDirName));
-        if (oldDir.exists() && oldDirName.equals(newDirName)) {
+    public void renameStudyAssetsDir(String oldDirName, String newDirName) throws IOException {
+        Path oldDir = generateStudyAssetsPath(oldDirName);
+        Path newDir = generateStudyAssetsPath(newDirName);
+        if (Files.exists(oldDir) && oldDirName.equals(newDirName)) {
             return;
         }
-        if (newDir.exists()) {
-            throw new exceptions.common.IOException(
-                    MessagesStrings.studyAssetsNotRenamedBecauseExists(oldDir.getName(), newDir.getName()));
+        if (Files.exists(newDir)) {
+            throw new JatosException(MessagesStrings.studyAssetsNotRenamedBecauseExists(oldDirName, newDirName));
         }
-        if (!oldDir.exists()) {
+        if (!Files.exists(oldDir)) {
             createStudyAssetsDir(newDirName);
             return;
         }
-        boolean result = oldDir.renameTo(newDir);
-        if (!result) {
-            throw new exceptions.common.IOException(MessagesStrings.studyAssetsDirNotRenamed(oldDir.getName(), newDir.getName()));
-        }
+        moveRecursively(oldDir, newDir);
     }
 
     /**
@@ -411,11 +572,19 @@ public class IOUtils {
      */
     public long getStudyAssetsDirSize(String dirName) {
         try {
-            Path path = getStudyAssetsDir(dirName).toPath();
+            Path path = getStudyAssetsDir(dirName);
             if (!Files.exists(path)) return 0;
-            //noinspection resource
-            return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
-        } catch (java.io.IOException e) {
+
+            try (Stream<Path> stream = Files.walk(path)) {
+                long sum = 0L;
+                for (Path p : (Iterable<Path>) stream::iterator) {
+                    if (Files.isRegularFile(p)) {
+                        sum += Files.size(p);
+                    }
+                }
+                return sum;
+            }
+        } catch (IOException e) {
             return 0;
         }
     }
@@ -427,62 +596,48 @@ public class IOUtils {
      * @param newHtmlFilePath The new local file path within the study assets
      * @param studyAssetName  The name (not the path) of the study assets
      */
-    public void renameHtmlFile(String oldHtmlFilePath, String newHtmlFilePath, String studyAssetName) {
-        File oldHtmlFile = getFileInStudyAssetsDir(studyAssetName, oldHtmlFilePath);
-        File newHtmlFile = getFileInStudyAssetsDir(studyAssetName, newHtmlFilePath);
+    public void renameHtmlFile(String oldHtmlFilePath, String newHtmlFilePath, String studyAssetName) throws IOException {
+        Path oldHtmlFile = getFileInStudyAssetsDir(studyAssetName, oldHtmlFilePath);
+        Path newHtmlFile = getFileInStudyAssetsDir(studyAssetName, newHtmlFilePath);
 
-        // If the current HTML file doesn't exist or old and new are equal do
-        // nothing
-        if (!oldHtmlFile.exists() || oldHtmlFile.equals(newHtmlFile)) {
+        // If the current HTML file doesn't exist or old and new are equal, do nothing
+        if (!Files.exists(oldHtmlFile) || oldHtmlFile.equals(newHtmlFile)) {
             return;
         }
 
-        if (newHtmlFile.exists()) {
-            throw new exceptions.common.IOException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
+        if (Files.exists(newHtmlFile)) {
+            throw new JatosException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
         }
 
-        boolean result = oldHtmlFile.renameTo(newHtmlFile);
-        if (!result) {
-            throw new exceptions.common.IOException(MessagesStrings.htmlFileNotRenamed(oldHtmlFilePath, newHtmlFilePath));
-        }
+        moveFile(oldHtmlFile, newHtmlFile, false);
     }
 
     /**
-     * Creates the given File as a directory, including necessary and non-existent parent directories. If the file
-     * already exists it will be deleted before.
+     * Path to the result uploads folder where JATOS stores the uploaded result files
      */
-    public static void createDir(File file) {
-        if (!file.mkdirs()) {
-            throw new exceptions.common.IOException("Couldn't create directory " + file.getPath());
-        }
+    public static Path getResultUploadsDir(Long studyResultId) {
+        return Path.of(Common.getResultUploadsPath()).resolve("study-result_" + studyResultId);
     }
 
     /**
-     * Path to result uploads folder where JATOS stores the uploaded result files
+     * Path to the result uploads folder where JATOS stores the uploaded result files
      */
-    public static String getResultUploadsDir(Long studyResultId) {
-        return Common.getResultUploadsPath() + File.separator + "study-result_" + studyResultId;
+    public static Path getResultUploadsDir(Long studyResultId, Long componentResultId) {
+        return getResultUploadsDir(studyResultId).resolve("comp-result_" + componentResultId);
     }
 
     /**
-     * Path to result uploads folder where JATOS stores the uploaded result files
-     */
-    public static String getResultUploadsDir(Long studyResultId, Long componentResultId) {
-        return getResultUploadsDir(studyResultId) + File.separator + "comp-result_" + componentResultId;
-    }
-
-    /**
-     * Path to result files in zip package with '/' as file separator
+     * Path to result files in a zip package with '/' as file separator
      */
     public static String getResultsPathForZip(Long studyResultId, Long componentResultId) {
-        return "study_result_" + studyResultId + "/comp-result_" + componentResultId;
+        return "study_result_" + studyResultId + "/" + "comp-result_" + componentResultId;
     }
 
     /**
-     * Path to result files in file system (after unpacking - so using the OS' file separator)
+     * Path to result files in the file system with '/' as a file separator meant to be used in JSON
      */
-    public static String getResultsPath(Long studyResultId, Long componentResultId) {
-        return File.separator + "study_result_" + studyResultId + File.separator + "comp-result_" + componentResultId;
+    public static String getResultsPathForJson(Long studyResultId, Long componentResultId) {
+        return "/" + "study_result_" + studyResultId + "/" + "comp-result_" + componentResultId;
     }
 
     /**
@@ -490,45 +645,57 @@ public class IOUtils {
      * the size of directories themselves (e.g. on Linux each directory takes 4kB).
      */
     public long getResultUploadDirSize(Long studyResultId) {
-        Path path = Paths.get(IOUtils.getResultUploadsDir(studyResultId));
-        if (!Files.exists(path)) return 0;
         try {
-            //noinspection resource
-            return Files.walk(path).map(Path::toFile).filter(f -> !f.isDirectory()).mapToLong(File::length).sum();
-        } catch (java.io.IOException e) {
+            Path path = IOUtils.getResultUploadsDir(studyResultId);
+            if (!Files.exists(path)) return 0;
+            try (Stream<Path> stream = Files.walk(path)) {
+                long size = 0L;
+                for (Path p : (Iterable<Path>) stream::iterator) {
+                    if (Files.isRegularFile(p)) {
+                        size += Files.size(p);
+                    }
+                }
+                return size;
+            }
+        } catch (IOException e) {
             return 0;
         }
     }
 
-    public File getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename) {
+    public Path getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename) {
         try {
-            String baseDirPath = getResultUploadsDir(studyResultId, componentResultId);
-            Files.createDirectories(Paths.get(baseDirPath));
+            Path baseDirPath = getResultUploadsDir(studyResultId, componentResultId);
+            Files.createDirectories(baseDirPath);
             return getFileSecurely(baseDirPath, filename);
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
-    public void removeResultUploadsDir(Long studyResultId) {
-        try {
-            Path dir = Paths.get(getResultUploadsDir(studyResultId));
-            if (Files.isDirectory(dir)) {
-                FileUtils.deleteDirectory(dir.toFile());
-            }
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+    public void removeResultUploadsDir(Long studyResultId) throws IOException {
+        Path dir = getResultUploadsDir(studyResultId);
+        if (Files.isDirectory(dir)) {
+            deleteRecursively(dir);
         }
     }
 
-    public void removeResultUploadsDir(Long studyResultId, Long componentResultId) {
-        try {
-            Path dir = Paths.get(getResultUploadsDir(studyResultId, componentResultId));
-            if (Files.isDirectory(dir)) {
-                FileUtils.deleteDirectory(dir.toFile());
-            }
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+    public void removeResultUploadsDir(Long studyResultId, Long componentResultId) throws IOException {
+        Path dir = getResultUploadsDir(studyResultId, componentResultId);
+        if (Files.isDirectory(dir)) {
+            deleteRecursively(dir);
         }
+    }
+
+    /**
+     * Helper function to allow an action after a file was sent (e.g. delete the file)
+     */
+    public static Source<ByteString, CompletionStage<IOResult>> okFileStreamed(final Path file, final Runnable handler) {
+        return FileIO.fromPath(file)
+                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
+                .mapMaterializedValue(action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
+    }
+
+    public static Runnable deleteFile(Path file) {
+        return () -> JatosException.unchecked(() -> Files.deleteIfExists(file));
     }
 }

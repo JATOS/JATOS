@@ -8,32 +8,31 @@ import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
-import exceptions.common.IOException;
 import exceptions.common.NotFoundException;
 import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
+import http.common.Http.Context;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import json.common.DefaultJson;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
 import play.db.jpa.JPAApi;
-import play.mvc.Http;
 import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.*;
 
 /**
  * Service class with functions that are common for all classes that extend Publix and don't belong in a controller.
- *
- * @author Kristian Lange
  */
 public class PublixUtils {
 
@@ -50,6 +49,7 @@ public class PublixUtils {
     private final UserDao userDao;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
+    private final DefaultJson defaultJson;
 
     @Inject
     public PublixUtils(JPAApi jpa,
@@ -62,7 +62,8 @@ public class PublixUtils {
                        WorkerDao workerDao,
                        UserDao userDao,
                        StudyLogger studyLogger,
-                       IOUtils ioUtils) {
+                       IOUtils ioUtils,
+                       DefaultJson defaultJson) {
         this.jpa = jpa;
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
@@ -74,6 +75,7 @@ public class PublixUtils {
         this.userDao = userDao;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
+        this.defaultJson = defaultJson;
     }
 
     /**
@@ -235,10 +237,10 @@ public class PublixUtils {
      * Usually there is only one ID cookie that is to be discarded, but if the jatos.idCookies.limit config value got
      * recently decreased, there will be more than one. This method should only be called during the start of a study.
      */
-    public void finishOldestStudyResult(Http.Request request) {
+    public void finishOldestStudyResult() {
         jpa.withTransaction(em -> {
-            while (idCookieService.maxIdCookiesReached(request)) {
-                Long abandonedStudyResultId = idCookieService.getStudyResultIdFromOldestIdCookie(request);
+            while (idCookieService.maxIdCookiesReached()) {
+                Long abandonedStudyResultId = idCookieService.getStudyResultIdOfOldestIdCookie();
                 StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);
                 // If the abandoned study result isn't done, finish it.
                 if (abandonedStudyResult != null && !PublixHelpers.studyRunDone(abandonedStudyResult)) {
@@ -248,7 +250,7 @@ public class PublixUtils {
                     studyLogger.log(abandonedStudyResult.getStudy(), "Finish abandoned study",
                             abandonedStudyResult.getWorker());
                 }
-                idCookieService.discardIdCookie(request, abandonedStudyResultId);
+                idCookieService.discardIdCookie(abandonedStudyResultId);
             }
         });
     }
@@ -285,7 +287,7 @@ public class PublixUtils {
         while (component.isPresent() && !component.get().isActive()) {
             component = study.getNextComponent(component.get());
         }
-        if (!component.isPresent()) {
+        if (component.isEmpty()) {
             throw new NotFoundException(PublixErrorMessages.studyHasNoActiveComponents(study.getId()));
         }
         return component.get();
@@ -364,10 +366,10 @@ public class PublixUtils {
      * Get query string parameters from the calling URL and put them into the field urlQueryParameters in StudyResult as
      * a JSON string.
      */
-    public void setUrlQueryParameter(Http.Request request, StudyResult studyResult) {
+    public void setUrlQueryParameter(StudyResult studyResult) {
         Map<String, String> queryMap = new HashMap<>();
-        request.queryString().forEach((k, v) -> queryMap.put(k, v[0]));
-        String parameter = JsonUtils.asJson(queryMap);
+        Context.current().requestHeader().queryString().forEach((k, v) -> queryMap.put(k, v[0]));
+        String parameter = defaultJson.objAsJson(queryMap);
         studyResult.setUrlQueryParameters(parameter);
     }
 
@@ -378,7 +380,7 @@ public class PublixUtils {
      * all component results of this study result for a file with this filename and returns the one that was uploaded
      * last.
      */
-    public Optional<File> retrieveLastUploadedResultFile(StudyResult studyResult, Component component,
+    public Optional<Path> retrieveLastUploadedResultFile(StudyResult studyResult, Component component,
                                                          String filename) {
         List<Long> componentResultIdList = componentResultDao
                 .findIdsByStudyResultAndComponent(studyResult.getId(), component);
@@ -386,10 +388,10 @@ public class PublixUtils {
 
         try {
             for (Long crId : componentResultIdList) {
-                File file = ioUtils.getResultUploadFileSecurely(studyResult.getId(), crId, filename);
-                if (file.exists()) return Optional.of(file);
+                Path file = ioUtils.getResultUploadFileSecurely(studyResult.getId(), crId, filename);
+                if (Files.exists(file)) return Optional.of(file);
             }
-        } catch (IOException ignore) {
+        } catch (Exception ignore) {
         }
         return Optional.empty();
     }
@@ -397,8 +399,8 @@ public class PublixUtils {
     /**
      * Retrieves the currently signed-in user or throws a ForbiddenException if none is signed in.
      */
-    public User retrieveSignedinUser(Http.Request request) {
-        String normalizedUsername = request.session().get(JatosPublix.SESSION_USERNAME)
+    public User retrieveSignedinUser() {
+        String normalizedUsername = Context.current().response().session().get(JatosPublix.SESSION_USERNAME)
                 .orElseThrow(() -> new ForbiddenException("No user signed in"));
 
         User signedinUser = userDao.findByUsername(normalizedUsername);
@@ -411,8 +413,8 @@ public class PublixUtils {
     /**
      * Retrieves the JatosRun object that maps to the jatos run parameter in the session.
      */
-    public JatosPublix.JatosRun fetchJatosRunFromSession(Http.Session session) {
-        String sessionValue = session.get("jatos_run")
+    public JatosPublix.JatosRun fetchJatosRunFromSession() {
+        String sessionValue = Context.current().response().session().get("jatos_run")
                 .orElseThrow(() -> new ForbiddenException("This study or component was never started in JATOS."));
 
         try {

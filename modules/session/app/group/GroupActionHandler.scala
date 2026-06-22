@@ -20,8 +20,6 @@ import scala.util.Try
  * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
  * contains an 'action' field. It was received by a GroupDispatcher and comes from a client via
  * a GroupChannelActor.
- *
- * @author Kristian Lange
  */
 @Singleton
 class GroupActionHandler @Inject()(jpa: JPAApi,

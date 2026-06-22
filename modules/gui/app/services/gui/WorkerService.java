@@ -4,7 +4,7 @@ import daos.common.StudyResultDao;
 import daos.common.worker.WorkerType;
 import exceptions.common.BadRequestException;
 import models.common.Batch;
-import models.common.workers.*;
+import models.common.workers.Worker;
 import play.data.validation.ValidationError;
 
 import javax.inject.Inject;
@@ -15,9 +15,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * Service class for JATOS Controllers (not Publix).
- *
- * @author Kristian Lange
+ * Service class for everything related to Workers.
  */
 @Singleton
 public class WorkerService {

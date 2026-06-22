@@ -16,8 +16,6 @@ import javax.inject.Inject
  * A BatchChannelActor belongs to a BatchDispatcher. A BatchChannelActor is created by the BatchChannel service and
  * registers itself to its BatchDispatcher. It closes if the WebSocket is closed or externally, by the BatchDispatcher.
  * While closing down, it unregisters from the BatchDispatcher.
- *
- * @author Kristian Lange
  */
 class BatchChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,

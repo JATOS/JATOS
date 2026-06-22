@@ -1,22 +1,20 @@
 package models.common;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
-import utils.common.JsonUtils;
-import utils.common.JsonUtils.JsonForApi;
-import utils.common.JsonUtils.JsonForIO;
-import utils.common.JsonUtils.JsonForPublix;
+import json.common.JsonUtils;
+import json.common.DefaultJson.JsonForApi;
+import json.common.DefaultJson.JsonForIO;
+import json.common.DefaultJson.JsonForPublix;
 
 import javax.persistence.*;
-import java.io.File;
 import java.sql.Timestamp;
 import java.util.UUID;
 
 /**
  * DB entity of a component. It's used by JPA and JSON marshaling.
  * The corresponding UI model is models.gui.ComponentProperties.
- *
- * @author Kristian Lange
  */
 @Entity
 @Table(name = "Component", indexes = {@Index(columnList = "uuid")})
@@ -54,7 +52,6 @@ public class Component {
      * Local path to component's HTML file in the study assets' dir. File separators are persisted as '/'.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
-    @JoinColumn(name = "viewUrl")
     private String htmlFilePath;
 
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
@@ -77,11 +74,13 @@ public class Component {
     /**
      * Component input data in JSON format: every component run of this Component gets access to them. Can be used for
      * initial data and configuration. It's called component input in the GUI and can be accessed via
-     * jatos.componentInput in jatos.js.
+     * 'jatos.componentInput' in jatos.js.
      */
-    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @Lob
-    private String jsonData;
+    @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
+    @JsonAlias({"componentInput", "jsonData"})
+    @Column(name = "jsonData")
+    private String componentInput;
 
     public Component() {
         this.uuid = UUID.randomUUID().toString();
@@ -132,11 +131,7 @@ public class Component {
     }
 
     public String getHtmlFilePath() {
-        if (htmlFilePath != null) {
-            return this.htmlFilePath.replace('/', File.separatorChar);
-        } else {
-            return null;
-        }
+        return this.htmlFilePath;
     }
 
     public void setComments(String comments) {
@@ -147,12 +142,12 @@ public class Component {
         return this.comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getComponentInput() {
+        return componentInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = JsonUtils.asStringForDB(jsonData);
+    public void setComponentInput(String componentInput) {
+        this.componentInput = JsonUtils.asStringForDB(componentInput);
     }
 
     public boolean isReloadable() {
@@ -178,23 +173,15 @@ public class Component {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof Component)) return false;
-
         Component other = (Component) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

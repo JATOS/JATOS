@@ -5,8 +5,6 @@ import java.util.List;
 
 /**
  * Model for breadcrumbs used in UI
- *
- * @author Kristian Lange
  */
 public class Breadcrumbs {
 

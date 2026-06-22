@@ -1,10 +1,9 @@
 package auth.gui;
 
 import com.google.common.base.Strings;
-import exceptions.common.AuthException;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
-import general.common.MessagesStrings;
-import play.Logger;
 
 import javax.inject.Singleton;
 import javax.naming.AuthenticationException;
@@ -16,13 +15,8 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import java.util.Hashtable;
 
-/**
- * @author Kristian Lange
- */
 @Singleton
 public class SigninLdap {
-
-    private static final Logger.ALogger LOGGER = Logger.of(SigninLdap.class);
 
     /**
      * Authenticates the given user via an external LDAP server. It throws an {@link NamingException} if the LDAP server
@@ -47,8 +41,7 @@ public class SigninLdap {
             }
             return false;
         } catch (NamingException e) {
-            LOGGER.warn("LDAP problems - " + e);
-            throw new AuthException(MessagesStrings.LDAP_PROBLEMS);
+            throw new JatosException(e.getMessage(), e, ErrorCode.LDAP_ERROR);
         }
     }
 

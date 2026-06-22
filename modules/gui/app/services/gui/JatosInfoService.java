@@ -1,0 +1,113 @@
+package services.gui;
+
+import general.common.Common;
+import org.apache.commons.io.FileUtils;
+
+import java.lang.management.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static http.common.HttpUtils.getLocalIpAddress;
+import static utils.common.StringUtils.humanReadableByteCount;
+import static utils.common.StringUtils.humanReadableDuration;
+
+public class JatosInfoService {
+
+    public static Map<String, String> getJVMInfo() {
+        Map<String, String> info = new LinkedHashMap<>();
+        info.put("User", System.getProperty("user.name"));
+
+        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+        info.put("Uptime", humanReadableDuration(Duration.ofMillis(runtimeBean.getUptime())));
+        info.put("Name", runtimeBean.getName());
+        info.put("PID", runtimeBean.getName().split("@")[0]);
+        info.put("Java name", runtimeBean.getVmName());
+        info.put("Java version", System.getProperty("java.version"));
+
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        info.put("Thread count", String.valueOf(threadBean.getThreadCount()));
+        info.put("Peak thread count", String.valueOf(threadBean.getPeakThreadCount()));
+
+        // Using Runtime.getRuntime()
+        info.put("Total memory", humanReadableByteCount(Runtime.getRuntime().totalMemory()));
+        info.put("Free memory", humanReadableByteCount(Runtime.getRuntime().freeMemory()));
+        info.put("Used memory",
+                humanReadableByteCount(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+        info.put("Max memory", humanReadableByteCount(Runtime.getRuntime().maxMemory()));
+
+        MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
+        info.put("Heap memory used", FileUtils.byteCountToDisplaySize(memoryBean.getHeapMemoryUsage().getUsed()));
+        info.put("Non-heap memory used",
+                FileUtils.byteCountToDisplaySize(memoryBean.getNonHeapMemoryUsage().getUsed()));
+        return info;
+    }
+
+    public static Map<String, String> getOSInfo() {
+        Map<String, String> info = new LinkedHashMap<>();
+
+        OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
+        info.put("OS name", systemBean.getName());
+        info.put("OS version", systemBean.getVersion());
+        info.put("System load average", String.valueOf(systemBean.getSystemLoadAverage()));
+        info.put("Available processors", String.valueOf(systemBean.getAvailableProcessors()));
+        info.put("System time", LocalDateTime.now().toString());
+        return info;
+    }
+
+    public static Map<String, String> getJatosConfig() {
+        Map<String, String> config = new LinkedHashMap<>();
+        config.put("Multi node", String.valueOf(Common.isMultiNode()));
+        config.put("Local IP", getLocalIpAddress());
+        config.put("Local basepath", Common.getBasepath());
+        config.put("Logs path", Common.getLogsPath());
+        config.put("Logs filename", Common.getLogsFilename());
+        config.put("Logs appender", Common.getLogsAppender());
+        config.put("Tmp path", Common.getTmpPath());
+        config.put("Study assets root path", Common.getStudyAssetsRootPath());
+        config.put("Result data max size", humanReadableByteCount(Common.getResultDataMaxSize()));
+        config.put("Result uploads allowed", String.valueOf(Common.isResultUploadsEnabled()));
+        config.put("Result uploads path", Common.getResultUploadsPath());
+        config.put("Result uploads max file size", humanReadableByteCount(Common.getResultUploadsMaxFileSize()));
+        config.put("Result uploads limit per study run", humanReadableByteCount(Common.getResultUploadsLimitPerStudyRun()));
+        config.put("Study logs allowed", String.valueOf(Common.isStudyLogsEnabled()));
+        config.put("Study logs path", String.valueOf(Common.getStudyLogsPath()));
+        config.put("User session timeout", String.valueOf(Common.getUserSessionTimeout()));
+        config.put("User session inactivity", String.valueOf(Common.getUserSessionInactivity()));
+        config.put("DB URL", Common.getDbUrl());
+        config.put("DB driver", Common.getDbDriver());
+        config.put("DB connection pool size", Common.getDbConnectionPoolSize());
+        config.put("Thread pool size", Common.getThreadPoolSize());
+        config.put("Max results DB query size", String.valueOf(Common.getMaxResultsDbQuerySize()));
+        config.put("Google OAuth allowed", String.valueOf(Common.isOauthGoogleAllowed()));
+        if (Common.isOauthGoogleAllowed()) {
+            config.put("Google OAuth client ID", Common.getOauthGoogleClientId());
+        }
+        config.put("OIDC allowed", String.valueOf(Common.isOidcAllowed()));
+        if (Common.isOidcAllowed()) {
+            config.put("OIDC discovery URL", Common.getOidcDiscoveryUrl());
+            config.put("OIDC client ID", Common.getOidcClientId());
+        }
+        config.put("ORCID allowed", String.valueOf(Common.isOrcidAllowed()));
+        if (Common.isOrcidAllowed()) {
+            config.put("ORCID client ID", Common.getOrcidClientId());
+        }
+        config.put("SRAM allowed", String.valueOf(Common.isSramAllowed()));
+        if (Common.isSramAllowed()) {
+            config.put("SRAM client ID", Common.getSramClientId());
+        }
+        config.put("CONEXT allowed", String.valueOf(Common.isConextAllowed()));
+        if (Common.isConextAllowed()) {
+            config.put("CONEXT client ID", Common.getConextClientId());
+        }
+        config.put("LDAP allowed", String.valueOf(Common.isLdapAllowed()));
+        if (Common.isLdapAllowed()) {
+            config.put("LDAP URL", Common.getLdapUrl());
+            config.put("LDAP base DN", String.join(", ", Common.getLdapBaseDn()));
+            config.put("LDAP admin DN", Common.getLdapAdminDn());
+            config.put("LDAP timeout", String.valueOf(Common.getLdapTimeout()));
+        }
+        return config;
+    }
+
+}

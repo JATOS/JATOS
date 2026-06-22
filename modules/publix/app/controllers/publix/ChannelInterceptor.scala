@@ -1,16 +1,16 @@
 package controllers.publix
 
-import daos.common.StudyResultDao
+import daos.common.{AbstractDao, StudyResultDao}
 import daos.common.worker.WorkerType
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
-import general.common.Http.Context
-import general.common.IOExecutor
+import executor.common.IOExecutor
+import http.common.Http.Context
 import models.common.StudyResult
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.db.jpa.JPAApi
-import utils.common.Helpers
+import utils.common.StringUtils
 
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaFunction
@@ -53,7 +53,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @return WebSocket that transports JSON strings.
    */
   def openBatch(studyResultUuid: String): WebSocket =
-    WebSocket.acceptOrResult[JsValue, JsValue] { implicit request =>
+    WebSocket.acceptOrResult[JsValue, JsValue] { _ =>
       inIOContext {
         jpa.withTransaction(asJavaFunction(_ => {
           try {
@@ -99,7 +99,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @return WebSocket that transfers JSON
    */
   def joinGroup(studyResultUuid: String): WebSocket =
-    WebSocket.acceptOrResult[JsValue, JsValue] { implicit request =>
+    WebSocket.acceptOrResult[JsValue, JsValue] { _ =>
       inIOContext {
         try {
           val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
@@ -156,7 +156,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @param studyResultUuid Study result's UUID
    * @return Result
    */
-  def reassignGroup(studyResultUuid: String): Action[AnyContent] = Action.async { implicit request =>
+  def reassignGroup(studyResultUuid: String): Action[AnyContent] = Action.async { _ =>
     inIOContext {
       try {
         val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
@@ -193,7 +193,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @param studyResultUuid Study result's UUID
    * @return Result
    */
-  def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action.async { implicit request =>
+  def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action.async { _ =>
     inIOContext {
       jpa.withTransaction(asJavaFunction(_ => {
         try {
@@ -227,14 +227,10 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * Helper to wrap logic in the IOExecutor and set up the HTTP Context.
    * Works for both standard Actions (returning Result) and WebSockets (returning Either).
    */
-  private def inIOContext[T](block: => T)(implicit request: RequestHeader): Future[T] = {
+  private def inIOContext[T](block: => T): Future[T] = {
+    val context = Context.current()
     Future {
-      try {
-        Context.setCurrent(new Context(request.asJava))
-        block
-      } finally {
-        Context.clear()
-      }
+      Context.withContext(context, () => block)
     }(ioExecutor)
   }
 
@@ -248,12 +244,12 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
   private def fetchStudyResultAndInitLazy(uuid: String): StudyResult = {
     jpa.withTransaction(asJavaFunction(_ => {
       val studyResult = fetchStudyResult(uuid)
-      Helpers.initializeAndUnproxy(studyResult.getBatch, studyResult.getHistoryGroupResult)
+      AbstractDao.initializeAndUnproxy(studyResult.getBatch, studyResult.getHistoryGroupResult)
       if (studyResult.getStudy != null) {
-        Helpers.initializeAndUnproxy(studyResult.getStudy, studyResult.getStudy.getUserList)
+        AbstractDao.initializeAndUnproxy(studyResult.getStudy, studyResult.getStudy.getUserList)
       }
       if (studyResult.getActiveGroupResult != null) {
-        Helpers.initializeAndUnproxy(studyResult.getActiveGroupResult, studyResult.getActiveGroupResult.getActiveMemberList)
+        AbstractDao.initializeAndUnproxy(studyResult.getActiveGroupResult, studyResult.getActiveGroupResult.getActiveMemberList)
       }
       studyResult
     }))

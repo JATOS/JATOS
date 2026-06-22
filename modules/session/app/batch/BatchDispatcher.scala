@@ -21,8 +21,6 @@ import javax.inject.Inject
  *
  * A new BatchDispatcher is created by the BatchDispatcherRegistry. If a BatchDispatcher has no more members, it closes
  * itself.
- *
- * @author Kristian Lange
  */
 object BatchDispatcher {
 

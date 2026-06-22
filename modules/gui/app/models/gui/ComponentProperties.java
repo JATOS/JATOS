@@ -1,33 +1,37 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
+import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
-import utils.common.JsonUtils;
+import json.common.DefaultJson;
 
-import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+
 /**
- * Model of component properties for UI (not persisted in DB). Only used together with an HTML form that creates a new
- * Component or updates one. The corresponding database entity is {@link models.common.Component}.
+ * DTO of component properties for UI. The corresponding database entity is {@link models.common.Component}.
  */
 @Constraints.Validate
-public class ComponentProperties implements Constraints.Validatable<List<ValidationError>> {
+public class ComponentProperties implements Validatable<List<ValidationError>> {
 
     public static final String ID = "id";
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
     public static final String HTML_FILE_PATH = "htmlFilePath";
-    public static final String JSON_DATA = "jsonData";
-    public static final String ACTIVE = "active";
+    public static final String COMPONENT_INPUT = "componentInput";
     public static final String COMMENTS = "comments";
 
+    @JsonProperty(access = READ_ONLY)
     private Long id;
 
     /**
@@ -35,8 +39,10 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
      * only one component with the same UUID, although it is allowed to have other studies that have this component with
      * this UUID.
      */
+    @JsonProperty(access = READ_ONLY)
     private String uuid;
 
+    @JsonProperty(access = READ_ONLY)
     private Long studyId;
 
     private String title;
@@ -44,6 +50,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     /**
      * Timestamp of the creation or the last update of this component
      */
+    @JsonProperty(access = READ_ONLY)
     private Timestamp date;
 
     /**
@@ -54,7 +61,8 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     /**
      * Should the actual HTML file on the disk be renamed - or just the value in the DB?
      */
-    private boolean htmlFileRename;
+    @JsonProperty(access = WRITE_ONLY)
+    private boolean htmlFileRename = false;
 
     /**
      * Does the html file exists in the file system?
@@ -77,7 +85,11 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
      */
     private String comments;
 
-    private String jsonData;
+    /**
+     * Data in JSON format that is injected into jatos.js as 'jatos.componentInput'
+     */
+    @JsonAlias({"componentInput", "jsonData"})
+    private String componentInput;
 
     public ComponentProperties() {
     }
@@ -127,11 +139,7 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
     }
 
     public String getHtmlFilePath() {
-        if (htmlFilePath != null) {
-            return this.htmlFilePath.replace('/', File.separatorChar);
-        } else {
-            return null;
-        }
+        return this.htmlFilePath;
     }
 
     public boolean isHtmlFileRename() {
@@ -159,12 +167,12 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
         return this.comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getComponentInput() {
+        return componentInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = jsonData;
+    public void setComponentInput(String componentInput) {
+        this.componentInput = componentInput;
     }
 
     public boolean isReloadable() {
@@ -213,8 +221,8 @@ public class ComponentProperties implements Constraints.Validatable<List<Validat
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-            errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        if (!Strings.isNullOrEmpty(componentInput) && !DefaultJson.isValid(componentInput)) {
+            errorList.add(new ValidationError(COMPONENT_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
         }
         return errorList.isEmpty() ? null : errorList;
     }

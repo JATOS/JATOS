@@ -1,20 +1,19 @@
 package controllers.gui;
 
 import actions.common.AsyncAction.Async;
-import general.common.Http.Context;
 import actions.common.AsyncAction.Executor;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import general.common.Common;
+import http.common.Http.Context;
+import http.common.HttpUtils;
 import models.common.Study;
 import models.common.User;
-import models.common.User.Role;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.http.HttpEntity;
 import play.mvc.Controller;
@@ -24,9 +23,8 @@ import play.mvc.Result;
 import services.gui.AdminService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
-import utils.common.Helpers;
+import json.common.DefaultJson;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -40,11 +38,10 @@ import java.util.stream.Stream;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.*;
 
 /**
  * Controller class around administration (updates are handled in Updates and user manager in Users)
- *
- * @author Kristian Lange
  */
 @Singleton
 public class Admin extends Controller {
@@ -56,6 +53,7 @@ public class Admin extends Controller {
     private final LogFileReader logFileReader;
     private final AdminService adminService;
     private final IOUtils ioUtils;
+    private final DefaultJson defaultJson;
 
     @Inject
     Admin(BreadcrumbsService breadcrumbsService,
@@ -64,7 +62,8 @@ public class Admin extends Controller {
           UserDao userDao,
           LogFileReader logFileReader,
           AdminService adminService,
-          IOUtils ioUtils) {
+          IOUtils ioUtils,
+          DefaultJson defaultJson) {
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.studyResultDao = studyResultDao;
@@ -72,13 +71,14 @@ public class Admin extends Controller {
         this.logFileReader = logFileReader;
         this.adminService = adminService;
         this.ioUtils = ioUtils;
+        this.defaultJson = defaultJson;
     }
 
     /**
      * Returns admin page
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     @SaveLastVisitedPageUrl
     public Result administration(Http.Request request) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -90,15 +90,15 @@ public class Admin extends Controller {
      * Returns the content (all regular file's names) of the logs directory as JSON
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result listLogs() throws IOException {
-        try (Stream<Path> paths = Files.walk(Paths.get(Common.getLogsPath()))) {
+        try (Stream<Path> paths = Files.walk(Path.of(Common.getLogsPath()))) {
             List<String> content = paths
                     .filter(Files::isRegularFile)
                     .map(file -> file.getFileName().toString())
                     .sorted()
                     .collect(Collectors.toList());
-            return ok(JsonUtils.asJsonNode(content));
+            return ok(defaultJson.objAsJsonNode(content));
         }
     }
 
@@ -106,7 +106,7 @@ public class Admin extends Controller {
      * For backward compatibility. Uses logs.
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result log(Integer lineLimit) throws IOException {
         return logs("application.log", lineLimit, true);
     }
@@ -114,13 +114,13 @@ public class Admin extends Controller {
     /**
      * Returns the log file specified by 'filename'. If 'reverse' is true, it returns the content of the file in reverse
      * order and as 'Transfer-Encoding:chunked'. It limits the number of lines to the given lineLimit. If the log file
-     * can't be read it still returns with OK but instead of the file content with an error message. If 'reverse' is
-     * false it returns the file for download.
+     * can't be read, it still returns with OK but instead of the file content with an error message. If 'reverse' is
+     * false, it returns the file for download.
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result logs(String filename, Integer lineLimit, boolean reverse) {
-        filename = Helpers.urlDecode(filename);
+        filename = HttpUtils.urlDecode(filename);
         if (!ioUtils.existsAndSecure(Common.getLogsPath(), filename)) return notFound();
 
         if (reverse) {
@@ -131,9 +131,10 @@ public class Admin extends Controller {
             Optional<Long> contentLength = Optional.of(logPath.toFile().length());
             String filenameInHeader = HttpHeaderParameterEncoding.encode("filename", "jatos_logs_" + filename);
             // We need the "Content-Disposition" header for API calls (not for the GUI)
-            return new Result(new ResponseHeader(200, Collections.emptyMap()),
-                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")))
-                    .withHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
+            Context.current().response().setHeader(Http.HeaderNames.CONTENT_DISPOSITION, "attachment; " + filenameInHeader);
+            return new Result(
+                    new ResponseHeader(200, Collections.emptyMap()),
+                    new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")));
         }
     }
 
@@ -141,7 +142,7 @@ public class Admin extends Controller {
      * Returns some status values
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result status() {
         return ok(adminService.getAdminStatus());
     }
@@ -150,7 +151,7 @@ public class Admin extends Controller {
      * Returns study manager page
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     @SaveLastVisitedPageUrl
     public Result studyManager(Http.Request request) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -162,7 +163,7 @@ public class Admin extends Controller {
      * Returns table data for the study manager page
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result allStudiesData() {
         List<Study> studyList = studyDao.findAll();
         boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyManager();
@@ -170,61 +171,61 @@ public class Admin extends Controller {
         boolean resultFileSizeFlag = Common.showResultFileSizeInStudyManager();
         List<Map<String, Object>> studiesData = adminService.getStudiesData(studyList, studyAssetsSizeFlag,
                 resultDataSizeFlag, resultFileSizeFlag);
-        return ok(JsonUtils.asJsonNode(studiesData));
+        return ok(defaultJson.objAsJsonNode(studiesData));
     }
 
     /**
      * Returns admin data for all studies that belong to the given user
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsername);
         Set<Study> studyList = user.getStudyList();
         List<Map<String, Object>> studiesData = adminService.getStudiesData(studyList, true, true, true);
-        return ok(JsonUtils.asJsonNode(studiesData));
+        return ok(defaultJson.objAsJsonNode(studiesData));
     }
 
     /**
      * Returns the study assets folder size of one study
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result studyAssetsSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
-        return ok(JsonUtils.asJsonNode(adminService.getStudyAssetDirSize(study)));
+        return ok(defaultJson.objAsJsonNode(adminService.getStudyAssetDirSize(study)));
     }
 
     /**
      * Returns the result data size of one study
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result resultDataSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
         int studyResultCount = studyResultDao.countByStudy(study);
-        return ok(JsonUtils.asJsonNode(adminService.getResultDataSize(study, studyResultCount)));
+        return ok(defaultJson.objAsJsonNode(adminService.getResultDataSize(study, studyResultCount)));
     }
 
     /**
      * Returns the size of all result files of one study
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result resultFileSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
         if (study == null) return badRequest("Study does not exist");
         if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
         int studyResultCount = studyResultDao.countByStudy(study);
-        return ok(JsonUtils.asJsonNode(adminService.getResultFileSize(study, studyResultCount)));
+        return ok(defaultJson.objAsJsonNode(adminService.getResultFileSize(study, studyResultCount)));
     }
 
 }

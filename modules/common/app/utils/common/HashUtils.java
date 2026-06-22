@@ -1,9 +1,9 @@
 package utils.common;
 
-import org.apache.commons.lang3.RandomStringUtils;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope.ErrorCode;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -19,6 +19,10 @@ public class HashUtils {
 
     public static final String SHA_256 = "SHA-256";
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final char[] TOKEN_CHARS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+
     public static String getHashMD5(String str) {
         try {
             byte[] strBytes = str.getBytes(StandardCharsets.UTF_8);
@@ -31,8 +35,8 @@ public class HashUtils {
     }
 
     /**
-     * Calculates hash with the given hash function. Uses ISO_8859_1 charset. Converts the byte
-     * array into an String of hexadecimal characters.
+     * Calculates hash with the given hash function. Uses ISO_8859_1 charset. Converts the byte array into an String of
+     * hexadecimal characters.
      */
     public static String getHash(String str, String hashFunction) {
         try {
@@ -59,10 +63,8 @@ public class HashUtils {
             }
             byte[] hashByte = digest.digest();
             return bytesToHex(hashByte);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (NoSuchAlgorithmException | IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -77,36 +79,35 @@ public class HashUtils {
 
     /**
      * Generates a random string that can be used for passwords or tokens
-     * https://stackoverflow.com/a/31260788/1278769
      */
     public static String generateSecureRandomString(int length) {
-        char[] possibleCharacters = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789").toCharArray();
-        return RandomStringUtils.random(length, 0, possibleCharacters.length - 1, false, false, possibleCharacters,
-                new SecureRandom());
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(TOKEN_CHARS[SECURE_RANDOM.nextInt(TOKEN_CHARS.length)]);
+        }
+        return sb.toString();
     }
 
     /**
-     * Uses MD5 to generate a 6 chars long checksum of a string
+     * Uses MD5 to generate a checksum of a string with the length specified
      */
-    public static String getChecksum(String str) {
-        return HashUtils.getHashMD5(str).substring(0, 6);
+    public static String getChecksum(String str, int length) {
+        return HashUtils.getHashMD5(str).substring(0, length);
     }
 
     /**
      * Uses Adler32 to calculate a checksum of a file
      */
-    public static long getChecksum(File file) {
-        try {
-            byte[] tempBuf = new byte[128];
-            FileInputStream is = new FileInputStream(file);
-            CheckedInputStream cis = new CheckedInputStream(is, new Adler32());
+    public static long getChecksum(Path file) {
+        byte[] tempBuf = new byte[128];
+        try (InputStream is = Files.newInputStream(file);
+             CheckedInputStream cis = new CheckedInputStream(is, new Adler32())) {
             //noinspection StatementWithEmptyBody - intentionally empty
             while (cis.read(tempBuf) >= 0) {
             }
             return cis.getChecksum().getValue();
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
-
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 

@@ -1,6 +1,6 @@
 package controllers.gui.actionannotations;
 
-import general.common.Http.Context;
+import http.common.Http.Context;
 import daos.common.UserDao;
 import general.common.Common;
 import models.common.User;
@@ -21,8 +21,6 @@ import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.Sav
 
 /**
  * Annotation definition for Play actions: save the last visited page URL in the database
- *
- * @author Kristian Lange
  */
 public class SaveLastVisitedPageUrlAction extends Action<SaveLastVisitedPageUrl> {
 

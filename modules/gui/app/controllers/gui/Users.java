@@ -1,44 +1,43 @@
 package controllers.gui;
 
 import actions.common.AsyncAction.Async;
-import general.common.Http.Context;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthService;
-import auth.gui.SigninFormValidation;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import daos.common.UserDao;
 import exceptions.common.AuthException;
+import http.common.Http.Context;
+import json.common.DefaultJson;
+import json.common.JsonUtils;
 import models.common.User;
 import models.common.User.Role;
-import models.gui.ChangePasswordModel;
-import models.gui.ChangeUserProfileModel;
-import models.gui.NewUserModel;
+import models.gui.ChangePasswordProperties;
+import models.gui.NewUserProperties;
+import models.gui.UserProperties;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
 import services.gui.UserService;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.*;
+import static models.gui.ChangePasswordProperties.*;
+import static services.gui.UserService.ADMIN_USERNAME;
 
 /**
  * Controller with actions concerning users (incl. user manager)
- *
- * @author Kristian Lange
  */
 @Singleton
 public class Users extends Controller {
@@ -46,30 +45,30 @@ public class Users extends Controller {
     private final UserDao userDao;
     private final UserService userService;
     private final AuthService authService;
-    private final SigninFormValidation signinFormValidation;
     private final BreadcrumbsService breadcrumbsService;
     private final FormFactory formFactory;
+    private final DefaultJson defaultJson;
     private final JsonUtils jsonUtils;
 
     @Inject
     Users(UserDao userDao,
           UserService userService,
           AuthService authService,
-          SigninFormValidation signinFormValidation,
           BreadcrumbsService breadcrumbsService,
           FormFactory formFactory,
+          DefaultJson defaultJson,
           JsonUtils jsonUtils) {
         this.userDao = userDao;
         this.userService = userService;
         this.authService = authService;
-        this.signinFormValidation = signinFormValidation;
         this.breadcrumbsService = breadcrumbsService;
         this.formFactory = formFactory;
+        this.defaultJson = defaultJson;
         this.jsonUtils = jsonUtils;
     }
 
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     @SaveLastVisitedPageUrl
     public Result userManager(Http.Request request) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -81,41 +80,33 @@ public class Users extends Controller {
      * GET request: Returns a list of all users as JSON
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result allUserData() {
-        List<User> users = userDao.findAllWithStudies();
-        List<Map<String, Object>> allUserData = new ArrayList<>();
-        for (User user : users) {
-            Map<String, Object> userData = jsonUtils.getSingleUserData(user);
-            allUserData.add(userData);
-        }
-        return ok(JsonUtils.asJsonNode(allUserData));
-    }
+        List<User> userList = userDao.findAll();
 
-    /**
-     * POST request to activate or deactivate a user.
-     */
-    @Async(Executor.IO)
-    @Auth(Role.ADMIN)
-    public Result toggleActive(String usernameOfUserToChange, Boolean active) {
-        String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
-        userService.toggleActive(normalizedUsernameOfUserToChange, active);
-        return ok();
+        ArrayNode allUserData = userList.stream()
+                .map(jsonUtils::getSingleUserData)
+                .collect(Json.mapper()::createArrayNode, ArrayNode::add, ArrayNode::addAll);
+
+        return ok(allUserData);
     }
 
     /**
      * POST a request to add or remove a role from a user.
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
-    public Result toggleRole(String usernameOfUserToChange, String role, boolean value) {
+    @Auth(roles = ADMIN)
+    public Result toggleRole(Http.Request request, String role, boolean value) {
+        DynamicForm requestData = formFactory.form().bindFromRequest(request);
+        String usernameOfUserToChange = requestData.get("username");
+        if (usernameOfUserToChange == null) return badRequest("Missing username");
         String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
         switch (Role.valueOf(role)) {
             case SUPERUSER:
-                return ok(JsonUtils.asJsonNode(
+                return ok(defaultJson.objAsJsonNode(
                         userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
             case ADMIN:
-                return ok(JsonUtils.asJsonNode(
+                return ok(defaultJson.objAsJsonNode(
                         userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
             default:
                 return badRequest("Unknown role");
@@ -126,24 +117,22 @@ public class Users extends Controller {
      * GET request that returns user data of the signed-in user
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result signedinUserData() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(signedinUser)));
+        return ok(jsonUtils.getSingleUserData(signedinUser));
     }
 
     /**
      * Handles POST request of user create form. Only users with Role ADMIN are allowed to create new users.
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result create(Http.Request request) {
-        Form<NewUserModel> form = formFactory.form(NewUserModel.class).bindFromRequest(request);
-        form = signinFormValidation.validateNewUser(form);
+        Form<NewUserProperties> form = formFactory.form(NewUserProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
-
-        User newUser = userService.bindToUserAndPersist(form.get());
-        return ok(JsonUtils.asJsonNode(jsonUtils.getSingleUserData(newUser)));
+        User newUser = userService.registerUser(form.get());
+        return ok(jsonUtils.getSingleUserData(newUser));
     }
 
     /**
@@ -151,11 +140,14 @@ public class Users extends Controller {
      * themselves or from an admin user to edit another user.
      */
     @Async(Executor.IO)
-    @Auth
-    public Result edit(Http.Request request, String username) {
+    @Auth(roles = {USER, ADMIN})
+    public Result edit(Http.Request request) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        DynamicForm requestData = formFactory.form().bindFromRequest(request);
+        String username = requestData.get("username");
         String normalizedUsernameOfUserToChange = User.normalizeUsername(username);
         User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
+        if (user == null) return badRequest("User doesn't exist");
 
         if (user.isOauthGoogle() || user.isOidc() || user.isOrcid() || user.isSram() || user.isConext()) {
             return forbidden(user.getAuthMethod() + " authenticated users can't have their profile changed.");
@@ -165,7 +157,7 @@ public class Users extends Controller {
             return forbidden("You are not allowed to get data for this user.");
         }
 
-        Form<ChangeUserProfileModel> form = formFactory.form(ChangeUserProfileModel.class).bindFromRequest(request);
+        Form<UserProperties> form = formFactory.form(UserProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         // Update user in the database: so far it's only the user's name
@@ -176,81 +168,72 @@ public class Users extends Controller {
     }
 
     /**
-     * Handles POST request from change password form in user manager initiated by an admin
+     * Handles POST request to change a password originated in the user manager and initiated by an admin
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = ADMIN)
     public Result changePasswordByAdmin(Http.Request request) {
+        DynamicForm dynForm = formFactory.form().bindFromRequest(request);
+        ChangePasswordProperties props = new ChangePasswordProperties();
+        props.setUsername(dynForm.get(USERNAME));
+        props.setNewPassword(dynForm.get(NEW_PASSWORD));
+        props.setNewPasswordRepeat(dynForm.get(NEW_PASSWORD)); // Admins do not have to repeat the password
+        props.setOldPassword(dynForm.get(OLD_PASSWORD));
+
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
-        String normalizedUsernameOfUserToChange = form.get().getUsername();
-
-        if (!signedinUser.isAdmin()) {
-            return forbidden("Only admin users are allowed to change passwords of other users.");
-        }
-
-        User user = userDao.findByUsername(normalizedUsernameOfUserToChange);
+        User user = userDao.findByUsername(props.getUsername());
         if (user == null) {
-            return badRequest("An user with username \"" + normalizedUsernameOfUserToChange + "\" doesn't exist.");
+            return badRequest("User doesn't exist.");
         }
         if (!user.isDb()) {
-            return forbidden("It's not possible to change the password of non-local authenticated users.");
+            return forbidden("It's not possible to change the password of a user that is not authenticated locally.");
         }
 
-        // Only the user 'admin' is allowed to change his own password
-        if (normalizedUsernameOfUserToChange.equals(UserService.ADMIN_USERNAME) &&
-                !signedinUser.getUsername().equals(UserService.ADMIN_USERNAME)) {
-            form = form.withError(new ValidationError(ChangePasswordModel.USERNAME,
-                    "It's not possible to change admin's password."));
-            return forbidden(form.errorsAsJson());
+        // Only the user 'admin' is allowed to change their own password
+        if (props.getUsername().equals(ADMIN_USERNAME) && !signedinUser.getUsername().equals(ADMIN_USERNAME)) {
+            return forbidden("You are not allowed to change the password of user 'admin'.");
         }
 
-        // Admins do not have to repeat the password
-        form.get().setNewPasswordRepeat(form.get().getNewPassword());
-        // Validate
-        form = signinFormValidation.validateChangePassword(form);
-        if (form.hasErrors()) return forbidden(form.errorsAsJson());
+        Form<ChangePasswordProperties> form = formFactory.form(ChangePasswordProperties.class).fill(props);
+        form = UserService.validateAndAddErrors(form, props);
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        // Change password
-        String newPassword = form.get().getNewPassword();
-        userService.updatePassword(user, newPassword);
-
+        userService.updatePassword(user, props.getNewPassword());
         return ok();
     }
 
     /**
-     * Handles POST request from change password form by user themselves
+     * Handles POST request to change a password form initiated by a user themselves
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {USER, ADMIN})
     public Result changePasswordByUser(Http.Request request) {
-        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        Form<ChangePasswordModel> form = formFactory.form(ChangePasswordModel.class).bindFromRequest(request);
-        String normalizedUsernameOfUserToChange = form.get().getUsername();
+        DynamicForm dynForm = formFactory.form().bindFromRequest(request);
+        ChangePasswordProperties props = new ChangePasswordProperties();
+        props.setUsername(dynForm.get(USERNAME));
+        props.setNewPassword(dynForm.get(NEW_PASSWORD));
+        props.setNewPasswordRepeat(dynForm.get(NEW_PASSWORD_REPEAT));
+        props.setOldPassword(dynForm.get(OLD_PASSWORD));
 
-        if (!signedinUser.getUsername().equals(normalizedUsernameOfUserToChange)) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        if (!signedinUser.getUsername().equals(props.getUsername())) {
             return forbidden("User can change only their own password");
         }
-
-        if (signedinUser.isLdap() || signedinUser.isOauthGoogle() || signedinUser.isOidc()) {
-            return forbidden("It's not possible to change the password of LDAP, Google sign-in or OIDC authenticated users.");
+        if (!signedinUser.isDb()) {
+            return forbidden("It's not possible to change the password of a user that is not authenticated locally.");
         }
 
         // Validate
-        form = signinFormValidation.validateChangePassword(form);
-        if (form.hasErrors()) return forbidden(form.errorsAsJson());
+        Form<ChangePasswordProperties> form = formFactory.form(ChangePasswordProperties.class).fill(props);
+        form = UserService.validateAndAddErrors(form, props);
+        if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        // Check old password
-        String oldPassword = form.get().getOldPassword();
-        if (!authService.authenticate(signedinUser, oldPassword)) {
-            form = form.withError(new ValidationError(ChangePasswordModel.OLD_PASSWORD, "Wrong password"));
-            return forbidden(form.errorsAsJson());
+        // Check old password against current password in the database
+        if (!authService.authenticate(signedinUser, props.getOldPassword())) {
+            return forbidden(defaultJson.objAsJsonNode(Collections.singletonMap(OLD_PASSWORD, Collections.singletonList("Wrong password"))));
         }
 
-        // Change password
-        String newPassword = form.get().getNewPassword();
-        userService.updatePassword(signedinUser, newPassword);
-
+        userService.updatePassword(signedinUser, props.getNewPassword());
         return ok();
     }
 
@@ -260,16 +243,18 @@ public class Users extends Controller {
      * It can't be a HTTP DELETE because it contains form data and Play doesn't handle body data in a DELETE request.
      */
     @Async(Executor.IO)
-    @Auth
-    public Result remove(Http.Request request, String usernameOfUserToRemove) {
+    @Auth(roles = {USER, ADMIN})
+    public Result remove(Http.Request request) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String normalizedSignedinUsername = signedinUser.getUsername();
+        DynamicForm requestData = formFactory.form().bindFromRequest(request);
+        String usernameOfUserToRemove = requestData.get("username");
+        if (usernameOfUserToRemove == null) return badRequest("Missing username");
         String normalizedUsernameOfUserToRemove = User.normalizeUsername(usernameOfUserToRemove);
         if (!signedinUser.isAdmin() && !normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
             return forbidden("You are not allowed to delete this user.");
         }
 
-        DynamicForm requestData = formFactory.form().bindFromRequest(request);
         switch (signedinUser.getAuthMethod()) {
             case DB:
             case LDAP:
@@ -284,8 +269,8 @@ public class Users extends Controller {
             case CONEXT:
             case OAUTH_GOOGLE:
                 // Google OAuth, OIDC, ORCID, SRAM and CONEXT users confirm with their username
-                String username = requestData.get("username");
-                if (!username.equals(signedinUser.getUsername())) {
+                String confirmUsername = requestData.get("confirmUsername");
+                if (confirmUsername == null || !confirmUsername.equals(signedinUser.getUsername())) {
                     return forbidden("Wrong username");
                 }
                 break;
@@ -297,7 +282,8 @@ public class Users extends Controller {
 
         // If the user removes himself: sign out by removing the session cookie
         if (normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
-            return ok(" ").withNewSession();
+            Context.current().response().clearSession();
+            return ok(" ");
         } else {
             return ok();
         }

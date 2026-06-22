@@ -18,8 +18,6 @@ import scala.util.Try
 
 /**
  * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
- *
- * @author Kristian Lange
  */
 @Singleton
 class BatchActionHandler @Inject()(jpa: JPAApi,

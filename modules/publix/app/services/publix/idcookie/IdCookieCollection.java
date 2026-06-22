@@ -11,10 +11,7 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 
 /**
- * Wrapper around a collection of JATOS ID cookies. Adds some useful methods. The number of ID cookies is limited by the
- * jatos.idCookies.limit value in the jatos.conf.
- *
- * @author Kristian Lange
+ * Wrapper around a collection of JATOS ID cookies. Adds some useful methods.
  */
 public class IdCookieCollection {
 

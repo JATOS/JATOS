@@ -1,8 +1,8 @@
 export { LinksWithToggle }
 
-import * as Helpers from "./helpers.js";
-import * as CopyToClipboard from "./copyToClipboard.js";
-import * as QrCodeModal from "./qrCodeModal.js";
+import * as Helpers from "helpers";
+import * as CopyToClipboard from "copyToClipboard";
+import * as QrCodeModal from "qrCodeModal";
 
 /**
  * Renders the toggle button "Open Directly" / "Confirm First" and the study links that can be toggled by it.

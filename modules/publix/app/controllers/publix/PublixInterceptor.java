@@ -2,7 +2,6 @@ package controllers.publix;
 
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
-import actions.common.TransactionalAction;
 import actions.common.TransactionalAction.Transactional;
 import com.google.common.base.Strings;
 import daos.common.ComponentDao;
@@ -12,8 +11,8 @@ import daos.common.worker.WorkerType;
 import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
-import filters.publix.IdCookieFilter;
 import filters.publix.IdCookieFilter.IdCookies;
+import http.common.HttpUtils;
 import models.common.Component;
 import models.common.Study;
 import models.common.StudyLink;
@@ -23,7 +22,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixHelpers;
-import utils.common.Helpers;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -37,8 +35,6 @@ import java.util.Optional;
  * A study run starts with the 'run' method that takes the study code as a parameter. The study code is the ID for a
  * StudyLink. The StudyLink determines the worker type and which Publix implementation will be called. All later
  * requests of this study run need at least the study result UUID and often the component UUID too.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class PublixInterceptor extends Controller {
@@ -69,7 +65,7 @@ public class PublixInterceptor extends Controller {
      * It always shows a ▶ button that the worker has to press to confirm the intention of running the study.
      */
     @Async(Executor.IO)
-    public Result studyEntry(Http.Request request, String studyCode) {
+    public Result studyEntry(String studyCode) {
         String studyEntryMsg = null;
         String errMsg = null;
         boolean validStudyLink = false;
@@ -92,7 +88,7 @@ public class PublixInterceptor extends Controller {
                 errMsg = "No valid study code";
             }
         }
-        return ok(views.html.publix.studyEntry.render(studyCode, validStudyLink, Helpers.getQueryString(request),
+        return ok(views.html.publix.studyEntry.render(studyCode, validStudyLink, HttpUtils.getQueryString(),
                 studyEntryMsg, errMsg));
     }
 
@@ -125,7 +121,7 @@ public class PublixInterceptor extends Controller {
                 .startStudy(request, studyLink);
     }
 
-    @IdCookies
+    @IdCookies // todo needed here - we have it in Publix.startComponent
     @Async(Executor.IO)
     @Transactional
     public Result startComponent(Http.Request request, String studyResultUuid, String componentUuid, String message) {

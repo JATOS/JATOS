@@ -1,29 +1,33 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
+import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
+import json.common.DefaultJson;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
+
 /**
- * Model of study properties for UI (not persisted in DB). Only used together with an HTML form that creates a new Study
- * or updates one. The corresponding database entity is {@link models.common.Study}.
+ * DTO of study properties for UI. The corresponding database entity is {@link models.common.Study}.
  */
 @Constraints.Validate
-public class StudyProperties implements Constraints.Validatable<List<ValidationError>> {
+public class StudyProperties implements Validatable<List<ValidationError>> {
 
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
-    public static final String JSON_DATA = "jsonData";
+    public static final String STUDY_INPUT = "studyInput";
     public static final String DESCRIPTION = "description";
     public static final String DIR_NAME = "dirName";
     public static final String COMMENTS = "comments";
@@ -33,12 +37,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     public static final String[] INVALID_DIR_NAMES = {"jatos", "publix",
             "public", "assets", "study_assets_root", "study_assets"};
 
+    @JsonProperty(access = READ_ONLY)
     private Long studyId;
 
     /**
      * Universally (worldwide) unique ID. Used for import/export between different JATOS instances. On one JATOS
      * instance it is only allowed to have one study with the same UUID.
      */
+    @JsonProperty(access = READ_ONLY)
     private String uuid;
 
     private String title;
@@ -48,12 +54,19 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     /**
      * Timestamp of the creation or the last update of this study
      */
+    @JsonProperty(access = READ_ONLY)
     private Timestamp date;
 
     /**
      * If a study is locked, it can't be changed.
      */
+    @JsonProperty(access = READ_ONLY)
     private boolean locked = false;
+
+    /**
+     * A deactivated study cannot be run by a worker. A study can be deactivated by any admin or by a member user.
+     */
+    private boolean active = true;
 
     /**
      * Is this study a group study, e.g. worker scripts can send messages between each other.
@@ -82,9 +95,10 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
     private String comments;
 
     /**
-     * Data in JSON format that are responded after public APIs 'getData' call.
+     * Data in JSON format that is injected into jatos.js as 'jatos.studyInput'
      */
-    private String jsonData;
+    @JsonAlias({"studyInput", "jsonData"})
+    private String studyInput;
 
     /**
      * URL to which should be redirected if the study run finishes. If kept null it won't be redirected and the default
@@ -161,6 +175,14 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         return this.locked;
     }
 
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
     public boolean isGroupStudy() {
         return groupStudy;
     }
@@ -185,12 +207,12 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
         this.allowPreview = allowPreview;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getStudyInput() {
+        return studyInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = jsonData;
+    public void setStudyInput(String studyInput) {
+        this.studyInput = studyInput;
     }
 
     public String getEndRedirectUrl() {
@@ -233,17 +255,21 @@ public class StudyProperties implements Constraints.Validatable<List<ValidationE
                 errorList.add(new ValidationError(DIR_NAME, MessagesStrings.DIR_NAME_TOO_LONG));
             }
             if (!IOUtils.checkFilename(dirName)) {
-                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
+                errorList.add(new ValidationError(DIR_NAME, "Invalid study assets directory name."));
             }
             if (Arrays.asList(INVALID_DIR_NAMES).contains(dirName)) {
-                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.INVALID_DIR_NAME));
+                errorList.add(new ValidationError(DIR_NAME,
+                        "Invalid study assets directory name. It can't be one of the following: " + Arrays.toString(INVALID_DIR_NAMES) + "."));
             }
+        }
+        if (description != null && !Jsoup.isValid(description, Safelist.none())) {
+            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
             errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-            errorList.add(new ValidationError(JSON_DATA, MessagesStrings.INVALID_JSON_FORMAT));
+        if (!Strings.isNullOrEmpty(studyInput) && !DefaultJson.isValid(studyInput)) {
+            errorList.add(new ValidationError(STUDY_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
         }
         if (description != null && !Jsoup.isValid(description, Safelist.none())) {
             errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));

@@ -1,10 +1,10 @@
 package services.publix.workers;
 
 import general.common.Common;
+import http.common.Http.Context;
 import models.common.Study;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.tuple.Pair;
-import play.mvc.Http;
 import play.mvc.Http.Cookie;
 
 import javax.inject.Singleton;
@@ -25,8 +25,6 @@ import static play.mvc.Http.Cookie.builder;
  * A GeneralSingle cookie consists of a list of tuples storing the study ID and worker ID. With the cookie's data, it is
  * possible to determine whether in this browser this study was done already with a GeneralSingle worker and by which
  * worker it was done.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class GeneralSingleCookieService {
@@ -47,9 +45,9 @@ public class GeneralSingleCookieService {
      * Returns the worker ID of the GeneralSingleWorker that belongs to the given study - or null if it doesn't exist.
      * If the study was run before the study UUID has been stored together with the worker ID in the cookie.
      */
-    public Long fetchWorkerIdByStudy(Http.Request request, Study study) {
-        Optional<Cookie> generalSingleCookie = request.cookies().get(COOKIE_NAME);
-        if (!generalSingleCookie.isPresent()) return null;
+    public Long fetchWorkerIdByStudy(Study study) {
+        Optional<Cookie> generalSingleCookie = Context.current().requestHeader().cookies().get(COOKIE_NAME);
+        if (generalSingleCookie.isEmpty()) return null;
 
         // Get all cookie items from this study (cookie item = Pair of studyUuid and workerId)
         List<Pair<String, Long>> cookieItemsFromStudy =
@@ -93,8 +91,8 @@ public class GeneralSingleCookieService {
      * Sets the cookie in the response. The cookie will contain all GeneralSingle studies done in this browser and
      * adds the given study (and worker). This cookie is HTTP only and has an expiry date in the far future.
      */
-    public Cookie get(Http.Request request, Study study, Worker worker) {
-        Optional<Cookie> currentCookie = request.getCookie(COOKIE_NAME);
+    public Cookie get(Study study, Worker worker) {
+        Optional<Cookie> currentCookie = Context.current().requestHeader().getCookie(COOKIE_NAME);
         String newCookieValue;
         if (currentCookie.isPresent()) {
             if (!currentCookie.get().value().contains(study.getUuid())) {

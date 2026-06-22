@@ -1,16 +1,15 @@
 package messaging.common;
 
-import general.common.Http.Context;
+import http.common.Http.Context;
+import play.libs.Json;
 import play.libs.typedmap.TypedKey;
-import utils.common.JsonUtils;
+
+import static exceptions.common.JatosException.unchecked;
 
 /**
- * Passes on messages (info/warning/error/success) to the view. Uses {@link Context}. JATOS has two
- * similar messaging services, this and FlashScopeMessaging. Difference to FlashScopeMessaging:
- * RequestScopeMessaging can have multiple messages for each kind (info/warning/error/success), but
- * it does not survive a redirect (according to Play's documentation, flash scope isn't reliable).
- *
- * @author Kristian Lange
+ * Passes on messages (info/warning/error/success) to the view. Uses {@link Context}. RequestScopeMessaging can have
+ * multiple messages for each kind (info/warning/error/success), but it does not survive a redirect (unlike Play's flash
+ * scope).
  */
 public class RequestScopeMessaging {
 
@@ -18,7 +17,7 @@ public class RequestScopeMessaging {
 
     public static String asJson() {
         if (Context.current().args().containsKey(MESSAGES)) {
-            return JsonUtils.asJson(Context.current().args().get(MESSAGES));
+            return unchecked(() -> Json.mapper().writeValueAsString(Context.current().args().get(MESSAGES)));
         } else {
             return "{}";
         }

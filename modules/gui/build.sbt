@@ -1,5 +1,5 @@
 name := "jatos-gui"
-version := "3.9.8"
+version := "3.10.3"
 organization := "org.jatos"
 scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
@@ -23,8 +23,5 @@ sources in(Compile, doc) := Seq.empty
 
 // No source docs in distribution 
 publishArtifact in(Compile, packageDoc) := false
-
-// Add versioning with Etag to assets (e.g. for CSS files)
-pipelineStages := Seq(digest)
 
 dockerBaseImage := "eclipse-temurin:8-jre"

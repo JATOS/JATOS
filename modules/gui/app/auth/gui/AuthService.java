@@ -5,6 +5,7 @@ import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import exceptions.common.AuthException;
 import general.common.Common;
+import http.common.Http.Context;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
@@ -22,8 +23,6 @@ import java.util.Optional;
 /**
  * Service class around authentication and the session cookie. It works together with the {@link Signin} controller and
  * the @{@link auth.gui.AuthAction.Auth} annotation defined in {@link AuthAction}.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class AuthService {
@@ -99,8 +98,8 @@ public class AuthService {
      *
      * In most cases, getSignedinUser() is faster since it doesn't have to query the database.
      */
-    public User getSignedinUserBySessionCookie(Http.Session session) {
-        Optional<String> normalizedUsername = session.get(AuthService.SESSION_USERNAME);
+    public User getSignedinUserBySessionCookie() {
+        Optional<String> normalizedUsername = Context.current().response().session().get(AuthService.SESSION_USERNAME);
         User signedinUser = null;
         if (normalizedUsername.isPresent()) {
             signedinUser = userDao.findByUsername(normalizedUsername.orElse(null));
@@ -112,21 +111,21 @@ public class AuthService {
      * Prepares Play's session cookie for the user with the given username to be signed-in. Does not authenticate the
      * user (use authenticate() for this).
      */
-    public Map<String, String> writeSessionCookie(String normalizedUsername, boolean keepSignedin) {
+    public void writeSessionCookie(String normalizedUsername, boolean keepSignedin) {
         Map<String, String> map = new HashMap<>();
         map.put(SESSION_USERNAME, normalizedUsername);
         map.put(SESSION_SIGNIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
         map.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
         map.put(SESSION_KEEP_SIGNEDIN, String.valueOf(Common.getUserSessionAllowKeepSignedin() && keepSignedin));
-        return map;
+        Context.current().response().putSession(map);
     }
 
     /**
      * Returns true if the user decided to be kept signed (checkbox on the sign-in page) AND if it is allowed to be kept
      * signed in.
      */
-    public boolean isSessionKeepSignedin(Http.Session session) {
-        Optional<String> keepSignedin = session.get(SESSION_KEEP_SIGNEDIN);
+    public boolean isSessionKeepSignedin() {
+        Optional<String> keepSignedin = Context.current().response().session().get(SESSION_KEEP_SIGNEDIN);
         boolean allowKeepSignedin = Common.getUserSessionAllowKeepSignedin();
         return allowKeepSignedin && keepSignedin.isPresent() && keepSignedin.get().equals("true");
     }
@@ -134,9 +133,10 @@ public class AuthService {
     /**
      * Returns true if the session sign-in time as saved in Play's session cookie is older than allowed.
      */
-    public boolean isSessionTimeout(Http.Session session) {
+    public boolean isSessionTimeout() {
         try {
-            String signinTimeStr = session.get(SESSION_SIGNIN_TIME).orElseThrow(IllegalArgumentException::new);
+            String signinTimeStr = Context.current().response().session().get(SESSION_SIGNIN_TIME)
+                    .orElseThrow(IllegalArgumentException::new);
             Instant signinTime = Instant.ofEpochMilli(Long.parseLong(signinTimeStr));
             Instant now = Instant.now();
             Instant allowedUntil = signinTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
@@ -151,9 +151,10 @@ public class AuthService {
     /**
      * Returns true if the session inactivity time as saved in Play's session cookie is older than allowed.
      */
-    public boolean isInactivityTimeout(Http.Session session) {
+    public boolean isInactivityTimeout() {
         try {
-            String lastActivityTimeStr = session.get(SESSION_LAST_ACTIVITY_TIME).orElseThrow(IllegalArgumentException::new);
+            String lastActivityTimeStr = Context.current().response().session().get(SESSION_LAST_ACTIVITY_TIME)
+                    .orElseThrow(IllegalArgumentException::new);
             Instant lastActivityTime = Instant.ofEpochMilli(Long.parseLong(lastActivityTimeStr));
             Instant now = Instant.now();
             Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
@@ -174,8 +175,8 @@ public class AuthService {
                 : controllers.gui.routes.Home.home(Http.Status.OK).url();
     }
 
-    public Long getSessionSigninTime(Http.Request request) {
-        return Long.valueOf(request.session().get(AuthService.SESSION_SIGNIN_TIME).orElse("-1"));
+    public Long getSessionSigninTime() {
+        return Long.valueOf(Context.current().response().session().get(AuthService.SESSION_SIGNIN_TIME).orElse("-1"));
     }
 
 }

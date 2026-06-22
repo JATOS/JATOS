@@ -13,8 +13,6 @@ import java.util.Optional;
 
 /**
  * DAO for Component entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ComponentDao extends AbstractDao {
@@ -33,7 +31,7 @@ public class ComponentDao extends AbstractDao {
     }
 
     /**
-     * Change and persist active property of a Component.
+     * Change and persist the active property of a Component.
      */
     public void changeActive(Component component, boolean active) {
         component.setActive(active);

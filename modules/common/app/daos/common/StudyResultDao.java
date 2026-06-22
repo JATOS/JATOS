@@ -11,12 +11,12 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import java.util.*;
+import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.stream.Collectors;
 
 /**
  * DAO for StudyResult and StudyResultStatus
- *
- * @author Kristian Lange
  */
 @Singleton
 public class StudyResultDao extends AbstractDao {
@@ -490,6 +490,58 @@ public class StudyResultDao extends AbstractDao {
                     .setParameter("states", doneStates)
                     .getSingleResult();
             return count != null && count.intValue() > 0;
+        });
+    }
+
+    public void updateLastSeenDateIfOlderThan(Long id, Duration duration) {
+        jpa.withTransaction("default", true, em -> {
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            Timestamp threshold = new Timestamp(now.getTime() - duration.toMillis());
+            em.createQuery("UPDATE StudyResult sr "
+                            + "SET sr.lastSeenDate = :now "
+                            + "WHERE sr.id = :id "
+                            + "AND (sr.lastSeenDate IS NULL OR sr.lastSeenDate < :threshold)")
+                    .setParameter("id", id)
+                    .setParameter("now", now)
+                    .setParameter("threshold", threshold)
+                    .executeUpdate();
+        });
+    }
+
+    /**
+     * Checks if the StudyResult with the given UUID is currently running. A study is considered running if its state is
+     * not FINISHED, ABORTED, or FAIL.
+     */
+    public boolean isStudyRunning(String uuid) {
+        return jpa.withTransaction("default", true, em -> {
+            String queryStr = "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.uuid = :uuid "
+                    + "AND sr.studyState NOT IN (:states)";
+            List<StudyResult.StudyState> finishedStates = Arrays.asList(
+                    StudyResult.StudyState.FINISHED,
+                    StudyResult.StudyState.ABORTED,
+                    StudyResult.StudyState.FAIL);
+
+            Number count = (Number) em.createQuery(queryStr)
+                    .setParameter("uuid", uuid)
+                    .setParameter("states", finishedStates)
+                    .getSingleResult();
+            return count.intValue() > 0;
+        });
+    }
+
+    /**
+     * Checks if the number of OpenAI calls for the given StudyResult is lower than the threshold (callLimit). If yes,
+     * it increments the counter and returns true. If the threshold is reached, it returns false.
+     */
+    public boolean checkAndIncrementOpenAiApiCount(String uuid, int callLimit) {
+        return jpa.withTransaction("default", true, em -> {
+            int updatedRows = em.createQuery(
+                            "UPDATE StudyResult sr SET sr.openAiApiCount = sr.openAiApiCount + 1 " +
+                                    "WHERE sr.uuid = :uuid AND sr.openAiApiCount < :callLimit")
+                    .setParameter("uuid", uuid)
+                    .setParameter("callLimit", callLimit)
+                    .executeUpdate();
+            return updatedRows > 0;
         });
     }
 

@@ -1,6 +1,5 @@
 package controllers.publix.workers;
 
-import actions.common.TransactionalAction.Transactional;
 import controllers.publix.IPublix;
 import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
@@ -8,13 +7,15 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.InternalServerErrorException;
-import filters.publix.IdCookieFilter;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import filters.publix.IdCookieFilter.IdCookies;
 import general.common.Common;
-import general.common.IOExecutor;
-import general.common.StudyAssetsExecutor;
+import http.common.Http.Context;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import http.common.HttpUtils;
+import json.common.JsonUtils;
 import models.common.*;
 import models.common.workers.JatosWorker;
 import play.Logger;
@@ -28,13 +29,12 @@ import services.publix.PublixUtils;
 import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosStudyAuthorisation;
-import utils.common.Helpers;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import static messaging.common.FlashMessagingHelper.INFO;
 import static play.mvc.Results.ok;
 import static play.mvc.Results.redirect;
 
@@ -44,8 +44,6 @@ import static play.mvc.Results.redirect;
  *
  * Between the UI and Publix a session variable is used to pass on the information whether it is a study run or a
  * component run. In case it is a component run, there is a second session variable that contains the component UUID.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class JatosPublix extends Publix implements IPublix {
@@ -101,27 +99,27 @@ public class JatosPublix extends Publix implements IPublix {
     public Result startStudy(Http.Request request, StudyLink studyLink) {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
-        JatosWorker worker = publixUtils.retrieveSignedinUser(request).getWorker();
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
+        JatosWorker worker = publixUtils.retrieveSignedinUser().getWorker();
+        studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
         String componentUuid = null;
-        JatosRun jatosRun = publixUtils.fetchJatosRunFromSession(request.session());
+        JatosRun jatosRun = publixUtils.fetchJatosRunFromSession();
         switch (jatosRun) {
             case RUN_STUDY:
                 componentUuid = publixUtils.retrieveFirstActiveComponent(study).getUuid();
                 break;
             case RUN_COMPONENT_START:
-                componentUuid = request.session().get("run_component_uuid").orElse("unknown");
+                componentUuid = Context.current().response().session().get("run_component_uuid").orElse("unknown");
                 break;
             case RUN_COMPONENT_FINISHED:
                 throw new ForbiddenException("This study was never started in JATOS.");
         }
-        publixUtils.finishOldestStudyResult(request);
+        publixUtils.finishOldestStudyResult();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
-        publixUtils.setUrlQueryParameter(request, studyResult);
-        idCookieService.writeIdCookie(request, studyResult, jatosRun);
+        publixUtils.setUrlQueryParameter(studyResult);
+        idCookieService.writeIdCookie(studyResult, jatosRun);
 
-        String username = request.session().get(JatosPublix.SESSION_USERNAME).orElse("unknown");
+        String username = Context.current().response().session().get(JatosPublix.SESSION_USERNAME).orElse("unknown");
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
                 + "studyResultId " + studyResult.getId() + ", "
                 + "studyId " + study.getId() + ", "
@@ -139,11 +137,11 @@ public class JatosPublix extends Publix implements IPublix {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         JatosWorker worker = (JatosWorker) studyResult.getWorker();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         // Check if it's a single component run or a whole study run
-        JatosRun jatosRun = idCookieService.getJatosRun(request, studyResult.getId());
+        JatosRun jatosRun = idCookieService.getJatosRun(studyResult.getId());
         switch (jatosRun) {
             case RUN_STUDY:
                 break;
@@ -163,7 +161,7 @@ public class JatosPublix extends Publix implements IPublix {
         }
 
         ComponentResult componentResult = publixUtils.startComponent(component, studyResult, message);
-        idCookieService.writeIdCookie(request, studyResult, componentResult, jatosRun);
+        idCookieService.writeIdCookie(studyResult, componentResult, jatosRun);
         String dirName = studyResult.getStudy().getDirName();
         String htmlFilePath = component.getHtmlFilePath();
         return studyAssets.retrieveComponentHtmlFile(dirName, htmlFilePath).asJava();
@@ -175,23 +173,22 @@ public class JatosPublix extends Publix implements IPublix {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         JatosWorker worker = (JatosWorker) studyResult.getWorker();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         if (!PublixHelpers.studyRunDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
-            groupAdministration.leaveGroup(studyResult);
+            groupAdministration.leave(studyResult);
         }
-        idCookieService.discardIdCookie(request, studyResult.getId());
+        idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
 
-        if (Helpers.isAjax(request)) {
-            return ok();
-        }
-        if (message != null) {
-            return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId())
-                    .flashing("info", PublixErrorMessages.studyFinishedWithMessage(message));
-        } else {
+        if (HttpUtils.isHtmlRequest()) {
+            if (message != null) {
+                Context.current().response().putFlash(INFO, PublixErrorMessages.studyFinishedWithMessage(message));
+            }
             return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId());
+        } else {
+            return ok();
         }
     }
 
@@ -201,23 +198,22 @@ public class JatosPublix extends Publix implements IPublix {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
         JatosWorker worker = (JatosWorker) studyResult.getWorker();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         if (!PublixHelpers.studyRunDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);
-            groupAdministration.leaveGroup(studyResult);
+            groupAdministration.leave(studyResult);
         }
-        idCookieService.discardIdCookie(request, studyResult.getId());
+        idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (Helpers.isAjax(request)) {
-            return ok();
-        }
-        if (message != null) {
-            return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId())
-                    .flashing("info", PublixErrorMessages.studyFinishedWithMessage(message));
-        } else {
+        if (HttpUtils.isHtmlRequest()) {
+            if (message != null) {
+                Context.current().response().putSession(INFO, PublixErrorMessages.studyFinishedWithMessage(message));
+            }
             return redirect(Common.getJatosUrlBasePath() + "jatos/" + study.getId());
+        } else {
+            return ok();
         }
     }
 

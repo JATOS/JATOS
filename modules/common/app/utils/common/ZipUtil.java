@@ -1,30 +1,30 @@
 package utils.common;
 
-import org.apache.commons.io.FileUtils;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope;
+import general.common.ApiEnvelope.ErrorCode;
 
 import javax.inject.Singleton;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class that does zipping and unzipping.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ZipUtil {
-
-    private static final int BUFFER_SIZE = 4096;
 
     /**
      * File separator must be '/' and NOT the system's FILE.SEPARATOR
@@ -32,72 +32,61 @@ public class ZipUtil {
     private static final String ZIP_FILE_SEPARATOR = "/";
 
     /**
-     * Unzips the given File. Creates a new directory in the system's temp directory and writes the
-     * zip's content in there. The method can handle recursive unzipping of sub-directories.
+     * Unzips the given file. Creates a new directory in the system's temp directory and writes the zip's content in
+     * there. The method can handle recursive unzipping of subdirectories.
      */
-    public static File unzip(File fileToUnzip, File destDir) {
-        try {
-            destDir = destDir.toPath().normalize().toFile(); // normalize to prevent path traversal attacks
-            FileUtils.deleteQuietly(destDir);
-            IOUtils.createDir(destDir);
-            destDir.deleteOnExit();
+    public static Path unzip(Path fileToUnzip, Path destDir) {
+        try (ZipFile zipFile = new ZipFile(fileToUnzip.toFile())) {
+            destDir = destDir.normalize(); // normalize to prevent path traversal attacks
+            IOUtils.deleteRecursivelyIfExists(destDir);
+            Files.createDirectories(destDir);
 
-            File file;
-            ZipFile zipFile = new ZipFile(fileToUnzip);
-            Enumeration<?> zipEnumeration = zipFile.entries();
+            Enumeration<? extends ZipEntry> zipEnumeration = zipFile.entries();
             while (zipEnumeration.hasMoreElements()) {
-                ZipEntry zipEntry = (ZipEntry) zipEnumeration.nextElement();
+                ZipEntry zipEntry = zipEnumeration.nextElement();
                 String fileName = zipEntry.getName();
-                file = new File(destDir, fileName);
-                String canonicalPath = file.getCanonicalPath();
-                if (!canonicalPath.startsWith(destDir.getCanonicalPath() + File.separator)) {
-                    throw new exceptions.common.IOException("Illegal name: " + fileName);
+
+                Path file = destDir.resolve(fileName).normalize();
+                if (!file.startsWith(destDir)) {
+                    throw new IOException("Illegal name: " + fileName);
                 }
+
                 if (fileName.endsWith(ZIP_FILE_SEPARATOR)) {
-                    // noinspection ResultOfMethodCallIgnored
-                    file.mkdirs();
+                    Files.createDirectories(file);
                     continue;
                 }
 
-                File parent = file.getParentFile();
+                Path parent = file.getParent();
                 if (parent != null) {
-                    // noinspection ResultOfMethodCallIgnored
-                    parent.mkdirs();
+                    Files.createDirectories(parent);
                 }
 
-                InputStream inputStream = zipFile.getInputStream(zipEntry);
-                FileOutputStream fileOutputStream = new FileOutputStream(file);
-                byte[] bytes = new byte[BUFFER_SIZE];
-                int length;
-                while ((length = inputStream.read(bytes)) >= 0) {
-                    fileOutputStream.write(bytes, 0, length);
+                try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
+                    Files.copy(inputStream, file);
                 }
-                inputStream.close();
-                fileOutputStream.close();
             }
-            zipFile.close();
             return destDir;
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
     /**
      * Generates a zip archive file and writes a list of files into it
      */
-    static public void zipFiles(List<Path> filesToZip, File zipFile) {
-        try {
-            BufferedOutputStream fileOutputStream = new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
-            ZipOutputStream out = new ZipOutputStream(fileOutputStream, UTF_8);
+    static public void zipFiles(List<Path> filesToZip, Path zipFile) {
+        try (BufferedOutputStream fileOutputStream = new BufferedOutputStream(Files.newOutputStream(zipFile));
+             ZipOutputStream out = new ZipOutputStream(fileOutputStream, UTF_8)) {
 
             for (Path file : filesToZip) {
-                if (Files.exists(file)) addToZip(out, file.getFileName(), file);
+                if (Files.exists(file)) {
+                    addToZip(out, file.getFileName(), file);
+                }
             }
 
             out.flush();
-            out.close();
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -108,7 +97,7 @@ public class ZipUtil {
         if (Files.isDirectory(file)) {
             addDirToZip(out, zipRoot, file);
         } else {
-            addFileToZip(out, Paths.get(""), file);
+            addFileToZip(out, Path.of(""), file);
         }
     }
 
@@ -127,8 +116,8 @@ public class ZipUtil {
                     out.closeEntry();
                 }
             }
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -141,8 +130,8 @@ public class ZipUtil {
             out.putNextEntry(new ZipEntry(entry.toString().replace("\\", ZIP_FILE_SEPARATOR)));
             Files.copy(file, out);
             out.closeEntry();
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -155,8 +144,8 @@ public class ZipUtil {
             out.putNextEntry(new ZipEntry(entry.toString().replace("\\", ZIP_FILE_SEPARATOR)));
             Files.copy(file, out);
             out.closeEntry();
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 
@@ -164,7 +153,7 @@ public class ZipUtil {
         if (root == null) {
             return child;
         } else {
-            return Paths.get(root.toString(), child.toString());
+            return Path.of(root.toString(), child.toString());
         }
     }
 
@@ -185,8 +174,8 @@ public class ZipUtil {
                 }
                 bais.close();
             }
-        } catch (java.io.IOException e) {
-            throw new exceptions.common.IOException(e);
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
         }
     }
 

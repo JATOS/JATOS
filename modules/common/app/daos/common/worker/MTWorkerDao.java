@@ -12,8 +12,6 @@ import java.util.Optional;
 
 /**
  * DAO for MTWorker entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class MTWorkerDao extends WorkerDao {
@@ -33,7 +31,7 @@ public class MTWorkerDao extends WorkerDao {
                     "SELECT w " +
                             "FROM Worker w " +
                             "WHERE UPPER(w.mtWorkerId) = :mtWorkerId " +
-                            "  AND w.class != :workerType " +
+                            "  AND w.workerType <> :workerType " +
                             "ORDER BY w.id ASC";
             List<Worker> workerList = em.createQuery(queryStr, Worker.class)
                     .setParameter("mtWorkerId", mtWorkerId.toUpperCase())

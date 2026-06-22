@@ -1,19 +1,17 @@
 package daos.common;
 
-import javax.inject.Singleton;
-import javax.persistence.EntityManager;
-
+import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
 import play.db.jpa.JPAApi;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
+import javax.inject.Singleton;
+import javax.persistence.EntityManager;
+import java.util.Arrays;
 
 /**
- * Abstract DAO: Of the JPA calls only refresh() is public - persist(), merge()
+ * Abstract DAO: Of the JPA calls, only refresh() is public - persist(), merge()
  * and remove() are protected. The latter ones usually involve changes in
  * different entities and should be handled by the DAO of that type.
- *
- * @author Kristian Lange
  */
 @Singleton
 public abstract class AbstractDao {
@@ -46,6 +44,29 @@ public abstract class AbstractDao {
         jpa.withTransaction(em -> {
             em.refresh(entity);
         });
+    }
+
+	public void flush() {
+        jpa.withTransaction(EntityManager::flush);
+	}
+
+    /**
+     * Initialize all given objects that are loaded lazily in a Hibernate object
+     */
+    public static void initializeAndUnproxy(Object... objs) {
+        Arrays.stream(objs).forEach(AbstractDao::initializeAndUnproxy);
+    }
+
+    /**
+     * Initialize an object that is loaded lazily in a Hibernate object
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T initializeAndUnproxy(T obj) {
+        Hibernate.initialize(obj);
+        if (obj instanceof HibernateProxy) {
+            obj = (T) ((HibernateProxy) obj).getHibernateLazyInitializer().getImplementation();
+        }
+        return obj;
     }
 
 }

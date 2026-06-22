@@ -6,10 +6,10 @@ import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.common.ForbiddenException;
-import filters.publix.IdCookieFilter;
 import filters.publix.IdCookieFilter.IdCookies;
-import general.common.IOExecutor;
-import general.common.StudyAssetsExecutor;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
+import http.common.Http.Context;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.*;
@@ -28,8 +28,7 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
-import actions.common.TransactionalAction.Transactional;
+import json.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,8 +38,6 @@ import static play.mvc.Results.redirect;
 /**
  * Implementation of JATOS' public API for general single study runs (open to everyone). A general single run is done by
  * a GeneralSingleWorker.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class GeneralSinglePublix extends Publix implements IPublix {
@@ -96,7 +93,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
     public Result startStudy(Http.Request request, StudyLink studyLink) {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
-        Long workerId = generalSingleCookieService.fetchWorkerIdByStudy(request, study);
+        Long workerId = generalSingleCookieService.fetchWorkerIdByStudy(study);
 
         // There are 4 possibilities
         // 1. Preview study, first call -> create Worker and StudyResult, call finishOldestStudyResult, write General Single Cookie
@@ -108,8 +105,8 @@ public class GeneralSinglePublix extends Publix implements IPublix {
         Worker worker;
         if (workerId == null) {
             worker = workerCreator.createAndPersistGeneralSingleWorker(batch);
-            studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
-            publixUtils.finishOldestStudyResult(request);
+            studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
+            publixUtils.finishOldestStudyResult();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
             studyLogger.log(studyLink, "Started study run with " + GeneralSingleWorker.UI_WORKER_TYPE
                     + " worker", worker);
@@ -119,16 +116,16 @@ public class GeneralSinglePublix extends Publix implements IPublix {
                 throw new ForbiddenException("This study was run in this browser already. Although a worker with "
                         + "ID " + workerId + " doesn't exist. Probably it was run on a different JATOS.");
             }
-            studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
             studyResult = publixUtils.getLastStudyResult(worker).orElseThrow(() -> new ForbiddenException(
                     "This study was run in this browser already. Although JATOS couldn't find the study result."));
-            if (!idCookieService.hasIdCookie(request, studyResult.getId())) {
-                publixUtils.finishOldestStudyResult(request);
+            if (!idCookieService.hasIdCookie(studyResult.getId())) {
+                publixUtils.finishOldestStudyResult();
             }
         }
-        idCookieService.writeIdCookie(request, studyResult);
-        Http.Cookie generalSingleCookie = generalSingleCookieService.get(request, study, worker);
-        publixUtils.setUrlQueryParameter(request, studyResult);
+        idCookieService.writeIdCookie(studyResult);
+        Http.Cookie generalSingleCookie = generalSingleCookieService.get(study, worker);
+        publixUtils.setUrlQueryParameter(studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "
@@ -137,8 +134,9 @@ public class GeneralSinglePublix extends Publix implements IPublix {
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId() + ", "
                 + "preview " + study.isAllowPreview());
+        Context.current().response().setCookie(generalSingleCookie);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
-                studyResult.getUuid(), firstComponent.getUuid(), null)).withCookies(generalSingleCookie);
+                studyResult.getUuid(), firstComponent.getUuid(), null));
     }
 
 }

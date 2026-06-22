@@ -11,8 +11,6 @@ import play.mvc.Result;
  * communicate (e.g. start, finish components/studies, retrieve/persist data, join a group) with the JATOS server.
  *
  * Group and batch channels are handled by the ChannelInterceptor.
- *
- * @author Kristian Lange
  */
 public interface IPublix {
 

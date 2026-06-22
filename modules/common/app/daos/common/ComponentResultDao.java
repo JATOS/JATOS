@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 
 /**
  * DAO for ComponentResult entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ComponentResultDao extends AbstractDao {

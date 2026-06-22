@@ -1,11 +1,11 @@
 package services.publix.idcookie;
 
+import http.common.HttpUtils;
+
 import javax.inject.Singleton;
 
 /**
  * This class offers methods to turn an JATOS ID cookie into a string that can be put into a URL header.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class IdCookieSerialiser {
@@ -41,7 +41,7 @@ public class IdCookieSerialiser {
         sb.append(COOKIE_EQUALS);
         // Only encode here, right before turning it into a header string
         if (value instanceof String) {
-            sb.append(utils.common.Helpers.urlEncode((String) value));
+            sb.append(HttpUtils.urlEncode((String) value));
         } else {
             sb.append(value);
         }

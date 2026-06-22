@@ -14,6 +14,7 @@
             (<span class="fw-medium" id="userSidebarName">xxx</span>)
             <span class="badge bg-secondary no-info-icon" id="userSidebarAuthMethod" data-bs-tooltip="The account type you used to sign in.">xxx</span>
             <span class="badge bg-secondary no-info-icon d-none" id="userSidebarAdminBadge" data-bs-tooltip="Users with admin rights can add/change/delete other users.">Admin</span>
+            <span class="badge bg-secondary no-info-icon d-none" id="userSidebarViewerBadge" data-bs-tooltip="Viewers can read studies and results, but they cannot modify them.">Viewer</span>
             <span class="badge bg-secondary no-info-icon d-none" id="userSidebarSuperuserBadge" data-bs-tooltip="Superusers have access to every study.">Superuser</span>
         </div>
         <button type="button" class="btn btn-close2 btn-xs btn-nav" data-bs-dismiss="offcanvas"></button>
@@ -89,6 +90,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form class="form-admin" id="myUserSettingsForm">
+                <input type="hidden" id="myUserSettingsUsername" name="username">
                 <div class="modal-header align-items-start">
                     <h5 class="modal-title text-truncate flex-grow-1">My settings</h5>
                     <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
@@ -97,7 +99,7 @@
                     <div class="row mb-3">
                         <label for="myUserSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
                         <div class="col-sm-9">
-                            <input type="text" class="form-control" id="myUserSettingsName" name="name">
+                            <input type="text" class="form-control" id="myUserSettingsName" name="name" autocomplete="name">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -145,7 +147,7 @@
                             <span class="form-text" id="changeMyPasswordStrengthDescription">xxx</span>
                         </div>
                     </div>
-                    <input type="hidden" id="changeMyPasswordUsername" name="username" required>
+                    <input type="hidden" id="changeMyPasswordUsername" name="username" autocomplete="off" required>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -161,6 +163,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form class="form-danger" id="deleteMyUserForm">
+                <input type="hidden" id="deleteMyUserTargetUsername" name="username" autocomplete="off">
                 <div class="modal-header align-items-start">
                     <h5 class="modal-title text-truncate flex-grow-1">Confirm user deletion</h5>
                     <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
@@ -184,7 +187,7 @@
                     <div class="d-flex mb-3 d-none" id="deleteMyUserUsernameInput">
                         <label for="deleteMyUserUsername" class="col-form-label input-required">Your username</label>
                         <div class="flex-grow-1 ms-2 p-0">
-                            <input type="text" class="form-control" id="deleteMyUserUsername"  name="username" autocomplete="off" required>
+                            <input type="text" class="form-control" id="deleteMyUserUsername" name="confirmUsername" autocomplete="off" required>
                         </div>
                     </div>
                 </div>
@@ -214,6 +217,7 @@
     $("#userSidebarAuthMethod").html(Helpers.getAuthMethodText(window.signedinUser.authMethod));
 
     $("#userSidebarAdminBadge").toggleClass("d-none", !window.signedinUser.isAdmin);
+    $("#userSidebarViewerBadge").toggleClass("d-none", !window.signedinUser.isViewer);
     $("#userSidebarSuperuserBadge").toggleClass("d-none", !window.signedinUser.isSuperuser);
     $("#userSidebarSettingsButton").toggleClass("d-none", !window.signedinUser.isDb && !window.signedinUser.isLdap);
     $("#userSidebarPasswordButton").toggleClass("d-none", !window.signedinUser.isDb);
@@ -223,6 +227,7 @@
         $("#myUserSettingsForm")[0].reset();
         FormValidation.clear("#myUserSettingsForm");
         Helpers.generateModalSubtitles("#myUserSettingsModal", {"Username": window.signedinUser.username});
+        $('#myUserSettingsUsername').val(window.signedinUser.username);
         $('#myUserSettingsName').val(window.signedinUser.name);
         $('#myUserSettingsEmail').val(window.signedinUser.email);
     });
@@ -230,7 +235,7 @@
     $("#myUserSettingsConfirm").click(function(event) {
         $.ajax({
             type: 'POST',
-            url : window.routes.Users.edit(window.signedinUser.username),
+            url : window.routes.Users.edit(),
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#myUserSettingsForm').serialize(),
             success: function(response) {
@@ -304,6 +309,7 @@
                 "Name": window.signedinUser.name,
                 "Account type": Helpers.getAuthMethodText(window.signedinUser.authMethod)
                 }, true);
+        $('#deleteMyUserTargetUsername').val(window.signedinUser.username);
         if (window.signedinUser.isOauthGoogle || window.signedinUser.isOidc || window.signedinUser.isOrcid) {
             $("#deleteMyUserUsernameInput").removeClass("d-none");
         } else {
@@ -360,7 +366,7 @@
         }
 
         $.ajax({
-            url : window.routes.Users.remove(window.signedinUser.username),
+            url : window.routes.Users.remove(),
             type : 'POST',
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             data: $('#deleteMyUserForm').serialize(),

@@ -48,12 +48,12 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
    * HTTP endpoint that opens a batch channel and returns an Akka stream Flow that will be turned
    * into WebSocket. In case of an error/ problem, a PublixException is thrown.
    */
-  def open(studyResult: StudyResult)(implicit request: RequestHeader): Flow[Any, Nothing, _] = {
+  def open(studyResult: StudyResult): Flow[Any, Nothing, _] = {
     logger.info(s".open: studyResult ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().session.asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
 
     // To be sure, check if there is already a batch channel and close the old one before opening a new one.
     closeBatchChannel(batch.getId, studyResult.getId)

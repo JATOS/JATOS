@@ -1,16 +1,19 @@
 package models.common;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import daos.common.worker.WorkerType;
 import models.common.workers.Worker;
 import models.common.workers.WorkerTypeConverter;
-import utils.common.JsonUtils;
-import utils.common.JsonUtils.JsonForApi;
-import utils.common.JsonUtils.JsonForIO;
-import utils.common.JsonUtils.JsonForPublix;
+import json.common.JsonUtils;
+import json.common.DefaultJson.JsonForApi;
+import json.common.DefaultJson.JsonForIO;
+import json.common.DefaultJson.JsonForPublix;
 
 import javax.persistence.*;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,8 +23,6 @@ import java.util.Set;
  *
  * Defines the constraints regarding workers for a batch of a study, e.g. which
  * worker types are allowed, how many workers, which Workers etc.
- *
- * @author Kristian Lange
  */
 @Entity
 @Table(name = "Batch")
@@ -100,6 +101,7 @@ public class Batch {
      * permission to run this study.
      */
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
+    @JsonProperty("allowedWorkerTypes")
     @ElementCollection(fetch = FetchType.EAGER)
     @Convert(converter = WorkerTypeConverter.class)
     private Set<WorkerType> allowedWorkerTypes = new HashSet<>();
@@ -113,11 +115,13 @@ public class Batch {
 
     /**
      * Batch input data in JSON format: every study run of this Batch gets access to them. Can be used for initial data
-     * and configuration. It's called study input in the GUI and can be accessed via jatos.studyInput in jatos.js.
+     * and configuration. It's called study input in the GUI and can be accessed via 'jatos.studyInput' in jatos.js.
      */
     @Lob
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
-    private String jsonData;
+    @JsonAlias({"batchInput", "jsonData"})
+    @Column(name = "jsonData")
+    private String batchInput;
 
     /**
      * Temporary, global data storage that can be accessed via jatos.js to exchange data between all study runs of this
@@ -203,10 +207,6 @@ public class Batch {
         this.maxTotalWorkers = maxTotalWorkers;
     }
 
-    public void setAllowedWorkerTypes(Set<WorkerType> allowedWorkerTypes) {
-        this.allowedWorkerTypes = allowedWorkerTypes;
-    }
-
     public Set<WorkerType> getAllowedWorkerTypes() {
         return this.allowedWorkerTypes;
     }
@@ -215,7 +215,15 @@ public class Batch {
         if (allowedWorkerTypes == null) {
             allowedWorkerTypes = new HashSet<>();
         }
-        allowedWorkerTypes.add(workerType);
+        if (workerType != null) {
+            allowedWorkerTypes.add(workerType);
+        }
+    }
+
+    public void addAllAllowedWorkerTypes(Collection<WorkerType> workerTypes) {
+        if (workerTypes != null) {
+            workerTypes.forEach(this::addAllowedWorkerType);
+        }
     }
 
     public void removeAllowedWorkerType(WorkerType workerType) {
@@ -226,24 +234,42 @@ public class Batch {
         return allowedWorkerTypes.contains(workerType);
     }
 
+    public void setWorkerList(Set<Worker> workerList) {
+        this.workerList = workerList;
+    }
+
     public Set<Worker> getWorkerList() {
         return this.workerList;
     }
 
+    /**
+     * Adds a worker to this batch and the batch to the worker. Because Batch is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void addWorker(Worker worker) {
-        workerList.add(worker);
+        if (worker == null) return;
+        if (workerList.add(worker)) {          // true only if newly added
+            worker.addBatch(this);
+        }
     }
 
-    public void addAllWorkers(List<Worker> workerList) {
-        this.workerList.addAll(workerList);
+    public void addAllWorkers(Collection<Worker> workerList) {
+        workerList.forEach(this::addWorker);
     }
 
+    /**
+     * Removes a worker from this batch and the batch from the worker. Because Batch is the owning side of the relationship,
+     * both updates are handled here to have one source of truth.
+     */
     public void removeWorker(Worker worker) {
-        workerList.remove(worker);
+        if (worker == null) return;
+        if (workerList.remove(worker)) {       // true only if actually removed
+            worker.removeBatch(this);
+        }
     }
 
     public void removeAllWorkers(List<Worker> workerList) {
-        workerList.forEach(this.workerList::remove);
+        workerList.forEach(this::removeWorker);
     }
 
     public String getComments() {
@@ -254,12 +280,12 @@ public class Batch {
         this.comments = comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getBatchInput() {
+        return batchInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = JsonUtils.asStringForDB(jsonData);
+    public void setBatchInput(String batchInput) {
+        this.batchInput = JsonUtils.asStringForDB(batchInput);
     }
 
     public String getBatchSessionData() {
@@ -285,23 +311,15 @@ public class Batch {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof Batch)) return false;
-
         Batch other = (Batch) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

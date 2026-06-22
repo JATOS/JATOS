@@ -12,8 +12,6 @@ import java.util.List;
 
 /**
  * DB entity of the concrete Worker who originates from JATOS itself.
- * 
- * @author Kristian Lange
  */
 @Entity
 @DiscriminatorValue(JatosWorker.WORKER_TYPE)
@@ -27,7 +25,7 @@ public class JatosWorker extends Worker {
 	 * Corresponding User. This relationship is bidirectional.
 	 */
 	@JsonIgnore
-	@OneToOne(mappedBy = "worker", fetch = FetchType.LAZY)
+	@OneToOne(mappedBy = "worker")
 	private User user;
 
 	public JatosWorker() {

@@ -1,29 +1,30 @@
 package services.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import exceptions.common.IOException;
-import general.common.MessagesStrings;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope.ErrorCode;
+import json.common.DefaultJson;
 import models.common.Study;
-import models.common.legacy.StudyV2;
-import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
-import java.io.File;
+import javax.inject.Singleton;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static exceptions.common.JatosException.unchecked;
 
 /**
  * Deserialization of an JSON file to a study. The study's JSON string can be in different versions of the study to
  * support older JATOS' versions.
- *
- * @author Kristian Lange
  */
+@Singleton
 public class StudyDeserializer {
 
-    private final IOUtils ioUtils;
+    private final DefaultJson mapper;
 
     @Inject
-    StudyDeserializer(IOUtils ioUtils) {
-        this.ioUtils = ioUtils;
+    StudyDeserializer(DefaultJson mapper) {
+        this.mapper = mapper;
     }
 
     /**
@@ -31,27 +32,24 @@ public class StudyDeserializer {
      * of type Study. It can handle different versions of the study model. The version is determined by the version
      * field in the JSON string.
      */
-    public Study deserialize(File file) {
-        String jsonStr = ioUtils.readFile(file);
+    public Study deserialize(Path file) {
+        String jsonStr = unchecked(() -> Files.readString(file));
+        JsonNode node = mapper.jsonAsJsonNode(jsonStr);
 
-        JsonNode node = JsonUtils.parse(jsonStr);
-        int version = node.findValue(JsonUtils.VERSION).asInt();
-        if (version > Study.SERIAL_VERSION) {
-            throw new IOException(MessagesStrings.TOO_NEW_STUDY_VERSION);
-        }
+        int version = node.findValue("version").asInt();
         Study study;
         switch (version) {
             case 0:
+            case 1:
             case 2:
                 // Version 2
-                study = JsonUtils.parse(node.findValue(JsonUtils.DATA), StudyV2.class).toStudy();
-                break;
+                throw new JatosException("Support for this version of the study model has been removed.", ErrorCode.IMPORT_EXPORT_ERROR);
             case 3:
                 // Current version
-                study = JsonUtils.parse(node.findValue(JsonUtils.DATA), Study.class);
+                study = mapper.jsonNodeAsObj(node.findValue("data"), Study.class);
                 break;
             default:
-                throw new IOException(MessagesStrings.UNSUPPORTED_STUDY_VERSION);
+                throw new JatosException("This study is from an unsupported version of JATOS.", ErrorCode.IMPORT_EXPORT_ERROR);
         }
         return study;
     }

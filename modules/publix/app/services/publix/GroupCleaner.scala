@@ -17,8 +17,6 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 /**
  * This class runs a scheduler that regularly checks for group members that are inactive
- *
- * @author Kristian Lange
  */
 @Singleton
 class GroupCleaner @Inject()(actorSystem: ActorSystem,

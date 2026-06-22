@@ -2,20 +2,25 @@ package models.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import models.common.User.Role;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * DB entity of an API token (Personal Access Token, PAT). Used to authenticate/authorize JATOS API.
- *
- * @author Kristian Lange
  */
 @Entity
 @Table(name = "ApiToken", indexes = {@Index(columnList = "tokenHash")})
 public class ApiToken {
+
+    public static final String TOKEN_PREFIX = "jap_";
+    public static final int TOKEN_RANDOM_LENGTH = 31;
+    public static final int TOKEN_CHECKSUM_LENGTH = 6;
 
     @Id
     @GeneratedValue
@@ -35,10 +40,21 @@ public class ApiToken {
     /**
      * Owning User.
      */
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_username")
+    @NotNull
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_username", nullable = false)
     @JsonIgnore
     private User user;
+
+    @JsonProperty("username")
+    public String getUsername() {
+        return user != null ? user.getUsername() : null;
+    }
+
+    @JsonProperty("userId")
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
 
     /**
      * Timestamp of the creation date
@@ -48,6 +64,7 @@ public class ApiToken {
     /**
      * Time in seconds that this token will expire after creation date. Null means no expiration.
      */
+    @JsonProperty("expiresAfter")
     private Integer expires;
 
     @JsonProperty("expirationDate")
@@ -62,9 +79,9 @@ public class ApiToken {
         return Instant.now().isAfter(creationDate.toInstant().plusSeconds(expires));
     }
 
-    @JsonProperty("isAdminToken")
-    public boolean isAdminToken() {
-        return user.isAdmin();
+    @JsonProperty("roles")
+    public Set<Role> roles() {
+        return user.getRoleList();
     }
 
     /**
@@ -91,6 +108,7 @@ public class ApiToken {
         this.id = id;
     }
 
+    @JsonIgnore
     public String getTokenHash() {
         return tokenHash;
     }
@@ -142,23 +160,15 @@ public class ApiToken {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getTokenHash() == null) ? 0 : getTokenHash().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof ApiToken)) return false;
-
         ApiToken other = (ApiToken) obj;
-        if (getTokenHash() == null) return other.getTokenHash() == null;
-        return getTokenHash().equals(other.getTokenHash());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

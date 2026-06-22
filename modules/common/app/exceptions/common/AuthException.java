@@ -1,19 +1,14 @@
 package exceptions.common;
 
+import general.common.ApiEnvelope.ErrorCode;
+
 /**
- * Runtime exception for authentication errors in JATOS
+ * Runtime Exception for authentication/authorization errors in JATOS
  */
-public class AuthException extends RuntimeException {
+public class AuthException extends JatosException {
 
     public AuthException(String message) {
-        super(message);
+        super(message, ErrorCode.AUTH_ERROR);
     }
 
-    public AuthException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public AuthException(Throwable cause) {
-        super(cause);
-    }
 }

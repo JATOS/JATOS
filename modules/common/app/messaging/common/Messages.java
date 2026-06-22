@@ -7,10 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model for messages (success, info, warning, error) used for JSON marshaling
- * and destined for JATOS' GUI views.
- *
- * @author Kristian Lange
+ * Model for messages (success, info, warning, error) used for JSON serialization and used by JATOS' GUI views.
  */
 public class Messages {
 

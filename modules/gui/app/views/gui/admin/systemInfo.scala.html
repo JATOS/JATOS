@@ -12,19 +12,19 @@
             <div class="modal-body">
                 <h4>JATOS configuration</h4>
                 <ul class="list-group" id="jatosConfig">
-                    @for((key, value) <- utils.common.Helpers.getJatosConfig()){
+                    @for((key, value) <- services.gui.JatosInfoService.getJatosConfig()){
                     <li class="list-group-item text-break"><b>@key</b>: @value</li>
                     }
                 </ul>
                 <h4 class="mt-4">OS info</h4>
                 <ul class="list-group" id="osInfo">
-                    @for((key, value) <- utils.common.Helpers.getOSInfo()){
+                    @for((key, value) <- services.gui.JatosInfoService.getOSInfo()){
                     <li class="list-group-item text-break"><b>@key</b>: @value</li>
                     }
                 </ul>
                 <h4 class="mt-4">JVM info</h4>
                 <ul class="list-group" id="jvmInfo">
-                    @for((key, value) <- utils.common.Helpers.getJVMInfo()){
+                    @for((key, value) <- services.gui.JatosInfoService.getJVMInfo()){
                     <li class="list-group-item text-break"><b>@key</b>: @value</li>
                     }
                 </ul>

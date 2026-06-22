@@ -10,8 +10,6 @@ import java.util.Calendar;
 
 /**
  * DAO for LoginAttempt entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class LoginAttemptDao extends AbstractDao {

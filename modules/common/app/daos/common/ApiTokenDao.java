@@ -12,8 +12,6 @@ import java.util.Optional;
 
 /**
  * DAO for ApiToken entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ApiTokenDao extends AbstractDao {

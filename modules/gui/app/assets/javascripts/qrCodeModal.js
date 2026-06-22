@@ -5,7 +5,7 @@
 
 export { show }
 
-import * as Helpers from "./helpers.js";
+import * as Helpers from "helpers";
 
 // Add a click event listener to every ".btn-qr-code". But we need the ".off" in case this script is
 // imported multiple times on the same page

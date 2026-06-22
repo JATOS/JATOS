@@ -6,7 +6,7 @@
  * channel heartbeats (not here defined).
  * 
  * http://www.jatos.org
- * Author Kristian Lange 2014 - 2016
+ * Author Kristian Lange
  * Licensed under Apache License 2.0
  */
 

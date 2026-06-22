@@ -15,8 +15,6 @@ import javax.inject.Singleton;
 
 /**
  * Service class that creates ComponentResults, StudyResults, and GroupResults
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ResultCreator {

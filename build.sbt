@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.9.8"
+version := "3.10.3"
 organization := "org.jatos"
 scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
@@ -20,6 +20,15 @@ libraryDependencies ++= Seq(
   "com.pivovarit" % "throwing-function" % "1.6.1",
   "org.mockito" % "mockito-inline" % "4.11.0" % Test,
   "org.assertj" % "assertj-core" % "3.26.0" % Test
+)
+
+ThisBuild / dependencyOverrides ++= Seq(
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.12.7",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.7",
+  "com.fasterxml.jackson.core" % "jackson-annotations" % "2.12.7",
+  "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.12.7",
+  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.12.7",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.12.7"
 )
 
 // Docker commands to run in Dockerfile
@@ -56,12 +65,13 @@ lazy val jatos = (project in file("."))
     .aggregate(publix, common, gui)
     .dependsOn(publix, common, gui)
     .settings(
-      aggregateReverseRoutes := Seq(publix, common, gui)
+      aggregateReverseRoutes := Seq(publix, common, gui),
+      pipelineStages in Assets += digest
     )
 
 // Submodule jatos-utils: common utils for JSON, disk IO and such
 lazy val common = (project in file("modules/common"))
-    .enablePlugins(PlayJava, BuildInfoPlugin)
+    .enablePlugins(PlayJava, PlayScala, BuildInfoPlugin)
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
       buildInfoPackage := "general.common"
@@ -79,7 +89,7 @@ lazy val publix = (project in file("modules/publix"))
 
 // Submodule jatos-gui: responsible for running studies
 lazy val gui = (project in file("modules/gui"))
-    .enablePlugins(PlayJava, SbtWeb)
+    .enablePlugins(PlayJava, PlayScala, SbtWeb)
     .dependsOn(common)
 
 // Routes from submodules

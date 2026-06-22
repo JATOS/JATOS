@@ -1,37 +1,33 @@
 package services.gui;
 
-import general.common.Http.Context;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.common.IOException;
-import exceptions.common.NotFoundException;
 import general.common.MessagesStrings;
 import messaging.common.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
-import models.common.User;
 import models.gui.ComponentProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPAApi;
-import utils.common.Helpers;
+import utils.common.StringUtils;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static exceptions.common.JatosException.unchecked;
 
 /**
- * Service class for JATOS Controllers (not Publix) handling Component entities.
- *
- * @author Kristian Lange
+ * Service class handling Components.
  */
 @Singleton
 public class ComponentService {
@@ -43,21 +39,18 @@ public class ComponentService {
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final IOUtils ioUtils;
-    private final Checker checker;
 
     @Inject
     ComponentService(JPAApi jpa,
                      ResultRemover resultRemover,
                      StudyDao studyDao,
                      ComponentDao componentDao,
-                     IOUtils ioUtils,
-                     Checker checker) {
+                     IOUtils ioUtils) {
         this.jpa = jpa;
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.ioUtils = ioUtils;
-        this.checker = checker;
     }
 
     /**
@@ -73,7 +66,7 @@ public class ComponentService {
         clone.setHtmlFilePath(componentToBeCloned.getHtmlFilePath());
         clone.setReloadable(componentToBeCloned.isReloadable());
         clone.setActive(componentToBeCloned.isActive());
-        clone.setJsonData(componentToBeCloned.getJsonData());
+        clone.setComponentInput(componentToBeCloned.getComponentInput());
         clone.setComments(componentToBeCloned.getComments());
         return clone;
     }
@@ -99,7 +92,7 @@ public class ComponentService {
         component.setReloadable(updatedComponent.isReloadable());
         component.setHtmlFilePath(updatedComponent.getHtmlFilePath());
         component.setComments(updatedComponent.getComments());
-        component.setJsonData(updatedComponent.getJsonData());
+        component.setComponentInput(updatedComponent.getComponentInput());
         component.setActive(updatedComponent.isActive());
         componentDao.merge(component);
     }
@@ -110,8 +103,9 @@ public class ComponentService {
     public void updateComponentAfterEdit(Component component, ComponentProperties updatedProps) {
         component.setTitle(updatedProps.getTitle());
         component.setReloadable(updatedProps.isReloadable());
+        component.setActive(updatedProps.isActive());
         component.setComments(updatedProps.getComments());
-        component.setJsonData(updatedProps.getJsonData());
+        component.setComponentInput(updatedProps.getComponentInput());
         componentDao.merge(component);
     }
 
@@ -147,7 +141,7 @@ public class ComponentService {
                     component.getHtmlFilePath()));
         }
         props.setId(component.getId());
-        props.setJsonData(component.getJsonData());
+        props.setComponentInput(component.getComponentInput());
         props.setReloadable(component.isReloadable());
         if (component.getStudy() != null) {
             props.setStudyId(component.getStudy().getId());
@@ -160,10 +154,7 @@ public class ComponentService {
      */
     public Component createAndPersistComponent(Study study, Component component) {
         return jpa.withTransaction(em -> {
-            component.setStudy(study);
-            if (!study.hasComponent(component)) {
-                study.addComponent(component);
-            }
+            study.addComponent(component);
             componentDao.persist(component);
             studyDao.merge(study);
             return component;
@@ -186,9 +177,10 @@ public class ComponentService {
         Component component = new Component();
         component.setTitle(props.getTitle());
         component.setHtmlFilePath(props.getHtmlFilePath());
+        component.setActive(props.isActive());
         component.setReloadable(props.isReloadable());
         component.setComments(props.getComments());
-        component.setJsonData(props.getJsonData());
+        component.setComponentInput(props.getComponentInput());
         return component;
     }
 
@@ -205,20 +197,20 @@ public class ComponentService {
         }
 
         // What if the current HTML file doesn't exist
-        File currentFile = null;
-        if (!component.getHtmlFilePath().trim().isEmpty()) {
-            currentFile = ioUtils.getFileInStudyAssetsDir(component.getStudy().getDirName(),
-                    component.getHtmlFilePath());
+        Path currentFile = null;
+        String dirName = component.getStudy().getDirName();
+        String htmlFilePath = component.getHtmlFilePath();
+        if (!htmlFilePath.trim().isEmpty()) {
+            currentFile = unchecked(() -> ioUtils.getFileInStudyAssetsDir(dirName, htmlFilePath));
         }
-        if (currentFile == null || !currentFile.exists()) {
+        if (currentFile == null || !Files.exists(currentFile)) {
             component.setHtmlFilePath(newHtmlFilePath);
             componentDao.merge(component);
             return;
         }
 
         // Rename HTML file
-        if (htmlFileRename) ioUtils.renameHtmlFile(component.getHtmlFilePath(), newHtmlFilePath,
-                component.getStudy().getDirName());
+        if (htmlFileRename) unchecked(() -> ioUtils.renameHtmlFile(htmlFilePath, newHtmlFilePath, dirName));
         component.setHtmlFilePath(newHtmlFilePath);
         componentDao.merge(component);
     }
@@ -230,7 +222,8 @@ public class ComponentService {
     public void validate(Component component) {
         ComponentProperties props = bindToProperties(component);
         if (props.validate() != null) {
-            LOGGER.warn(".validate: " + props.validate().stream().map(ValidationError::message)
+            LOGGER.warn(".validate: " + props.validate().stream()
+                    .map(ValidationError::message)
                     .collect(Collectors.joining(", ")));
             throw new ValidationException(MessagesStrings.COMPONENT_INVALID);
         }
@@ -242,31 +235,26 @@ public class ComponentService {
      */
     public void remove(Component component) {
         jpa.withTransaction(entityManager -> {
-            Component managedComponent = componentDao.merge(component);
-            Study study = managedComponent.getStudy();
-            // Remove component from the study
-            study.removeComponent(managedComponent);
-            studyDao.merge(study);
+            Study study = component.getStudy();
+
             // Remove component's ComponentResults
-            resultRemover.removeAllComponentResults(managedComponent);
-            componentDao.remove(managedComponent);
+            resultRemover.removeAllComponentResults(component);
+
+            // Remove component from study
+            study.removeComponent(component);
+            studyDao.merge(study);
+
+            componentDao.remove(component);
         });
     }
 
     public Component getComponentFromIdOrUuid(String idOrUuid) {
-        Optional<Long> componentId = Helpers.parseLong(idOrUuid.trim());
-        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        Component component;
+        Optional<Long> componentId = StringUtils.parseLong(idOrUuid.trim());
         if (componentId.isPresent()) {
-            component = componentDao.findById(componentId.get());
-            if (component == null) throw new NotFoundException("Couldn't find component with ID " + idOrUuid);
-            checker.checkStandardForComponent(componentId.get(), component, signedinUser);
+            return componentDao.findById(componentId.get());
         } else {
-            component = componentDao.findByUuid(idOrUuid)
-                    .orElseThrow(() -> new NotFoundException("Couldn't find component with UUID " + idOrUuid));
-            checker.checkStandardForComponent(component.getId(), component, signedinUser);
+            return componentDao.findByUuid(idOrUuid).orElse(null);
         }
-        return component;
     }
 
 }

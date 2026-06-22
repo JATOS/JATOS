@@ -7,8 +7,6 @@ import scala.collection.mutable
 
 /**
  * The BatchDispatcherRegistry keeps track of all BatchDispatchers.
- *
- * @author Kristian Lange
  */
 @Singleton
 class BatchDispatcherRegistry @Inject()(batchDispatcherFactory: BatchDispatcher.Factory) {

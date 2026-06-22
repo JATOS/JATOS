@@ -6,12 +6,13 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.EntityManager;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * DAO for User entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class UserDao extends AbstractDao {
@@ -36,6 +37,10 @@ public class UserDao extends AbstractDao {
         super.remove(user);
     }
 
+    public void refresh(User user) {
+        super.refresh(user);
+    }
+
     public boolean authenticate(String normalizedUsername, String passwordHash) {
         if (normalizedUsername == null || passwordHash == null) return false;
 
@@ -55,6 +60,17 @@ public class UserDao extends AbstractDao {
         return jpa.withTransaction((EntityManager em) -> em.find(User.class, normalizedUsername));
     }
 
+    public User findById(Long id) {
+        return jpa.withTransaction((EntityManager em) -> {
+            List<User> result = em.createQuery(
+                            "SELECT u FROM User u WHERE u.id = :id", User.class)
+                    .setParameter("id", id)
+                    .setMaxResults(1)
+                    .getResultList();
+            return result.isEmpty() ? null : result.get(0);
+        });
+    }
+
     public List<User> findAll() {
         return jpa.withTransaction("default", true, (EntityManager em) ->
                 em.createQuery("SELECT u FROM User u", User.class).getResultList());
@@ -70,8 +86,28 @@ public class UserDao extends AbstractDao {
     }
 
     /**
-     * Returns the number of User rows
+     * Returns a mapping of usernames to a list of study IDs for which each user is a member.
      */
+    public Map<String, List<Long>> findAllUsersAndTheirStudyIds() {
+        return jpa.withTransaction((EntityManager em) -> {
+            List<Object[]> userStudyMappings = em.createQuery(
+                            "SELECT u.username, s.id FROM User u JOIN u.studyList s", Object[].class)
+                    .getResultList();
+
+            // Group study IDs by username
+            Map<String, List<Long>> studyIdsByUsername = new HashMap<>();
+            for (Object[] mapping : userStudyMappings) {
+                String username = (String) mapping[0];
+                Long studyId = ((Number) mapping[1]).longValue();
+                studyIdsByUsername.computeIfAbsent(username, k -> new ArrayList<>()).add(studyId);
+            }
+            return studyIdsByUsername;
+        });
+    }
+
+        /**
+         * Returns the number of User rows
+         */
     public int count() {
         return jpa.withTransaction("default", true, em -> {
             Number result = (Number) em.createQuery("SELECT COUNT(u) FROM User u").getSingleResult();

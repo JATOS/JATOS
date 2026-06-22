@@ -12,8 +12,6 @@ import scala.jdk.CollectionConverters._
  *
  * A Registry does not define who is a member - it just stores the open channels. Therefore, it is possible that a
  * client is a member but currently doesn't have an open channel.
- *
- * @author Kristian Lange
  */
 class GroupChannelRegistry {
 

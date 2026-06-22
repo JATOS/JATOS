@@ -4,7 +4,6 @@ import exceptions.common.ForbiddenException;
 import models.common.Batch;
 import models.common.Study;
 import models.common.workers.Worker;
-import play.mvc.Http;
 import services.publix.PublixErrorMessages;
 import services.publix.StudyAuthorisation;
 
@@ -12,14 +11,12 @@ import javax.inject.Singleton;
 
 /**
  * StudyAuthorization for GeneralMultipleWorker
- *
- * @author Kristian Lange
  */
 @Singleton
 public class GeneralMultipleStudyAuthorisation extends StudyAuthorisation {
 
     @Override
-    public void checkWorkerAllowedToStartStudy(Http.Session session, Worker worker, Study study, Batch batch) {
+    public void checkWorkerAllowedToStartStudy(Worker worker, Study study, Batch batch) {
         if (!study.isActive()) {
             throw new ForbiddenException(PublixErrorMessages.studyDeactivated(study.getId()));
         }
@@ -27,11 +24,11 @@ public class GeneralMultipleStudyAuthorisation extends StudyAuthorisation {
             throw new ForbiddenException(PublixErrorMessages.batchInactive(batch.getId()));
         }
         checkMaxTotalWorkers(batch, worker);
-        checkWorkerAllowedToDoStudy(session, worker, study, batch);
+        checkWorkerAllowedToDoStudy(worker, study, batch);
     }
 
     @Override
-    public void checkWorkerAllowedToDoStudy(Http.Session session, Worker worker, Study study, Batch batch) {
+    public void checkWorkerAllowedToDoStudy(Worker worker, Study study, Batch batch) {
         // Check if the worker type is allowed
         if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
             throw new ForbiddenException(PublixErrorMessages

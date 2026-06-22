@@ -5,7 +5,6 @@ import daos.common.worker.WorkerType;
 import general.common.Common;
 import models.common.*;
 import models.common.workers.Worker;
-import utils.common.Helpers;
 
 import java.util.Objects;
 
@@ -14,8 +13,6 @@ import java.util.Objects;
  * ID, worker type.
  *
  * ID cookies are used to provide these IDs to jatos.js and then to the component's JavaScript.
- *
- * @author Kristian Lange
  */
 public class IdCookieModel {
 

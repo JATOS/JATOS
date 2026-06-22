@@ -4,8 +4,6 @@ import models.common.workers.Worker;
 
 /**
  * Helper class with methods that generate error strings.
- *
- * @author Kristian Lange
  */
 public class PublixErrorMessages {
 

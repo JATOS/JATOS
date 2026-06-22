@@ -1,27 +1,25 @@
 package exceptions.common;
 
-import play.mvc.Http;
+import general.common.ApiEnvelope.ErrorCode;
 
 /**
- * Causes a request to return with a HTTP return type that is defined in the
- * child classes of this abstract class.
- *
- * @author Kristian Lange
+ * Runtime Exception that causes a request to return with an HTTP return status.
  */
-public class HttpException extends RuntimeException {
+public class HttpException extends JatosException {
 
-    private int httpStatus = Http.Status.BAD_REQUEST; // default is BadRequest
+    protected int httpStatusCode;
 
-    public HttpException(String message) {
+    public HttpException(int status, String message) {
         super(message);
+        this.httpStatusCode = status;
     }
 
-    public HttpException(String message, int httpStatus) {
-        super(message);
-        this.httpStatus = httpStatus;
+    public HttpException(int status, String message, ErrorCode errorCode) {
+        super(message, errorCode);
+        this.httpStatusCode = status;
     }
 
     public int getHttpStatus() {
-        return httpStatus;
+        return httpStatusCode;
     }
 }

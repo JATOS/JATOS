@@ -8,8 +8,6 @@ import scala.language.postfixOps
 
 /**
  * The GroupDispatcherRegistry keeps track of all GroupDispatchers.
- *
- * @author Kristian Lange
  */
 @Singleton
 class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.Factory) {

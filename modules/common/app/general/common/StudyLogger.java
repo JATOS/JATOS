@@ -12,17 +12,18 @@ import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.libs.Json;
 import utils.common.HashUtils;
+import utils.common.IOUtils;
 
 import javax.inject.Singleton;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 
 /**
  * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created while the study is
@@ -35,13 +36,13 @@ import java.util.concurrent.CompletableFuture;
  * SHA-256 hash of the content of the file is included in the log.
  * <p>
  * The log uses charset ISO_8859_1.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class StudyLogger {
 
     private static final Logger.ALogger LOGGER = Logger.of(StudyLogger.class);
+
+    private static final Pattern NON_ISO_8859_1 = Pattern.compile("[^\\u0000-\\u00FF]");
 
     /**
      * JSON key names used in study log
@@ -92,7 +93,7 @@ public class StudyLogger {
 
     private void create(Study study, String msg) {
         if (!Common.isStudyLogsEnabled()) return;
-        Path studyLogPath = Paths.get(getPath(study));
+        Path studyLogPath = Path.of(getPath(study));
         try {
             if (Files.exists(studyLogPath)) {
                 LOGGER.error("A study log with " + studyLogPath + " exists already.");
@@ -106,8 +107,8 @@ public class StudyLogger {
             jsonObj.put(SERVERS_MAC, Common.getMac());
             jsonObj.put(HASH_FUNCTION, HashUtils.SHA_256);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
-            byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
-            Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.CREATE_NEW);
+            String sanitizedLogEntry = sanitizeForIso88591(logEntry);
+            Files.writeString(studyLogPath, sanitizedLogEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
             LOGGER.error("Study log couldn't be created: " + studyLogPath, e);
         }
@@ -116,11 +117,11 @@ public class StudyLogger {
     public String retire(Study study) {
         if (!Common.isStudyLogsEnabled()) return null;
         log(study, null, "Last entry of the study log", Pair.of(STUDY_UUID, study.getUuid()));
-        Path logPath = Paths.get(getPath(study));
-        Path retiredLogPath = Paths.get(getRetiredPath(study));
+        Path logPath = Path.of(getPath(study));
+        Path retiredLogPath = Path.of(getRetiredPath(study));
         if (Files.exists(logPath)) {
             try {
-                Files.move(logPath, retiredLogPath);
+                IOUtils.moveFile(logPath, retiredLogPath, false);
             } catch (IOException e) {
                 LOGGER.error("Study log couldn't be moved from " + logPath + " to " + retiredLogPath, e);
             }
@@ -217,7 +218,7 @@ public class StudyLogger {
      */
     private void log(Study study, User user, ObjectNode jsonObj) {
         if (!Common.isStudyLogsEnabled()) return;
-        Path studyLogPath = Paths.get(getPath(study));
+        Path studyLogPath = Path.of(getPath(study));
         if (Files.notExists(studyLogPath)) {
             LOGGER.info("Couldn't find log for study with UUID " + study.getUuid() + " in " + studyLogPath
                     + ". Create new log file.");
@@ -227,8 +228,8 @@ public class StudyLogger {
             if (user != null) jsonObj.put(USER_NAME, user.getName());
             jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
-            byte[] logEntryInBytes = logEntry.getBytes(StandardCharsets.ISO_8859_1);
-            Files.write(studyLogPath, logEntryInBytes, StandardOpenOption.APPEND);
+            String sanitizedLogEntry = sanitizeForIso88591(logEntry);
+            Files.writeString(studyLogPath, sanitizedLogEntry, StandardCharsets.ISO_8859_1, StandardOpenOption.APPEND);
         } catch (IOException e) {
             LOGGER.error("Study log couldn't be written: " + studyLogPath, e);
         }
@@ -283,6 +284,11 @@ public class StudyLogger {
 
     private boolean hasNextLine(String nextLine, int lineLimit, int lineNumber) {
         return nextLine != null && (lineLimit == -1 || lineNumber <= lineLimit);
+    }
+
+    public String sanitizeForIso88591(String str) {
+        if (str == null) return null;
+        return NON_ISO_8859_1.matcher(str).replaceAll("?");
     }
 
 }

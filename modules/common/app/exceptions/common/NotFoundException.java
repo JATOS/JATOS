@@ -1,16 +1,20 @@
 package exceptions.common;
 
-import play.mvc.Http;
+import general.common.ApiEnvelope.ErrorCode;
+
+import static play.mvc.Http.Status.NOT_FOUND;
 
 /**
- * It causes the request to return with an HTTP status 404 (Not Found).
- *
- * @author Kristian Lange
+ * Runtime Exception that causes the request to return with HTTP status 404 (Not Found).
  */
 public class NotFoundException extends HttpException {
 
     public NotFoundException(String message) {
-        super(message, Http.Status.NOT_FOUND);
+        super(NOT_FOUND, message, ErrorCode.NOT_FOUND);
+    }
+
+    public NotFoundException(String message, ErrorCode errorCode) {
+        super(NOT_FOUND, message, errorCode);
     }
 
 }

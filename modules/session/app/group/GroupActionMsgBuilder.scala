@@ -16,8 +16,6 @@ import scala.jdk.CollectionConverters._
 
 /**
  * Utility class that builds GroupMsgs. So it mostly handles the JSON creation.
- *
- * @author Kristian Lange
  */
 @Singleton
 class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDao) {

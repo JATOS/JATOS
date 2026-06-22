@@ -1,9 +1,8 @@
 package controllers.gui;
 
 import actions.common.AsyncAction.Async;
-import actions.common.TransactionalAction;
 import actions.common.TransactionalAction.Transactional;
-import general.common.Http.Context;
+import http.common.Http.Context;
 import actions.common.AsyncAction.Executor;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
@@ -23,11 +22,8 @@ import models.common.workers.Worker;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.BreadcrumbsService;
-import services.gui.Checker;
-import services.gui.ResultRemover;
-import services.gui.ResultStreamer;
-import utils.common.JsonUtils;
+import services.gui.*;
+import json.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -36,17 +32,17 @@ import java.util.List;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
-import static messaging.common.FlashScopeMessaging.ERROR;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
+import static messaging.common.FlashMessagingHelper.ERROR;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class StudyResults extends Controller {
 
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final BreadcrumbsService breadcrumbsService;
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
@@ -58,7 +54,7 @@ public class StudyResults extends Controller {
     private final JsonUtils jsonUtils;
 
     @Inject
-    StudyResults(Checker checker,
+    StudyResults(AuthorizationService authorizationService,
                  BreadcrumbsService breadcrumbsService,
                  ResultRemover resultRemover,
                  ResultStreamer resultStreamer,
@@ -67,7 +63,7 @@ public class StudyResults extends Controller {
                  GroupResultDao groupResultDao,
                  WorkerDao workerDao,
                  JsonUtils jsonUtils) {
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
@@ -83,16 +79,16 @@ public class StudyResults extends Controller {
      * Shows the study results view
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result studysStudyResults(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
-            return redirect(routes.Studies.study(studyId, e.getHttpStatus()))
-                    .flashing(ERROR, e.getMessage());
+            Context.current().response().putFlash(ERROR, e.getMessage());
+            return redirect(routes.Studies.study(studyId, e.getHttpStatus()));
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study, BreadcrumbsService.RESULTS);
@@ -104,18 +100,18 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a batch.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result batchesStudyResults(Http.Request request, Long studyId, Long batchId, String workerType) {
         Batch batch = batchDao.findById(batchId);
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForBatch(batch, study, batchId);
+            authorizationService.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessBatch(batch, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
-            return redirect(routes.Studies.study(studyId, e.getHttpStatus()))
-                    .flashing(ERROR, e.getMessage());
+            Context.current().response().putFlash(ERROR, e.getMessage());
+            return redirect(routes.Studies.study(studyId, e.getHttpStatus()));
         }
 
         String breadcrumbsTitle = Strings.isNullOrEmpty(workerType) ? BreadcrumbsService.RESULTS
@@ -129,18 +125,18 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a group.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result groupsStudyResults(Http.Request request, Long studyId, Long groupId) {
         Study study = studyDao.findById(studyId);
         GroupResult groupResult = groupResultDao.findById(groupId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
-            checker.checkStandardForGroup(groupResult, study, groupId);
+            authorizationService.canUserAccessStudy(study, signedinUser);
+            authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
-            return redirect(routes.Studies.study(studyId, e.getHttpStatus()))
-                    .flashing(ERROR, e.getMessage());
+            Context.current().response().putFlash(ERROR, e.getMessage());
+            return redirect(routes.Studies.study(studyId, e.getHttpStatus()));
         }
 
         String breadcrumbsTitle = BreadcrumbsService.RESULTS;
@@ -154,16 +150,16 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a worker.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result workersStudyResults(Http.Request request, Long workerId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Worker worker = workerDao.findById(workerId);
         try {
-            checker.checkWorker(worker, workerId);
-            checker.isUserAllowedToAccessWorker(signedinUser, worker);
-        } catch (BadRequestException | ForbiddenException e) {
-            return redirect(routes.Home.home(e.getHttpStatus())).flashing(ERROR, e.getMessage());
+            authorizationService.canUserAccessWorker(signedinUser, worker);
+        } catch (NotFoundException | ForbiddenException e) {
+            Context.current().response().putFlash(ERROR, e.getMessage());
+            return redirect(routes.Home.home(e.getHttpStatus()));
         }
 
         String breadcrumbs = breadcrumbsService.generateForWorker(worker, BreadcrumbsService.RESULTS);
@@ -175,7 +171,7 @@ public class StudyResults extends Controller {
      * StudyResults IDs as a String. Removing a StudyResult always removes it's ComponentResults.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result remove(Http.Request request) {
         if (request.body().asJson() == null) return badRequest("Malformed request body");
         if (!request.body().asJson().has("studyResultIds")) return badRequest("Malformed JSON");
@@ -191,11 +187,11 @@ public class StudyResults extends Controller {
      * GET request that returns StudyResults of a study in JSON format. It streams in chunks (reduces memory usage)
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByStudy(study);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -206,11 +202,11 @@ public class StudyResults extends Controller {
      * specified and the results will only be of this type. It streams in chunks (reduces memory usage)
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForBatch(batch, batch.getId(), signedinUser);
+        authorizationService.canUserAccessBatch(batch, signedinUser);
         WorkerType wt = WorkerType.fromWireValueInclNone(workerType);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByBatch(wt, batch);
@@ -221,11 +217,11 @@ public class StudyResults extends Controller {
      * GET request that returns all StudyResults of a group in JSON format. It streams in chunks (reduces memory usage)
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForGroup(groupResult, groupResultId, signedinUser);
+        authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByGroup(groupResult);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -236,10 +232,12 @@ public class StudyResults extends Controller {
      * usage)
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByWorker(Long workerId) throws BadRequestException {
         Worker worker = workerDao.findById(workerId);
-        checker.checkWorker(worker, workerId);
+        if (worker == null) {
+            throw new NotFoundException("Worker doesn't exist");
+        }
 
         Source<ByteString, ?> source = resultStreamer.streamStudyResultsByWorker(worker);
         return ok().chunked(source).as("text/plain; charset=utf-8");
@@ -250,11 +248,11 @@ public class StudyResults extends Controller {
      */
     @Async(Executor.IO)
     @Transactional
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStudyResult(studyResult, signedinUser, false);
+        authorizationService.canUserAccessStudyResult(studyResult, signedinUser, false);
 
         return ok(jsonUtils.getComponentResultsByStudyResult(studyResult));
     }

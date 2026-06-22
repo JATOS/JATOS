@@ -4,7 +4,7 @@
 
 export { Named, success, info, warning, error, showList, hideAll }
 
-import * as Timeago from './timeago.min.js';
+import * as Timeago from 'timeago';
 
 /*
  * This class allows alerts with a namespace. E.g., if alerts are associated with a Modal one can get Alerts with a

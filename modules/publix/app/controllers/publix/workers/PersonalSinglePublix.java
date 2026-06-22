@@ -5,10 +5,9 @@ import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import filters.publix.IdCookieFilter;
 import filters.publix.IdCookieFilter.IdCookies;
-import general.common.IOExecutor;
-import general.common.StudyAssetsExecutor;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.*;
@@ -24,8 +23,7 @@ import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
-import actions.common.TransactionalAction.Transactional;
+import json.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -36,8 +34,6 @@ import static play.mvc.Results.redirect;
 /**
  * Implementation of JATOS' public API for personal single study runs. A personal single run is done by a
  * PersonalSingleWorker.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class PersonalSinglePublix extends Publix implements IPublix {
@@ -88,7 +84,7 @@ public class PersonalSinglePublix extends Publix implements IPublix {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         PersonalSingleWorker worker = (PersonalSingleWorker) studyLink.getWorker();
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
         // There are 5 possibilities
         // 1. Preview study, first call -> create StudyResult, call finishOldestStudyResult
@@ -98,17 +94,17 @@ public class PersonalSinglePublix extends Publix implements IPublix {
         // 5. No preview study, second+ call -> throw exception
         Optional<StudyResult> studyResultOpt = publixUtils.getLastStudyResult(worker);
         StudyResult studyResult;
-        if (!studyResultOpt.isPresent()) {
-            publixUtils.finishOldestStudyResult(request);
+        if (studyResultOpt.isEmpty()) {
+            publixUtils.finishOldestStudyResult();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
         } else {
-            if (!idCookieService.hasIdCookie(request, studyResultOpt.get().getId())) {
-                publixUtils.finishOldestStudyResult(request);
+            if (!idCookieService.hasIdCookie(studyResultOpt.get().getId())) {
+                publixUtils.finishOldestStudyResult();
             }
             studyResult = studyResultOpt.get();
         }
-        idCookieService.writeIdCookie(request, studyResult);
-        publixUtils.setUrlQueryParameter(request, studyResult);
+        idCookieService.writeIdCookie(studyResult);
+        publixUtils.setUrlQueryParameter(studyResult);
         Component component = publixUtils.retrieveFirstActiveComponent(study);
 
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "

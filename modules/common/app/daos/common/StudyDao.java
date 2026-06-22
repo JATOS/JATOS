@@ -13,8 +13,6 @@ import java.util.stream.Collectors;
 
 /**
  * DAO of Study entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class StudyDao extends AbstractDao {
@@ -76,8 +74,7 @@ public class StudyDao extends AbstractDao {
     }
 
     /**
-     * Finds all studies with the given title and returns them in a list. If
-     * there is none it returns an empty list.
+     * Finds all studies with the given title and returns them in a list. If there is none it returns an empty list.
      */
     public List<Study> findByTitle(String title) {
         return jpa.withTransaction("default", true, (EntityManager em) -> {
@@ -91,16 +88,16 @@ public class StudyDao extends AbstractDao {
         if (srids.isEmpty()) return Collections.emptyList();
         return jpa.withTransaction("default", true, (EntityManager em) ->
                 em.createQuery("SELECT s FROM Study s WHERE s IN (SELECT sr.study FROM StudyResult sr WHERE sr.id IN :srids)", Study.class)
-                .setParameter("srids", srids)
-                .getResultList());
+                        .setParameter("srids", srids)
+                        .getResultList());
     }
 
     public List<Long> findIdsByStudyResultIds(Collection<Long> srids) {
         if (srids.isEmpty()) return Collections.emptyList();
         return jpa.withTransaction("default", true, (EntityManager em) ->
                 em.createQuery("SELECT sr.study.id FROM StudyResult sr WHERE sr.id IN :srids", Long.class)
-                .setParameter("srids", srids)
-                .getResultList().stream().distinct().collect(Collectors.toList()));
+                        .setParameter("srids", srids)
+                        .getResultList().stream().distinct().collect(Collectors.toList()));
     }
 
     public List<Study> findAll() {
@@ -130,6 +127,18 @@ public class StudyDao extends AbstractDao {
                     .setParameter("user", user)
                     .getSingleResult();
             return result != null && result.intValue() > 0;
+        });
+    }
+
+    /**
+     * Returns a list of user IDs of all users that are members of the study with the given ID.
+     */
+    public List<Long> findAllMembersByStudyId(Long studyId) {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            String queryStr = "SELECT u.id FROM Study s JOIN s.userList u WHERE s.id = :studyId";
+            return em.createQuery(queryStr, Long.class)
+                    .setParameter("studyId", studyId)
+                    .getResultList();
         });
     }
 

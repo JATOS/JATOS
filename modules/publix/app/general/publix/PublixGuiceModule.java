@@ -7,8 +7,6 @@ import group.GroupDispatcher;
 
 /**
  * Configuration of Guice dependency injection for Publix module
- * 
- * @author Kristian Lange
  */
 public class PublixGuiceModule extends AbstractModule {
 

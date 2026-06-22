@@ -12,9 +12,6 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/**
- * @author Kristian Lange
- */
 @Singleton
 public class WorkerCreator {
 

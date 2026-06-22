@@ -1,6 +1,5 @@
 package services.gui;
 
-import general.common.Http.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import daos.common.ComponentResultDao;
@@ -8,12 +7,13 @@ import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import http.common.Http.Context;
 import models.common.Study;
 import models.common.StudyResultStatus;
 import models.common.User;
-import utils.common.Helpers;
+import json.common.DefaultJson;
+import utils.common.StringUtils;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -23,9 +23,7 @@ import java.util.stream.Collectors;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 
 /**
- * Service class mostly for Admin controller.
- *
- * @author Kristian Lange
+ * Service class for everything related to Admin.
  */
 @Singleton
 public class AdminService {
@@ -36,6 +34,7 @@ public class AdminService {
     private final StudyResultDao studyResultDao;
     private final ComponentResultDao componentResultDao;
     private final IOUtils ioUtils;
+    private final DefaultJson defaultJson;
 
     @Inject
     AdminService(UserDao userDao,
@@ -43,13 +42,15 @@ public class AdminService {
                  WorkerDao workerDao,
                  StudyResultDao studyResultDao,
                  ComponentResultDao componentResultDao,
-                 IOUtils ioUtils) {
+                 IOUtils ioUtils,
+                 DefaultJson defaultJson) {
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.studyResultDao = studyResultDao;
         this.componentResultDao = componentResultDao;
         this.ioUtils = ioUtils;
+        this.defaultJson = defaultJson;
     }
 
     public List<Map<String, Object>> getStudiesData(Collection<Study> studyList, boolean studyAssetsSizeFlag,
@@ -97,7 +98,7 @@ public class AdminService {
     public Map<String, Object> getStudyAssetDirSize(Study study) {
         long size = ioUtils.getStudyAssetsDirSize(study.getDirName());
         return ImmutableMap.of(
-                "humanReadable", Helpers.humanReadableByteCount(size),
+                "humanReadable", StringUtils.humanReadableByteCount(size),
                 "size", size);
     }
 
@@ -105,9 +106,9 @@ public class AdminService {
         long size = componentResultDao.sizeByStudy(study);
         long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
         String resultDataSizePerStudyResultCount = (studyResultCount != 0
-                ? Helpers.humanReadableByteCount(averagePerResult)
+                ? StringUtils.humanReadableByteCount(averagePerResult)
                 : "0 B");
-        String humanReadable = Helpers.humanReadableByteCount(size) + " (" + resultDataSizePerStudyResultCount + ")";
+        String humanReadable = StringUtils.humanReadableByteCount(size) + " (" + resultDataSizePerStudyResultCount + ")";
         return ImmutableMap.of(
                 "humanReadable", humanReadable,
                 "size", size,
@@ -121,9 +122,9 @@ public class AdminService {
                 .sum();
         long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
         String resultFileSizePerStudyResultCount = studyResultCount != 0
-                ? Helpers.humanReadableByteCount(averagePerResult)
+                ? StringUtils.humanReadableByteCount(averagePerResult)
                 : "0 B";
-        String humanReadable = Helpers.humanReadableByteCount(size) + " (" + resultFileSizePerStudyResultCount + ")";
+        String humanReadable = StringUtils.humanReadableByteCount(size) + " (" + resultFileSizePerStudyResultCount + ")";
         return ImmutableMap.of(
                 "humanReadable", humanReadable,
                 "size", size,
@@ -131,12 +132,12 @@ public class AdminService {
     }
 
     /**
-     * Gets the last seen time of users that were active latest, except the signed in one. It is limited to 'limit'
+     * Gets the last seen time of users that were active latest, except the signed-in one. It is limited to 'limit'
      * latest users.
      */
     public List<Map<String, String>> getLatestUsers(int limit) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        List<Map<String, String>> lastSeenMapOrdered = userDao.findLastSeen(limit).stream()
+        return userDao.findLastSeen(limit).stream()
                 .filter(u -> u.getLastSeen() != null)
                 .filter(u -> !u.getUsername().equals(signedinUser.getUsername()))
                 .map(u -> ImmutableMap.of(
@@ -145,7 +146,6 @@ public class AdminService {
                         "authMethod", u.getAuthMethod().name(),
                         "time", u.getLastSeen().toInstant().toString()))
                 .collect(Collectors.toList());
-        return lastSeenMapOrdered;
     }
 
     public List<Map<String, Object>> getLatestStudyRuns(int limit) {
@@ -173,7 +173,7 @@ public class AdminService {
         statusMap.put("serverTime", System.currentTimeMillis());
         statusMap.put("latestUsers", getLatestUsers(10));
         statusMap.put("latestStudyRuns", getLatestStudyRuns(10));
-        return JsonUtils.asJsonNode(statusMap);
+        return defaultJson.objAsJsonNode(statusMap);
     }
 
 }

@@ -4,8 +4,8 @@
 
 export { show }
 
-import * as Helpers from "./helpers.js";
-import * as Alerts from "./alerts.js";
+import * as Helpers from "helpers";
+import * as Alerts from "alerts";
 
 const alerts = new Alerts.Named("confirmation-modal");
 $("#confirmationModal").on('hide.bs.modal', alerts.hideAll);

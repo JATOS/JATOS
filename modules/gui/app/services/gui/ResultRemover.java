@@ -4,9 +4,8 @@ import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import exceptions.common.IOException;
-import general.common.Http.Context;
 import general.common.StudyLogger;
+import http.common.Http.Context;
 import models.common.*;
 import models.common.workers.Worker;
 import play.Logger;
@@ -16,6 +15,7 @@ import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,8 +24,6 @@ import static auth.gui.AuthAction.SIGNEDIN_USER;
 
 /**
  * Service class that removes ComponentResults or StudyResults. It's used by controllers or other services.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ResultRemover {
@@ -33,7 +31,7 @@ public class ResultRemover {
     private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
     private final JPAApi jpa;
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
@@ -43,7 +41,7 @@ public class ResultRemover {
 
     @Inject
     ResultRemover(JPAApi jpa,
-                  Checker checker,
+                  AuthorizationService authorizationService,
                   ComponentResultDao componentResultDao,
                   StudyResultDao studyResultDao,
                   GroupResultDao groupResultDao,
@@ -51,7 +49,7 @@ public class ResultRemover {
                   StudyLogger studyLogger,
                   IOUtils ioUtils) {
         this.jpa = jpa;
-        this.checker = checker;
+        this.authorizationService = authorizationService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
@@ -70,7 +68,7 @@ public class ResultRemover {
         jpa.withTransaction(em -> {
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
-            checker.checkComponentResults(componentResultList, signedinUser, true);
+            authorizationService.canUserAccessComponentResults(componentResultList, signedinUser, true);
             for (ComponentResult componentResult : componentResultList) {
                 removeComponentResult(componentResult.getId());
                 if (removeEmptyStudyResults && componentResult.getStudyResult().getComponentResultList().isEmpty()) {
@@ -94,7 +92,7 @@ public class ResultRemover {
         List<StudyResult> studyResultList = studyResultDao.findByIds(studyResultIdList);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Set<Study> studies = new HashSet<>();
-        checker.checkStudyResults(studyResultList, signedinUser, true);
+        authorizationService.canUserAccessStudyResults(studyResultList, signedinUser, true);
         for (StudyResult studyResult : studyResultList) {
             removeStudyResult(studyResult.getId());
         }

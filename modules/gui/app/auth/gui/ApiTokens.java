@@ -5,9 +5,9 @@ import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.ApiTokenDao;
-import general.common.Http.Context;
+import http.common.Http.Context;
+import json.common.JsonUtils;
 import models.common.ApiToken;
 import models.common.User;
 import org.jsoup.Jsoup;
@@ -23,27 +23,29 @@ import java.util.List;
 
 import static actions.common.AsyncAction.Async;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static models.common.User.Role.*;
 
 /**
  * All JATOS GUI endpoints concerning API tokens (personal access tokens)
- *
- * @author Kristian Lange
  */
 @Singleton
 public class ApiTokens extends Controller {
 
     private final ApiTokenDao apiTokenDao;
     private final ApiTokenService apiTokenService;
+    private final JsonUtils jsonUtils;
 
     @Inject
     ApiTokens(ApiTokenDao apiTokenDao,
-              ApiTokenService apiTokenService) {
+              ApiTokenService apiTokenService,
+              JsonUtils jsonUtils) {
         this.apiTokenDao = apiTokenDao;
         this.apiTokenService = apiTokenService;
+        this.jsonUtils = jsonUtils;
     }
 
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result allTokenDataByUser() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
@@ -51,38 +53,44 @@ public class ApiTokens extends Controller {
         for (ApiToken token : tokenList) {
             tokenData.add(Json.mapper().valueToTree(token));
         }
-        JsonNode data = Json.newObject().set("data", tokenData);
+        JsonNode data = jsonUtils.wrapAsDataEnvelope(tokenData);
         return ok(data);
     }
 
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result generate(String name, Integer expires) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
         if (!Jsoup.isValid(name, Safelist.none())) return badRequest("No HTML allowed");
         if (expires == null || expires < 0) return badRequest("Expiration must be >= 0");
         Integer expiresWithNull = expires == 0 ? null : expires; // 0 => null and means the token never expires
-        String apiTokenStr = apiTokenService.create(signedinUser, name, expiresWithNull);
+        String apiTokenStr = apiTokenService.create(signedinUser, name, expiresWithNull).getRight();
         return ok(apiTokenStr);
     }
 
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result remove(Long id) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         ApiToken token = apiTokenDao.find(id);
-        if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
+        if (token == null || token.getUser().equals(signedinUser)) {
+            return notFound("Token doesn't exist");
+        }
         apiTokenDao.remove(token);
         return ok();
     }
 
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER, ADMIN})
     public Result toggleActive(Long id, Boolean active) {
+        if (active == null) return badRequest("Active must be true or false");
+
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         ApiToken token = apiTokenDao.find(id);
-        if (token == null || token.getUser() != signedinUser) return notFound("Token doesn't exist");
+        if (token == null || token.getUser().equals(signedinUser)) {
+            return notFound("Token doesn't exist");
+        }
         token.setActive(active);
         apiTokenDao.merge(token);
         return ok(" ");

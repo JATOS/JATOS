@@ -3,19 +3,21 @@ package services.gui;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.gui.routes;
-import models.common.*;
+import models.common.Batch;
+import models.common.Component;
+import models.common.GroupResult;
+import models.common.Study;
 import models.common.workers.Worker;
 import models.gui.Breadcrumbs;
 import play.libs.Json;
 import play.mvc.Http;
-import utils.common.JsonUtils;
+import json.common.DefaultJson;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
  * Provides breadcrumbs for different views of JATOS' GUI.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class BreadcrumbsService {
@@ -26,6 +28,13 @@ public class BreadcrumbsService {
     public static final String ADMINISTRATION = "Administration";
     public static final String USER_MANAGER = "User manager";
     public static final String STUDY_MANAGER = "Study manager";
+
+    private final DefaultJson defaultJson;
+
+    @Inject
+    public BreadcrumbsService(DefaultJson defaultJson) {
+        this.defaultJson = defaultJson;
+    }
 
     public String generateForHome() {
         return generateForHome(null);
@@ -111,7 +120,7 @@ public class BreadcrumbsService {
             node.put("url", breadcrumb.url);
             arrayNode.add(node);
         }
-        return JsonUtils.asJson(arrayNode);
+        return defaultJson.objAsJson(arrayNode);
     }
 
 }

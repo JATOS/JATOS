@@ -14,8 +14,6 @@ import java.util.Optional;
 
 /**
  * DAO for abstract Worker entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class WorkerDao extends AbstractDao {

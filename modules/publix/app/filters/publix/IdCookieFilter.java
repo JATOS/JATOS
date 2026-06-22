@@ -1,13 +1,13 @@
 package filters.publix;
 
 import akka.stream.Materializer;
-import general.common.Http.Context;
+import http.common.Http;
+import http.common.Http.Context;
+import http.common.RouteAnnotations;
 import play.mvc.Filter;
-import play.mvc.Http;
 import play.mvc.Http.RequestHeader;
 import play.mvc.Result;
-import services.publix.idcookie.IdCookieAccessor;
-import services.publix.idcookie.IdCookieCollection;
+import services.publix.idcookie.IdCookieService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -19,8 +19,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
-import static services.publix.idcookie.IdCookieAccessor.IDCOOKIE_TYPED_KEY;
-
+/**
+ * A Play filter that extracts the ID cookies from the requests and puts them into {@link Http.Args} where
+ * they can be updated by the request's logic. At the end of the request the ID cookies are written back to the
+ * response.
+ */
 @Singleton
 public class IdCookieFilter extends Filter {
 
@@ -32,44 +35,30 @@ public class IdCookieFilter extends Filter {
     public @interface IdCookies {
     }
 
-    private final IdCookieAccessor idCookieAccessor;
+    private final IdCookieService idCookieService;
 
     @Inject
-    public IdCookieFilter(Materializer mat, IdCookieAccessor idCookieAccessor) {
+    public IdCookieFilter(Materializer mat, IdCookieService idCookieService) {
         super(mat);
-        this.idCookieAccessor = idCookieAccessor;
+        this.idCookieService = idCookieService;
     }
 
     @Override
     public CompletionStage<Result> apply(Function<RequestHeader, CompletionStage<Result>> nextFilter,
                                          RequestHeader requestHeader) {
-        Optional<IdCookies> idCookiesAnnotation = Context.getAnnotation(requestHeader, IdCookies.class);
+        // Check for this request if the controller class or method is annotated with @IdCookies
+        Optional<IdCookies> idCookiesAnnotation = RouteAnnotations.get(requestHeader, IdCookies.class);
 
-        if (!idCookiesAnnotation.isPresent()) {
+        if (idCookiesAnnotation.isEmpty()) {
             return nextFilter.apply(requestHeader);
         }
 
         return Context.withContext(
-                // Logic before the request is handled
-                () -> {
-                    IdCookieCollection idCookieCollection = idCookieAccessor.extractFromCookies(requestHeader.cookies());
-                    Context.current().args().put(IDCOOKIE_TYPED_KEY, idCookieCollection);
-                },
+                () -> idCookieService.initFromRequestCookies(requestHeader.cookies()),
                 nextFilter.apply(requestHeader)
         ).thenApply(result -> {
-            // Logic after the request is handled
-            try {
-                IdCookieCollection idCookieCollection = Context.current().args().get(IDCOOKIE_TYPED_KEY);
-                Http.Cookie[] cookies = idCookieCollection.getAll().stream()
-                        .map(idCookieAccessor::generatePlayCookie)
-                        .toArray(Http.Cookie[]::new);
-                return result.withCookies(cookies);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                // Clean up the thread's Context
-                Context.clear();
-            }
+            idCookieService.syncIdCookiesToResponse();
+            return result;
         });
     }
 

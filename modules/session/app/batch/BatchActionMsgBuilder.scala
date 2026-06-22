@@ -16,8 +16,6 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 
 /**
  * Utility class that builds BatchMsgs. So it mostly handles the JSON creation.
- *
- * @author Kristian Lange
  */
 @Singleton
 class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {

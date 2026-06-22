@@ -5,10 +5,9 @@ import controllers.publix.Publix;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import filters.publix.IdCookieFilter;
 import filters.publix.IdCookieFilter.IdCookies;
-import general.common.IOExecutor;
-import general.common.StudyAssetsExecutor;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import models.common.*;
@@ -24,8 +23,7 @@ import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalMultipleStudyAuthorisation;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
-import actions.common.TransactionalAction.Transactional;
+import json.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -34,8 +32,6 @@ import static play.mvc.Results.redirect;
 
 /**
  * Implementation of JATOS' public API for studies run by PersonalMultipleWorker.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class PersonalMultiplePublix extends Publix implements IPublix {
@@ -75,12 +71,12 @@ public class PersonalMultiplePublix extends Publix implements IPublix {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
         PersonalMultipleWorker worker = (PersonalMultipleWorker) studyLink.getWorker();
-        studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
-        publixUtils.finishOldestStudyResult(request);
+        publixUtils.finishOldestStudyResult();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
-        publixUtils.setUrlQueryParameter(request, studyResult);
-        idCookieService.writeIdCookie(request, studyResult);
+        publixUtils.setUrlQueryParameter(studyResult);
+        idCookieService.writeIdCookie(studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 
         LOGGER.info(".startStudy: studyCode " + studyLink.getStudyCode() + ", "

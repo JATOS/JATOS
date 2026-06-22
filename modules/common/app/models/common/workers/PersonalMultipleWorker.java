@@ -14,8 +14,6 @@ import java.util.List;
 /**
  * DB entity of the concrete Worker for a Personal Multiple Run (worker for an external run that can be used multiple
  * times and always assigns the results to the same worker).
- *
- * @author Kristian Lange
  */
 @Entity
 @DiscriminatorValue(PersonalMultipleWorker.WORKER_TYPE)

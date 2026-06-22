@@ -11,8 +11,6 @@ import java.util.UUID;
 
 /**
  * DB entity of the concrete worker who originates from the MTurk.
- * 
- * @author Kristian Lange
  */
 @Entity
 @DiscriminatorValue(MTWorker.WORKER_TYPE)

@@ -7,8 +7,6 @@ import javax.persistence.Entity;
 
 /**
  * DB entity of the concrete worker who originates from the MTurk Sandbox.
- * 
- * @author Kristian Lange
  */
 @Entity
 @DiscriminatorValue(MTSandboxWorker.WORKER_TYPE)

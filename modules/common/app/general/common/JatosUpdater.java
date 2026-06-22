@@ -6,12 +6,11 @@ import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
-import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.IOFileFilter;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope.ErrorCode;
 import org.apache.commons.lang3.SystemUtils;
 import play.Environment;
 import play.Logger;
@@ -26,16 +25,14 @@ import utils.common.ZipUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -45,25 +42,34 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * This class handles JATOS updates
  *
- * Some hints: - JATOS releases are currently stored at GitHub - The data requested from GitHub are stored in
- * ReleaseInfo - If there is an 'n' in the release's version an update is forbidden. This is safety feature in case an
- * future update is not compatible with this update process. - The new release might need a new Java version. The
- * release's Java version is determined by the asset's filename (see newJavaVersion). - The current state of the update
- * process (UpdateState) is stored in 'state'. - The update process is finished in the loader script - In the GUI the
- * update is handled in the home view
+ * Some hints:
+ * - JATOS releases are currently stored at GitHub
+ * - The data requested from GitHub are stored in ReleaseInfo
+ * - If there is an 'n' in the release's version, an update is forbidden. This is a safety feature in case a future
+ * update is not compatible with this update process.
+ * - The new release might need a new Java version. The release's Java version is determined by the asset's filename
+ * (see newJavaVersion).
+ * - The current state of the update process (UpdateState) is stored in 'state'.
+ * - The update process is finished in the loader script
+ * - In the GUI the update is handled in the home view
  *
- * Update process: 1. Check GitHub for a new releases and put release data into ReleaseInfo 2. Ask user (GUI home view)
- * 3. Download and unzip new release into system's tmp folder 4. Ask user (GUI home view) 5. Move new release into a
- * separate folder within the current JATOS installation folder 6. Exchange loader scripts and config folder 7. Restart
- * JATOS: finish process with an stop hook that runs the new loader script with an 'update' parameter 8. The loader
- * script moves everything in the new release folder into the JATOS installation folder (eventual overwriting existing
- * files) 9. The loader script starts JATOS again 10. JATOS shows a success msg (or a failure msg)
- *
- * @author Kristian Lange (2019)
+ * Update process:
+ * 1. Check GitHub for new releases and put release data into ReleaseInfo
+ * 2. Ask the user (GUI home view)
+ * 3. Download and unzip a new release into the system's tmp folder
+ * 4. Ask the user (GUI home view)
+ * 5. Move the new release into a separate folder within the current JATOS installation folder
+ * 6. Exchange loader scripts and config folder
+ * 7. Restart JATOS: finish the process with a stop hook that runs the new loader script with an 'update' parameter
+ * 8. The loader script moves everything in the new release folder into the JATOS installation folder (eventually
+ * overwriting existing files)
+ * 9. The loader script starts JATOS again
+ * 10. JATOS shows a success msg (or a failure msg)
  */
 @Singleton
 public class JatosUpdater {
@@ -71,7 +77,7 @@ public class JatosUpdater {
     private static final Logger.ALogger LOGGER = Logger.of(JatosUpdater.class);
     private static final String BACKUP_DIR_PREFIX = "backup_";
 
-    private enum UpdateState {
+    enum UpdateState {
         SLEEPING, // most of the time
         DOWNLOADING, // Currently downloading new release
         DOWNLOADED, // Finished downloading and unzipping successfully
@@ -84,14 +90,14 @@ public class JatosUpdater {
     /**
      * Initial state after every JATOS start is SLEEPING, unless Initializer sets it to SUCCESS or FAILED
      */
-    private UpdateState state = UpdateState.SLEEPING;
+    UpdateState state = UpdateState.SLEEPING;
 
     /**
      * Last time the release info was requested from GitHub
      */
     private LocalTime lastTimeAskedReleaseInfo;
 
-    private ReleaseInfo currentReleaseInfo;
+    ReleaseInfo currentReleaseInfo;
 
     /**
      * Contains all info about an JATOS update. It's also send as JSON to the GUI. Fields have to be public for JSON
@@ -236,7 +242,7 @@ public class JatosUpdater {
     /**
      * Determine the path and name of the directory where the update files will be stored.
      */
-    private final Supplier<File> tmpJatosDir = () -> new File(IOUtils.TMP_DIR,
+    private final Supplier<Path> tmpJatosDir = () -> IOUtils.tmpDir().resolve(
             "jatos-" + currentReleaseInfo.versionFull);
 
     private final WSClient ws;
@@ -251,15 +257,23 @@ public class JatosUpdater {
 
     private final Environment environment;
 
+    private final ObjectMapper objectMapper;
+
     @Inject
-    JatosUpdater(WSClient ws, Materializer materializer, ActorSystem actorSystem, ExecutionContext executionContext,
-                 ApplicationLifecycle applicationLifecycle, Environment environment) {
+    JatosUpdater(WSClient ws,
+                 Materializer materializer,
+                 ActorSystem actorSystem,
+                 ExecutionContext executionContext,
+                 ApplicationLifecycle applicationLifecycle,
+                 Environment environment,
+                 ObjectMapper objectMapper) {
         this.ws = ws;
         this.materializer = materializer;
         this.actorSystem = actorSystem;
         this.executionContext = executionContext;
         this.applicationLifecycle = applicationLifecycle;
         this.environment = environment;
+        this.objectMapper = objectMapper;
     }
 
     public void setUpdateStateSuccess() {
@@ -279,7 +293,7 @@ public class JatosUpdater {
     public CompletionStage<JsonNode> getReleaseInfo(String version, boolean allowPreReleases) {
         return fetchReleaseInfo(version, allowPreReleases).thenApply(releaseInfo -> {
             currentReleaseInfo = releaseInfo;
-            ObjectNode json = (ObjectNode) Json.toJson(currentReleaseInfo);
+            ObjectNode json = objectMapper.valueToTree(currentReleaseInfo);
             json.put("currentUpdateState", state.toString());
             resetUpdateState();
             return json;
@@ -287,12 +301,12 @@ public class JatosUpdater {
     }
 
     /**
-     * Gets JATOS release information from GitHub and returns it as a String in format x.x.x. To prevent high load on
-     * GitHub it stores it locally and newly requests it only once per hour (only if allowPreReleases is false). If no
-     * version is given it gets the latest one.
+     * Gets JATOS release information from GitHub and returns it as a String in format x.x.x. To prevent a high load on
+     * GitHub, it stores it locally and newly requests it only once per hour (only if allowPreReleases is false). If no
+     * version is given, it gets the latest one.
      *
-     * @param version          Which release info to get. If null the latest is fetched.
-     * @param allowPreReleases If true it includes pre-releases.
+     * @param version          Which release info to get. If null, the latest is fetched.
+     * @param allowPreReleases If true, it includes pre-releases.
      */
     private CompletionStage<ReleaseInfo> fetchReleaseInfo(String version, boolean allowPreReleases) {
         if (version != null) {
@@ -363,10 +377,10 @@ public class JatosUpdater {
                 : currentReleaseInfo.zipUrl;
         final String zipFilename = "jatos-" + currentReleaseInfo.versionFull + ".zip";
         try {
-            final CompletionStage<File> downloadStage = downloadAsync(downloadUrl, zipFilename);
+            final CompletionStage<Path> downloadStage = downloadAsync(downloadUrl, zipFilename);
             return downloadStage
                     .thenApply(zipFile -> {
-                        File unzippedDir = ZipUtil.unzip(zipFile, tmpJatosDir.get());
+                        Path unzippedDir = ZipUtil.unzip(zipFile, tmpJatosDir.get());
                         state = UpdateState.DOWNLOADED;
                         scheduleStateReset();
                         LOGGER.info("Downloaded and unzipped new JATOS " + zipFilename);
@@ -400,11 +414,13 @@ public class JatosUpdater {
         return future;
     }
 
-    private CompletionStage<File> downloadAsync(String url, String filename) throws IOException {
-        File file = new File(IOUtils.TMP_DIR, filename);
-        try (OutputStream outputStream = Files.newOutputStream(file.toPath())) {
+    private CompletionStage<Path> downloadAsync(String url, String filename) throws IOException {
+        Path file = IOUtils.tmpDir().resolve(filename);
+        try (OutputStream outputStream = Files.newOutputStream(file)) {
             LOGGER.info("Download " + url);
-            CompletionStage<WSResponse> futureResponse = ws.url(url).setMethod("GET")
+
+            CompletionStage<WSResponse> futureResponse = ws.url(url)
+                    .setMethod("GET")
                     .setRequestTimeout(Duration.ofHours(1))
                     .stream();
             return futureResponse.thenCompose(res -> {
@@ -440,9 +456,9 @@ public class JatosUpdater {
         if (state != UpdateState.DOWNLOADED) {
             throw new IllegalStateException("Wrong update state (" + state + ")");
         }
-        if (!tmpJatosDir.get().isDirectory()) {
+        if (!Files.isDirectory(tmpJatosDir.get())) {
             state = UpdateState.SLEEPING;
-            throw new IOException("JATOS update directory couldn't be found in " + tmpJatosDir.get().getAbsolutePath());
+            throw new IOException("JATOS update directory couldn't be found in " + tmpJatosDir.get().toAbsolutePath());
         }
 
         if (!environment.isProd()) {
@@ -485,56 +501,64 @@ public class JatosUpdater {
      */
     private void backupCurrentJatosFiles(boolean backupAll) throws IOException {
         String bkpDirName = BACKUP_DIR_PREFIX + Common.getJatosVersion();
-        Path bkpDir = Paths.get(Common.getBasepath(), bkpDirName);
+        Path bkpDir = Path.of(Common.getBasepath(), bkpDirName);
         int i = 2;
         while (Files.exists(bkpDir)) {
-            bkpDir = Paths.get(Common.getBasepath(), bkpDirName + "_" + i);
+            bkpDir = Path.of(Common.getBasepath(), bkpDirName + "_" + i);
             i++;
         }
         Files.createDirectories(bkpDir);
 
         if (backupAll) {
-            IOFileFilter filter = FileFilterUtils.notFileFilter(FileFilterUtils
-                    .or(FileFilterUtils.nameFileFilter("RUNNING_PID"),
-                            FileFilterUtils.prefixFileFilter(BACKUP_DIR_PREFIX)));
-            FileUtils.copyDirectory(new File(Common.getBasepath()), bkpDir.toFile(), filter);
+            DirectoryStream.Filter<Path> filter = entry -> {
+                String name = entry.getFileName().toString();
+                return !name.equals("RUNNING_PID") && !name.startsWith(BACKUP_DIR_PREFIX);
+            };
+            IOUtils.copyRecursively(Path.of(Common.getBasepath()), bkpDir, filter);
             LOGGER.info("Backup of current JATOS files into " + bkpDir.getFileName());
         } else {
-            FileUtils.copyDirectory(FileUtils.getFile(Common.getBasepath(), "conf"), bkpDir.resolve("conf").toFile());
-            Files.copy(Paths.get(Common.getBasepath(), "loader.sh"), bkpDir.resolve("loader.sh"));
+            IOUtils.copyRecursively(Path.of(Common.getBasepath(), "conf"), bkpDir.resolve("conf"));
+            Files.copy(Path.of(Common.getBasepath(), "loader.sh"), bkpDir.resolve("loader.sh"));
             // JATOS Docker has no loader.bat
-            if (Files.exists(Paths.get(Common.getBasepath(), "loader.bat"))) {
-                Files.copy(Paths.get(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
+            if (Files.exists(Path.of(Common.getBasepath(), "loader.bat"))) {
+                Files.copy(Path.of(Common.getBasepath(), "loader.bat"), bkpDir.resolve("loader.bat"));
             }
             LOGGER.info("Backup of current version of loader scripts and conf/ into " + bkpDir.getFileName());
         }
     }
 
     private void updateFiles() throws IOException {
-        Path srcUpdateDir = Files.list(tmpJatosDir.get().toPath()).findFirst().orElseThrow(
-                () -> new FileNotFoundException("JATOS update directory seems to be corrupted."));
-        Path dstUpdateDir = Paths.get(Common.getBasepath(), "update-" + currentReleaseInfo.versionFull);
+        Path srcUpdateDir;
+        try (Stream<Path> stream = Files.list(tmpJatosDir.get())) {
+            srcUpdateDir = stream.findFirst().orElseThrow(
+                    () -> new FileNotFoundException("JATOS update directory seems to be corrupted."));
+        }
+
+        Path dstUpdateDir = Path.of(Common.getBasepath(), "update-" + currentReleaseInfo.versionFull);
         if (Files.exists(dstUpdateDir)) {
-            FileUtils.deleteDirectory(dstUpdateDir.toFile());
+            IOUtils.deleteRecursively(dstUpdateDir);
             LOGGER.info("Deleted old update directory " + dstUpdateDir);
         }
-        FileUtils.copyDirectory(srcUpdateDir.toFile(), dstUpdateDir.toFile());
+
+        IOUtils.copyRecursively(srcUpdateDir, dstUpdateDir);
         LOGGER.info("Copied JATOS update files into JATOS installation folder under " + dstUpdateDir);
 
         updateLoaderScripts(dstUpdateDir);
 
-        FileUtils.deleteDirectory(tmpJatosDir.get());
+        IOUtils.deleteRecursively(tmpJatosDir.get());
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static void updateLoaderScripts(Path srcDir) throws IOException {
-        Files.move(srcDir.resolve("loader.sh"), Paths.get(Common.getBasepath(), "loader.sh"),
-                StandardCopyOption.REPLACE_EXISTING);
-        Files.move(srcDir.resolve("loader.bat"), Paths.get(Common.getBasepath(), "loader.bat"),
-                StandardCopyOption.REPLACE_EXISTING);
-        Paths.get(Common.getBasepath(), "loader.sh").toFile().setExecutable(true);
-        Paths.get(Common.getBasepath(), "loader.bat").toFile().setExecutable(true);
-        LOGGER.info("Replaced loader scripts with newer version.");
+    private static void updateLoaderScripts(Path srcDir) {
+        try {
+            IOUtils.moveFile(srcDir.resolve("loader.sh"), Path.of(Common.getBasepath(), "loader.sh"), true);
+            IOUtils.moveFile(srcDir.resolve("loader.bat"), Path.of(Common.getBasepath(), "loader.bat"), true);
+            Path.of(Common.getBasepath(), "loader.sh").toFile().setExecutable(true);
+            Path.of(Common.getBasepath(), "loader.bat").toFile().setExecutable(true);
+            LOGGER.info("Replaced loader scripts with newer version.");
+        } catch (IOException e) {
+            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
+        }
     }
 
     /**
@@ -553,7 +577,7 @@ public class JatosUpdater {
 
         // Get loader script with path and 'update' argument
         String loaderName = isOsUx() ? "loader.sh" : "loader.bat";
-        String loader = Common.getBasepath() + File.separator + loaderName;
+        String loader = Path.of(Common.getBasepath(), loaderName).toString();
         cmd.add(loader);
         cmd.add("update");
 

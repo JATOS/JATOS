@@ -19,8 +19,6 @@ import java.util.*;
  *
  * All worker entities are stored in the same database table. Inheritance is
  * established with an discriminator column.
- *
- * @author Kristian Lange (2015)
  */
 @Entity
 @Table(name = "Worker")
@@ -117,6 +115,10 @@ public abstract class Worker {
         return batchList.contains(batch);
     }
 
+    public void addBatch(Batch batch) {
+        batchList.add(batch);
+    }
+
     public void removeBatch(Batch batch) {
         batchList.remove(batch);
     }
@@ -128,23 +130,15 @@ public abstract class Worker {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return Worker.class.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof Worker)) return false;
-
         Worker other = (Worker) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

@@ -12,8 +12,6 @@ import scala.jdk.CollectionConverters._
   * BatchChannelActors specified by an ActorRef.
   *
   * A Registry does not define who is a member - it just stores the open channels.
-  *
-  * @author Kristian Lange
   */
 class BatchChannelRegistry {
 

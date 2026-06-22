@@ -1,41 +1,38 @@
 package models.gui;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.google.common.base.Strings;
 import daos.common.worker.WorkerType;
 import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
+import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
-import utils.common.JsonUtils;
+import services.gui.WorkerService;
+import json.common.DefaultJson;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Model of batch properties for UI (not persisted in DB). Only used together with an HTML form that creates a new Batch
- * or updates one. Default values, where necessary, are at the fields or in the constructor. The corresponding database
- * entity is {@link models.common.Batch}.
+ * DTO of batch properties for UI. The corresponding database entity is {@link models.common.Batch}.
  *
- * An active member is a member who joined a group and is still a member of this group. maxActiveMemberLimited,
- * maxActiveMembers, maxTotalMemberLimited and maxTotalMembers are properties for groups.
+ * An active member is a member who joined a group and is still a member of this group. maxActiveMembers and
+ * maxTotalMembers are properties for groups.
  */
 @Constraints.Validate
-public class BatchProperties implements Constraints.Validatable<List<ValidationError>> {
+public class BatchProperties implements Validatable<List<ValidationError>> {
 
     public static final String ID = "id";
     public static final String UUID = "uuid";
     public static final String TITLE = "title";
     public static final String DEFAULT_TITLE = "Default";
-    public static final String ACTIVE = "active";
     public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
     public static final String MAX_TOTAL_MEMBERS = "maxTotalMembers";
     public static final String MAX_TOTAL_WORKERS = "maxTotalWorkers";
     public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
     public static final String COMMENTS = "comments";
-    public static final String JSON_DATA = "jsonData";
+    public static final String BATCH_INPUT = "batchInput";
 
     private Long id;
 
@@ -56,31 +53,14 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
     private boolean active = true;
 
     /**
-     * Set to true if the maxActiveMembers are limited (= groups have an limited number of active members). False
-     * otherwise.
-     */
-    private boolean maxActiveMemberLimited = false;
-
-    /**
-     * Maximum number of workers/members in one group of this batch that are active at the same time.
+     * Maximum number of workers/members in one group in this batch that are active at the same time.
      */
     private Integer maxActiveMembers = null;
 
     /**
-     * Set to true if the maxTotalMembers are limited (= groups have a limited number of members). False otherwise.
-     */
-    private boolean maxTotalMemberLimited = false;
-
-    /**
-     * Maximum number of workers/members active or inactive in one group of this batch in total.
+     * Maximum number of workers/members active or inactive in one group in this batch in total.
      */
     private Integer maxTotalMembers = null;
-
-    /**
-     * Set to true if the maxTotalWorkers are limited (= the whole batch has a limited number of workers). False
-     * otherwise.
-     */
-    private boolean maxTotalWorkerLimited = false;
 
     /**
      * Maximum number of workers in this batch in total independent of its groups.
@@ -99,10 +79,10 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
     private String comments;
 
     /**
-     * Data in JSON format: every study run of this Batch gets access to them. They can be changed in the GUI but not
-     * via jatos.js. Can be used for initial data and configuration.
+     * Data in JSON format that is injected into jatos.js as 'jatos.batchInput'
      */
-    private String jsonData;
+    @JsonAlias({"batchInput", "jsonData"})
+    private String batchInput;
 
     public void setId(Long id) {
         this.id = id;
@@ -136,14 +116,6 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
         this.active = active;
     }
 
-    public boolean isMaxActiveMemberLimited() {
-        return maxActiveMemberLimited;
-    }
-
-    public void setMaxActiveMemberLimited(boolean maxActiveMemberLimited) {
-        this.maxActiveMemberLimited = maxActiveMemberLimited;
-    }
-
     public Integer getMaxActiveMembers() {
         return maxActiveMembers;
     }
@@ -152,28 +124,12 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
         this.maxActiveMembers = maxActiveMembers;
     }
 
-    public boolean isMaxTotalMemberLimited() {
-        return maxTotalMemberLimited;
-    }
-
-    public void setMaxTotalMemberLimited(boolean maxTotalMemberLimited) {
-        this.maxTotalMemberLimited = maxTotalMemberLimited;
-    }
-
     public Integer getMaxTotalMembers() {
         return maxTotalMembers;
     }
 
     public void setMaxTotalMembers(Integer maxTotalMembers) {
         this.maxTotalMembers = maxTotalMembers;
-    }
-
-    public boolean isMaxTotalWorkerLimited() {
-        return maxTotalWorkerLimited;
-    }
-
-    public void setMaxTotalWorkerLimited(boolean maxTotalWorkerLimited) {
-        this.maxTotalWorkerLimited = maxTotalWorkerLimited;
     }
 
     public Integer getMaxTotalWorkers() {
@@ -193,7 +149,27 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
     }
 
     public void addAllowedWorkerType(WorkerType workerType) {
-        allowedWorkerTypes.add(workerType);
+        if (allowedWorkerTypes == null) {
+            allowedWorkerTypes = new HashSet<>();
+        }
+        if (workerType != null) {
+            allowedWorkerTypes.add(workerType);
+        }
+    }
+
+    public void addAllAllowedWorkerTypes(Collection<WorkerType> types) {
+        if (types != null) {
+            types.forEach(this::addAllowedWorkerType);
+        }
+    }
+
+    // todo why is this never called?
+    public void removeAllowedWorkerType(WorkerType type) {
+        allowedWorkerTypes.remove(type);
+    }
+
+    public boolean hasAllowedWorkerType(WorkerType type) {
+        return allowedWorkerTypes.contains(type);
     }
 
     public String getComments() {
@@ -204,12 +180,12 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
         this.comments = comments;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getBatchInput() {
+        return batchInput;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = jsonData;
+    public void setBatchInput(String batchInput) {
+        this.batchInput = batchInput;
     }
 
     @Override
@@ -225,48 +201,32 @@ public class BatchProperties implements Constraints.Validatable<List<ValidationE
             errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
         }
         if (title == null || title.trim().isEmpty()) {
-            errorList.add(
-                    new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
         }
         if (title != null && title.length() > 255) {
-            errorList.add(
-                    new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+            errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
         }
         if (title != null && !Jsoup.isValid(title, Safelist.none())) {
-            errorList.add(new ValidationError(TITLE,
-                    MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (maxActiveMemberLimited && maxActiveMembers == null) {
-            errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS,
-                    MessagesStrings.BATCH_MAX_ACTIVE_MEMBERS_SET));
+        if (maxActiveMembers != null && maxActiveMembers < 1) {
+            errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS, "Batch's max active member size must be at least 1."));
         }
-        if (maxTotalMemberLimited && maxTotalMembers == null) {
-            errorList.add(new ValidationError(MAX_TOTAL_MEMBERS,
-                    MessagesStrings.BATCH_MAX_TOTAL_MEMBERS_SET));
-        }
-        if (maxTotalMemberLimited && maxTotalMembers != null
-                && maxActiveMembers != null
-                && maxTotalMembers < maxActiveMembers) {
-            errorList.add(new ValidationError(MAX_TOTAL_MEMBERS,
-                    MessagesStrings.BATCH_MAX_TOTAL_MEMBERS));
+        if (maxTotalMembers != null && maxTotalMembers < 1) {
+            errorList.add(new ValidationError(MAX_TOTAL_MEMBERS, "Batch's max total member size must be at least 1."));
         }
         if (maxTotalWorkers != null && maxTotalWorkers < 1) {
-            errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
-                    MessagesStrings.BATCH_MAX_TOTAL_WORKERS));
+            errorList.add(new ValidationError(MAX_TOTAL_WORKERS, "Batch's max total worker size must be at least 1."));
         }
-        if (maxTotalWorkerLimited && maxTotalWorkers == null) {
-            errorList.add(new ValidationError(MAX_TOTAL_WORKERS,
-                    MessagesStrings.BATCH_MAX_TOTAL_WORKER_SET));
+        if (maxTotalMembers != null && maxActiveMembers != null && maxTotalMembers < maxActiveMembers) {
+            errorList.add(new ValidationError(MAX_TOTAL_MEMBERS, "Maximum total members must be greater than or equal to maximum active members."));
         }
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
-            errorList.add(new ValidationError(COMMENTS,
-                    MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
         }
-        if (!Strings.isNullOrEmpty(jsonData) && !JsonUtils.isValid(jsonData)) {
-            errorList.add(new ValidationError(JSON_DATA,
-                    MessagesStrings.INVALID_JSON_FORMAT));
+        if (!Strings.isNullOrEmpty(batchInput) && !DefaultJson.isValid(batchInput)) {
+            errorList.add(new ValidationError(BATCH_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
         }
-
         return errorList.isEmpty() ? null : errorList;
     }
 

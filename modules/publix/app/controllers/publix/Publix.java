@@ -2,10 +2,12 @@ package controllers.publix;
 
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
-import filters.publix.IdCookieFilter;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import filters.publix.IdCookieFilter.IdCookies;
 import general.common.*;
 import group.GroupAdministration;
+import http.common.HttpUtils;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -21,12 +23,11 @@ import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieService;
-import utils.common.Helpers;
+import utils.common.StringUtils;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
+import json.common.JsonUtils;
 
 import javax.inject.Singleton;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Timestamp;
@@ -39,8 +40,6 @@ import static actions.common.TransactionalAction.*;
 
 /**
  * Abstract parent controller class for all worker type Publix classes
- *
- * @author Kristian Lange
  */
 @Singleton
 public abstract class Publix implements IPublix {
@@ -97,7 +96,7 @@ public abstract class Publix implements IPublix {
     public Result startComponent(Request request, StudyResult studyResult, Component component, String message) {
         ComponentResult componentResult = publixUtils.startComponent(component, studyResult, message);
         publixUtils.setPreStudyState(componentResult);
-        idCookieService.writeIdCookie(request, studyResult, componentResult);
+        idCookieService.writeIdCookie(studyResult, componentResult);
         String dirName = studyResult.getStudy().getDirName();
         String htmlFilePath = component.getHtmlFilePath();
         return studyAssets.retrieveComponentHtmlFile(dirName, htmlFilePath).asJava();
@@ -108,7 +107,7 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
         ComponentResult componentResult = publixUtils.retrieveStartedComponentResult(component, studyResult);
         if (studyResult.getStudyState() != StudyState.PRE) {
@@ -126,7 +125,7 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
         String studySessionData = request.body().asText();
         studyResultDao.updateStudySessionData(studyResult.getId(), studySessionData);
         return ok();
@@ -144,11 +143,11 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) {
+        if (componentResult.isEmpty()) {
             LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
                     + "componentId " + component.getId() + " - " + "Can't fetch current ComponentResult");
             return forbidden("Impossible to put result data to component result");
@@ -158,10 +157,10 @@ public abstract class Publix implements IPublix {
         if (postedResultData == null) return badRequest("Result data empty");
 
         int newDataSize = append
-                ? componentResult.get().getDataSize() + Helpers.getStringSize(postedResultData)
-                : Helpers.getStringSize(postedResultData);
+                ? componentResult.get().getDataSize() + StringUtils.getStringSize(postedResultData)
+                : StringUtils.getStringSize(postedResultData);
         if (newDataSize > Common.getResultDataMaxSize()) {
-            String maxSize = Helpers.humanReadableByteCount(Common.getResultDataMaxSize());
+            String maxSize = StringUtils.humanReadableByteCount(Common.getResultDataMaxSize());
             componentResultDao.setQuotaReached(componentResult.get().getId());
             studyResultDao.setQuotaReached(studyResult.getId());
             LOGGER.info(".submitOrAppendResultData: " + "studyResultId " + studyResult.getId() + ", "
@@ -174,6 +173,8 @@ public abstract class Publix implements IPublix {
         } else {
             componentResultDao.replaceData(componentResult.get().getId(), postedResultData);
         }
+
+        studyResultDao.updateLastSeenDateIfOlderThan(studyResult.getId(), Common.getLastSeenDateUpdateThreshold());
 
         studyLogger.logResultDataStoring(componentResult.get(), postedResultData, append);
         return ok();
@@ -189,11 +190,11 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
         publixUtils.checkComponentBelongsToStudy(study, component);
 
         Optional<ComponentResult> componentResult = publixUtils.retrieveCurrentComponentResult(studyResult);
-        if (!componentResult.isPresent()) {
+        if (componentResult.isEmpty()) {
             LOGGER.info(getLogForUploadResultFile(studyResult, component, filename,
                     "Can't fetch current ComponentResult"));
             return forbidden("Impossible to upload result file to component result");
@@ -225,9 +226,11 @@ public abstract class Publix implements IPublix {
                 return badRequest("Bad filename");
             }
 
-            Path destFile = ioUtils.getResultUploadFileSecurely(
-                    studyResult.getId(), componentResult.get().getId(), filename).toPath();
+            Path destFile = ioUtils.getResultUploadFileSecurely(studyResult.getId(), componentResult.get().getId(), filename);
             tmpFile.moveTo(destFile, true);
+
+            studyResultDao.updateLastSeenDateIfOlderThan(studyResult.getId(), Common.getLastSeenDateUpdateThreshold());
+
             studyLogger.logResultUploading(destFile, componentResult.get());
         } catch (IOException e) {
             LOGGER.info(getLogForUploadResultFile(studyResult, component, filename, "File upload failed"));
@@ -246,14 +249,14 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         Component component = null;
         if (componentId != null) {
             component = publixUtils.retrieveComponent(study, Long.parseLong(componentId));
             publixUtils.checkComponentBelongsToStudy(study, component);
         }
-        Optional<File> file = publixUtils.retrieveLastUploadedResultFile(studyResult, component, filename);
+        Optional<Path> file = publixUtils.retrieveLastUploadedResultFile(studyResult, component, filename);
         return file.isPresent() ? ok(file.get(), false) : notFound("Result file not found: " + filename);
     }
 
@@ -263,19 +266,19 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         if (!PublixHelpers.studyRunDone(studyResult)) {
             publixUtils.abortStudy(message, studyResult);
-            groupAdministration.leaveGroup(studyResult);
+            groupAdministration.leave(studyResult);
         }
-        idCookieService.discardIdCookie(request, studyResult.getId());
+        idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Aborted study run", worker);
 
-        if (Helpers.isAjax(request)) {
-            return ok();
-        } else {
+        if (HttpUtils.isHtmlRequest()) {
             return ok(views.html.publix.abort.render());
+        } else {
+            return ok();
         }
     }
 
@@ -285,23 +288,23 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         if (!PublixHelpers.studyRunDone(studyResult)) {
             publixUtils.finishStudyResult(successful, message, studyResult);
-            groupAdministration.leaveGroup(studyResult);
+            groupAdministration.leave(studyResult);
         }
-        idCookieService.discardIdCookie(request, studyResult.getId());
+        idCookieService.discardIdCookie(studyResult.getId());
         studyLogger.log(study, "Finished study run", worker);
 
-        if (Helpers.isAjax(request)) {
-            return ok();
-        } else {
+        if (HttpUtils.isHtmlRequest()) {
             if (!successful) {
                 return ok(views.html.publix.error.render(message));
             } else {
                 return redirect(routes.StudyAssets.endPage(studyResult.getUuid(), Option.empty()));
             }
+        } else {
+            return ok();
         }
     }
 
@@ -310,7 +313,7 @@ public abstract class Publix implements IPublix {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
-        studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
+        studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
         String msg = request.body().asText().replaceAll("\\R+", " ").replaceAll("\\s+", " ");
         LOGGER.info("Logging from client: studyResult " + studyResult.getId() + ", "
                 + "batchId " + batch.getId() + ", "

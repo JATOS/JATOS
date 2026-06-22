@@ -1,5 +1,6 @@
 package auth.gui;
 
+import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -7,16 +8,17 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import actions.common.AsyncAction.Async;
 import daos.common.UserDao;
 import exceptions.common.AuthException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.ValidationException;
 import general.common.Common;
+import http.common.Http.Context;
 import models.common.User;
-import models.gui.NewUserModel;
+import models.gui.NewUserProperties;
 import play.Logger;
 import play.Logger.ALogger;
-import play.data.Form;
-import play.data.FormFactory;
+import play.data.validation.ValidationError;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -27,8 +29,9 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.List;
 
-import static messaging.common.FlashScopeMessaging.*;
+import static messaging.common.FlashMessagingHelper.ERROR;
 
 /**
  * Class that handles the sign-in of users via Google OIDC sign-in button.
@@ -37,8 +40,6 @@ import static messaging.common.FlashScopeMessaging.*;
  * authentication - authorization and session management is still done by JATOS and Play Framework.
  *
  * More info: https://developers.google.com/identity/gsi/web
- *
- * @author Kristian Lange
  */
 @Singleton
 public class SigninGoogle extends Controller {
@@ -46,17 +47,14 @@ public class SigninGoogle extends Controller {
     private static final ALogger LOGGER = Logger.of(SigninGoogle.class);
 
     private final AuthService authService;
-    private final SigninFormValidation signinFormValidation;
-    private final FormFactory formFactory;
     private final UserDao userDao;
     private final UserService userService;
 
     @Inject
-    SigninGoogle(AuthService authService, SigninFormValidation signinFormValidation,
-                 FormFactory formFactory, UserService userService, UserDao userDao) {
+    SigninGoogle(AuthService authService,
+                 UserService userService,
+                 UserDao userDao) {
         this.authService = authService;
-        this.signinFormValidation = signinFormValidation;
-        this.formFactory = formFactory;
         this.userDao = userDao;
         this.userService = userService;
     }
@@ -70,25 +68,25 @@ public class SigninGoogle extends Controller {
         GoogleIdToken idToken = fetchOAuthGoogleIdToken(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google sign in: Invalid ID token.");
-            return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(ERROR, "Google sign in: Invalid ID token");
+            Context.current().response().putFlash(ERROR, "Google sign in: Invalid ID token");
+            return redirect(auth.gui.routes.Signin.signin());
         }
 
         GoogleIdToken.Payload idTokenPayload = idToken.getPayload();
 
         if (!idTokenPayload.getEmailVerified()) {
             LOGGER.info("Google sign in: Couldn't sign in user due to email not verified");
-            return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(ERROR, "Google sign in: Email not verified");
+            Context.current().response().putFlash(ERROR, "Google sign in: Email not verified");
+            return redirect(auth.gui.routes.Signin.signin());
         }
 
         User user;
         try {
-            user = persistUserIfNotExisting(idTokenPayload);
-        } catch (AuthException e) {
+            user = getOrRegisterUser(idTokenPayload);
+        } catch (AuthException | ValidationException | ForbiddenException e) {
             LOGGER.warn(e.getMessage());
-            return redirect(auth.gui.routes.Signin.signin())
-                    .flashing(ERROR, e.getMessage());
+            Context.current().response().putFlash(ERROR, e.getMessage());
+            return redirect(auth.gui.routes.Signin.signin());
         }
 
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
@@ -96,9 +94,9 @@ public class SigninGoogle extends Controller {
 
         String pictureUrl = idTokenPayload.get("picture") != null ? idTokenPayload.get("picture").toString() : "";
         String redirectPage = authService.getRedirectPageAfterSignin(user);
-        return redirect(redirectPage)
-                .addingToSession(request, "googlePictureUrl", pictureUrl)
-                .addingToSession(request, authService.writeSessionCookie(normalizedUsername, false));
+        authService.writeSessionCookie(normalizedUsername, false);
+        Context.current().response().putSession("googlePictureUrl", pictureUrl);
+        return redirect(redirectPage);
     }
 
     /**
@@ -113,28 +111,27 @@ public class SigninGoogle extends Controller {
         return verifier.verify(idTokenString);
     }
 
-    private User persistUserIfNotExisting(GoogleIdToken.Payload idTokenPayload) throws AuthException {
+    private User getOrRegisterUser(GoogleIdToken.Payload idTokenPayload)
+            throws AuthException, ValidationException, ForbiddenException {
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
-
         User user = userDao.findByUsername(normalizedUsername);
-        if (user == null) {
+        if (user != null && !user.isOauthGoogle()) {
+            throw new AuthException("User exists - but does not use Google sign in");
+        } else if (user != null) {
+            return user;
+        } else {
             String name = (String) idTokenPayload.get("name");
-            NewUserModel newUserModel = new NewUserModel();
-            newUserModel.setUsername(normalizedUsername);
-            newUserModel.setName(name);
-            newUserModel.setEmail(idTokenPayload.getEmail());
-            newUserModel.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
-            Form<NewUserModel> newUserForm = formFactory.form(NewUserModel.class).fill(newUserModel);
-            newUserForm = signinFormValidation.validateNewUser(newUserForm);
-            if (newUserForm.hasErrors()) {
-                throw new AuthException("Google sign in: user validation failed - " + newUserForm.errors().get(0).message());
+            NewUserProperties newUserProperties = new NewUserProperties();
+            newUserProperties.setUsername(normalizedUsername);
+            newUserProperties.setName(name);
+            newUserProperties.setEmail(idTokenPayload.getEmail());
+            newUserProperties.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
+            List<ValidationError> errors = newUserProperties.validate();
+            if (errors != null && !errors.isEmpty()) {
+                throw new ValidationException(errors.get(0).message());
             }
-
-            user = userService.bindToUserAndPersist(newUserModel);
-        } else if (!user.isOauthGoogle()) {
-            throw new AuthException("User exists already - but does not use Google sign in");
+            return userService.registerUser(newUserProperties);
         }
-        return user;
     }
 
 }

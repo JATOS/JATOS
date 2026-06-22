@@ -8,8 +8,6 @@ import javax.inject.Singleton;
 
 /**
  * Sign-in using ORCID (orcid.org) based on OpenID Connect (OIDC)
- *
- * @author Kristian Lange
  */
 @Singleton
 public class SigninOrcid extends SigninOidc {

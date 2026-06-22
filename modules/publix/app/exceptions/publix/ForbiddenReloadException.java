@@ -1,10 +1,9 @@
 package exceptions.publix;
 
 /**
- * Thrown if a JATOS component attempted a not allowed reload
- * 
- * @author Kristian Lange
+ * Special exception used during study flow management. Thrown if a JATOS component attempted a not allowed reload.
  */
+// todo extend JatosException
 public class ForbiddenReloadException extends RuntimeException {
 
     private final String uuid;

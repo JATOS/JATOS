@@ -1,5 +1,5 @@
 name := "jatos-common"
-version := "3.9.8"
+version := "3.10.3"
 organization := "org.jatos"
 scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
@@ -11,7 +11,7 @@ libraryDependencies ++= Seq(
   evolutions,
   jdbc,
   "org.hibernate" % "hibernate-core" % "5.6.15.Final",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.11.4",
+  "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5" % "2.12.7",
   "mysql" % "mysql-connector-java" % "8.0.33",
   "org.jsoup" % "jsoup" % "1.18.1",
   "commons-io" % "commons-io" % "2.15.1",

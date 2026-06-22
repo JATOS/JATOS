@@ -3,29 +3,26 @@ package controllers.gui;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import akka.stream.javadsl.Flow;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.UserDao;
 import general.common.Common;
-import models.common.User;
-import models.common.User.Role;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
 import services.gui.UserService;
-import utils.common.JsonUtils;
+import json.common.DefaultJson;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
 import static auth.gui.AuthAction.Auth;
+import static models.common.User.Role.ADMIN;
 
 /**
  * Controller with endpoints used by /jatos/test. Each endpoint tests a different aspect of JATOS.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class Tests extends Controller {
@@ -37,8 +34,11 @@ public class Tests extends Controller {
         this.userDao = userDao;
     }
 
+    @Inject
+    DefaultJson defaultJson;
+
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result testDatabase() {
         try {
             userDao.findByUsername(UserService.ADMIN_USERNAME);
@@ -49,7 +49,7 @@ public class Tests extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result testFolderAccess() {
         Map<String, Boolean> folderAccessResults = new HashMap<>();
         folderAccessResults.put("studyAssetsRoot", testFolder(Common.getStudyAssetsRootPath()));
@@ -57,15 +57,15 @@ public class Tests extends Controller {
         folderAccessResults.put("logs", testFolder(Common.getLogsPath()));
         folderAccessResults.put("studyLogs", testFolder(Common.getStudyLogsPath()));
         folderAccessResults.put("tmp", testFolder(Common.getTmpPath()));
-        return ok(JsonUtils.asJsonNode(folderAccessResults));
+        return ok(defaultJson.objAsJsonNode(folderAccessResults));
     }
 
-    private boolean testFolder(String path) {
+    private boolean testFolder(String pathStr) {
         try {
-            File studyAssetsRoot = new File(path);
-            if (!studyAssetsRoot.canRead()
-                    || !studyAssetsRoot.canWrite()
-                    || !studyAssetsRoot.isDirectory()) {
+            Path path = Path.of(pathStr);
+            if (!Files.isReadable(path)
+                    || !Files.isWritable(path)
+                    || !Files.isDirectory(path)) {
                 return false;
             }
         } catch (Exception e) {
@@ -75,7 +75,7 @@ public class Tests extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public WebSocket testWebSocket() {
         return WebSocket.Text.accept(request -> {
             // send response back to a client

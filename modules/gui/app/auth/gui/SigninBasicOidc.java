@@ -6,9 +6,6 @@ import models.common.User;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/**
- * @author Kristian Lange
- */
 @Singleton
 public class SigninBasicOidc extends SigninOidc {
 

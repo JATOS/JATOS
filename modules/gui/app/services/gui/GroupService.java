@@ -1,18 +1,14 @@
 package services.gui;
 
-import com.google.common.base.Strings;
 import daos.common.GroupResultDao;
 import models.common.GroupResult;
 import models.common.GroupResult.GroupState;
-import models.gui.GroupSession;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * Service class for JATOS Controllers (not Publix).
- *
- * @author Kristian Lange
+ * Service class for everything related to Groups.
  */
 @Singleton
 public class GroupService {
@@ -22,30 +18,6 @@ public class GroupService {
     @Inject
     GroupService(GroupResultDao groupResultDao) {
         this.groupResultDao = groupResultDao;
-    }
-
-    public GroupSession bindToGroupSession(GroupResult groupResult) {
-        GroupSession groupSession = new GroupSession();
-        groupSession.setVersion(groupResult.getGroupSessionVersion());
-        groupSession.setData(groupResult.getGroupSessionData());
-        return groupSession;
-    }
-
-    public boolean updateGroupSession(long groupResultId, GroupSession groupSession) {
-        GroupResult currentGroupResult = groupResultDao.findById(groupResultId);
-        if (currentGroupResult == null ||
-                !groupSession.getVersion().equals(currentGroupResult.getGroupSessionVersion())) {
-            return false;
-        }
-
-        currentGroupResult.setGroupSessionVersion(currentGroupResult.getGroupSessionVersion() + 1);
-        if (Strings.isNullOrEmpty(groupSession.getData())) {
-            currentGroupResult.setGroupSessionData("{}");
-        } else {
-            currentGroupResult.setGroupSessionData(groupSession.getData());
-        }
-        groupResultDao.merge(currentGroupResult);
-        return true;
     }
 
     public GroupState toggleGroupFixed(GroupResult groupResult, boolean fixed) {

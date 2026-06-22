@@ -55,14 +55,14 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormJsonData" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
+                        <label class="col-sm-3 col-form-label" for="componentPropertiesFormComponentInput" data-bs-tooltip="Your component scripts can use this input data. You can also leave it empty if not needed. Use the 'Pretty' button to format the JSON nicely.">
                             Component input<br>
                             <button type="button" class="btn btn-outline-secondary btn-sm pretty-json-button" data-target="#componentPropertiesJsonEditor" data-bs-tooltip="Format your JSON nicely">Pretty</button>
                         </label>
                         <div class="col-sm-9">
                             <div class="form-control" id="componentPropertiesJsonEditor"></div>
                             @* We use a hidden textarea here to transfer the JSON data into the form POST *@
-                            <textarea id="componentPropertiesFormJsonData" name="jsonData" hidden></textarea>
+                            <textarea id="componentPropertiesFormComponentInput" name="componentInput" hidden></textarea>
                         </div>
                     </div>
                 </form>
@@ -133,7 +133,7 @@
         $('#componentPropertiesFormDirName').text("/" + window.study.dirName + "/");
         $('#componentPropertiesFormHtmlFilePath').val(properties.htmlFilePath);
         $('#componentPropertiesFormComments').val(properties.comments ? properties.comments : "");
-        Editor.setup("json", properties.jsonData, "#componentPropertiesJsonEditor");
+        Editor.setup("json", properties.componentInput, "#componentPropertiesJsonEditor");
 
         // Disable all fields if study is locked
         Helpers.disableForm("#componentPropertiesModal", window.study.isLocked);
@@ -176,8 +176,8 @@
         const componentId = $('#componentPropertiesModal').data().id;
 
         // Put JSON from editor into textarea to let it be picked up by form.serialize
-        const jsonData = Editor.getValue('#componentPropertiesJsonEditor');
-        $("#componentPropertiesFormJsonData").val(jsonData);
+        const componentInput = Editor.getValue('#componentPropertiesJsonEditor');
+        $("#componentPropertiesFormComponentInput").val(componentInput);
 
         $.ajax({
             type : 'POST',
@@ -189,11 +189,11 @@
                 Alerts.success("The component properties were changed successfully.");
                 $('#componentsTable').DataTable().ajax.reload();
             },
-            error : function(response) {
+            error : function(err) {
                 FormValidation.clear("#componentPropertiesForm");
                 alerts.warning("The component was not saved.");
-                if (Helpers.isJson(response.responseText)) {
-                    FormValidation.show("#componentPropertiesForm", response.responseJSON);
+                if (Helpers.isJson(err.responseText)) {
+                    FormValidation.show("#componentPropertiesForm", err.responseJSON);
                 } else if (err.responseText) {
                     alerts.error(err.responseText);
                 } else {

@@ -3,9 +3,7 @@ package controllers.gui;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import general.common.JatosUpdater;
-import models.common.User.Role;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Controller;
@@ -16,10 +14,10 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.concurrent.CompletionStage;
 
+import static models.common.User.Role.ADMIN;
+
 /**
  * Controller class for everything around JATOS' auto-update
- *
- * @author Kristian Lange
  */
 @Singleton
 public class Updates extends Controller {
@@ -41,7 +39,7 @@ public class Updates extends Controller {
      * @param allowPreReleases If true, allows requesting of pre-releases too
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public CompletionStage<Result> getReleaseInfo(String version, Boolean allowPreReleases) {
         return jatosUpdater.getReleaseInfo(version, allowPreReleases).handle((releaseInfo, error) -> {
             if (error != null) {
@@ -54,7 +52,7 @@ public class Updates extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result cancelUpdate() {
         jatosUpdater.cancelUpdate();
         return ok();
@@ -66,7 +64,7 @@ public class Updates extends Controller {
      * @param dry Allows testing the endpoint without actually downloading anything
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public CompletionStage<Result> downloadJatos(Boolean dry) {
         return jatosUpdater.downloadFromGitHubAndUnzip(dry).handle((result, error) -> {
             if (error != null) {
@@ -85,7 +83,7 @@ public class Updates extends Controller {
      *                  If false, only the conf directory and the loader scripts.
      */
     @Async(Executor.IO)
-    @Auth(Role.ADMIN)
+    @Auth(roles = ADMIN)
     public Result updateAndRestart(Boolean backupAll) {
         try {
             jatosUpdater.updateAndRestart(backupAll);

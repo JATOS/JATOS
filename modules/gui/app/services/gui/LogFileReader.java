@@ -4,20 +4,22 @@ import akka.stream.javadsl.Source;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
 import com.diffplug.common.base.Errors;
-import exceptions.common.IOException;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 
 import javax.inject.Singleton;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Class responsible for reading JATOS log files. It's not part of utils.common.IOUtils because it uses Akka Streams.
- *
- * @author Kristian Lange (2017)
  */
 @Singleton
 public class LogFileReader {
@@ -42,7 +44,10 @@ public class LogFileReader {
      */
     private void streamLogFile(Writer writer, String filename, int lineLimit) {
         File logFile = new File(Common.getLogsPath(), filename);
-        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, Charset.defaultCharset())) {
+        try (ReversedLinesFileReader reader = ReversedLinesFileReader.builder()
+                .setFile(logFile)
+                .setCharset(Charset.defaultCharset())
+                .get()) {
             String oneLine = reader.readLine();
             int lineNumber = 1;
             while (oneLine != null && (lineLimit == -1 || lineNumber <= lineLimit)) {
@@ -51,7 +56,7 @@ public class LogFileReader {
                 lineNumber++;
             }
         } catch (java.io.IOException e) {
-            throw new IOException("Could not open log file '" + filename + "'");
+            throw new JatosException("Could not open log file '" + filename + "'", ErrorCode.IO_ERROR);
         }
     }
 }

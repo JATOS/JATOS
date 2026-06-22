@@ -12,9 +12,6 @@ import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * @author Kristian Lange
- */
 @Singleton
 public class StudyLinkDao extends AbstractDao {
 

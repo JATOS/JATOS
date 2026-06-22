@@ -11,8 +11,6 @@ import scala.collection.mutable.ListBuffer
 /**
   * Fixes the charset and collation of MySQL tables to the proper UTF-8 charset 'utf8mb4' (instead of 'utf8' as it is
   * defined in the evolution scripts). Called during start-up.
-  *
-  * @author Kristian Lange
   */
 @Singleton
 class MySQLCharsetFix @Inject()(db: Database, jatosMigrations: JatosMigrations) {

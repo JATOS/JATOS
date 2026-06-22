@@ -16,8 +16,6 @@ import javax.inject.Inject
  *
  * A GroupChannelActor belongs to a GroupDispatcher. A GroupChannelActor is created by the GroupChannel service. It
  * registers and unregisters itself with the GroupDispatcher.
- *
- * @author Kristian Lange
  */
 class GroupChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,

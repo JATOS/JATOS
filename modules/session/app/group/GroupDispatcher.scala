@@ -33,8 +33,6 @@ import javax.inject.Inject
  *
  * The group session patches are JSON Patches after RFC 6902 and used to describe changes in the group session data. The
  * session data are stored in the GroupResult.
- *
- * @author Kristian Lange
  */
 object GroupDispatcher {
 

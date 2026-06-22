@@ -8,11 +8,11 @@ import play.db.jpa.JPAApi;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.EntityManager;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * DAO of Batch entity
- *
- * @author Kristian Lange
  */
 @Singleton
 public class BatchDao extends AbstractDao {
@@ -38,6 +38,17 @@ public class BatchDao extends AbstractDao {
         return jpa.withTransaction("default", true, (EntityManager em) -> em.find(Batch.class, id));
     }
 
+    public Optional<Batch> findByUuid(String uuid) {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            String queryStr = "SELECT s FROM Batch s WHERE " + "s.uuid=:uuid";
+            List<Batch> batchList = em.createQuery(queryStr, Batch.class)
+                    .setParameter("uuid", uuid)
+                    .setMaxResults(1)
+                    .getResultList();
+            return !batchList.isEmpty() ? Optional.of(batchList.get(0)) : Optional.empty();
+        });
+    }
+
     /**
      * Finds a study by its ID and eagerly fetches the batchList to avoid LazyInitializationException.
      */
@@ -51,17 +62,19 @@ public class BatchDao extends AbstractDao {
     }
 
     /**
-     * Finds and returns the default Batch (the first Batch) of the given Study as defined by the order in the database.
+     * Finds and returns the default Batch (the first Batch) of the given Study as defined by the order in the
+     * database.
      */
     public Batch findDefaultBatchByStudy(Study study) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        Optional<Batch> batch = jpa.withTransaction("default", true, (EntityManager em) -> {
             String hql = "SELECT b FROM Study s JOIN s.batchList b WHERE s = :study ORDER BY INDEX(b)";
             return em.createQuery(hql, Batch.class)
                     .setParameter("study", study)
                     .setMaxResults(1)
                     .getResultList()
-                    .stream().findFirst().orElse(null);
+                    .stream().findFirst();
         });
+        return batch.orElse(null);
     }
 
     /**
@@ -100,6 +113,32 @@ public class BatchDao extends AbstractDao {
             // If not a member, check if adding them would exceed the limit
             int currentCount = countWorkers(batch);
             return currentCount >= batch.getMaxTotalWorkers();
+        });
+    }
+
+    /**
+     * Atomically updates batchSessionData and increments batchSessionVersion, but only if the current version matches
+     * the expectedVersion (compare-and-set).
+     *
+     * @return The new batchSessionVersion if the update succeeded (exactly one row updated), null if the version
+     * mismatched
+     */
+    public Long updateBatchSession(Long batchId, Long expectedVersion, String sessionData) {
+        return jpa.withTransaction("default", true, (EntityManager em) -> {
+            String query =
+                    "UPDATE Batch b " +
+                            "SET b.batchSessionData = :sessionData, " +
+                            "    b.batchSessionVersion = b.batchSessionVersion + 1 " +
+                            "WHERE b.id = :id " +
+                            "  AND b.batchSessionVersion = :expectedVersion";
+
+            int updated = em.createQuery(query)
+                    .setParameter("sessionData", sessionData)
+                    .setParameter("id", batchId)
+                    .setParameter("expectedVersion", expectedVersion)
+                    .executeUpdate();
+
+            return updated == 1 ? expectedVersion + 1 : null;
         });
     }
 

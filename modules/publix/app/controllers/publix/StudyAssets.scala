@@ -1,19 +1,21 @@
 package controllers.publix
 
 import daos.common.StudyResultDao
-import exceptions.common.{BadRequestException, ForbiddenException, IOException, NotFoundException}
+import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
+import executor.common.StudyAssetsExecutor
 import filters.publix.IdCookieFilter.IdCookies
-import general.common.Http.Context
-import general.common.{Common, MessagesStrings, StudyAssetsExecutor}
+import http.common.Http.Context
+import general.common.{Common, MessagesStrings}
+import http.common.HttpUtils
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.db.jpa.JPAApi
 import services.publix.idcookie.IdCookieService
 import services.publix.{PublixErrorMessages, PublixHelpers}
-import utils.common.{Helpers, IOUtils}
+import utils.common.{StringUtils, IOUtils}
 
-import java.io.File
+import java.io.{File, IOException}
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
@@ -26,8 +28,6 @@ import scala.util.matching.Regex
 
 /**
  * Manages web-access to files in the external study assets directories (outside of JATOS' packed Jar).
- *
- * @author Kristian Lange
  */
 @Singleton
 class StudyAssets @Inject()(components: ControllerComponents,
@@ -89,25 +89,26 @@ class StudyAssets @Inject()(components: ControllerComponents,
   private def sendAssetFile(request: Request[AnyContent], urlPath: String): Result = {
     val filePath = urlPath.replace(URL_PATH_SEPARATOR, File.separator)
     try {
-      checkProperAssets(request, urlPath)
+      checkProperAssets(urlPath)
       val file = ioUtils.getExistingFileSecurely(Common.getStudyAssetsRootPath, filePath)
-      logger.debug(s".viaAssetsPath: loading file ${file.getPath}.")
+      logger.debug(s".viaAssetsPath: loading file $file.")
       if (request.headers.hasHeader(RANGE)) {
-        RangeResult.ofFile(file, request.headers.get(RANGE), Option.empty)
+        RangeResult.ofPath(file, request.headers.get(RANGE), Option.empty)
       } else {
-        Ok.sendFile(file, inline = true).withHeaders("Cache-Control" -> "private")
+        Context.current().response.setHeader("Cache-Control", "private")
+        Ok.sendPath(file, inline = true)
       }
     } catch {
       case e: ForbiddenException =>
         val errorMsg = e.getMessage
         logger.info(".viaAssetsPath: " + errorMsg)
-        if (Helpers.isAjax(request.asJava)) Forbidden(errorMsg)
-        else Forbidden(views.html.publix.error.render(errorMsg))
+        if (HttpUtils.isHtmlRequest) Forbidden(views.html.publix.error.render(errorMsg))
+        else Forbidden(errorMsg)
       case _: IOException =>
         logger.info(s".viaAssetsPath: failed loading from path ${Common.getStudyAssetsRootPath}${File.separator}$filePath")
         val errorMsg = s"Resource '$filePath' couldn't be found."
-        if (Helpers.isAjax(request.asJava)) NotFound(errorMsg)
-        else NotFound(views.html.publix.error.render(errorMsg))
+        if (HttpUtils.isHtmlRequest) NotFound(views.html.publix.error.render(errorMsg))
+        else NotFound(errorMsg)
     }
   }
 
@@ -122,12 +123,12 @@ class StudyAssets @Inject()(components: ControllerComponents,
    * originate in the same browser, one can assume this worker is allowed to access the study
    * assets.
    */
-  private def checkProperAssets(request: Request[AnyContent], urlPath: String): Unit = {
+  private def checkProperAssets(urlPath: String): Unit = {
     val filePathArray = urlPath.split(URL_PATH_SEPARATOR)
     if (filePathArray.isEmpty)
       throw new ForbiddenException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
     val studyAssets =filePathArray(0)
-    if (!idCookieService.oneIdCookieHasThisStudyAssets(request.asJava, studyAssets))
+    if (!idCookieService.oneIdCookieHasThisStudyAssets(studyAssets))
       throw new ForbiddenException(PublixErrorMessages.studyAssetsNotAllowedOutsideRun(urlPath))
   }
 
@@ -137,9 +138,9 @@ class StudyAssets @Inject()(components: ControllerComponents,
   def retrieveComponentHtmlFile(studyDirName: String, componentHtmlFilePath: String): Result = {
     try {
       val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
-      Ok.sendFile(file)
-        .as("text/html; charset=utf-8")
-        .withHeaders("Cache-Control" -> "no-cache, no-store")
+      Context.current().response().setHeader("Cache-Control", "no-cache, no-store")
+      Context.current().response().setHeader("Content-Type", "text/html; charset=utf-8")
+      Ok.sendPath(file)
     } catch {
       case _: IOException =>
         throw new NotFoundException(MessagesStrings.htmlFilePathNotExist(studyDirName, componentHtmlFilePath))
@@ -151,7 +152,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
    * Passes on the confirmationCode in case it's defined (either cookie or URL query parameter).
    */
   def endPage(studyResultUuid: String, confirmationCode: Option[String] = None): Action[AnyContent] =
-    Action.async { implicit request =>
+    Action.async { _ =>
       Context.withContext(studyAssetsExecutor, () => {
         jpa.withTransaction(asJavaFunction((_: EntityManager) => {
           val studyResult = studyResultDao.findByUuid(studyResultUuid).orElseThrow(
@@ -173,10 +174,10 @@ class StudyAssets @Inject()(components: ControllerComponents,
           else if (ioUtils.checkFileInStudyAssetsDirExists(studyResult.getStudy.getDirName, "endPage.html")) {
             // Redirect to endPage.html from study assets
             confirmationCode match {
-              case Some(cc) => Ok.sendFile(ioUtils
-                  .getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
-                .withCookies(confirmationCodeCookie(cc)).bakeCookies()
-              case None => Ok.sendFile(ioUtils
+              case Some(cc) =>
+                Context.current().response().setCookie(confirmationCodeCookie(cc).asJava)
+                Ok.sendPath(ioUtils.getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
+              case None => Ok.sendPath(ioUtils
                 .getExistingFileInStudyAssetsDir(studyResult.getStudy.getDirName, "endPage.html"))
             }
           }
@@ -210,10 +211,10 @@ class StudyAssets @Inject()(components: ControllerComponents,
     var newEndRedirectUrl = endRedirectUrl
 
     "\\[(.*?)]".r.findAllIn(newEndRedirectUrl).foreach(m => {
-      val parameter = Helpers.urlDecode(m.substring(1, m.length - 1)) // remove squared brackets and decode
+      val parameter = HttpUtils.urlDecode(m.substring(1, m.length - 1)) // remove squared brackets and decode
       (originalStudyLinkUrlQueryParameters \ parameter).asOpt[String] match {
         case Some(value) =>
-          newEndRedirectUrl = newEndRedirectUrl.replace(m, Helpers.urlEncode(value))
+          newEndRedirectUrl = newEndRedirectUrl.replace(m, HttpUtils.urlEncode(value))
         case None =>
           newEndRedirectUrl = newEndRedirectUrl.replace(m, "undefined")
           logger.info(s".enhanceQueryStringInEndRedirectUrl: Could not find '$parameter' in original study link")

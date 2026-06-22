@@ -17,8 +17,6 @@ import scala.jdk.CollectionConverters._
  * This class handles the joining, leaving, and reassigning of group members. A group's state is stored in a
  * GroupResult. Group dispatchers manage group channels (the handlers of the WebSockets). Members of a group are
  * identified by the study result ID (which represents a particular study run).
- *
- * @author Kristian Lange
  */
 @Singleton
 class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegistry,
@@ -27,17 +25,6 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
                                     jpa: JPAApi) {
 
   private val logger: Logger = Logger(this.getClass)
-
-  /**
-   * Checks if the given study result belongs to a group study and then leaves the group
-   */
-  def leaveGroup(studyResult: StudyResult): Unit = {
-    val groupResult = studyResult.getActiveGroupResult
-    val study = studyResult.getStudy
-    if (study.isGroupStudy && groupResult != null) {
-      leave(studyResult)
-    }
-  }
 
   /**
    * Joins a group or creates a new group.
@@ -65,13 +52,14 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
 
   /**
    * Leaves the group that this study result is a member of. Moves the study result in its group result into history.
-   * Closes the group channel. Finishes a group if necessary. We don't need a JPA transaction here because the transaction is already started by the
-   * calling methods.
+   * Closes the group channel. Finishes a group if necessary.
    */
   def leave(studyResult: StudyResult): Unit = {
     jpa.withTransaction(asJavaFunction((_: EntityManager) => {
+      if (!studyResult.getStudy.isGroupStudy) return
+
       val groupResult = studyResult.getActiveGroupResult
-      if (groupResult == null || !studyResult.getStudy.isGroupStudy) return
+      if (groupResult == null) return
 
       moveActiveMemberToHistory(studyResult)
       checkAndFinishGroup(groupResult)

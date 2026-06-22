@@ -8,11 +8,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import daos.common.*;
 import exceptions.common.ForbiddenException;
-import exceptions.common.IOException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
-import general.common.Http.Context;
+import http.common.Http.Context;
 import general.common.StudyLogger;
+import json.common.DefaultJson;
+import json.common.JsonUtils;
 import models.common.*;
 import models.gui.StudyProperties;
 import play.data.Form;
@@ -23,8 +24,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
-import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -33,17 +32,17 @@ import java.util.List;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
-import static messaging.common.FlashScopeMessaging.*;
+import static messaging.common.FlashMessagingHelper.ERROR;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
- *
- * @author Kristian Lange
  */
 @Singleton
 public class Studies extends Controller {
 
-    private final Checker checker;
+    private final AuthorizationService authorizationService;
     private final StudyService studyService;
     private final UserService userService;
     private final BreadcrumbsService breadcrumbsService;
@@ -54,13 +53,13 @@ public class Studies extends Controller {
     private final UserDao userDao;
     private final ComponentResultDao componentResultDao;
     private final StudyLinkDao studyLinkDao;
-    private final JsonUtils jsonUtils;
-    private final IOUtils ioUtils;
     private final FormFactory formFactory;
     private final StudyLogger studyLogger;
+    private final DefaultJson defaultJson;
+    private final JsonUtils jsonUtils;
 
     @Inject
-    Studies(Checker checker,
+    Studies(AuthorizationService authorizationService,
             StudyService studyService,
             UserService userService,
             BreadcrumbsService breadcrumbsService,
@@ -71,11 +70,11 @@ public class Studies extends Controller {
             UserDao userDao,
             ComponentResultDao componentResultDao,
             StudyLinkDao studyLinkDao,
-            JsonUtils jsonUtils,
-            IOUtils ioUtils,
             FormFactory formFactory,
-            StudyLogger studyLogger) {
-        this.checker = checker;
+            StudyLogger studyLogger,
+            DefaultJson defaultJson,
+            JsonUtils jsonUtils) {
+        this.authorizationService = authorizationService;
         this.studyService = studyService;
         this.userService = userService;
         this.breadcrumbsService = breadcrumbsService;
@@ -86,25 +85,26 @@ public class Studies extends Controller {
         this.userDao = userDao;
         this.componentResultDao = componentResultDao;
         this.studyLinkDao = studyLinkDao;
-        this.jsonUtils = jsonUtils;
-        this.ioUtils = ioUtils;
         this.formFactory = formFactory;
         this.studyLogger = studyLogger;
+        this.defaultJson = defaultJson;
+        this.jsonUtils = jsonUtils;
     }
 
     /**
      * Shows the study view with details of a study and their components.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
     public Result study(Http.Request request, Long studyId, int httpStatus) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         try {
-            checker.checkStandardForStudy(study, studyId, signedinUser);
+            authorizationService.canUserAccessStudy(study, signedinUser);
         } catch (ForbiddenException | NotFoundException e) {
-            return redirect(routes.Home.home(e.getHttpStatus())).flashing(ERROR, e.getMessage());
+            Context.current().response().putFlash(ERROR, e.getMessage());
+            return redirect(routes.Home.home(e.getHttpStatus()));
         }
 
         String breadcrumbs = breadcrumbsService.generateForStudy(study);
@@ -121,18 +121,13 @@ public class Studies extends Controller {
      * POST request to create a new study.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result submitCreated(Http.Request request) {
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
-        Study study = studyService.createAndPersistStudy(studyProperties);
-        try {
-            ioUtils.createStudyAssetsDir(study.getDirName());
-        } catch (IOException e) {
-            return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
-        }
+        Study study = studyService.createAndPersistStudyAndAssetsDir(studyProperties, false);
         return ok(study.getId().toString());
     }
 
@@ -140,39 +135,36 @@ public class Studies extends Controller {
      * GET request that returns the study properties as JSON.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result properties(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         StudyProperties studyProperties = studyService.bindToProperties(study);
-        return ok(JsonUtils.asJsonNode(studyProperties));
+        return ok(defaultJson.objAsJsonNode(studyProperties));
     }
 
     /**
      * POST request to update study properties
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     @Transactional
     public Result submitEdited(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStudyLocked(study);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         StudyProperties studyProperties = form.get();
         try {
-            studyService.renameStudyAssetsDir(study, studyProperties.getDirName());
-        } catch (IOException e) {
+            studyService.updateStudyAndRenameAssets(study, studyProperties);
+        } catch (Exception e) {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
-
-        studyService.updateStudy(study, studyProperties);
         return ok();
     }
 
@@ -180,12 +172,11 @@ public class Studies extends Controller {
      * POST request to update study properties
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result submitDescription(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStudyLocked(study);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
 
         String description = request.body().asText();
 
@@ -202,11 +193,11 @@ public class Studies extends Controller {
      * POST request to swap the locked field of a study.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result toggleLock(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         study.setLocked(!study.isLocked());
         studyDao.merge(study);
@@ -218,30 +209,18 @@ public class Studies extends Controller {
         return ok(String.valueOf(study.isLocked()));
     }
 
-    /**
-     * POST request to activate or deactivate a study. Can be done only by an admin.
-     */
-    @Async(Executor.IO)
-    @Auth(User.Role.ADMIN)
-    public Result toggleActive(Long studyId, Boolean active) {
-        Study study = studyDao.findById(studyId);
-        study.setActive(active);
-        studyDao.merge(study);
-        return ok();
-    }
-
-    /**
+     /**
      * GET request to clones a study.
      */
-    @Async(Executor.IO)
-    @Auth
+     @Async(Executor.IO)
+     @Auth(roles = USER)
     public Result cloneStudy(Long studyId) {
         Study study = studyDao.findByIdWithComponents(studyId);
-        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+         authorizationService.canUserAccessStudy(study, signedinUser);
 
         Study clone = studyService.clone(study);
-        clone = studyService.createAndPersistStudy(signedinUser, clone);
+        clone = studyService.createAndPersistStudy(clone);
         return ok(Json.toJson(ImmutableMap.of("id", clone.getId(), "title", clone.getTitle())));
     }
 
@@ -249,11 +228,11 @@ public class Studies extends Controller {
      * GET request that gets all users and whether they are admin of this study as a JSON array.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result memberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         List<User> userList = userDao.findAll();
         return ok(jsonUtils.memberUserArrayOfStudy(userList, study));
@@ -263,12 +242,12 @@ public class Studies extends Controller {
      * POST request that adds or removes a member user from a study
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result toggleMemberUser(Long studyId, String username, boolean isMember) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String normalizedUsername = User.normalizeUsername(username);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
         User userToChange = userService.retrieveUser(normalizedUsername);
         studyService.changeUserMember(study, userToChange, isMember);
 
@@ -279,11 +258,11 @@ public class Studies extends Controller {
      * POST request that adds all users as members to a study
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result addAllMemberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         if (!Common.isStudyMembersAllowedToAddAllUsers()) {
             return forbidden("It's not allowed to add all users at once in this JATOS.");
@@ -297,11 +276,11 @@ public class Studies extends Controller {
      * DELETE request that removes all member users from a study
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result removeAllMemberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         studyService.removeAllUserMembers(study);
         return ok();
@@ -311,14 +290,13 @@ public class Studies extends Controller {
      * POST request to change the order of components within a study.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result changeComponentOrder(Long studyId, Long componentId, String newPosition) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Component component = componentDao.findById(componentId);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
-        checker.checkStudyLocked(study);
-        checker.checkStandardForComponent(studyId, componentId, component);
+        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessComponent(component, signedinUser);
         studyService.changeComponentPosition(newPosition, study, component);
 
         return ok();
@@ -329,30 +307,32 @@ public class Studies extends Controller {
      * Redirects to /publix/runx.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = USER)
     public Result runStudy(Http.Request request, Long studyId, Long batchId, Long frames, Long hSplit, Long vSplit) {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
+        authorizationService.canUserAccessBatch(batch, signedinUser);
 
         // Get StudyLink and redirect to jatos-publix to start the study
         StudyLink studyLink = studyLinkDao.findByBatchAndWorker(batch, signedinUser.getWorker())
                 .orElseGet(() -> studyLinkDao.persist(new StudyLink(batch, signedinUser.getWorker())));
         String runUrl = Common.getJatosUrlBasePath() + "publix/runx?code=" + studyLink.getStudyCode()
                 + "&frames=" + frames + "&hSplit=" + hSplit + "&vSplit=" + vSplit;
-        return redirect(runUrl).addingToSession(request, "jatos_run", "RUN_STUDY");
+        Context.current().response().putSession("jatos_run", "RUN_STUDY");
+        return redirect(runUrl);
     }
 
     /**
      * GET request that returns all component data of the given study as JSON.
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public Result tableDataByStudy(Long studyId) {
         Study study = studyDao.findByIdWithComponents(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        checker.checkStandardForStudy(study, studyId, signedinUser);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         List<Component> componentList = study.getComponentList();
         List<Integer> resultCountList = new ArrayList<>();

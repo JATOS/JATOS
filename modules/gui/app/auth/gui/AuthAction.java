@@ -2,6 +2,10 @@ package auth.gui;
 
 import auth.gui.AuthAction.Auth;
 import auth.gui.AuthAction.AuthMethod.AuthResult;
+import auth.gui.AuthAction.AuthMethod.Type;
+import exceptions.common.AuthException;
+import http.common.Http.Context;
+import http.common.HttpUtils;
 import models.common.User;
 import models.common.User.Role;
 import play.libs.typedmap.TypedKey;
@@ -9,7 +13,6 @@ import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.With;
-import utils.common.Helpers;
 
 import javax.inject.Inject;
 import java.lang.annotation.ElementType;
@@ -17,58 +20,63 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
 
-import static messaging.common.FlashScopeMessaging.*;
+import static messaging.common.FlashMessagingHelper.ERROR;
 
 /**
  * This class defines the {@link Auth} annotation used in JATOS GUI and JATOS API. Authentication methods are
  * 1) via session cookies, and 2) via personal access tokens (API tokens).
- * <p>
+ *
  * The actual session cookie authentication is done in {@link AuthSessionCookie}. The actual authentication with API
  * tokens is in {@link AuthApiToken}.
- * <p>
+ *
  * Additionally, it does some basic authorization (with {@link User.Role}).
- * <p>
+ *
  * Authentication via DB, LDAP, OIDC and Google Sign-In use the session cookie authentication.
- * <p>
+ *
  * IMPORTANT: Since this annotation accesses the database, the annotated method has to be within a transaction.
  * This means the {@link javax.transaction.Transactional} annotation has to be BEFORE the {@link Auth} annotation.
- *
- * @author Kristian Lange
  */
 public class AuthAction extends Action<Auth> {
 
     /**
      * This @Auth annotation can be used on every controller action (GUI or API) where authentication
-     * and authorization are required. If no Role is added, then the default Role 'USER' is assumed.
+     * and authorization are required. If no Role is added, then the default Role 'NONE' is assumed.
      */
     @With(AuthAction.class)
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Auth {
-        Role value() default Role.USER;
+        Role[] roles() default {Role.NONE};
+        Type[] types() default {Type.SESSION};
     }
 
     /**
-     * Key name used in {@link general.common.Http.Context} to store the signed-in User
+     * Key name used in {@link Context} to store the signed-in User
      */
     public static final TypedKey<User> SIGNEDIN_USER = TypedKey.create("signedinUser");
 
     /**
      * Interface that every authentication method has to implement.
      */
-    interface AuthMethod {
+    public interface AuthMethod {
+
+        enum Type {
+            SESSION, TOKEN
+        }
+
+        Type type();
 
         /**
-         * @param request       This action's {@link Http.Request} object
-         * @param necessaryRole Role the user must have to access the resource
+         * @param allowedRoles   Roles that are allowed to access the resource
          * @return Returns an {@link AuthResult}.
          */
-        AuthResult authenticate(Http.Request request, User.Role necessaryRole);
+        AuthResult authenticate(EnumSet<Role> allowedRoles);
 
         /**
          * Result of an authentication attempt.
@@ -84,8 +92,6 @@ public class AuthAction extends Action<Auth> {
              */
             enum State {AUTHENTICATED, DENIED, WRONG_METHOD}
 
-            Http.Request request;
-
             State state;
 
             /**
@@ -93,32 +99,20 @@ public class AuthAction extends Action<Auth> {
              */
             Result result;
 
-            /**
-             * The AuthResult can have a function that is called on the result of the original action.
-             */
-            Function<Result, Result> postHook = r -> r; // Default: do nothing
-
-            private AuthResult(Http.Request request, State state) {
-                this.request = request;
+            private AuthResult(State state) {
                 this.state = state;
             }
 
-            static AuthResult authenticated(Http.Request request) {
-                return new AuthResult(request, State.AUTHENTICATED);
+            static AuthResult authenticated() {
+                return new AuthResult(State.AUTHENTICATED);
             }
 
-            static AuthResult authenticated(Http.Request request, Function<Result, Result> postHook) {
-                AuthResult ar =  new AuthResult(request, State.AUTHENTICATED);
-                ar.postHook = postHook;
-                return ar;
+            static AuthResult wrongMethod() {
+                return new AuthResult(State.WRONG_METHOD);
             }
 
-            static AuthResult wrongMethod(Http.Request request) {
-                return new AuthResult(request, State.WRONG_METHOD);
-            }
-
-            static AuthResult denied(Http.Request request, Result result) {
-                AuthResult ar = new AuthResult(request, State.DENIED);
+            static AuthResult denied(Result result) {
+                AuthResult ar = new AuthResult(State.DENIED);
                 ar.result = result;
                 return ar;
             }
@@ -129,20 +123,23 @@ public class AuthAction extends Action<Auth> {
 
     @Inject
     AuthAction(AuthSessionCookie authSessionCookie, AuthApiToken authApiToken) {
-        authMethods.add(authSessionCookie);
         authMethods.add(authApiToken);
+        authMethods.add(authSessionCookie);
     }
 
     public CompletionStage<Result> call(Http.Request request) {
-        User.Role necessaryRole = configuration.value();
+        EnumSet<Role> allowedRoles = EnumSet.copyOf(Arrays.asList(configuration.roles()));
+        EnumSet<Type> allowedTypes = EnumSet.copyOf(Arrays.asList(configuration.types()));
 
         // Try to authenticate with each registered method
         for (AuthMethod authMethod : authMethods) {
 
-            AuthResult authResult = authMethod.authenticate(request, necessaryRole);
+            if (!allowedTypes.contains(authMethod.type())) continue;
+
+            AuthResult authResult = authMethod.authenticate(allowedRoles);
             switch (authResult.state) {
                 case AUTHENTICATED:
-                    return delegate.call(authResult.request).thenApply(authResult.postHook); // Successful authentication
+                    return delegate.call(request); // Successful authentication
                 case DENIED:
                     return CompletableFuture.completedFuture(authResult.result);
                 case WRONG_METHOD:
@@ -151,15 +148,15 @@ public class AuthAction extends Action<Auth> {
         }
 
         // No authentication method worked
-        return denied(request);
+        return denied();
     }
 
-    static CompletionStage<Result> denied(Http.Request request) {
-        if (Helpers.isHtmlRequest(request) && !Helpers.isAjax(request)) {
-            return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin())
-                    .flashing(ERROR, "Failed authentication"));
+    static CompletionStage<Result> denied() {
+        if (HttpUtils.isHtmlRequest()) {
+            Context.current().response().putFlash(ERROR, "Failed authentication");
+            return CompletableFuture.completedFuture(redirect(auth.gui.routes.Signin.signin()));
         } else {
-            return CompletableFuture.completedFuture(forbidden("Failed authentication"));
+            return CompletableFuture.failedStage(new AuthException("Failed authentication"));
         }
     }
 

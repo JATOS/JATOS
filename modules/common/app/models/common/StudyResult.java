@@ -14,15 +14,12 @@ import java.sql.Timestamp;
 import java.util.*;
 
 /**
- * DB entity of a study result. It's used for JSON marshalling and JPA persistance. A study result
- * essentially stores the state and the result of a study run. It has an index on id and uuid, since both are used
- * identifier.
- *
- * @author Kristian Lange
+ * DB entity of a study result. It's used for JSON marshalling and JPA persistance. A study result essentially stores
+ * the state and the result of a study run. It has an index on id and uuid, since both are used identifier.
  */
 @Entity
-@Table(name = "StudyResult", indexes = { @Index(columnList = "uuid") })
-@JsonPropertyOrder(value = { "id", "startDate", "worker", "confirmationCode", "studyState", "errorMsg", "abortMsg" })
+@Table(name = "StudyResult", indexes = {@Index(columnList = "uuid")})
+@JsonPropertyOrder(value = {"id", "startDate", "worker", "confirmationCode", "studyState", "errorMsg", "abortMsg"})
 public class StudyResult {
 
     @Id
@@ -61,7 +58,7 @@ public class StudyResult {
     public enum StudyState {
         PRE, // Preview of study (exists only in PersonalSingleWorker and GeneralSingleWorker)
         STARTED, // Study was started
-        DATA_RETRIEVED, // Study's jsonData were retrieved
+        DATA_RETRIEVED, // Study properties were retrieved
         FINISHED, // Study successfully finished
         ABORTED, // Study aborted by worker
         FAIL; // Something went wrong
@@ -153,8 +150,8 @@ public class StudyResult {
     private String urlQueryParameters;
 
     /**
-     * Flag that indicates whether the study run reached its quota for the max result file size per study run at
-     * least once.
+     * Flag that indicates whether the study run reached its quota for the max result file size per study run at least
+     * once.
      */
     @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
     private boolean quotaReached = false;
@@ -338,23 +335,15 @@ public class StudyResult {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((getId() == null) ? 0 : getId().hashCode());
-        return result;
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-
-        if (obj == null) return false;
-
         if (!(obj instanceof StudyResult)) return false;
-
         StudyResult other = (StudyResult) obj;
-        if (getId() == null) return other.getId() == null;
-        return getId().equals(other.getId());
+        return getId() != null && getId().equals(other.getId());
     }
 
 }

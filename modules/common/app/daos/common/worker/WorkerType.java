@@ -12,6 +12,7 @@ import models.common.workers.*;
  * Do not use WorkerType.valueOf to parse a worker type String - use WorkerType.fromWireValue instead.
  */
 public enum WorkerType {
+
     JATOS(JatosWorker.WORKER_TYPE, JatosWorker.SHORT_WORKER_TYPE, JatosWorker.UI_WORKER_TYPE),
     PERSONAL_SINGLE(PersonalSingleWorker.WORKER_TYPE, PersonalSingleWorker.SHORT_WORKER_TYPE, PersonalSingleWorker.UI_WORKER_TYPE),
     PERSONAL_MULTIPLE(PersonalMultipleWorker.WORKER_TYPE, PersonalMultipleWorker.SHORT_WORKER_TYPE, PersonalMultipleWorker.UI_WORKER_TYPE),
@@ -34,10 +35,6 @@ public enum WorkerType {
     @JsonValue
     public String value() {
         return value;
-    }
-
-    public String shortValue() {
-        return shortValue;
     }
 
     public String uiValue() {

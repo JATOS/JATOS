@@ -3,13 +3,28 @@
 # Order is important!
 # ~~~~
 
-### Publix ###
+### Publix API ###
 
-+ nocsp
-GET     /publix/:studyId/start                                      @controllers.publix.LegacyStudyRuns.transformToStudyLink(request: Request, studyId: Long, batchId: Long)
+# OpenAI proxy
++ nocsrf
+GET     /publix/api/v1/studyResults/:studyResultUuid/openai         @controllers.publix.OpenAiProxy.proxy(request:Request, path = "" , studyResultUuid)
++ nocsrf
+GET     /publix/api/v1/studyResults/:studyResultUuid/openai/*path   @controllers.publix.OpenAiProxy.proxy(request:Request, path, studyResultUuid)
++ nocsrf
+POST    /publix/api/v1/studyResults/:studyResultUuid/openai         @controllers.publix.OpenAiProxy.proxy(request:Request, path = "", studyResultUuid)
++ nocsrf
+POST    /publix/api/v1/studyResults/:studyResultUuid/openai/*path   @controllers.publix.OpenAiProxy.proxy(request:Request, path, studyResultUuid)
++ nocsrf
+DELETE  /publix/api/v1/studyResults/:studyResultUuid/openai         @controllers.publix.OpenAiProxy.proxy(request:Request, path = "", studyResultUuid)
++ nocsrf
+DELETE  /publix/api/v1/studyResults/:studyResultUuid/openai/*path   @controllers.publix.OpenAiProxy.proxy(request:Request, path, studyResultUuid)
 
+
+### Publix for jatos.js ###
+
+# Running studies
 + nocsp
-GET     /publix/run                                                 @controllers.publix.PublixInterceptor.studyEntry(request: Request, code: String ?= null)
+GET     /publix/run                                                 @controllers.publix.PublixInterceptor.studyEntry(code: String ?= null)
 + nocsp
 GET     /publix/runx                                                @controllers.publix.PublixInterceptor.runx(code: String ?= null, frames: Long ?= 2, hSplit: Long ?= 2, vSplit: Long ?= 1)
 + nocsp

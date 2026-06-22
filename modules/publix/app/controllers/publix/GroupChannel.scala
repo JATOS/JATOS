@@ -45,12 +45,12 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
    * Joins a group but doesn't open the group channel. In case of an error/ problem, a PublixException is thrown.
    * Synchronized to prevent race conditions with group members joining, leaving, reassigning.
    */
-  def join(studyResult: StudyResult)(implicit request: RequestHeader): Unit = synchronized {
+  def join(studyResult: StudyResult): Unit = synchronized {
     logger.info(s".join: studyResult ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.withBody().session.asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
 
     if (studyResult.getHistoryGroupResult != null) {
@@ -90,12 +90,12 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
    * reassignment was successful, an Ok is returned. If it was unsuccessful, a Forbidden is returned.
    * In case of an error/ problem, a PublixException is thrown.
    */
-  def reassign(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
+  def reassign(studyResult: StudyResult): Result = synchronized {
     logger.info(s".reassign: studyResultId ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.session.asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
 
     if (studyResult.getHistoryGroupResult != null) {
@@ -115,12 +115,12 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   /**
    * Let this study run (specified by the study result ID) leave the group that it joined before.
    */
-  def leave(studyResult: StudyResult)(implicit request: Request[_]): Result = synchronized {
+  def leave(studyResult: StudyResult): Result = synchronized {
     logger.info(s".leave: studyResultId ${studyResult.getId}")
     val worker = studyResult.getWorker.asInstanceOf[A]
     val study = studyResult.getStudy
     val batch = studyResult.getBatch
-    studyAuthorisation.checkWorkerAllowedToDoStudy(request.session.asJava, worker, study, batch)
+    studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
     publixUtils.checkStudyIsGroupStudy(study)
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null) {

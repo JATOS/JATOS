@@ -5,10 +5,9 @@ import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction.Transactional;
 import auth.gui.AuthAction.Auth;
 import com.google.common.base.Strings;
-import controllers.gui.actionannotations.GuiAccessLoggingAction.GuiAccessLogging;
 import daos.common.StudyDao;
 import general.common.Common;
-import general.common.Http.Context;
+import http.common.Http.Context;
 import models.common.Study;
 import models.common.User;
 import play.libs.ws.WSClient;
@@ -16,8 +15,8 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.BreadcrumbsService;
-import utils.common.Helpers;
-import utils.common.JsonUtils;
+import services.gui.UserService;
+import json.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -30,11 +29,11 @@ import java.util.concurrent.CompletionStage;
 import static actions.common.TransactionalAction.Mode.READ_ONLY;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * Controller that provides actions for the home page
- *
- * @author Kristian Lange
  */
 @Singleton
 public class Home extends Controller {
@@ -59,27 +58,28 @@ public class Home extends Controller {
      * Shows home view
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
-    public Result home(Http.Request request, int httpStatus) {
+    public Result home(int httpStatus) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String breadcrumbs = breadcrumbsService.generateForHome();
         boolean freshlySignedin = signedinUser.getLastLogin() != null &&
                 Duration.between(signedinUser.getLastLogin().toInstant(), Instant.now())
                         .minusSeconds(30)
                         .isNegative();
+        Http.RequestHeader request = Context.current().requestHeader();
         return status(httpStatus, views.html.gui.home.render(freshlySignedin, signedinUser, breadcrumbs, request.asScala()));
     }
 
-    public Result home(Http.Request request) {
-        return home(request, Http.Status.OK);
+    public Result home() {
+        return home(Http.Status.OK);
     }
 
     /**
      * Tries to loads some static HTML that will be shown on the home page instead of the default welcome message
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     public CompletionStage<Result> branding() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (Strings.isNullOrEmpty(Common.getBrandingUrl())) return CompletableFuture.completedFuture(noContent());
@@ -89,7 +89,8 @@ public class Home extends Controller {
                     .replaceAll("@USER_NAME", signedinUser.getName())
                     .replaceAll("@USER_USERNAME", signedinUser.getUsername());
             if (r.getStatus() == 404 || branding.startsWith("404")) return notFound();
-            return ok(branding).withHeader("Cache-Control", "max-age=3600");
+            Context.current().response().setHeader("Cache-Control", "max-age=3600");
+            return ok(branding);
         });
     }
 
@@ -98,11 +99,11 @@ public class Home extends Controller {
      * signed-in user).
      */
     @Async(Executor.IO)
-    @Auth
+    @Auth(roles = {VIEWER, USER})
     @Transactional(READ_ONLY)
     public Result sidebarData() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        List<Study> studyList = Helpers.isAllowedSuperuser(signedinUser)
+        List<Study> studyList = UserService.isAllowedSuperuser(signedinUser)
                 ? studyDao.findAll()
                 : studyDao.findAllByUser(signedinUser);
         return ok(jsonUtils.sidebarData(studyList));
