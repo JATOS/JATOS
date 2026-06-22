@@ -136,6 +136,9 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
     Future.successful(result)
   }
 
+  /**
+   * Handle all JatosExceptions with a 'cause'
+   */
   private def handleJatosException(request: RequestHeader, e: JatosException): Result = {
     Option(e.getCause) match {
       case Some(cause: NamingException) =>
