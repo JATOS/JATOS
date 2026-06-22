@@ -4,7 +4,6 @@ package exceptions.publix;
  * Special exception used during study flow management. Exception that is thrown if a JATOS tries to start a component
  * in a linear study that is before the current running component
  */
-// todo extend JatosException
 public class ForbiddenNonLinearFlowException extends RuntimeException {
 
     private final String uuid;

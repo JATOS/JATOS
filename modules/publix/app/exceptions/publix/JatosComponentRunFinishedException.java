@@ -3,7 +3,6 @@ package exceptions.publix;
 /**
  * Special exception used during study flow management. Thrown if a JATOS component attempted a not allowed reload.
  */
-// todo extend JatosException
 public class JatosComponentRunFinishedException extends RuntimeException {
 
     private final String uuid;

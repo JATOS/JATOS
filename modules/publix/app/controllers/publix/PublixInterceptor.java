@@ -121,7 +121,7 @@ public class PublixInterceptor extends Controller {
                 .startStudy(request, studyLink);
     }
 
-    @IdCookies // todo needed here - we have it in Publix.startComponent
+    @IdCookies
     @Async(Executor.IO)
     @Transactional
     public Result startComponent(Http.Request request, String studyResultUuid, String componentUuid, String message) {
