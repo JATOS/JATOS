@@ -73,7 +73,6 @@ public class GeneralMultiplePublix extends Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result startStudy(Http.Request request, StudyLink studyLink) {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();

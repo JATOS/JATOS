@@ -95,7 +95,6 @@ public class JatosPublix extends Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result startStudy(Http.Request request, StudyLink studyLink) {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
@@ -132,7 +131,6 @@ public class JatosPublix extends Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result startComponent(Http.Request request, StudyResult studyResult, Component component, String message) {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
@@ -168,7 +166,6 @@ public class JatosPublix extends Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result abortStudy(Http.Request request, StudyResult studyResult, String message) {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();
@@ -193,7 +190,6 @@ public class JatosPublix extends Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result finishStudy(Http.Request request, StudyResult studyResult, Boolean successful, String message) {
         Study study = studyResult.getStudy();
         Batch batch = studyResult.getBatch();

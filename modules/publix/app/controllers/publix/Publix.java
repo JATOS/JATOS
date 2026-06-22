@@ -92,7 +92,6 @@ public abstract class Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result startComponent(Request request, StudyResult studyResult, Component component, String message) {
         ComponentResult componentResult = publixUtils.startComponent(component, studyResult, message);
         publixUtils.setPreStudyState(componentResult);
@@ -261,7 +260,6 @@ public abstract class Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result abortStudy(Request request, StudyResult studyResult, String message) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();
@@ -283,7 +281,6 @@ public abstract class Publix implements IPublix {
     }
 
     @Override
-    @IdCookies
     public Result finishStudy(Request request, StudyResult studyResult, Boolean successful, String message) {
         Worker worker = studyResult.getWorker();
         Study study = studyResult.getStudy();

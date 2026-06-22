@@ -221,6 +221,7 @@ public class PublixInterceptor extends Controller {
                     .downloadResultFile(request, studyResult, filename, componentId);
     }
 
+    @IdCookies
     @Async(Executor.IO)
     @Transactional
     public Result abortStudy(Http.Request request, String studyResultUuid, String message) {
@@ -232,6 +233,7 @@ public class PublixInterceptor extends Controller {
                 .abortStudy(request, studyResult, message);
     }
 
+    @IdCookies
     @Async(Executor.IO)
     @Transactional
     public Result finishStudy(Http.Request request, String studyResultUuid, Boolean successful, String message) {

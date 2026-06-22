@@ -79,7 +79,6 @@ public class PersonalSinglePublix extends Publix implements IPublix {
      * result switches into 'STARTED' and back to normal behavior.
      */
     @Override
-    @IdCookies
     public Result startStudy(Http.Request request, StudyLink studyLink) {
         Batch batch = studyLink.getBatch();
         Study study = batch.getStudy();
