@@ -1,7 +1,6 @@
 package exceptions.common;
 
 import general.common.ApiEnvelope.ErrorCode;
-import play.data.Form;
 
 /**
  * This exception is used where Play's Form validation with {@link play.data.validation.ValidationError} can't be used,
