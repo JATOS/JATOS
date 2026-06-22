@@ -49,11 +49,6 @@ public class ChangePasswordProperties implements Validatable<List<ValidationErro
         this.newPassword = newPassword;
     }
 
-    // todo can be deleted?
-    public String getNewPasswordRepeat() {
-        return newPasswordRepeat;
-    }
-
     public void setNewPasswordRepeat(String newPasswordRepeat) {
         this.newPasswordRepeat = newPasswordRepeat;
     }
