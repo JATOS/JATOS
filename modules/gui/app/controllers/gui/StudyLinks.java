@@ -166,6 +166,7 @@ public class StudyLinks extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @SuppressWarnings("unused")
     public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) {
         GroupResult groupResult = groupResultDao.findById(groupResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

@@ -8,8 +8,8 @@ import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
-import http.common.Http.Context;
 import general.common.MessagesStrings;
+import http.common.Http.Context;
 import models.common.Study;
 import models.common.User;
 import models.common.User.AuthMethod;
@@ -19,7 +19,7 @@ import models.gui.NewUserProperties;
 import models.gui.UserProperties;
 import org.hibernate.Hibernate;
 import play.data.Form;
-import play.data.validation.Constraints;
+import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 import play.db.jpa.JPAApi;
 import utils.common.HashUtils;
@@ -282,7 +282,7 @@ public class UserService {
      * validate method of the provided properties to obtain a list of validation errors and appends them to the form
      * instance.
      */
-    public static <T extends Constraints.Validatable<List<ValidationError>>> Form<T> validateAndAddErrors(Form<T> form, T props) {
+    public static <T extends Validatable<List<ValidationError>>> Form<T> validateAndAddErrors(Form<T> form, T props) {
         List<ValidationError> errors = props.validate();
         if (errors == null || errors.isEmpty()) return form;
 

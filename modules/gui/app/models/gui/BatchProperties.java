@@ -4,13 +4,12 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.google.common.base.Strings;
 import daos.common.worker.WorkerType;
 import general.common.MessagesStrings;
+import json.common.DefaultJson;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
-import services.gui.WorkerService;
-import json.common.DefaultJson;
 
 import java.util.*;
 
@@ -161,15 +160,6 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         if (types != null) {
             types.forEach(this::addAllowedWorkerType);
         }
-    }
-
-    // todo why is this never called?
-    public void removeAllowedWorkerType(WorkerType type) {
-        allowedWorkerTypes.remove(type);
-    }
-
-    public boolean hasAllowedWorkerType(WorkerType type) {
-        return allowedWorkerTypes.contains(type);
     }
 
     public String getComments() {

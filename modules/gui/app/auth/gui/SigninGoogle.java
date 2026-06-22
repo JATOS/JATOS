@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static messaging.common.FlashMessagingHelper.ERROR;
+import static models.common.User.AuthMethod.OAUTH_GOOGLE;
 
 /**
  * Class that handles the sign-in of users via Google OIDC sign-in button.
@@ -125,7 +126,7 @@ public class SigninGoogle extends Controller {
             newUserProperties.setUsername(normalizedUsername);
             newUserProperties.setName(name);
             newUserProperties.setEmail(idTokenPayload.getEmail());
-            newUserProperties.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE);
+            newUserProperties.setAuthMethod(OAUTH_GOOGLE);
             List<ValidationError> errors = newUserProperties.validate();
             if (errors != null && !errors.isEmpty()) {
                 throw new ValidationException(errors.get(0).message());
