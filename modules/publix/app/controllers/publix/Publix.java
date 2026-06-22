@@ -4,10 +4,11 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
-import filters.publix.IdCookieFilter.IdCookies;
-import general.common.*;
+import general.common.Common;
+import general.common.StudyLogger;
 import group.GroupAdministration;
 import http.common.HttpUtils;
+import json.common.JsonUtils;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -23,9 +24,8 @@ import services.publix.PublixHelpers;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieService;
-import utils.common.StringUtils;
 import utils.common.IOUtils;
-import json.common.JsonUtils;
+import utils.common.StringUtils;
 
 import javax.inject.Singleton;
 import java.io.IOException;
@@ -34,9 +34,9 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Optional;
 
+import static actions.common.TransactionalAction.*;
 import static play.libs.Files.TemporaryFile;
 import static play.mvc.Http.Request;
-import static actions.common.TransactionalAction.*;
 
 /**
  * Abstract parent controller class for all worker type Publix classes
