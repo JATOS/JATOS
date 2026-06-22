@@ -29,12 +29,10 @@ public class DefaultJson {
         // Never include source JSON content in exception locations (prevents leaking payload snippets)
         mapper.getFactory().disable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
 
-        // Add the module jackson-datatype-hibernate
-        // https://github.com/FasterXML/jackson-datatype-hibernate
-        // Hibernate uses lazy loading by default for entity associations. Serialization with Jackson would fail with
-        // a LazyInitializationException if the association is not initialized. The FORCE_LAZY_LOADING feature forces
-        // the module to load the data from the database before serializing it.
-        // todo still necessary? performance?
+        // Register Jackson's Hibernate module so Jackson can handle Hibernate proxies and lazy collections.
+        // FORCE_LAZY_LOADING is disabled, so serialization will not trigger database loading of uninitialized
+        // lazy associations. Uninitialized lazy values are serialized as null / not expanded instead of causing
+        // Jackson to traverse Hibernate internals or potentially throwing LazyInitializationException.
         Hibernate5Module h5Module = new Hibernate5Module();
         h5Module.disable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
         mapper.registerModule(h5Module);
