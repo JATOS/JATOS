@@ -4,9 +4,11 @@ import akka.stream.Materializer;
 import http.common.Http;
 import http.common.Http.Context;
 import http.common.RouteAnnotations;
+import play.libs.typedmap.TypedKey;
 import play.mvc.Filter;
 import play.mvc.Http.RequestHeader;
 import play.mvc.Result;
+import services.publix.idcookie.IdCookieCollection;
 import services.publix.idcookie.IdCookieService;
 
 import javax.inject.Inject;
@@ -15,7 +17,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -26,6 +30,9 @@ import java.util.function.Function;
  */
 @Singleton
 public class IdCookieFilter extends Filter {
+
+    public static final TypedKey<Set<String>> INCOMING_IDCOOKIE_NAMES_TYPED_KEY = TypedKey.create("incomingIdCookieNames");
+    public static final TypedKey<IdCookieCollection> IDCOOKIES_TYPED_KEY = TypedKey.create("idCookies");
 
     /**
      * Annotation to mark controller methods that should be processed by the IdCookiesFilter.
@@ -54,12 +61,35 @@ public class IdCookieFilter extends Filter {
         }
 
         return Context.withContext(
-                () -> idCookieService.initFromRequestCookies(requestHeader.cookies()),
+                () -> initFromRequestCookies(requestHeader.cookies()),
                 nextFilter.apply(requestHeader)
         ).thenApply(result -> {
-            idCookieService.syncIdCookiesToResponse();
+            syncIdCookiesToResponse();
             return result;
         });
+    }
+
+    /**
+     * Initializes the {@link Http.Context#args()} with ID cookies
+     */
+    public void initFromRequestCookies(play.mvc.Http.Cookies cookies) {
+        Http.Context.current().args().put(INCOMING_IDCOOKIE_NAMES_TYPED_KEY, idCookieService.extractIdCookieNames(cookies));
+        Http.Context.current().args().put(IDCOOKIES_TYPED_KEY, idCookieService.extractFromCookies(cookies));
+    }
+
+    /**
+     * Synchronizes the ID cookies from {@link Http.Context#args()} with ID cookies in the response. ID cookies that
+     * were removed from {@link Http.Context#args()} during request handling are added as discard cookies.
+     */
+    public void syncIdCookiesToResponse() {
+        Set<String> incomingCookieNames = Http.Context.current().args().get(INCOMING_IDCOOKIE_NAMES_TYPED_KEY);
+        Set<String> finalCookieNames = idCookieService.generatePlayCookieNames();
+
+        Set<String> removedCookieNames = new HashSet<>(incomingCookieNames);
+        removedCookieNames.removeAll(finalCookieNames);
+
+        Http.Context.current().response().setCookies(idCookieService.generatePlayCookies());
+        Http.Context.current().response().setCookies(idCookieService.generateDiscardCookies(removedCookieNames));
     }
 
 }

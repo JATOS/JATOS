@@ -8,7 +8,6 @@ import http.common.HttpUtils;
 import models.common.ComponentResult;
 import models.common.StudyResult;
 import play.Logger;
-import play.libs.typedmap.TypedKey;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import services.publix.PublixErrorMessages;
@@ -25,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static filters.publix.IdCookieFilter.IDCOOKIES_TYPED_KEY;
 import static play.mvc.Http.Cookie.builder;
 
 /**
@@ -42,37 +42,11 @@ public class IdCookieService {
     private static final String COOKIE_EQUALS = "=";
     private static final String COOKIE_AND = "&";
 
-    public static final TypedKey<Set<String>> INCOMING_IDCOOKIE_NAMES_TYPED_KEY = TypedKey.create("incomingIdCookieNames");
-    public static final TypedKey<IdCookieCollection> IDCOOKIES_TYPED_KEY = TypedKey.create("idCookies");
-
     private final IdCookieSerialiser idCookieSerialiser;
 
     @Inject
     public IdCookieService(IdCookieSerialiser idCookieSerialiser) {
         this.idCookieSerialiser = idCookieSerialiser;
-    }
-
-    /**
-     * Initializes the {@link Http.Context#args()} with ID cookies
-     */
-    public void initFromRequestCookies(Cookies cookies) {
-        Http.Context.current().args().put(INCOMING_IDCOOKIE_NAMES_TYPED_KEY, extractIdCookieNames(cookies));
-        Http.Context.current().args().put(IDCOOKIES_TYPED_KEY, extractFromCookies(cookies));
-    }
-
-    /**
-     * Synchronizes the ID cookies from {@link Http.Context#args()} with ID cookies in the response. ID cookies that
-     * were removed from {@link Http.Context#args()} during request handling are added as discard cookies.
-     */
-    public void syncIdCookiesToResponse() {
-        Set<String> incomingCookieNames = Http.Context.current().args().get(INCOMING_IDCOOKIE_NAMES_TYPED_KEY);
-        Set<String> finalCookieNames = generatePlayCookieNames();
-
-        Set<String> removedCookieNames = new HashSet<>(incomingCookieNames);
-        removedCookieNames.removeAll(finalCookieNames);
-
-        Http.Context.current().response().setCookies(generatePlayCookies());
-        Http.Context.current().response().setCookies(generateDiscardCookies(removedCookieNames));
     }
 
     public IdCookieCollection idCookies() {
@@ -191,7 +165,7 @@ public class IdCookieService {
         return getIdCookie(studyResultId).getJatosRun();
     }
 
-    private Set<String> extractIdCookieNames(Cookies cookies) {
+    public Set<String> extractIdCookieNames(Cookies cookies) {
         Set<String> idCookieNames = new HashSet<>();
         for (Cookie cookie : cookies) {
             if (isIdCookieName(cookie.name())) {
@@ -210,7 +184,7 @@ public class IdCookieService {
      * Extracts all ID cookies from all the HTTP cookies and stores them into an {@link IdCookieCollection}. If a cookie
      * is malformed, it is discarded right away (removed from the Response).
      */
-    private IdCookieCollection extractFromCookies(Cookies cookies) {
+    public IdCookieCollection extractFromCookies(Cookies cookies) {
         IdCookieCollection idCookieCollection = new IdCookieCollection();
         for (Cookie cookie : cookies) {
             // Cookie names are case-insensitive
@@ -248,14 +222,14 @@ public class IdCookieService {
         return idCookie;
     }
 
-    private Cookie[] generatePlayCookies() {
+    public Cookie[] generatePlayCookies() {
         IdCookieCollection cookies = Http.Context.current().args().get(IDCOOKIES_TYPED_KEY);
         return cookies.getAll().stream()
                 .map(this::generatePlayCookie)
                 .toArray(Cookie[]::new);
     }
 
-    private Set<String> generatePlayCookieNames() {
+    public Set<String> generatePlayCookieNames() {
         IdCookieCollection cookies = Http.Context.current().args().get(IDCOOKIES_TYPED_KEY);
         return cookies.getAll().stream()
                 .map(IdCookieModel::getName)
@@ -278,7 +252,7 @@ public class IdCookieService {
         return cookieBuilder.build();
     }
 
-    private Cookie[] generateDiscardCookies(Set<String> cookieNames) {
+    public Cookie[] generateDiscardCookies(Set<String> cookieNames) {
         return cookieNames.stream()
                 .map(cookieName -> generateDiscardCookie(cookieName, Common.getJatosUrlBasePath()))
                 .toArray(Cookie[]::new);
