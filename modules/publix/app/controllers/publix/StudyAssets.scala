@@ -8,6 +8,7 @@ import general.common.{Common, MessagesStrings}
 import http.common.Http.Context
 import http.common.HttpUtils
 import play.api.Logger
+import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.db.jpa.JPAApi
@@ -25,6 +26,14 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
+
+/**
+ * Injectable wrapper around Play's standard AssetsBuilder, used by StudyAssets
+ * to serve bundled public assets such as jatos.js from custom controller logic.
+ */
+private[publix] class Assets @Inject()(errorHandler: HttpErrorHandler,
+                       assetsMetadata: controllers.AssetsMetadata
+                      ) extends controllers.AssetsBuilder(errorHandler, assetsMetadata)
 
 /**
  * Manages web-access to files in the external study assets directories (outside of JATOS' packed Jar).
