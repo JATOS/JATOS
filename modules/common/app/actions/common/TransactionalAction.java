@@ -1,5 +1,6 @@
 package actions.common;
 
+import http.common.Http.Context;
 import play.db.jpa.JPAApi;
 import play.mvc.Action;
 import play.mvc.Http;
@@ -39,11 +40,14 @@ import java.util.concurrent.CompletionStage;
             this.jpa = jpa;
         }
 
-        @Override
-        public CompletionStage<Result> call(Http.Request req) {
-            boolean readOnly = configuration != null && configuration.value() == Mode.READ_ONLY;
-            return jpa.withTransaction("default", readOnly, em -> {
-                return delegate.call(req);
-            });
-        }
+    @Override
+    public CompletionStage<Result> call(Http.Request req) {
+        boolean readOnly = configuration != null && configuration.value() == Mode.READ_ONLY;
+        Context context = req.attrs().get(Context.REQUEST_ATTR);
+
+        return jpa.withTransaction("default", readOnly, em -> {
+            CompletionStage<Result> result = Context.withContext(context, () -> delegate.call(req));
+            return result;
+        });
+    }
     }

@@ -21,23 +21,21 @@ import java.util.function.Function;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 /**
- * An asynchronous action that routes work to a specific executor. This action allows
- * delegating blocking operations (e.g., I/O or file system
- * operations) to custom execution contexts in order to avoid blocking Play's default
+ * An asynchronous action that routes work to a specific executor. This action allows delegating blocking operations
+ * (e.g., I/O or file system operations) to custom execution contexts in order to avoid blocking Play's default
  * dispatcher.
  *
- * This class facilitates the use of the {@link AsyncAction.Async} annotation, which specifies
- * the executor context to be used during the execution of the associated route or controller
- * method. The supported executors are defined in the {@link AsyncAction.Executor} enum.
+ * This class facilitates the use of the {@link AsyncAction.Async} annotation, which specifies the executor context to
+ * be used during the execution of the associated route or controller method. The supported executors are defined in the
+ * {@link AsyncAction.Executor} enum.
  *
- * To switch execution contexts for a specific route or controller method, use the
- * {@link AsyncAction.Async} annotation and specify the desired {@link AsyncAction.Executor}.
- * If no executor is specified, the {@link AsyncAction.Executor#DEFAULT} executor is used
- * as the fallback.
+ * To switch execution contexts for a specific route or controller method, use the {@link AsyncAction.Async} annotation
+ * and specify the desired {@link AsyncAction.Executor}. If no executor is specified, the
+ * {@link AsyncAction.Executor#DEFAULT} executor is used as the fallback.
  *
- * Internally, this class ensures proper management of the request context when switching
- * execution contexts. The context is set before executing the asynchronous work in the
- * specified executor and cleared after execution to prevent memory leaks.
+ * Internally, this class ensures proper management of the request context when switching execution contexts. The
+ * context is set before executing the asynchronous work in the specified executor and cleared after execution to
+ * prevent memory leaks.
  */
 public class AsyncAction extends Action<AsyncAction.Async> {
 
@@ -68,12 +66,11 @@ public class AsyncAction extends Action<AsyncAction.Async> {
     public CompletionStage<Result> call(Http.Request req) {
         Executor executor = (configuration != null) ? configuration.value() : Executor.DEFAULT;
 
-        if (executor == Executor.DEFAULT) {
-            return delegate.call(req);
-        } else {
-            // Context is already set by ContextFilter
-            Context context = Context.current();
+        Context context = req.attrs().get(Context.REQUEST_ATTR);
 
+        if (executor == Executor.DEFAULT) {
+            return Context.withContext(context, () -> delegate.call(req));
+        } else {
             return supplyAsync(() ->
                     Context.withContext(context, () -> delegate.call(req)), executors.get(executor))
                     .thenCompose(Function.identity());

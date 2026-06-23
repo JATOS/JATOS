@@ -24,9 +24,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
- * A Play filter that extracts the ID cookies from the requests and puts them into {@link Http.Args} where
- * they can be updated by the request's logic. At the end of the request the ID cookies are written back to the
- * response.
+ * A Play filter that extracts the ID cookies from the requests and puts them into {@link Http.Args} where they can be
+ * updated by the request's logic. At the end of the request the ID cookies are written back to the response.
  */
 @Singleton
 public class IdCookieFilter extends Filter {
@@ -60,13 +59,18 @@ public class IdCookieFilter extends Filter {
             return nextFilter.apply(requestHeader);
         }
 
-        return Context.withContext(
-                () -> initFromRequestCookies(requestHeader.cookies()),
-                nextFilter.apply(requestHeader)
-        ).thenApply(result -> {
-            syncIdCookiesToResponse();
-            return result;
+        Context context = requestHeader.attrs().get(Context.REQUEST_ATTR);
+
+        CompletionStage<Result> resultStage = Context.withContext(context, () -> {
+            initFromRequestCookies(requestHeader.cookies());
+            return nextFilter.apply(requestHeader);
         });
+
+        return resultStage.thenApply(result ->
+                Context.withContext(context, () -> {
+                    syncIdCookiesToResponse();
+                    return result;
+                }));
     }
 
     /**

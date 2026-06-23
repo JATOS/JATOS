@@ -33,34 +33,35 @@ public class RequestLoggingFilter extends Filter {
     public CompletionStage<Result> apply(Function<Http.RequestHeader, CompletionStage<Result>> nextFilter,
                                          Http.RequestHeader requestHeader) {
         long startTime = System.currentTimeMillis();
+        Context context = requestHeader.attrs().get(Context.REQUEST_ATTR);
+
         return nextFilter.apply(requestHeader)
-                .thenApply(
-                        result -> {
-                            ALogger logger = getLogger(requestHeader);
-                            long endTime = System.currentTimeMillis();
-                            long requestTime = endTime - startTime;
-                            Optional<User> signedinUser = Context.current().args().getOptional(SIGNEDIN_USER);
+                .thenApply(result -> Context.withContext(context, () -> {
+                    ALogger logger = getLogger(requestHeader);
+                    long endTime = System.currentTimeMillis();
+                    long requestTime = endTime - startTime;
+                    Optional<User> signedinUser = Context.current().args().getOptional(SIGNEDIN_USER);
 
-                            if (signedinUser.isPresent()) {
-                                String username = signedinUser.map(User::getUsername).orElse("UNKNOWN");
-                                String anonymizedUsername = StringUtils.anonymizeUsername(username);
-                                logger.info("{} {} by {} took {}ms and returned {}",
-                                        requestHeader.method(),
-                                        requestHeader.uri(),
-                                        anonymizedUsername,
-                                        requestTime,
-                                        result.status());
-                            } else {
-                                logger.info(
-                                        "{} {} took {}ms and returned {}",
-                                        requestHeader.method(),
-                                        requestHeader.uri(),
-                                        requestTime,
-                                        result.status());
-                            }
+                    if (signedinUser.isPresent()) {
+                        String username = signedinUser.map(User::getUsername).orElse("UNKNOWN");
+                        String anonymizedUsername = StringUtils.anonymizeUsername(username);
+                        logger.info("{} {} by {} took {}ms and returned {}",
+                                requestHeader.method(),
+                                requestHeader.uri(),
+                                anonymizedUsername,
+                                requestTime,
+                                result.status());
+                    } else {
+                        logger.info(
+                                "{} {} took {}ms and returned {}",
+                                requestHeader.method(),
+                                requestHeader.uri(),
+                                requestTime,
+                                result.status());
+                    }
 
-                            return result;
-                        });
+                    return result;
+                }));
     }
 
     private ALogger getLogger(Http.RequestHeader requestHeader) {
