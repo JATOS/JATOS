@@ -3,13 +3,15 @@ package services.publix;
 import daos.common.BatchDao;
 import daos.common.worker.WorkerDao;
 import models.common.Batch;
-import models.common.workers.GeneralMultipleWorker;
-import models.common.workers.GeneralSingleWorker;
-import models.common.workers.MTSandboxWorker;
-import models.common.workers.MTWorker;
-import models.common.workers.Worker;
+import models.common.workers.*;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import testutils.publix.JPAMocker;
+
+import javax.persistence.EntityManager;
+
+import java.util.function.Function;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -30,11 +32,14 @@ public class WorkerCreatorTest {
         batchDao = mock(BatchDao.class);
         workerCreator = new WorkerCreator(workerDao, batchDao);
 
+        EntityManager entityManager = Mockito.mock(EntityManager.class);
+        JPAMocker.mockDaoTransactions(entityManager, workerDao, batchDao);
+
         doAnswer(invocation -> {
             Worker worker = invocation.getArgument(0);
             worker.setId(100L);
             return null;
-        }).when(workerDao).create(any(Worker.class));
+        }).when(workerDao).persist(any(Worker.class));
     }
 
     @Test
@@ -49,6 +54,7 @@ public class WorkerCreatorTest {
         assertTrue(created instanceof MTSandboxWorker);
         assertEquals(mtId, created.getMTWorkerId());
         assertFalse(batch.getWorkerList().contains(created));
+        verify(workerDao).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(workerDao).persist(created);
         verify(batchDao).addWorkerToBatch(batch.getId(), created.getId());
         verifyNoMoreInteractions(workerDao, batchDao);
@@ -66,6 +72,7 @@ public class WorkerCreatorTest {
         assertFalse(created instanceof MTSandboxWorker);
         assertEquals(mtId, created.getMTWorkerId());
         assertFalse(batch.getWorkerList().contains(created));
+        verify(workerDao).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(workerDao).persist(created);
         verify(batchDao).addWorkerToBatch(batch.getId(), created.getId());
         verifyNoMoreInteractions(workerDao, batchDao);
@@ -80,6 +87,7 @@ public class WorkerCreatorTest {
 
         assertNotNull(created);
         assertFalse(batch.getWorkerList().contains(created));
+        verify(workerDao).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(workerDao).persist(created);
         verify(batchDao).addWorkerToBatch(batch.getId(), created.getId());
         verifyNoMoreInteractions(workerDao, batchDao);
@@ -94,6 +102,7 @@ public class WorkerCreatorTest {
 
         assertNotNull(created);
         assertFalse(batch.getWorkerList().contains(created));
+        verify(workerDao).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(workerDao).persist(created);
         verify(batchDao).addWorkerToBatch(batch.getId(), created.getId());
         verifyNoMoreInteractions(workerDao, batchDao);

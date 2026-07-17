@@ -5,15 +5,15 @@ package exceptions.publix;
  */
 public class JatosComponentRunFinishedException extends RuntimeException {
 
-    private final String uuid;
+    private final String studyUuid;
 
-	public JatosComponentRunFinishedException(String uuid) {
+	public JatosComponentRunFinishedException(String studyUuid) {
 		super();
-        this.uuid = uuid;
+        this.studyUuid = studyUuid;
 	}
 
-    public String getUuid() {
-        return uuid;
+    public String getStudyUuid() {
+        return studyUuid;
     }
 
 }

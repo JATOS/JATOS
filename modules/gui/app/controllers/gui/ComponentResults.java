@@ -8,7 +8,6 @@ import auth.gui.AuthAction.Auth;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
-import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import http.common.Http.Context;
@@ -19,7 +18,10 @@ import models.common.User;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.*;
+import services.gui.AuthorizationService;
+import services.gui.BreadcrumbsService;
+import services.gui.ResultRemover;
+import services.gui.ResultStreamer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -28,9 +30,9 @@ import java.util.List;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static messaging.common.FlashMessagingHelper.ERROR;
 import static models.common.User.Role.USER;
 import static models.common.User.Role.VIEWER;
-import static messaging.common.FlashMessagingHelper.*;
 
 /**
  * Controller that deals with requests regarding ComponentResult.
@@ -91,7 +93,7 @@ public class ComponentResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
-    public Result remove(Http.Request request) throws ForbiddenException, BadRequestException, NotFoundException {
+    public Result remove(Http.Request request) {
         if (request.body().asJson() == null) return badRequest("Malformed request body");
         if (!request.body().asJson().has("componentResultIds")) return badRequest("Malformed JSON");
 
@@ -108,7 +110,7 @@ public class ComponentResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER})
-    public Result tableDataByComponent(Long componentId) throws ForbiddenException, NotFoundException {
+    public Result tableDataByComponent(Long componentId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Component component = componentDao.findById(componentId);
         authorizationService.canUserAccessComponent(component, signedinUser);
@@ -122,7 +124,7 @@ public class ComponentResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER})
-    public Result exportSingleResultData(Long componentResultId) throws ForbiddenException, NotFoundException {
+    public Result exportSingleResultData(Long componentResultId) {
         ComponentResult componentResult = componentResultDao.findByIdWithComponent(componentResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessComponentResult(componentResult, signedinUser, false);

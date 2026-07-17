@@ -3,14 +3,13 @@ package services.gui;
 import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import exceptions.common.BadRequestException;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
-import play.db.jpa.JPAApi;
 import models.gui.StudyCodeProperties;
 
 import javax.inject.Inject;
@@ -25,19 +24,16 @@ import java.util.List;
 @Singleton
 public class StudyLinkService {
 
-    private final JPAApi jpa;
     private final BatchDao batchDao;
     private final WorkerDao workerDao;
     private final StudyLinkDao studyLinkDao;
     private final WorkerService workerService;
 
     @Inject
-    StudyLinkService(JPAApi jpa,
-                     BatchDao batchDao,
+    StudyLinkService(BatchDao batchDao,
                      WorkerDao workerDao,
                      StudyLinkDao studyLinkDao,
                      WorkerService workerService) {
-        this.jpa = jpa;
         this.batchDao = batchDao;
         this.workerDao = workerDao;
         this.studyLinkDao = studyLinkDao;
@@ -45,6 +41,8 @@ public class StudyLinkService {
     }
 
     public List<String> getStudyCodes(Batch batch, StudyCodeProperties props) {
+        if (props.getType() == null) throw new BadRequestException("Unknown type");
+
         switch (props.getType()) {
             case PERSONAL_SINGLE:
             case PERSONAL_MULTIPLE:
@@ -60,8 +58,12 @@ public class StudyLinkService {
         }
     }
 
+    /**
+     * Creates and persists study links for the PERSONAL worker types. It can create multiple study codes if the amount
+     * is greater than 1. If the amount is smaller than 1, it returns a single study code.
+     */
     private List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, WorkerType workerType) {
-        return jpa.withTransaction(em -> {
+        return studyLinkDao.withTransaction(em -> {
             int i = Math.max(amount, 1);
 
             List<String> studyCodeList = new ArrayList<>();

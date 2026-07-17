@@ -1,9 +1,8 @@
 package controllers.publix;
 
 import controllers.publix.workers.*;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import exceptions.common.BadRequestException;
-import models.common.workers.*;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

@@ -1,13 +1,16 @@
 package services.gui;
 
+import daos.common.StudyDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
+import general.common.ApiEnvelope.ErrorCode;
+import general.common.Common;
 import models.common.*;
 import models.common.workers.Worker;
-import general.common.ApiEnvelope.ErrorCode;
 import models.gui.NewUserProperties;
 import models.gui.UserProperties;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
@@ -24,13 +27,30 @@ import static services.gui.UserService.ADMIN_USERNAME;
 @Singleton
 public class AuthorizationService {
 
-    public void canUserAccessComponent(Component component, User user)
-        throws NotFoundException, ForbiddenException {
+    private final StudyDao studyDao;
+
+    @Inject
+    public AuthorizationService(StudyDao studyDao) {
+        this.studyDao = studyDao;
+    }
+
+    public boolean isAllowedSuperuser(User user) {
+        return Common.isUserRoleAllowSuperuser() && user.isSuperuser();
+    }
+
+    /**
+     * Check that the user is a member of the study or a superuser. Use studyDao.hasUser (instead of study.hasUser) in
+     * case the Hibernate entity is not fully initialized.
+     */
+    public boolean isMemberOrSuperuser(Study study, User user) {
+        return studyDao.hasUser(study, user) || isAllowedSuperuser(user);
+    }
+
+    public void canUserAccessComponent(Component component, User user) {
         canUserAccessComponent(component, user, false);
     }
 
-    public void canUserAccessComponent(Component component, User user, boolean studyMustNotBeLocked)
-        throws NotFoundException, ForbiddenException {
+    public void canUserAccessComponent(Component component, User user, boolean studyMustNotBeLocked) {
         if (component == null) {
             throw new NotFoundException("Component doesn't exist.");
         }
@@ -39,13 +59,11 @@ public class AuthorizationService {
         checkStudyNotLocked(study, studyMustNotBeLocked);
     }
 
-    public void canUserAccessBatch(Batch batch, User user)
-        throws NotFoundException, ForbiddenException {
+    public void canUserAccessBatch(Batch batch, User user) {
         canUserAccessBatch(batch, user, false);
     }
 
-    public void canUserAccessBatch(Batch batch, User user, boolean studyMustNotBeLocked)
-        throws NotFoundException, ForbiddenException {
+    public void canUserAccessBatch(Batch batch, User user, boolean studyMustNotBeLocked) {
         if (batch == null) {
             throw new NotFoundException("Batch doesn't exist.");
         }
@@ -54,12 +72,11 @@ public class AuthorizationService {
         checkStudyNotLocked(study, studyMustNotBeLocked);
     }
 
-    public void canUserAccessStudyLink(StudyLink studyLink, User user) throws ForbiddenException, NotFoundException {
+    public void canUserAccessStudyLink(StudyLink studyLink, User user) {
         canUserAccessStudyLink(studyLink, user, false);
     }
 
-    public void canUserAccessStudyLink(StudyLink studyLink, User user, boolean studyMustNotBeLocked)
-        throws NotFoundException, ForbiddenException {
+    public void canUserAccessStudyLink(StudyLink studyLink, User user, boolean studyMustNotBeLocked) {
         if (studyLink == null) {
             throw new NotFoundException("Study code doesn't exist.");
         }
@@ -68,13 +85,11 @@ public class AuthorizationService {
         checkStudyNotLocked(study, studyMustNotBeLocked);
     }
 
-    public void canUserAccessGroupResult(GroupResult groupResult, User user)
-        throws ForbiddenException, NotFoundException {
+    public void canUserAccessGroupResult(GroupResult groupResult, User user) {
         canUserAccessGroupResult(groupResult, user, false);
     }
 
-    public void canUserAccessGroupResult(GroupResult groupResult, User user, boolean studyMustNotBeLocked)
-        throws ForbiddenException, NotFoundException {
+    public void canUserAccessGroupResult(GroupResult groupResult, User user, boolean studyMustNotBeLocked) {
         if (groupResult == null) {
             throw new NotFoundException("GroupResult does not exist");
         }
@@ -83,48 +98,55 @@ public class AuthorizationService {
         checkStudyNotLocked(study, studyMustNotBeLocked);
     }
 
-    public void checkNotDefaultBatch(Batch batch) throws ForbiddenException {
+    public void checkNotDefaultBatch(Batch batch) {
         if (batch.equals(batch.getStudy().getDefaultBatch())) {
             throw new ForbiddenException("Not default batch.");
         }
     }
 
-    public void checkStudyNotLocked(Study study) throws ForbiddenException {
+    @SuppressWarnings("unused")
+    public void checkStudyNotLocked(Study study) {
         checkStudyNotLocked(study, true);
     }
 
-    private void checkStudyNotLocked(Study study, boolean studyMustNotBeLocked) throws ForbiddenException {
-        if (studyMustNotBeLocked && study.isLocked()) {
+    private void checkStudyNotLocked(Study study, boolean studyMustNotBeLocked) {
+        // Use studyDao.isLocked (instead of study.isLocked) in case the Hibernate entity is not fully initialized
+        if (studyMustNotBeLocked && studyDao.isLocked(study.getId())) {
             throw new ForbiddenException("Study locked", ErrorCode.STUDY_LOCKED);
         }
     }
 
-    public void canUserAccessStudy(Study study, User user) throws ForbiddenException, NotFoundException {
+    public void canUserAccessStudy(Study study, User user) {
         canUserAccessStudy(study, user, false);
     }
 
-    public void canUserAccessStudy(Study study, User user, boolean studyMustNotBeLocked)
-        throws ForbiddenException, NotFoundException {
+    public void canUserAccessStudy(Study study, User user, boolean studyMustNotBeLocked) {
         if (study == null) {
             throw new NotFoundException("Study doesn't exist.");
         }
-        // Check that the user is a member of the study or a superuser
-        if (!(study.hasUser(user) || UserService.isAllowedSuperuser(user))) {
+        if (!isMemberOrSuperuser(study, user)) {
             throw new ForbiddenException("No access to study.", ErrorCode.NO_ACCESS);
         }
         checkStudyNotLocked(study, studyMustNotBeLocked);
     }
 
+    public void canUserAccessStudyOrAdmin(Study study, User user) {
+        if (study == null) {
+            throw new NotFoundException("Study doesn't exist.");
+        }
+        if (!(isMemberOrSuperuser(study, user) || user.isAdmin())) {
+            throw new ForbiddenException("No access to study.", ErrorCode.NO_ACCESS);
+        }
+    }
+
     public void canUserAccessComponentResults(List<ComponentResult> componentResultList, User user,
-                                              boolean studyMustNotBeLocked)
-        throws ForbiddenException, NotFoundException {
+                                              boolean studyMustNotBeLocked) {
         for (ComponentResult componentResult : componentResultList) {
             canUserAccessComponentResult(componentResult, user, studyMustNotBeLocked);
         }
     }
 
-    public void canUserAccessComponentResult(ComponentResult componentResult, User user, boolean studyMustNotBeLocked)
-        throws ForbiddenException, NotFoundException {
+    public void canUserAccessComponentResult(ComponentResult componentResult, User user, boolean studyMustNotBeLocked) {
         if (componentResult == null) {
             throw new NotFoundException("Component doesn't exists");
         }
@@ -133,15 +155,13 @@ public class AuthorizationService {
         checkStudyNotLocked(study, studyMustNotBeLocked);
     }
 
-    public void canUserAccessStudyResults(List<StudyResult> studyResultList, User user, boolean studyMustNotBeLocked)
-        throws ForbiddenException, NotFoundException {
+    public void canUserAccessStudyResults(List<StudyResult> studyResultList, User user, boolean studyMustNotBeLocked) {
         for (StudyResult studyResult : studyResultList) {
             canUserAccessStudyResult(studyResult, user, studyMustNotBeLocked);
         }
     }
 
-    public void canUserAccessStudyResult(StudyResult studyResult, User user, boolean studyMustNotBeLocked)
-        throws ForbiddenException, NotFoundException {
+    public void canUserAccessStudyResult(StudyResult studyResult, User user, boolean studyMustNotBeLocked) {
         if (studyResult == null) {
             throw new NotFoundException("StudyResult doesn't exists");
         }
@@ -150,22 +170,22 @@ public class AuthorizationService {
         checkStudyNotLocked(study, studyMustNotBeLocked);
     }
 
-    public void canUserAccessWorker(User user, Worker worker) throws ForbiddenException, NotFoundException {
+    public void canUserAccessWorker(User user, Worker worker) {
         if (worker == null) {
             throw new NotFoundException("Worker doesn't exist");
         }
-        boolean allowed = user.getStudyList().stream()
-            .map(Study::getBatchList)
-            .flatMap(List::stream)
-            .map(Batch::getWorkerList)
-            .flatMap(Set::stream)
-            .anyMatch(w -> w.equals(worker));
+        boolean allowed = studyDao.findAllByUser(user).stream()
+                .map(Study::getBatchList)
+                .flatMap(List::stream)
+                .map(Batch::getWorkerList)
+                .flatMap(Set::stream)
+                .anyMatch(w -> w.equals(worker));
         if (!allowed) {
             throw new ForbiddenException("User is not allowed to access this Worker", ErrorCode.NO_ACCESS);
         }
     }
 
-    public void checkAdminOrSelf(User signedinUser, User user) throws ForbiddenException, NotFoundException {
+    public void checkAdminOrSelf(User signedinUser, User user) {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -174,13 +194,13 @@ public class AuthorizationService {
         }
     }
 
-    public void checkAuthMethodIsDbOrLdap(NewUserProperties props) throws ForbiddenException {
+    public void checkAuthMethodIsDbOrLdap(NewUserProperties props) {
         if (!Arrays.asList(DB, LDAP).contains(props.getAuthMethod())) {
             throw new ForbiddenException("Invalid authentication method", ErrorCode.INVALID_AUTH_METHOD);
         }
     }
 
-    public void checkAuthMethodIsDbOrLdap(User user) throws ForbiddenException, NotFoundException {
+    public void checkAuthMethodIsDbOrLdap(User user) {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -189,7 +209,7 @@ public class AuthorizationService {
         }
     }
 
-    public void checkNotUserAdmin(User user) throws ForbiddenException, NotFoundException {
+    public void checkNotUserAdmin(User user) {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -198,7 +218,7 @@ public class AuthorizationService {
         }
     }
 
-    public void checkNotYourself(User signedinUser, User user) throws ForbiddenException, NotFoundException {
+    public void checkNotYourself(User signedinUser, User user) {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -207,7 +227,7 @@ public class AuthorizationService {
         }
     }
 
-    public void checkSignedinUserAllowedToChangeUser(UserProperties props, User signedinUser, User user) throws ForbiddenException {
+    public void checkSignedinUserAllowedToChangeUser(UserProperties props, User signedinUser, User user) {
         final boolean isPropsAdminUser = ADMIN_USERNAME.equals(props.getUsername());
         final boolean isSignedinAdminUser = ADMIN_USERNAME.equals(signedinUser.getUsername());
         final boolean passwordChangeRequested = props.getPassword() != null;
@@ -230,7 +250,7 @@ public class AuthorizationService {
         }
     }
 
-    public void checkSignedinUserAllowedToAccessUser(User user, User signedinUser) throws ForbiddenException, NotFoundException {
+    public void checkSignedinUserAllowedToAccessUser(User user, User signedinUser) {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
@@ -241,14 +261,14 @@ public class AuthorizationService {
         }
     }
 
-    public void checkUserAllowedToAccessApiToken(ApiToken token, User signedinUser) throws ForbiddenException, NotFoundException {
+    public void checkUserAllowedToAccessApiToken(ApiToken token, User signedinUser) {
         if (token == null) {
             throw new NotFoundException("Token not found");
         }
         checkSignedinUserAllowedToAccessUser(token.getUser(), signedinUser);
     }
 
-    public void checkUserExists(User user) throws NotFoundException {
+    public void checkUserExists(User user) {
         if (user == null) {
             throw new NotFoundException("User not found");
         }

@@ -3,7 +3,6 @@ package models.common.workers;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import daos.common.worker.WorkerType;
 import models.common.Batch;
 import models.common.StudyResult;
 import play.data.validation.ValidationError;
@@ -18,7 +17,7 @@ import java.util.*;
  * (and their component results).
  *
  * All worker entities are stored in the same database table. Inheritance is
- * established with an discriminator column.
+ * established with a discriminator column.
  */
 @Entity
 @Table(name = "Worker")
@@ -30,16 +29,16 @@ import java.util.*;
 public abstract class Worker {
 
     public static final String DISCRIMINATOR = "workerType";
-    public static final String UI_WORKER_TYPE = "uiWorkerType";
     public static final String COMMENT = "comment";
 
     @Id
     @GeneratedValue
     private Long id;
 
-    @Convert(converter = WorkerTypeConverter.class)
-    @Column(name = "workerType")
-    private WorkerType workerType;
+    /**
+     * Worker type is determined by the concrete Worker subclass / JPA discriminator.
+     */
+    public abstract WorkerType getWorkerType();
 
     /**
      * Some comment the user can give during study link/worker creation (only for {@link PersonalSingleWorker} and
@@ -83,20 +82,16 @@ public abstract class Worker {
         return this.id;
     }
 
-    public void setWorkerType(WorkerType workerType) {
-        this.workerType = workerType;
-    }
-
-    public WorkerType getWorkerType() {
-        return workerType;
-    }
-
     public void setComment(String comment) {
         this.comment = comment;
     }
 
     public String getComment() {
         return this.comment;
+    }
+
+    public List<StudyResult> getStudyResultList() {
+        return studyResultList;
     }
 
     public void addStudyResult(StudyResult studyResult) {
@@ -109,10 +104,6 @@ public abstract class Worker {
 
     public Set<Batch> getBatchList() {
         return batchList;
-    }
-
-    public boolean hasBatch(Batch batch) {
-        return batchList.contains(batch);
     }
 
     public void addBatch(Batch batch) {

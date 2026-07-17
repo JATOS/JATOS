@@ -1,5 +1,5 @@
 name := "jatos-common"
-version := "3.10.4"
+version := "3.10.5"
 organization := "org.jatos"
 scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
   "com.diffplug.durian" % "durian" % "3.4.0",
   "org.apache.commons" % "commons-lang3" % "3.18.0",
   "org.mockito" % "mockito-inline" % "4.11.0" % "test",
-  "org.easytesting" % "fest-assert" % "1.4" % "test"
+  "org.assertj" % "assertj-core" % "3.26.0" % Test
 )
 
 // No source docs in distribution

@@ -1,7 +1,7 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import general.common.Common;
 import models.common.*;
 import models.common.workers.Worker;
@@ -138,10 +138,6 @@ public class IdCookieModel {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public int getIndex() {
-        return index;
     }
 
     public void setIndex(int index) {

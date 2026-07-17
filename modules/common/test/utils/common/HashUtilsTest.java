@@ -2,7 +2,6 @@ package utils.common;
 
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -60,7 +59,7 @@ public class HashUtilsTest {
 
     @Test
     public void testGetChecksumString() {
-        String checksum = HashUtils.getChecksum(TEST_STRING);
+        String checksum = HashUtils.getChecksum(TEST_STRING, 6);
         assertEquals(6, checksum.length());
         assertEquals(EXPECTED_MD5.substring(0, 6), checksum);
     }
@@ -70,7 +69,7 @@ public class HashUtilsTest {
         // Create a temporary file with test content
         Path tempFile = Files.createTempFile("checksumtest", ".txt");
         Files.write(tempFile, TEST_STRING.getBytes(StandardCharsets.UTF_8));
-        File file = tempFile.toFile();
+        Path file = tempFile;
 
         try {
             long checksum = HashUtils.getChecksum(file);

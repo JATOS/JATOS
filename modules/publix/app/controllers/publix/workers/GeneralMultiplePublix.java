@@ -9,13 +9,12 @@ import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.GeneralMultipleWorker;
-import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.WorkerType;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
@@ -46,8 +45,7 @@ public class GeneralMultiplePublix extends Publix implements IPublix {
     private final StudyLogger studyLogger;
 
     @Inject
-    GeneralMultiplePublix(JPAApi jpa,
-                          PublixUtils publixUtils,
+    GeneralMultiplePublix(PublixUtils publixUtils,
                           GeneralMultipleStudyAuthorisation studyAuthorisation,
                           ResultCreator resultCreator,
                           WorkerCreator workerCreator,
@@ -55,15 +53,15 @@ public class GeneralMultiplePublix extends Publix implements IPublix {
                           IdCookieService idCookieService,
                           PublixErrorMessages errorMessages,
                           StudyAssets studyAssets,
-                          JsonUtils jsonUtils,
+                          DomainJsonMapper domainJsonMapper,
                           ComponentResultDao componentResultDao,
                           StudyResultDao studyResultDao,
                           StudyLogger studyLogger,
                           IOUtils ioUtils,
-                          IOExecutor dbContext,
+                          IOExecutor ioContext,
                           StudyAssetsExecutor studyAssetsExecutor) {
-        super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
-                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils, dbContext, studyAssetsExecutor);
+        super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioContext, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -89,8 +87,7 @@ public class GeneralMultiplePublix extends Publix implements IPublix {
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId());
-        studyLogger.log(studyLink, "Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE
-                + " worker", worker);
+        studyLogger.log(studyLink, "Started study run with " + WorkerType.PERSONAL_MULTIPLE + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyResult.getUuid(), firstComponent.getUuid(), null));
     }

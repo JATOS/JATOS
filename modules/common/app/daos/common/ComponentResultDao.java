@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Clob;
 import java.sql.SQLException;
@@ -40,7 +41,7 @@ public class ComponentResultDao extends AbstractDao {
      * Overwrite data in 'data' fields (data, dataShort, dataSize)
      */
     public void replaceData(Long id, String data) {
-        jpa.withTransaction(em -> {
+        withTransaction(em -> {
             em.createNativeQuery("UPDATE ComponentResult cr " +
                             "SET cr.data = :data, " +
                             "cr.dataShort = SUBSTR(:data, 1, 1000), " +
@@ -53,7 +54,7 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     public void purgeData(Long id) {
-        jpa.withTransaction(em -> {
+        withTransaction(em -> {
             em.createNativeQuery("UPDATE ComponentResult cr " +
                             "SET cr.data = NULL, cr.dataShort = NULL, cr.dataSize = 0 " +
                             "WHERE cr.id = :id")
@@ -66,7 +67,7 @@ public class ComponentResultDao extends AbstractDao {
      * Append data to 'data' field and replace data in 'dataShort' and 'dataSize'
      */
     public void appendData(Long id, String data) {
-        jpa.withTransaction(em -> {
+        withTransaction(em -> {
             if (Common.usesMysql()) {
                 em.createNativeQuery("UPDATE ComponentResult cr " +
                                 "SET cr.data = CONCAT(COALESCE(cr.data, ''), :data), " +
@@ -126,7 +127,7 @@ public class ComponentResultDao extends AbstractDao {
      * of JATOS that didn't have those fields yet).
      */
     public void setDataSizeAndDataShort(Long id) {
-        jpa.withTransaction(em -> {
+        withTransaction(em -> {
             Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                     .setParameter("id", id)
                     .getSingleResult();
@@ -154,7 +155,7 @@ public class ComponentResultDao extends AbstractDao {
      * in use, MySQL or H2. So we have to treat them differently to get the String.
      */
     public String getData(Long id) {
-        return jpa.withTransaction((javax.persistence.EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                     .setParameter("id", id)
                     .getSingleResult();
@@ -171,14 +172,14 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     public ComponentResult findById(Long id) {
-        return jpa.withTransaction((javax.persistence.EntityManager em) -> em.find(ComponentResult.class, id));
+        return withReadOnlyTransaction((EntityManager em) -> em.find(ComponentResult.class, id));
     }
 
     /**
      * Finds a componentResult by its ID and eagerly fetches the componet to avoid LazyInitializationException.
      */
     public ComponentResult findByIdWithComponent(Long id) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT cr FROM ComponentResult cr LEFT JOIN FETCH cr.component WHERE cr.id = :id";
             return em.createQuery(queryStr, ComponentResult.class)
                     .setParameter("id", id)
@@ -188,14 +189,14 @@ public class ComponentResultDao extends AbstractDao {
 
     public List<ComponentResult> findByIds(List<Long> ids) {
         if (ids.isEmpty()) return Collections.emptyList();
-        return jpa.withTransaction((javax.persistence.EntityManager em) -> em
+        return withReadOnlyTransaction((EntityManager em) -> em
                 .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.id IN :ids", ComponentResult.class)
                 .setParameter("ids", ids)
                 .getResultList());
     }
 
     public int count() {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr";
             Query query = em.createQuery(queryStr);
             Number result = (Number) query.getSingleResult();
@@ -207,7 +208,7 @@ public class ComponentResultDao extends AbstractDao {
      * Returns the number of ComponentResults belonging to the given Component.
      */
     public int countByComponent(Component component) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.component=:component";
             Query query = em.createQuery(queryStr);
             Number result = (Number) query.setParameter("component", component).getSingleResult();
@@ -216,20 +217,41 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
+     * Returns the number of ComponentResults belonging to each Component of the given Study.
+     */
+    public Map<Long, Integer> countByStudyComponents(Study study) {
+        if (study == null) return Collections.emptyMap();
+        return withReadOnlyTransaction(em -> {
+            List<Tuple> tuples = em.createQuery(
+                            "SELECT cr.component.id AS componentId, COUNT(cr) AS count " +
+                                    "FROM ComponentResult cr " +
+                                    "WHERE cr.component.study = :study " +
+                                    "GROUP BY cr.component.id",
+                            Tuple.class)
+                    .setParameter("study", study)
+                    .getResultList();
+            return tuples.stream().collect(Collectors.toMap(
+                    (Tuple t) -> ((Number) t.get("componentId")).longValue(),
+                    (Tuple t) -> ((Number) t.get("count")).intValue()
+            ));
+        });
+    }
+
+    /**
      * Fetches all ComponentResults without 'dataSize' (is null). This is used only during update from an old version of
      * JATOS that didn't have those fields yet.
      */
     public List<Long> findAllIdsWhereDataSizeIsNull() {
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.dataSize is NULL", Long.class)
-                .getResultList());
+                        .getResultList());
     }
 
     public List<ComponentResult> findAllByComponent(Component component) {
-        return jpa.withTransaction((javax.persistence.EntityManager em) -> em
-                .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
-                .setParameter("component", component)
-                .getResultList());
+        return withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
+                        .setParameter("component", component)
+                        .getResultList());
     }
 
     /**
@@ -240,17 +262,17 @@ public class ComponentResultDao extends AbstractDao {
      */
     public List<ComponentResult> findAllByComponent(Component component, int first, int max) {
         // Added 'LEFT JOIN FETCH' for performance (loads LAZY-linked StudyResults and their Workers)
-        return jpa.withTransaction((javax.persistence.EntityManager em) -> em
-                .createQuery("SELECT cr FROM ComponentResult cr " +
-                                "LEFT JOIN FETCH cr.studyResult sr " +
-                                "LEFT JOIN FETCH sr.worker " +
-                                "WHERE cr.component=:component " +
-                                "ORDER BY cr.id ASC",
-                        ComponentResult.class)
-                .setFirstResult(first)
-                .setMaxResults(max)
-                .setParameter("component", component)
-                .getResultList());
+        return withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("SELECT cr FROM ComponentResult cr " +
+                                        "LEFT JOIN FETCH cr.studyResult sr " +
+                                        "LEFT JOIN FETCH sr.worker " +
+                                        "WHERE cr.component=:component " +
+                                        "ORDER BY cr.id ASC",
+                                ComponentResult.class)
+                        .setFirstResult(first)
+                        .setMaxResults(max)
+                        .setParameter("component", component)
+                        .getResultList());
     }
 
     /**
@@ -263,7 +285,7 @@ public class ComponentResultDao extends AbstractDao {
                 .filter(Objects::nonNull)
                 .map(Component::getId)
                 .collect(Collectors.toList());
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             Number result = (Number) em.createQuery(
                             "SELECT SUM(cr.dataSize) FROM ComponentResult cr WHERE cr.component.id IN :componentIds")
                     .setParameter("componentIds", componentIds)
@@ -274,52 +296,52 @@ public class ComponentResultDao extends AbstractDao {
 
     public List<Long> findIdsByComponentIds(List<Long> componentIds) {
         if (componentIds.isEmpty()) return Collections.emptyList();
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN :componentIds", Long.class)
-                .setParameter("componentIds", componentIds)
-                .getResultList().stream().distinct().collect(Collectors.toList()));
+                        .setParameter("componentIds", componentIds)
+                        .getResultList().stream().distinct().collect(Collectors.toList()));
     }
 
     public List<Long> findIdsByComponentUuids(List<String> componentUuids) {
         if (componentUuids.isEmpty()) return Collections.emptyList();
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN " +
-                        "(SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)", Long.class)
-                .setParameter("componentUuids", componentUuids)
-                .getResultList().stream().distinct().collect(Collectors.toList()));
+                                "(SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)", Long.class)
+                        .setParameter("componentUuids", componentUuids)
+                        .getResultList().stream().distinct().collect(Collectors.toList()));
     }
 
     public List<Long> findIdsByStudyIds(List<Long> studyIds) {
         if (studyIds.isEmpty()) return Collections.emptyList();
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN " +
-                        "(SELECT c.id FROM Component c WHERE c.study.id IN :studyIds)", Long.class)
-                .setParameter("studyIds", studyIds)
-                .getResultList().stream().distinct().collect(Collectors.toList()));
+                                "(SELECT c.id FROM Component c WHERE c.study.id IN :studyIds)", Long.class)
+                        .setParameter("studyIds", studyIds)
+                        .getResultList().stream().distinct().collect(Collectors.toList()));
     }
 
     public List<Long> findIdsByStudyUuids(List<String> studyUuids) {
         if (studyUuids.isEmpty()) return Collections.emptyList();
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN " +
-                        "(SELECT c.id FROM Component c WHERE c.study.id IN " +
-                        "(SELECT s.id FROM Study s WHERE s.uuid IN :studyUuids))", Long.class)
-                .setParameter("studyUuids", studyUuids)
-                .getResultList().stream().distinct().collect(Collectors.toList()));
+                                "(SELECT c.id FROM Component c WHERE c.study.id IN " +
+                                "(SELECT s.id FROM Study s WHERE s.uuid IN :studyUuids))", Long.class)
+                        .setParameter("studyUuids", studyUuids)
+                        .getResultList().stream().distinct().collect(Collectors.toList()));
     }
 
     public List<Long> findIdsByStudyResultId(Long srid) {
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.studyResult.id = :srid", Long.class)
-                .setParameter("srid", srid)
-                .getResultList());
+                        .setParameter("srid", srid)
+                        .getResultList());
     }
 
     /**
      * Returns the last ComponentResult that belongs to the given StudyResult.
      */
     public Optional<ComponentResult> findLastByStudyResult(StudyResult studyResult) {
-        return jpa.withTransaction(em -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.studyResult = :studyResult ORDER BY cr.id DESC";
             TypedQuery<ComponentResult> query = em.createQuery(queryStr, ComponentResult.class);
             query.setParameter("studyResult", studyResult);
@@ -330,11 +352,11 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Returns a list of component result IDs that belong to the given study result and
-     * optionally a specific component.
+     * Returns a list of component result IDs that belong to the given study result and optionally a specific
+     * component.
      */
     public List<Long> findIdsByStudyResultAndComponent(Long studyResultId, Component component) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction(em -> {
             String queryStr = "SELECT cr.id FROM ComponentResult cr WHERE cr.studyResult.id = :srid";
             if (component != null) {
                 queryStr += " AND cr.component = :component";
@@ -355,11 +377,11 @@ public class ComponentResultDao extends AbstractDao {
      */
     public List<Long> findOrderedIdsByOrderedStudyResultIds(List<Long> orderedSrids) {
         if (orderedSrids.isEmpty()) return Collections.emptyList();
-        List<Object[]> unorderedDbResults = jpa.withTransaction((javax.persistence.EntityManager em) ->
+        List<Object[]> unorderedDbResults = withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.studyResult.id, cr.id FROM ComponentResult cr "
-                        + "WHERE cr.studyResult.id IN :ids", Object[].class)
-                .setParameter("ids", orderedSrids)
-                .getResultList());
+                                + "WHERE cr.studyResult.id IN :ids", Object[].class)
+                        .setParameter("ids", orderedSrids)
+                        .getResultList());
         // We have to ensure that the order of the srids of the crids that will be returned is the same as the order of
         // the given srids.
         // This is a inefficient hack. We could use MySQL's "ORDER BY FIELD" (https://stackoverflow.com/questions/3799935)
@@ -382,14 +404,14 @@ public class ComponentResultDao extends AbstractDao {
      */
     public List<Long> findIdsByComponentResultIds(List<Long> crids) {
         if (crids.isEmpty()) return Collections.emptyList();
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.id IN :ids", Long.class)
-                .setParameter("ids", crids)
-                .getResultList().stream().distinct().collect(Collectors.toList()));
+                        .setParameter("ids", crids)
+                        .getResultList().stream().distinct().collect(Collectors.toList()));
     }
 
     public void setQuotaReached(Long componentResultId) {
-        jpa.withTransaction(em -> {
+        withTransaction(em -> {
             em.createQuery("UPDATE ComponentResult cr SET cr.quotaReached = true WHERE cr.id = :id")
                     .setParameter("id", componentResultId)
                     .executeUpdate();

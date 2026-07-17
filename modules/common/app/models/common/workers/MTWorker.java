@@ -9,6 +9,8 @@ import javax.persistence.Entity;
 import java.util.List;
 import java.util.UUID;
 
+import static models.common.workers.WorkerType.MT;
+
 /**
  * DB entity of the concrete worker who originates from the MTurk.
  */
@@ -16,9 +18,9 @@ import java.util.UUID;
 @DiscriminatorValue(MTWorker.WORKER_TYPE)
 public class MTWorker extends Worker {
 
-	public static final String WORKER_TYPE = "MT";
-    public static final String SHORT_WORKER_TYPE = "mt";
-	public static final String UI_WORKER_TYPE = "MTurk";
+	static final String WORKER_TYPE = "MT";
+    static final String SHORT_WORKER_TYPE = "mt";
+	static final String UI_WORKER_TYPE = "MTurk";
 
 	/**
 	 * Worker ID from MTurk
@@ -32,6 +34,11 @@ public class MTWorker extends Worker {
 	@JsonCreator
 	public MTWorker(String mtWorkerId) {
 		this.mtWorkerId = mtWorkerId;
+	}
+
+	@Override
+	public WorkerType getWorkerType() {
+		return MT;
 	}
 
 	public String getMTWorkerId() {

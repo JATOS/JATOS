@@ -1,15 +1,17 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
+import exceptions.common.JatosException;
 import general.common.Common;
-import http.common.Http;
+import http.common.Http.Context;
 import http.common.HttpUtils;
 import models.common.ComponentResult;
 import models.common.StudyResult;
 import play.Logger;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
+import play.mvc.Http.RequestHeader;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exceptions.IdCookieMalformedException;
 import services.publix.idcookie.exceptions.IdCookieNotFoundException;
@@ -30,7 +32,7 @@ import static play.mvc.Http.Cookie.builder;
 /**
  * Service class for JATOS ID cookie handling.
  *
- * The request-scoped {@link IdCookieCollection} stored in {@link Http.Context#args()} is the source of truth for ID
+ * The request-scoped {@link IdCookieCollection} stored in {@link Context#args()} is the source of truth for ID
  * cookies during request processing. This service initializes that collection from incoming browser cookies, lets the
  * application code query and mutate it, and finally synchronizes the collection back into response cookies.
  */
@@ -49,12 +51,24 @@ public class IdCookieService {
         this.idCookieSerialiser = idCookieSerialiser;
     }
 
+    /**
+     * Returns the IdCookieCollection stored in the Context. Get the Context attached to the current thread.
+     */
     public IdCookieCollection idCookies() {
-        return Http.Context.current().args().get(IDCOOKIES_TYPED_KEY);
+        return Context.current().args().getOptional(IDCOOKIES_TYPED_KEY)
+                .orElseThrow(() -> new JatosException("ID cookies were not initialized for this request."));
     }
 
     /**
-     * Returns true if the ID cookie for the given study result ID exists in {@link Http.Context#args()}
+     * Returns the IdCookieCollection stored in the Context. Get the Context attached to the given RequestHeader.
+     */
+    public IdCookieCollection idCookies(RequestHeader request) {
+        return Context.current(request).args().getOptional(IDCOOKIES_TYPED_KEY)
+                .orElseThrow(() -> new JatosException("ID cookies were not initialized for this request."));
+    }
+
+    /**
+     * Returns true if the ID cookie for the given study result ID exists in {@link Context#args()}
      */
     public boolean hasIdCookie(Long studyResultId) {
         return idCookies().findWithStudyResultId(studyResultId) != null;
@@ -76,8 +90,9 @@ public class IdCookieService {
      * Returns true if the study assets of at least one ID cookie are equal to the given study assets. Otherwise,
      * returns false.
      */
-    public boolean oneIdCookieHasThisStudyAssets(String studyAssets) {
-        for (IdCookieModel idCookie : idCookies().getAll()) {
+    public boolean oneIdCookieHasThisStudyAssets(RequestHeader request, String studyAssets) {
+        IdCookieCollection idCookies = idCookies(request);
+        for (IdCookieModel idCookie : idCookies.getAll()) {
             if (idCookie.getStudyAssets().equals(studyAssets)) {
                 return true;
             }
@@ -136,7 +151,7 @@ public class IdCookieService {
      * null if the IdCookieCollection is empty.
      */
     public IdCookieModel getOldestIdCookie() {
-        IdCookieCollection idCookieCollection = Http.Context.current().args().get(IDCOOKIES_TYPED_KEY);
+        IdCookieCollection idCookieCollection = Context.current().args().get(IDCOOKIES_TYPED_KEY);
         long oldest = Long.MAX_VALUE;
         IdCookieModel oldestIdCookie = null;
         for (IdCookieModel idCookie : idCookieCollection.getAll()) {
@@ -223,14 +238,14 @@ public class IdCookieService {
     }
 
     public Cookie[] generatePlayCookies() {
-        IdCookieCollection cookies = Http.Context.current().args().get(IDCOOKIES_TYPED_KEY);
+        IdCookieCollection cookies = Context.current().args().get(IDCOOKIES_TYPED_KEY);
         return cookies.getAll().stream()
                 .map(this::generatePlayCookie)
                 .toArray(Cookie[]::new);
     }
 
     public Set<String> generatePlayCookieNames() {
-        IdCookieCollection cookies = Http.Context.current().args().get(IDCOOKIES_TYPED_KEY);
+        IdCookieCollection cookies = Context.current().args().get(IDCOOKIES_TYPED_KEY);
         return cookies.getAll().stream()
                 .map(IdCookieModel::getName)
                 .collect(Collectors.toSet());

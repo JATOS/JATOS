@@ -18,8 +18,6 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 /**
  * Called during start-up
- *
- * @author Kristian Lange
  */
 class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             environment: play.Environment,

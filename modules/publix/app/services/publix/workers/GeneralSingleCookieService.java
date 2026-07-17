@@ -91,7 +91,7 @@ public class GeneralSingleCookieService {
      * Sets the cookie in the response. The cookie will contain all GeneralSingle studies done in this browser and
      * adds the given study (and worker). This cookie is HTTP only and has an expiry date in the far future.
      */
-    public Cookie get(Study study, Worker worker) {
+    public Cookie generate(Study study, Worker worker) {
         Optional<Cookie> currentCookie = Context.current().requestHeader().getCookie(COOKIE_NAME);
         String newCookieValue;
         if (currentCookie.isPresent()) {

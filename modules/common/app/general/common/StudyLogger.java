@@ -175,7 +175,7 @@ public class StudyLogger {
      *
      * @param file File that will be stored
      */
-    public void logResultUploading(Path file, ComponentResult componentResult) throws IOException {
+    public void logResultUploading(Path file, ComponentResult componentResult) {
         if (!Common.isStudyLogsEnabled()) return;
         if (file == null) return;
         StudyResult studyResult = componentResult.getStudyResult();

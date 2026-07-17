@@ -10,16 +10,15 @@ import daos.common.*;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
-import http.common.Http.Context;
 import general.common.StudyLogger;
+import http.common.Http.Context;
 import json.common.DefaultJson;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.gui.StudyProperties;
 import play.data.Form;
 import play.data.FormFactory;
 import play.data.validation.ValidationError;
-import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -27,8 +26,9 @@ import services.gui.*;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
@@ -56,7 +56,7 @@ public class Studies extends Controller {
     private final FormFactory formFactory;
     private final StudyLogger studyLogger;
     private final DefaultJson defaultJson;
-    private final JsonUtils jsonUtils;
+    private final DomainJsonMapper domainJsonMapper;
 
     @Inject
     Studies(AuthorizationService authorizationService,
@@ -73,7 +73,7 @@ public class Studies extends Controller {
             FormFactory formFactory,
             StudyLogger studyLogger,
             DefaultJson defaultJson,
-            JsonUtils jsonUtils) {
+            DomainJsonMapper domainJsonMapper) {
         this.authorizationService = authorizationService;
         this.studyService = studyService;
         this.userService = userService;
@@ -88,7 +88,7 @@ public class Studies extends Controller {
         this.formFactory = formFactory;
         this.studyLogger = studyLogger;
         this.defaultJson = defaultJson;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
     }
 
     /**
@@ -128,7 +128,7 @@ public class Studies extends Controller {
 
         StudyProperties studyProperties = form.get();
         Study study = studyService.createAndPersistStudyAndAssetsDir(studyProperties, false);
-        return ok(study.getId().toString());
+        return ok(String.valueOf(study.getId()));
     }
 
     /**
@@ -162,7 +162,7 @@ public class Studies extends Controller {
         StudyProperties studyProperties = form.get();
         try {
             studyService.updateStudyAndRenameAssets(study, studyProperties);
-        } catch (Exception e) {
+        } catch (IOException e) {
             return badRequest(form.withError(StudyProperties.DIR_NAME, e.getMessage()).errorsAsJson());
         }
         return ok();
@@ -209,19 +209,22 @@ public class Studies extends Controller {
         return ok(String.valueOf(study.isLocked()));
     }
 
-     /**
-     * GET request to clones a study.
+    /**
+     * GET request to clone a study.
      */
-     @Async(Executor.IO)
-     @Auth(roles = USER)
+    @Async(Executor.IO)
+    @Auth(roles = USER)
+    @Transactional
     public Result cloneStudy(Long studyId) {
         Study study = studyDao.findByIdWithComponents(studyId);
-         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-         authorizationService.canUserAccessStudy(study, signedinUser);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.canUserAccessStudy(study, signedinUser);
 
         Study clone = studyService.clone(study);
         clone = studyService.createAndPersistStudy(clone);
-        return ok(Json.toJson(ImmutableMap.of("id", clone.getId(), "title", clone.getTitle())));
+
+        JsonNode json = defaultJson.objAsJsonNode(ImmutableMap.of("id", clone.getId(), "title", clone.getTitle()));
+        return ok(json);
     }
 
     /**
@@ -234,8 +237,8 @@ public class Studies extends Controller {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, signedinUser);
 
-        List<User> userList = userDao.findAll();
-        return ok(jsonUtils.memberUserArrayOfStudy(userList, study));
+        List<User> userList = userDao.findAllByStudy(study);
+        return ok(domainJsonMapper.memberUserArrayOfStudy(userList));
     }
 
     /**
@@ -243,15 +246,17 @@ public class Studies extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result toggleMemberUser(Long studyId, String username, boolean isMember) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String normalizedUsername = User.normalizeUsername(username);
         authorizationService.canUserAccessStudy(study, signedinUser);
+
         User userToChange = userService.retrieveUser(normalizedUsername);
         studyService.changeUserMember(study, userToChange, isMember);
 
-        return ok(jsonUtils.memberUserOfStudy(userToChange, study));
+        return ok(domainJsonMapper.memberUserOfStudy(userToChange, study));
     }
 
     /**
@@ -259,6 +264,7 @@ public class Studies extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result addAllMemberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -277,6 +283,7 @@ public class Studies extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result removeAllMemberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -291,12 +298,14 @@ public class Studies extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
-    public Result changeComponentOrder(Long studyId, Long componentId, String newPosition) {
-        Study study = studyDao.findById(studyId);
+    @Transactional
+    public Result changeComponentOrder(Long studyId, Long componentId, int newPosition) {
+        Study study = studyDao.findByIdWithComponents(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Component component = componentDao.findById(componentId);
         authorizationService.canUserAccessStudy(study, signedinUser, true);
         authorizationService.canUserAccessComponent(component, signedinUser);
+
         studyService.changeComponentPosition(newPosition, study, component);
 
         return ok();
@@ -308,7 +317,7 @@ public class Studies extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
-    public Result runStudy(Http.Request request, Long studyId, Long batchId, Long frames, Long hSplit, Long vSplit) {
+    public Result runStudy(Long studyId, Long batchId, Long frames, Long hSplit, Long vSplit) {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -334,10 +343,8 @@ public class Studies extends Controller {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, signedinUser);
 
-        List<Component> componentList = study.getComponentList();
-        List<Integer> resultCountList = new ArrayList<>();
-        componentList.forEach(component -> resultCountList.add(componentResultDao.countByComponent(component)));
-        JsonNode dataAsJson = jsonUtils.allComponentsForUI(study.getComponentList(), resultCountList);
+        Map<Long, Integer> resultCountsByComponentId = componentResultDao.countByStudyComponents(study);
+        JsonNode dataAsJson = domainJsonMapper.allComponentsForUI(study.getComponentList(), resultCountsByComponentId);
         return ok(dataAsJson);
     }
 

@@ -7,17 +7,19 @@ import exceptions.publix._
 import general.common.ApiEnvelope
 import general.common.ApiEnvelope.ErrorCode
 import http.common.HttpUtils
+import messaging.common.FlashMessagingHelper.ERROR
 import play.api.Logger
 import play.api.http.HttpErrorHandler
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.mvc.Http
 import services.publix.idcookie.exceptions.{IdCookieAlreadyExistsException, IdCookieCollectionFullException, IdCookieNotFoundException}
-import utils.common.StringUtils
 
 import java.io.IOException
+import java.util.concurrent.CompletionException
 import javax.inject.{Inject, Singleton}
 import javax.naming.NamingException
+import scala.annotation.tailrec
 import scala.concurrent._
 import scala.jdk.CollectionConverters._
 
@@ -27,7 +29,7 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
   private val logger: Logger = Logger(this.getClass)
 
   def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
-    val api = isApi(request)
+    val api = HttpUtils.isApiRequest(request.asJava)
 
     // Log error messages and show some message - but don't show any longer message (e.g., with stack trace)
     Future.successful(
@@ -67,7 +69,9 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
   }
 
   def onServerError(request: RequestHeader, throwable: Throwable): Future[Result] = {
-    val result: Result = throwable match {
+    val rootThrowable = unwrapAsyncException(throwable)
+
+    val result: Result = rootThrowable match {
 
       case e: InternalServerErrorException =>
         logger.error(logPrefix(request, e), e)
@@ -115,13 +119,13 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
         errorResult(request, InternalServerError, s"IO error: ${e.getMessage}", ErrorCode.IO_ERROR)
 
       case e: ForbiddenReloadException =>
-        finishStudy(e.getUuid, successful = false, e.getMessage)
+        finishStudy(e.getStudyUuid, successful = false, e.getMessage)
 
       case e: ForbiddenNonLinearFlowException =>
-        finishStudy(e.getUuid, successful = false, e.getMessage)
+        finishStudy(e.getStudyUuid, successful = false, e.getMessage)
 
       case e: JatosComponentRunFinishedException =>
-        finishStudy(e.getUuid, successful = true, null)
+        finishStudy(e.getStudyUuid, successful = true, null)
 
       case _ =>
         logger.error(s"Internal JATOS error: ${throwable.getCause}", throwable)
@@ -134,6 +138,16 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
     }
 
     Future.successful(result)
+  }
+
+  @tailrec
+  private def unwrapAsyncException(throwable: Throwable): Throwable = throwable match {
+    case e: CompletionException if e.getCause != null =>
+      unwrapAsyncException(e.getCause)
+    case e: ExecutionException if e.getCause != null =>
+      unwrapAsyncException(e.getCause)
+    case e =>
+      e
   }
 
   /**
@@ -209,8 +223,6 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
     errorResult(request, BadRequest, msg, ErrorCode.INVALID_JSON)
   }
 
-  private def isApi(request: RequestHeader): Boolean = request.path.contains("/jatos/api/")
-
   private def looksLikeInvalidJson(request: RequestHeader, message: String): Boolean = {
     val isJsonRequest =
       request.contentType.exists(_.equalsIgnoreCase("application/json")) ||
@@ -228,10 +240,13 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
   }
 
   private def errorResult(request: RequestHeader, status: Status, msg: String, errorCode: ErrorCode): Result = {
+    val gui = HttpUtils.isGuiUrl(request.path)
     val html = HttpUtils.isHtmlRequest(request.asJava)
-    val api = isApi(request)
+    val api = HttpUtils.isApiRequest(request.asJava)
 
-    if (html) {
+    if (gui && html) {
+      Redirect(controllers.gui.routes.Home.home(status.header.status)).flashing(ERROR -> msg)
+    } else if (html) {
       status(views.html.publix.error.render(msg))
     } else if (api) {
       status(ApiEnvelope.wrap(msg, errorCode).asJsValue())

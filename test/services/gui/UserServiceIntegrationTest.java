@@ -4,23 +4,23 @@ import auth.gui.AuthService;
 import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
+import http.common.Http;
 import models.common.Study;
 import models.common.User;
-import models.gui.NewUserModel;
-import org.fest.assertions.Fail;
+import models.gui.NewUserProperties;
+import org.assertj.core.api.Fail;
 import org.junit.Test;
+import play.test.Helpers;
 import testutils.JatosTest;
-import testutils.ContextMocker;
 
 import javax.inject.Inject;
-import java.io.IOException;
+import javax.persistence.EntityManager;
 
-import static com.pivovarit.function.ThrowingConsumer.unchecked;
-import static org.fest.assertions.Assertions.assertThat;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * @author Kristian Lange
- */
 public class UserServiceIntegrationTest extends JatosTest {
 
     @Inject
@@ -43,47 +43,38 @@ public class UserServiceIntegrationTest extends JatosTest {
 
     @Test
     public void checkRetrieveUser() {
-        jpaApi.withTransaction(unchecked((em) -> {
-            User user = userService.retrieveUser("admin");
-            assertThat(user).isEqualTo(admin);
-        }));
+        User user = userService.retrieveUser("admin");
+        assertThat(user).isEqualTo(admin);
     }
 
     @Test
     public void checkRetrieveUnknownUser() {
         // Unknown user should throw NotFoundException
-        jpaApi.withTransaction(em -> {
-            try {
-                userService.retrieveUser("user-not-exist");
-                Fail.fail();
-            } catch (NotFoundException e) {
-                // A NotFoundException must be thrown
-            }
-        });
+        try {
+            userService.retrieveUser("user-not-exist");
+            Fail.fail();
+        } catch (NotFoundException e) {
+            // A NotFoundException must be thrown
+        }
     }
 
     @Test
     public void checkBindToUserAndPersist() {
-        NewUserModel userModel = new NewUserModel();
+        NewUserProperties userModel = new NewUserProperties();
         userModel.setUsername("foo@foo.org");
         userModel.setName("Foo Bar");
         userModel.setPassword("blaPw");
-        userModel.setPasswordRepeat("blaPw");
 
-        jpaApi.withTransaction(em -> {
-            userService.bindToUserAndPersist(userModel);
-        });
+        userService.bindToUserAndPersist(userModel);
 
         // Check that the user is stored in the DB properly
-        jpaApi.withTransaction(em -> {
-            User u = userDao.findByUsername("foo@foo.org");
-            assertThat(u.getUsername()).isEqualTo("foo@foo.org");
-            assertThat(u.getName()).isEqualTo(userModel.getName());
-            assertThat(u.getPasswordHash()).isNotEmpty();
-            assertThat(u.getRoleList()).containsOnly(User.Role.USER);
-            assertThat(u.getStudyList()).isEmpty();
-            assertThat(u.getWorker()).isNotNull();
-        });
+        User u = userDao.findByUsernameWithStudies("foo@foo.org");
+        assertThat(u.getUsername()).isEqualTo("foo@foo.org");
+        assertThat(u.getName()).isEqualTo(userModel.getName());
+        assertThat(u.getPasswordHash()).isNotEmpty();
+        assertThat(u.getRoleList()).containsOnly(User.Role.USER);
+        assertThat(u.getStudyList()).isEmpty();
+        assertThat(u.getWorker()).isNotNull();
     }
 
     @Test
@@ -91,7 +82,7 @@ public class UserServiceIntegrationTest extends JatosTest {
         createUser("foo@foo.org");
 
         // Check that the user is stored in the DB properly
-        User u = getUser("foo@foo.org");
+        User u = userDao.findByUsername("foo@foo.org");
         assertThat(u.getUsername()).isEqualTo("foo@foo.org");
         assertThat(u.getName()).isEqualTo("Foo Bar");
         assertThat(u.getPasswordHash()).isNotEmpty();
@@ -107,7 +98,7 @@ public class UserServiceIntegrationTest extends JatosTest {
         createUser("FoO@FoO.OrG");
 
         // Retrieve user with lower-case email
-        User u = getUser("foo@foo.org");
+        User u = userDao.findByUsername("foo@foo.org");
         assertThat(u.getUsername()).isEqualTo("foo@foo.org");
         assertThat(u.getName()).isEqualTo("Foo Bar");
         assertThat(u.getPasswordHash()).isNotEmpty();
@@ -123,20 +114,20 @@ public class UserServiceIntegrationTest extends JatosTest {
             userService.updatePassword(user, "newPassword");
         });
 
-        User userWithUpdatedPassword = getUser("foo@foo.org");
+        User userWithUpdatedPassword = userDao.findByUsername("foo@foo.org");
 
-        jpaApi.withTransaction(unchecked((em) -> authService.authenticate(userWithUpdatedPassword, "newPassword")));
+        jpaApi.withTransaction((EntityManager em) -> authService.authenticate(userWithUpdatedPassword, "newPassword"));
     }
 
     @Test
     public void checkToggleActive() {
         createUser("foo@foo.org");
-        // We need a Play context to be able to use RequestScope
-        ContextMocker.mock();
-        RequestScope.put(AuthService.SIGNEDIN_USER, admin);
 
-        jpaApi.withTransaction(unchecked((em) -> userService.toggleActive("foo@foo.org", false)));
-        User u = getUser("foo@foo.org");
+        Http.Context.setCurrent(new Http.Context(Helpers.fakeRequest().build()));
+        Http.Context.current().args().put(SIGNEDIN_USER, admin);
+
+        userService.toggleActive("foo@foo.org", false);
+        User u = userDao.findByUsername("foo@foo.org");
         assertThat(u.isActive()).isFalse();
     }
 
@@ -146,21 +137,22 @@ public class UserServiceIntegrationTest extends JatosTest {
     @Test
     public void checkChangeAdminRole() {
         User user = createUser("foo@foo.org");
-        ContextMocker.mock();
-        RequestScope.put(AuthService.SIGNEDIN_USER, admin);
+
+        Http.Context.setCurrent(new Http.Context(Helpers.fakeRequest().build()));
+        Http.Context.current().args().put(SIGNEDIN_USER, admin);
 
         // Add the ADMIN role to the user
-        jpaApi.withTransaction(unchecked((em) -> userService.changeAdminRole("foo@foo.org", true)));
+        userService.changeAdminRole("foo@foo.org", true);
         {
-            User u = getUser("foo@foo.org");
+            User u = userDao.findByUsername("foo@foo.org");
             // User has the role ADMIN now
             assertThat(u.getRoleList()).containsOnly(User.Role.USER, User.Role.ADMIN);
         }
 
         // Remove ADMIN role from user
-        jpaApi.withTransaction(unchecked((em) -> userService.changeAdminRole("foo@foo.org", false)));
+        userService.changeAdminRole("foo@foo.org", false);
         {
-            User u = getUser(user.getUsername());
+            User u = userDao.findByUsername(user.getUsername());
             // User does not have the role ADMIN now
             assertThat(u.getRoleList()).containsOnly(User.Role.USER);
         }
@@ -171,19 +163,17 @@ public class UserServiceIntegrationTest extends JatosTest {
      */
     @Test
     public void checkChangeAdminRoleUserNotFound() {
-        ContextMocker.mock();
-        RequestScope.put(AuthService.SIGNEDIN_USER, admin);
+        Http.Context.setCurrent(new Http.Context(Helpers.fakeRequest().build()));
+        Http.Context.current().args().put(SIGNEDIN_USER, admin);
 
-        jpaApi.withTransaction(em -> {
-            try {
-                userService.changeAdminRole("non-existing@user.org", false);
-                Fail.fail();
-            } catch (NotFoundException e) {
-                // A NotFoundException must be thrown
-            } catch (ForbiddenException e) {
-                Fail.fail();
-            }
-        });
+        try {
+            userService.changeAdminRole("non-existing@user.org", false);
+            Fail.fail();
+        } catch (NotFoundException e) {
+            // A NotFoundException must be thrown
+        } catch (ForbiddenException e) {
+            Fail.fail();
+        }
     }
 
     /**
@@ -191,21 +181,20 @@ public class UserServiceIntegrationTest extends JatosTest {
      */
     @Test
     public void checkChangeAdminRoleAdminAlwaysAdmin() {
-        // Put a different user than 'admin' in RequestScope as signed in
+        // Put a different user than 'admin' in Context as signed in
         User user = createUser("foo@foo.org");
-        ContextMocker.mock();
-        RequestScope.put(AuthService.SIGNEDIN_USER, user);
 
-        jpaApi.withTransaction(em -> {
-            try {
-                userService.changeAdminRole(UserService.ADMIN_USERNAME, false);
-                Fail.fail();
-            } catch (NotFoundException e) {
-                Fail.fail();
-            } catch (ForbiddenException e) {
-                // A ForbiddenException must be thrown
-            }
-        });
+        Http.Context.setCurrent(new Http.Context(Helpers.fakeRequest().build()));
+        Http.Context.current().args().put(SIGNEDIN_USER, user);
+
+        try {
+            userService.changeAdminRole(UserService.ADMIN_USERNAME, false);
+            Fail.fail();
+        } catch (NotFoundException e) {
+            Fail.fail();
+        } catch (ForbiddenException e) {
+            // A ForbiddenException must be thrown
+        }
     }
 
     /**
@@ -214,26 +203,24 @@ public class UserServiceIntegrationTest extends JatosTest {
     @Test
     public void checkChangeAdminRoleLoggedInCantLoose() {
         User user = createUser("foo@foo.org");
-        ContextMocker.mock();
-        RequestScope.put(AuthService.SIGNEDIN_USER, admin);
 
-        jpaApi.withTransaction(unchecked((em) -> userService.changeAdminRole(user.getUsername(), true)));
+        Http.Context.setCurrent(new Http.Context(Helpers.fakeRequest().build()));
+        Http.Context.current().args().put(SIGNEDIN_USER, admin);
+
+        userService.changeAdminRole(user.getUsername(), true);
 
         // Now make a different user the logged-in user
-        RequestScope.put(AuthService.SIGNEDIN_USER, user);
+        Http.Context.current().args().put(SIGNEDIN_USER, user);
 
         // Try to remove the ADMIN role from the user
-        jpaApi.withTransaction(em -> {
-            try {
-                userService.changeAdminRole(user.getUsername(), false);
-                Fail.fail();
-            } catch (NotFoundException e) {
-                Fail.fail();
-            } catch (ForbiddenException e) {
-                // A ForbiddenException must be thrown
-            }
-            return null;
-        });
+        try {
+            userService.changeAdminRole(user.getUsername(), false);
+            Fail.fail();
+        } catch (NotFoundException e) {
+            Fail.fail();
+        } catch (ForbiddenException e) {
+            // A ForbiddenException must be thrown
+        }
     }
 
     /**
@@ -244,14 +231,18 @@ public class UserServiceIntegrationTest extends JatosTest {
         User user = createUser("foo@foo.org");
         Long studyId = importExampleStudy();
 
-        // Add the user as a member to the study
-        jpaApi.withTransaction(unchecked((em) -> {
+        // Make the new user the only member of the study
+        jpaApi.withTransaction(em -> {
             Study study = studyDao.findById(studyId);
             studyService.changeUserMember(study, user, true);
-        }));
+            studyService.changeUserMember(study, admin, false);
+        });
+
+        Http.Context.setCurrent(new Http.Context(Helpers.fakeRequest().build()));
+        Http.Context.current().args().put(SIGNEDIN_USER, admin);
 
         // Remove user
-        jpaApi.withTransaction(unchecked((em) -> userService.removeUser("foo@foo.org")));
+        jpaApi.withTransaction((EntityManager em) -> userService.removeUser("foo@foo.org"));
 
         // User is removed from the database
         assertThat(userDao.findByUsername("foo@foo.org")).isNull();
@@ -266,22 +257,14 @@ public class UserServiceIntegrationTest extends JatosTest {
      */
     @Test
     public void checkRemoveUserNotAdmin() {
-        jpaApi.withTransaction((em) -> {
-            try {
-                userService.removeUser(UserService.ADMIN_USERNAME);
-                Fail.fail();
-            } catch (NotFoundException | IOException e) {
-                Fail.fail();
-            } catch (ForbiddenException e) {
-                // Must throw a ForbiddenException
-            }
-        });
-    }
-
-    private User getUser(String username) {
-        return jpaApi.withTransaction((em) -> {
-            return userDao.findByUsername(username);
-        });
+        try {
+            userService.removeUser(UserService.ADMIN_USERNAME);
+            Fail.fail();
+        } catch (NotFoundException e) {
+            Fail.fail();
+        } catch (ForbiddenException e) {
+            // Must throw a ForbiddenException
+        }
     }
 
 }

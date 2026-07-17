@@ -1,27 +1,32 @@
 package auth.gui;
 
 import daos.common.ApiTokenDao;
+import http.common.Http.Context;
+import json.common.DefaultJson;
+import json.common.DomainJsonMapper;
 import models.common.ApiToken;
 import models.common.User;
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import play.libs.Json;
 import play.mvc.Result;
+import play.test.Helpers;
 import services.gui.ApiTokenService;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 import static play.mvc.Http.Status.*;
 import static play.test.Helpers.contentAsString;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for ApiTokens controller.
- *
- * @author Kristian Lange
  */
 public class ApiTokensTest {
 
@@ -31,16 +36,30 @@ public class ApiTokensTest {
 
     private User user;
 
+    private final DomainJsonMapper domainJsonMapper =
+            new DomainJsonMapper(new DefaultJson(), null, null, null, null);
+
     @Before
     public void setUp() {
         apiTokenDao = mock(ApiTokenDao.class);
         apiTokenService = mock(ApiTokenService.class);
-        AuthService authService = mock(AuthService.class);
-        apiTokens = new ApiTokens(apiTokenDao, apiTokenService, authService);
+        apiTokens = new ApiTokens(apiTokenDao, apiTokenService, domainJsonMapper);
 
         user = new User();
         user.setUsername("alice");
-        when(authService.getSignedinUser()).thenReturn(user);
+
+        setCurrentContextWithSignedinUser(user);
+    }
+
+    @After
+    public void tearDown() {
+        Context.clear();
+    }
+
+    private void setCurrentContextWithSignedinUser(User user) {
+        Context context = new Context(Helpers.fakeRequest().build());
+        context.args().put(SIGNEDIN_USER, user);
+        Context.setCurrent(context);
     }
 
     @Test
@@ -68,7 +87,10 @@ public class ApiTokensTest {
 
     @Test
     public void generate_valid_callsService_andReturnsTokenString() {
-        when(apiTokenService.create(eq(user), eq("mytoken"), isNull())).thenReturn("TOKEN123");
+        ApiToken token = new ApiToken();
+        token.setUser(user);
+        token.setName("mytoken");
+        when(apiTokenService.create(eq(user), eq("mytoken"), isNull())).thenReturn(Pair.of(token, "TOKEN123"));
 
         Result res = apiTokens.generate("mytoken", 0); // 0 = never expires
 
@@ -168,4 +190,5 @@ public class ApiTokensTest {
         assertThat(captor.getValue().isActive()).isFalse();
         assertThat(contentAsString(res)).isEqualTo(" ");
     }
+
 }

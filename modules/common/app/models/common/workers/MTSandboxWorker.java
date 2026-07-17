@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import static models.common.workers.WorkerType.MT_SANDBOX;
+
 /**
  * DB entity of the concrete worker who originates from the MTurk Sandbox.
  */
@@ -12,9 +14,9 @@ import javax.persistence.Entity;
 @DiscriminatorValue(MTSandboxWorker.WORKER_TYPE)
 public class MTSandboxWorker extends MTWorker {
 
-	public static final String WORKER_TYPE = "MTSandbox";
-    public static final String SHORT_WORKER_TYPE = "mts";
-	public static final String UI_WORKER_TYPE = "MTurk Sandbox";
+	static final String WORKER_TYPE = "MTSandbox";
+    static final String SHORT_WORKER_TYPE = "mts";
+	static final String UI_WORKER_TYPE = "MTurk Sandbox";
 
     @SuppressWarnings("unused")
 	public MTSandboxWorker() {
@@ -23,6 +25,11 @@ public class MTSandboxWorker extends MTWorker {
 	@JsonCreator
 	public MTSandboxWorker(String mtWorkerId) {
 		super(mtWorkerId);
+	}
+
+	@Override
+	public WorkerType getWorkerType() {
+		return MT_SANDBOX;
 	}
 	
 }

@@ -2,16 +2,17 @@ package controllers.gui;
 
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
+import actions.common.TransactionalAction.Transactional;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
-import daos.common.UserDao;
 import general.common.Common;
 import http.common.Http.Context;
 import http.common.HttpUtils;
+import json.common.DefaultJson;
 import models.common.Study;
 import models.common.User;
 import play.core.utils.HttpHeaderParameterEncoding;
@@ -21,23 +22,27 @@ import play.mvc.Http;
 import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.AdminService;
+import services.gui.AuthorizationService;
 import services.gui.BreadcrumbsService;
 import services.gui.LogFileReader;
-import json.common.DefaultJson;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static actions.common.TransactionalAction.Mode.READ_ONLY;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static exceptions.common.JatosException.unchecked;
 import static models.common.User.Role.*;
 
 /**
@@ -49,9 +54,9 @@ public class Admin extends Controller {
     private final BreadcrumbsService breadcrumbsService;
     private final StudyDao studyDao;
     private final StudyResultDao studyResultDao;
-    private final UserDao userDao;
     private final LogFileReader logFileReader;
     private final AdminService adminService;
+    private final AuthorizationService authorizationService;
     private final IOUtils ioUtils;
     private final DefaultJson defaultJson;
 
@@ -59,17 +64,17 @@ public class Admin extends Controller {
     Admin(BreadcrumbsService breadcrumbsService,
           StudyDao studyDao,
           StudyResultDao studyResultDao,
-          UserDao userDao,
           LogFileReader logFileReader,
           AdminService adminService,
+          AuthorizationService authorizationService,
           IOUtils ioUtils,
           DefaultJson defaultJson) {
         this.breadcrumbsService = breadcrumbsService;
         this.studyDao = studyDao;
         this.studyResultDao = studyResultDao;
-        this.userDao = userDao;
         this.logFileReader = logFileReader;
         this.adminService = adminService;
+        this.authorizationService = authorizationService;
         this.ioUtils = ioUtils;
         this.defaultJson = defaultJson;
     }
@@ -91,8 +96,8 @@ public class Admin extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = ADMIN)
-    public Result listLogs() throws IOException {
-        try (Stream<Path> paths = Files.walk(Path.of(Common.getLogsPath()))) {
+    public Result listLogs() {
+        try (Stream<Path> paths = unchecked(() -> Files.walk(Path.of(Common.getLogsPath())))) {
             List<String> content = paths
                     .filter(Files::isRegularFile)
                     .map(file -> file.getFileName().toString())
@@ -107,7 +112,7 @@ public class Admin extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = ADMIN)
-    public Result log(Integer lineLimit) throws IOException {
+    public Result log(Integer lineLimit) {
         return logs("application.log", lineLimit, true);
     }
 
@@ -164,13 +169,13 @@ public class Admin extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = ADMIN)
+    @Transactional(READ_ONLY)
     public Result allStudiesData() {
-        List<Study> studyList = studyDao.findAll();
         boolean studyAssetsSizeFlag = Common.showStudyAssetsSizeInStudyManager();
         boolean resultDataSizeFlag = Common.showResultDataSizeInStudyManager();
         boolean resultFileSizeFlag = Common.showResultFileSizeInStudyManager();
-        List<Map<String, Object>> studiesData = adminService.getStudiesData(studyList, studyAssetsSizeFlag,
-                resultDataSizeFlag, resultFileSizeFlag);
+        List<Map<String, Object>> studiesData = adminService.getAllStudiesData(
+                studyAssetsSizeFlag, resultDataSizeFlag, resultFileSizeFlag);
         return ok(defaultJson.objAsJsonNode(studiesData));
     }
 
@@ -179,11 +184,11 @@ public class Admin extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = ADMIN)
+    @Transactional(READ_ONLY)
     public Result studiesDataByUser(String username) {
         String normalizedUsername = User.normalizeUsername(username);
-        User user = userDao.findByUsername(normalizedUsername);
-        Set<Study> studyList = user.getStudyList();
-        List<Map<String, Object>> studiesData = adminService.getStudiesData(studyList, true, true, true);
+        List<Map<String, Object>> studiesData = adminService.getStudiesDataByUser(
+                normalizedUsername, true, true, true);
         return ok(defaultJson.objAsJsonNode(studiesData));
     }
 
@@ -195,8 +200,7 @@ public class Admin extends Controller {
     public Result studyAssetsSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
-        if (study == null) return badRequest("Study does not exist");
-        if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
+        authorizationService.canUserAccessStudyOrAdmin(study, signedinUser);
         return ok(defaultJson.objAsJsonNode(adminService.getStudyAssetDirSize(study)));
     }
 
@@ -207,9 +211,8 @@ public class Admin extends Controller {
     @Auth(roles = {VIEWER, USER, ADMIN})
     public Result resultDataSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        Study study = studyDao.findById(studyId);
-        if (study == null) return badRequest("Study does not exist");
-        if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
+        Study study = studyDao.findByIdWithComponents(studyId);
+        authorizationService.canUserAccessStudyOrAdmin(study, signedinUser);
         int studyResultCount = studyResultDao.countByStudy(study);
         return ok(defaultJson.objAsJsonNode(adminService.getResultDataSize(study, studyResultCount)));
     }
@@ -222,8 +225,7 @@ public class Admin extends Controller {
     public Result resultFileSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
-        if (study == null) return badRequest("Study does not exist");
-        if (!study.hasUser(signedinUser) && !signedinUser.isAdmin()) return forbidden("No access for this user");
+        authorizationService.canUserAccessStudyOrAdmin(study, signedinUser);
         int studyResultCount = studyResultDao.countByStudy(study);
         return ok(defaultJson.objAsJsonNode(adminService.getResultFileSize(study, studyResultCount)));
     }

@@ -20,12 +20,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static com.pivovarit.function.ThrowingConsumer.unchecked;
+import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * @author Kristian Lange
- */
 public class StudyLoggerIntegrationTest extends JatosTest {
 
     @Inject
@@ -89,96 +85,90 @@ public class StudyLoggerIntegrationTest extends JatosTest {
     @Test
     public void checkLog() throws IOException {
         Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
+        Study study = studyDao.findByIdWithBatches(studyId);
 
-            Path logPath = Paths.get(studyLogger.getPath(study));
-            StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
+        Path logPath = Paths.get(studyLogger.getPath(study));
+        StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
 
-            // Use all log() methods
-            studyLogger.log(study, admin, "log with user");
-            studyLogger.log(study, "log with worker", admin.getWorker());
-            studyLogger.log(studyLink, "log with study link and worker", admin.getWorker());
-            studyLogger.log(study, admin, "log with batch", study.getDefaultBatch());
-            studyLogger.log(study, admin, "log with Pair", Pair.of("mykey", "myvalue"));
-            studyLogger.log(study, admin, "log non-ASCII 你经常来吗"); // handles ISO_8859_1 only
+        // Use all log() methods
+        studyLogger.log(study, admin, "log with user");
+        studyLogger.log(study, "log with worker", admin.getWorker());
+        studyLogger.log(studyLink, "log with study link and worker", admin.getWorker());
+        studyLogger.log(study, admin, "log with batch", study.getDefaultBatch());
+        studyLogger.log(study, admin, "log with Pair", Pair.of("mykey", "myvalue"));
+        studyLogger.log(study, admin, "log non-ASCII 你经常来吗"); // handles ISO_8859_1 only
 
-            // Check they wrote something into the log
-            List<String> content = Files.readAllLines(logPath);
-            // First line is always empty, second line is the initial msg, third line is study created, fourth line is
-            // study description
-            assertThat(Json.parse(content.get(4)).get("msg").textValue()).isEqualTo("log with user");
-            assertThat(Json.parse(content.get(5)).get("msg").textValue()).isEqualTo("log with worker");
-            assertThat(Json.parse(content.get(6)).get("msg").textValue()).isEqualTo("log with study link and worker");
-            assertThat(Json.parse(content.get(6)).get("workerId").asLong()).isEqualTo(admin.getWorker().getId());
-            assertThat(Json.parse(content.get(7)).get("msg").textValue()).isEqualTo("log with batch");
-            assertThat(Json.parse(content.get(7)).get("batchId").asLong()).isEqualTo(study.getDefaultBatch().getId());
-            assertThat(Json.parse(content.get(8)).get("msg").textValue()).isEqualTo("log with Pair");
-            assertThat(Json.parse(content.get(8)).get("mykey").textValue()).isEqualTo("myvalue");
-            assertThat(Json.parse(content.get(9)).get("msg").textValue()).isEqualTo("log non-ASCII ?????");
-        }));
+        // Check they wrote something into the log
+        List<String> content = Files.readAllLines(logPath);
+        // First line is always empty, second line is the initial msg, third line is study created, fourth line is
+        // study description
+        assertThat(Json.parse(content.get(4)).get("msg").textValue()).isEqualTo("log with user");
+        assertThat(Json.parse(content.get(5)).get("msg").textValue()).isEqualTo("log with worker");
+        assertThat(Json.parse(content.get(6)).get("msg").textValue()).isEqualTo("log with study link and worker");
+        assertThat(Json.parse(content.get(6)).get("workerId").asLong()).isEqualTo(admin.getWorker().getId());
+        assertThat(Json.parse(content.get(7)).get("msg").textValue()).isEqualTo("log with batch");
+        assertThat(Json.parse(content.get(7)).get("batchId").asLong()).isEqualTo(study.getDefaultBatch().getId());
+        assertThat(Json.parse(content.get(8)).get("msg").textValue()).isEqualTo("log with Pair");
+        assertThat(Json.parse(content.get(8)).get("mykey").textValue()).isEqualTo("myvalue");
+        assertThat(Json.parse(content.get(9)).get("msg").textValue()).isEqualTo("log non-ASCII ?????");
     }
 
     @Test
-    public void checkLogResultDataStoring() {
+    public void checkLogResultDataStoring() throws IOException {
         Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
+        Study study = studyDao.findByIdWithComponentsAndBatches(studyId);
 
-            StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
-            StudyResult studyResult = new StudyResult(studyLink, admin.getWorker());
-            ComponentResult componentResult = new ComponentResult(study.getFirstComponent().get());
-            componentResult.setStudyResult(studyResult);
-            studyResult.addComponentResult(componentResult);
-            String data = "result data 1";
+        StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
+        StudyResult studyResult = new StudyResult(studyLink, admin.getWorker());
+        ComponentResult componentResult = new ComponentResult(study.getFirstComponent().orElseThrow());
+        componentResult.setStudyResult(studyResult);
+        studyResult.addComponentResult(componentResult);
+        String data = "result data 1";
 
-            studyLogger.logResultDataStoring(componentResult, data, false);
+        studyLogger.logResultDataStoring(componentResult, data, false);
 
-            Path logPath = Paths.get(studyLogger.getPath(study));
-            List<String> content = Files.readAllLines(logPath);
-            JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
+        Path logPath = Paths.get(studyLogger.getPath(study));
+        List<String> content = Files.readAllLines(logPath);
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
-            assertThat(json.has("msg")).isTrue();
-            assertThat(json.has("timestamp")).isTrue();
-            assertThat(json.has("componentUuid")).isTrue();
-            assertThat(json.get("componentUuid").asText()).isEqualTo(study.getFirstComponent().get().getUuid());
-            assertThat(json.has("workerId")).isTrue();
-            assertThat(json.get("workerId").asLong()).isEqualTo(admin.getWorker().getId());
-            assertThat(json.has("dataHash")).isTrue();
-            assertThat(json.get("dataHash").asText()).isEqualTo(HashUtils.getHash("result data 1", HashUtils.SHA_256));
-        }));
+        assertThat(json.has("msg")).isTrue();
+        assertThat(json.has("timestamp")).isTrue();
+        assertThat(json.has("componentUuid")).isTrue();
+        assertThat(json.get("componentUuid").asText()).isEqualTo(study.getFirstComponent().get().getUuid());
+        assertThat(json.has("workerId")).isTrue();
+        assertThat(json.get("workerId").asLong()).isEqualTo(admin.getWorker().getId());
+        assertThat(json.has("dataHash")).isTrue();
+        assertThat(json.get("dataHash").asText()).isEqualTo(HashUtils.getHash("result data 1", HashUtils.SHA_256));
     }
 
     @Test
-    public void checkLogResultFileUploading() {
+    public void checkLogResultFileUploading() throws IOException {
         Long studyId = importExampleStudy();
-        jpaApi.withTransaction(unchecked((em) -> {
-            Study study = studyDao.findById(studyId);
+        Study study = studyDao.findByIdWithComponentsAndBatches(studyId);
 
-            StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
-            StudyResult studyResult = new StudyResult(studyLink, admin.getWorker());
-            ComponentResult componentResult = new ComponentResult(study.getFirstComponent().get());
-            componentResult.setStudyResult(studyResult);
-            studyResult.addComponentResult(componentResult);
-            Path uploadedFile = Paths.get("test/resources/example.png");
+        StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
+        StudyResult studyResult = new StudyResult(studyLink, admin.getWorker());
+        ComponentResult componentResult = new ComponentResult(study.getFirstComponent().orElseThrow());
+        componentResult.setStudyResult(studyResult);
+        studyResult.addComponentResult(componentResult);
+        Path uploadedFile = Paths.get("test/resources/example.png");
 
-            studyLogger.logResultUploading(uploadedFile, componentResult);
+        studyLogger.logResultUploading(uploadedFile, componentResult);
 
-            Path logPath = Paths.get(studyLogger.getPath(study));
-            List<String> content = Files.readAllLines(logPath);
-            JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
+        Path logPath = Paths.get(studyLogger.getPath(study));
+        List<String> content = Files.readAllLines(logPath);
+        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
 
-            assertThat(json.has("msg")).isTrue();
-            assertThat(json.has("timestamp")).isTrue();
-            assertThat(json.has("componentUuid")).isTrue();
-            assertThat(json.get("componentUuid").asText()).isEqualTo(study.getFirstComponent().get().getUuid());
-            assertThat(json.has("workerId")).isTrue();
-            assertThat(json.get("workerId").asLong()).isEqualTo(admin.getWorker().getId());
-            assertThat(json.has("fileName")).isTrue();
-            assertThat(json.get("fileName").asText()).isEqualTo(uploadedFile.getFileName().toString());
-            assertThat(json.has("fileHash")).isTrue();
-            assertThat(json.get("fileHash").asText()).isEqualTo(HashUtils.getHash(uploadedFile, HashUtils.SHA_256));
-        }));
+        assertThat(json.has("msg")).isTrue();
+        assertThat(json.has("timestamp")).isTrue();
+        assertThat(json.has("componentUuid")).isTrue();
+        assertThat(json.get("componentUuid").asText()).isEqualTo(study.getFirstComponent().get().getUuid());
+        assertThat(json.has("workerId")).isTrue();
+        assertThat(json.get("workerId").asLong()).isEqualTo(admin.getWorker().getId());
+        assertThat(json.has("fileName")).isTrue();
+        assertThat(json.get("fileName").asText()).isEqualTo(uploadedFile.getFileName().toString());
+        assertThat(json.has("fileHash")).isTrue();
+        assertThat(json.get("fileHash").asText()).isEqualTo(HashUtils.getHash(uploadedFile, HashUtils.SHA_256));
     }
 
     private void checkInitEntry(Study study) throws IOException {

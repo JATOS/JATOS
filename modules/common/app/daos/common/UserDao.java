@@ -1,5 +1,6 @@
 package daos.common;
 
+import models.common.Study;
 import models.common.User;
 import play.db.jpa.JPAApi;
 
@@ -22,9 +23,6 @@ public class UserDao extends AbstractDao {
         super(jpa);
     }
 
-    /**
-     * Persist user (involves creating a JatosWorker)
-     */
     public void persist(User user) {
         super.persist(user);
     }
@@ -44,7 +42,7 @@ public class UserDao extends AbstractDao {
     public boolean authenticate(String normalizedUsername, String passwordHash) {
         if (normalizedUsername == null || passwordHash == null) return false;
 
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction(em -> {
             Long count = em.createQuery(
                             "SELECT COUNT(u) FROM User u " +
                                     "WHERE u.username = :username AND u.passwordHash = :passwordHash",
@@ -57,11 +55,28 @@ public class UserDao extends AbstractDao {
     }
 
     public User findByUsername(String normalizedUsername) {
-        return jpa.withTransaction((EntityManager em) -> em.find(User.class, normalizedUsername));
+        return withReadOnlyTransaction((EntityManager em) -> em.find(User.class, normalizedUsername));
+    }
+
+    /**
+     * Finds a user by username and eagerly fetches their studyList.
+     */
+    public User findByUsernameWithStudies(String normalizedUsername) {
+        return withReadOnlyTransaction(em -> {
+            List<User> result = em.createQuery(
+                            "SELECT DISTINCT u FROM User u " +
+                                    "LEFT JOIN FETCH u.studyList " +
+                                    "WHERE u.username = :username",
+                            User.class)
+                    .setParameter("username", normalizedUsername)
+                    .setMaxResults(1)
+                    .getResultList();
+            return result.isEmpty() ? null : result.get(0);
+        });
     }
 
     public User findById(Long id) {
-        return jpa.withTransaction((EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             List<User> result = em.createQuery(
                             "SELECT u FROM User u WHERE u.id = :id", User.class)
                     .setParameter("id", id)
@@ -72,24 +87,26 @@ public class UserDao extends AbstractDao {
     }
 
     public List<User> findAll() {
-        return jpa.withTransaction("default", true, (EntityManager em) ->
-                em.createQuery("SELECT u FROM User u", User.class).getResultList());
+        return withReadOnlyTransaction(em -> {
+            return em.createQuery("SELECT u FROM User u", User.class).getResultList();
+        });
     }
 
     /**
      * Returns a list of all users and eagerly fetches their studyList.
      */
     public List<User> findAllWithStudies() {
-        return jpa.withTransaction("default", true, (EntityManager em) ->
-                em.createQuery("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.studyList", User.class)
-                        .getResultList());
+        return withReadOnlyTransaction(em -> {
+            return em.createQuery("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.studyList", User.class)
+                    .getResultList();
+        });
     }
 
     /**
      * Returns a mapping of usernames to a list of study IDs for which each user is a member.
      */
     public Map<String, List<Long>> findAllUsersAndTheirStudyIds() {
-        return jpa.withTransaction((EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             List<Object[]> userStudyMappings = em.createQuery(
                             "SELECT u.username, s.id FROM User u JOIN u.studyList s", Object[].class)
                     .getResultList();
@@ -105,11 +122,22 @@ public class UserDao extends AbstractDao {
         });
     }
 
-        /**
-         * Returns the number of User rows
-         */
+    /**
+     * Returns all users that are members of the given study.
+     */
+    public List<User> findAllByStudy(Study study) {
+        return withReadOnlyTransaction(em -> {
+            return em.createQuery("SELECT u FROM Study s JOIN s.userList u WHERE s = :study", User.class)
+                    .setParameter("study", study)
+                    .getResultList();
+        });
+    }
+
+    /**
+     * Returns the number of User rows
+     */
     public int count() {
-        return jpa.withTransaction("default", true, em -> {
+        return withReadOnlyTransaction(em -> {
             Number result = (Number) em.createQuery("SELECT COUNT(u) FROM User u").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -119,7 +147,7 @@ public class UserDao extends AbstractDao {
      * Returns the users with the most recent lastSeen datetime field. Limit the number by 'limit'.
      */
     public List<User> findLastSeen(int limit) {
-        return jpa.withTransaction("default", true, em -> {
+        return withReadOnlyTransaction(em -> {
             return em.createQuery("SELECT u FROM User u ORDER BY lastSeen DESC", User.class)
                     .setMaxResults(limit)
                     .getResultList();

@@ -8,14 +8,13 @@ import general.common.Common;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import http.common.HttpUtils;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
 import scala.Option;
@@ -46,54 +45,51 @@ public abstract class Publix implements IPublix {
 
     private static final ALogger LOGGER = Logger.of(Publix.class);
 
-    protected final JPAApi jpa;
     protected final PublixUtils publixUtils;
     protected final StudyAuthorisation studyAuthorisation;
     protected final GroupAdministration groupAdministration;
     protected final IdCookieService idCookieService;
     protected final PublixErrorMessages errorMessages;
     protected final StudyAssets studyAssets;
-    protected final JsonUtils jsonUtils;
+    protected final DomainJsonMapper domainJsonMapper;
     protected final ComponentResultDao componentResultDao;
     protected final StudyResultDao studyResultDao;
     protected final StudyLogger studyLogger;
     protected final IOUtils ioUtils;
-    protected final IOExecutor dbContext;
+    protected final IOExecutor ioContext;
     protected final StudyAssetsExecutor studyAssetsExecutor;
 
-    public Publix(JPAApi jpa,
-                  PublixUtils publixUtils,
+    public Publix(PublixUtils publixUtils,
                   StudyAuthorisation studyAuthorisation,
                   GroupAdministration groupAdministration,
                   IdCookieService idCookieService,
                   PublixErrorMessages errorMessages,
                   StudyAssets studyAssets,
-                  JsonUtils jsonUtils,
+                  DomainJsonMapper domainJsonMapper,
                   ComponentResultDao componentResultDao,
                   StudyResultDao studyResultDao,
                   StudyLogger studyLogger,
                   IOUtils ioUtils,
-                  IOExecutor dbContext,
+                  IOExecutor ioContext,
                   StudyAssetsExecutor studyAssetsExecutor) {
-        this.jpa = jpa;
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.groupAdministration = groupAdministration;
         this.idCookieService = idCookieService;
         this.errorMessages = errorMessages;
         this.studyAssets = studyAssets;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
-        this.dbContext = dbContext;
+        this.ioContext = ioContext;
         this.studyAssetsExecutor = studyAssetsExecutor;
     }
 
     @Override
     public Result startComponent(Request request, StudyResult studyResult, Component component, String message) {
-        ComponentResult componentResult = publixUtils.startComponent(component, studyResult, message);
+        ComponentResult componentResult = publixUtils.startComponentRun(component, studyResult, message);
         publixUtils.setPreStudyState(componentResult);
         idCookieService.writeIdCookie(studyResult, componentResult);
         String dirName = studyResult.getStudy().getDirName();
@@ -116,7 +112,7 @@ public abstract class Publix implements IPublix {
         componentResult.setComponentState(ComponentState.DATA_RETRIEVED);
         componentResultDao.merge(componentResult);
 
-        return ok(jsonUtils.initData(batch, studyResult, study, component));
+        return ok(domainJsonMapper.initData(batch, studyResult, study, component));
     }
 
     @Override
@@ -266,8 +262,8 @@ public abstract class Publix implements IPublix {
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-        if (!PublixHelpers.studyRunDone(studyResult)) {
-            publixUtils.abortStudy(message, studyResult);
+        if (!PublixHelpers.studyResultDone(studyResult)) {
+            publixUtils.abortStudyRun(message, studyResult);
             groupAdministration.leave(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());
@@ -287,8 +283,8 @@ public abstract class Publix implements IPublix {
         Batch batch = studyResult.getBatch();
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
-        if (!PublixHelpers.studyRunDone(studyResult)) {
-            publixUtils.finishStudyResult(successful, message, studyResult);
+        if (!PublixHelpers.studyResultDone(studyResult)) {
+            publixUtils.finishStudyRun(successful, message, studyResult);
             groupAdministration.leave(studyResult);
         }
         idCookieService.discardIdCookie(studyResult.getId());

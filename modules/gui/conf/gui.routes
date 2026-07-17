@@ -122,9 +122,9 @@ GET      /jatos/signout                                                     @aut
 
 # Home controller
 GET      /jatos/sidebarData                                                 @controllers.gui.Home.sidebarData()
-GET      /jatos                                                             @controllers.gui.Home.home(httpStatus: Int ?= 200)
-GET      /jatos/                                                            @controllers.gui.Home.home(httpStatus: Int ?= 200)
-GET      /                                                                  @controllers.gui.Home.home(httpStatus: Int ?= 200)
+GET      /jatos                                                             @controllers.gui.Home.home(request: Request, httpStatus: Int ?= 200)
+GET      /jatos/                                                            @controllers.gui.Home.home(request: Request, httpStatus: Int ?= 200)
+GET      /                                                                  @controllers.gui.Home.home(request: Request, httpStatus: Int ?= 200)
 GET      /jatos/branding                                                    @controllers.gui.Home.branding()
 
 # ApiTokens controller
@@ -170,8 +170,8 @@ POST     /jatos/:studyId/memberUser                                         @con
 POST     /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.addAllMemberUsers(studyId: Long)
 DELETE   /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.removeAllMemberUsers(studyId: Long)
 GET      /jatos/:studyId/memberUsers                                        @controllers.gui.Studies.memberUsers(studyId: Long)
-POST     /jatos/:studyId/componentOrder                                     @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition)
-GET      /jatos/:studyId/run                                                @controllers.gui.Studies.runStudy(request: Request, studyId: Long, batchId: Long ?= -1, frames: Long ?= 1, hSplit: Long ?= 1, vSplit: Long ?= 1)
+POST     /jatos/:studyId/componentOrder                                     @controllers.gui.Studies.changeComponentOrder(studyId: Long, componentId: Long, newPosition: Int)
+GET      /jatos/:studyId/run                                                @controllers.gui.Studies.runStudy(studyId: Long, batchId: Long ?= -1, frames: Long ?= 1, hSplit: Long ?= 1, vSplit: Long ?= 1)
 GET      /jatos/:studyId/clone                                              @controllers.gui.Studies.cloneStudy(studyId: Long)
 POST     /jatos/:studyId/lock/toggle                                        @controllers.gui.Studies.toggleLock(studyId: Long)
 GET      /jatos/:studyId/componentsTableData                                @controllers.gui.Studies.tableDataByStudy(studyId: Long)

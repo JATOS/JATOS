@@ -49,15 +49,14 @@ public class GeneralSingleStudyAuthorisation extends StudyAuthorisation {
     }
 
     @Override
-    public void checkWorkerAllowedToDoStudy(Worker worker, Study study, Batch batch)
-            throws ForbiddenException {
+    public void checkWorkerAllowedToDoStudy(Worker worker, Study study, Batch batch) {
         // Check if the worker type is allowed
         if (!batch.hasAllowedWorkerType(worker.getWorkerType())) {
             throw new ForbiddenException(PublixErrorMessages
                     .workerTypeNotAllowed(worker.getWorkerType().uiValue(), study.getId(), batch.getId()));
         }
         // General single workers can't repeat the same study
-        if (studyResultDao.hasFinishedStudy(worker, study)) {
+        if (studyResultDao.hasStudyWithStudyRunDone(worker, study)) {
             throw new ForbiddenException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
     }

@@ -3,14 +3,16 @@ package controllers.publix.workers;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.GeneralMultipleWorker;
-import models.common.workers.PersonalMultipleWorker;
+import models.common.workers.WorkerType;
 import org.junit.Before;
 import org.junit.Test;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
@@ -20,11 +22,11 @@ import services.publix.WorkerCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralMultipleStudyAuthorisation;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static play.test.Helpers.SEE_OTHER;
 import static play.test.Helpers.fakeRequest;
@@ -43,8 +45,6 @@ public class GeneralMultiplePublixTest {
 
     private GeneralMultiplePublix publix;
 
-    private final JPAApi jpa = mock(JPAApi.class);
-
     @Before
     public void setUp() {
         publixUtils = mock(PublixUtils.class);
@@ -56,22 +56,26 @@ public class GeneralMultiplePublixTest {
         GroupAdministration groupAdministration = mock(GroupAdministration.class);
         StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
-        JsonUtils jsonUtils = mock(JsonUtils.class);
+        DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
         ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
         StudyResultDao studyResultDao = mock(StudyResultDao.class);
         IOUtils ioUtils = null; // not needed in this unit test
+        IOExecutor ioContext = mock(IOExecutor.class);
+        StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new GeneralMultiplePublix(jpa, publixUtils, studyAuthorisation, resultCreator, workerCreator,
-                groupAdministration, idCookieService, errorMessages, studyAssets, jsonUtils,
-                componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new GeneralMultiplePublix(publixUtils, studyAuthorisation, resultCreator, workerCreator,
+                groupAdministration, idCookieService, errorMessages, studyAssets, domainJsonMapper,
+                componentResultDao, studyResultDao, studyLogger, ioUtils, ioContext, studyAssetsExecutor);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Study newStudy(long id) {
         Study s = new Study();
         s.setId(id);
         return s;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Batch newBatch(long id, Study study) {
         Batch b = new Batch();
         b.setId(id);
@@ -86,12 +90,14 @@ public class GeneralMultiplePublixTest {
         return sl;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static GeneralMultipleWorker newWorker(long id) {
         GeneralMultipleWorker w = mock(GeneralMultipleWorker.class);
         when(w.getId()).thenReturn(id);
         return w;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static StudyResult newStudyResult(long id, String uuid, Study study, Batch batch, GeneralMultipleWorker worker) {
         StudyResult sr = new StudyResult();
         sr.setId(id);
@@ -102,6 +108,7 @@ public class GeneralMultiplePublixTest {
         return sr;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Component newComponent(String uuid) {
         Component c = new Component();
         c.setUuid(uuid);
@@ -111,7 +118,7 @@ public class GeneralMultiplePublixTest {
     // -------------------- startStudy --------------------
 
     @Test
-    public void startStudy_createsWorkerAndStudyResult_andRedirects() throws PublixException {
+    public void startStudy_createsWorkerAndStudyResult_andRedirects() {
         Study study = newStudy(100L);
         Batch batch = newBatch(200L, study);
         StudyLink sl = newStudyLink(batch);
@@ -134,11 +141,11 @@ public class GeneralMultiplePublixTest {
 
         // Verify interactions specific to GeneralMultiplePublix
         verify(workerCreator).createAndPersistGeneralMultipleWorker(batch);
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult(request);
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
+        verify(publixUtils).finishOldestStudyResult();
         verify(resultCreator).createStudyResult(sl, worker);
-        verify(publixUtils).setUrlQueryParameter(request, sr);
-        verify(idCookieService).writeIdCookie(request, sr);
-        verify(studyLogger).log(eq(sl), contains("Started study run with " + PersonalMultipleWorker.UI_WORKER_TYPE), eq(worker));
+        verify(publixUtils).setUrlQueryParameter(sr);
+        verify(idCookieService).writeIdCookie(sr);
+        verify(studyLogger).log(eq(sl), contains("Started study run with " + WorkerType.PERSONAL_MULTIPLE), eq(worker));
     }
 }

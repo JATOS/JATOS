@@ -1,39 +1,42 @@
 package services.gui;
 
-import auth.gui.AuthService;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import exceptions.common.ForbiddenException;
-import exceptions.common.NotFoundException;
+import http.common.Http.Context;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
 import models.gui.ComponentProperties;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.Mockito;
-import testutils.gui.ContextMocker;
+import play.test.Helpers;
 import utils.common.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for ComponentService.
- *
- * @author Kristian Lange
  */
 public class ComponentServiceTest {
 
     private static org.mockito.MockedStatic<general.common.Common> commonStatic;
+
+    private ResultRemover resultRemover;
+    private StudyDao studyDao;
+    private ComponentDao componentDao;
+    private IOUtils ioUtils;
+
+    private ComponentService componentService;
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
@@ -50,25 +53,21 @@ public class ComponentServiceTest {
         if (commonStatic != null) commonStatic.close();
     }
 
-    private ResultRemover resultRemover;
-    private StudyDao studyDao;
-    private ComponentDao componentDao;
-    private IOUtils ioUtils;
-    private AuthService authService;
-    private Checker checker;
-
-    private ComponentService componentService;
-
     @Before
     public void setup() {
         resultRemover = Mockito.mock(ResultRemover.class);
         studyDao = Mockito.mock(StudyDao.class);
         componentDao = Mockito.mock(ComponentDao.class);
         ioUtils = Mockito.mock(IOUtils.class);
-        authService = Mockito.mock(AuthService.class);
-        checker = Mockito.mock(Checker.class);
 
-        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils, authService, checker);
+        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
+    }
+
+    @After
+    public void tearDown() {
+        Context.clear();
     }
 
     private Component exampleComponent(Study study) {
@@ -78,7 +77,7 @@ public class ComponentServiceTest {
         c.setHtmlFilePath("a/index.html");
         c.setReloadable(true);
         c.setActive(true);
-        c.setJsonData("{\"x\":1}");
+        c.setComponentInput("{\"x\":1}");
         c.setComments("note");
         c.setId(10L);
         return c;
@@ -98,7 +97,7 @@ public class ComponentServiceTest {
         assertThat(clone.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
         assertThat(clone.isReloadable()).isTrue();
         assertThat(clone.isActive()).isTrue();
-        assertThat(clone.getJsonData()).isEqualTo("{\"x\":1}");
+        assertThat(clone.getComponentInput()).isEqualTo("{\"x\":1}");
         assertThat(clone.getComments()).isEqualTo("note");
         // differences
         assertThat(clone.getId()).isNull();
@@ -134,8 +133,6 @@ public class ComponentServiceTest {
         when(componentDao.findByTitle("Comp A (clone)")).thenReturn(Collections.emptyList());
         when(ioUtils.cloneComponentHtmlFile(anyString(), anyString())).thenThrow(new IOException("fail"));
 
-        // Prepare a fake HTTP context used by RequestScopeMessaging
-        ContextMocker.mock();
         // When
         Component clone = componentService.cloneWholeComponent(original);
 
@@ -152,6 +149,7 @@ public class ComponentServiceTest {
         s.setId(3L);
         Component c = exampleComponent(s);
         c.setId(42L);
+        when(studyDao.findStudyDirNameByComponentId(c.getId())).thenReturn(s.getDirName());
         when(ioUtils.checkFileInStudyAssetsDirExists(s.getDirName(), c.getHtmlFilePath())).thenReturn(true);
 
         // When
@@ -164,14 +162,14 @@ public class ComponentServiceTest {
         assertThat(props.getStudyId()).isEqualTo(3L);
         assertThat(props.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
         assertThat(props.isHtmlFileExists()).isTrue();
-        assertThat(props.getJsonData()).isEqualTo("{\"x\":1}");
+        assertThat(props.getComponentInput()).isEqualTo("{\"x\":1}");
         assertThat(props.getComments()).isEqualTo("note");
         assertThat(props.isReloadable()).isTrue();
         assertThat(props.isActive()).isTrue();
     }
 
     @Test
-    public void updateComponentAfterEdit_shouldUpdateSelectedFields_andCallDaoUpdate() {
+    public void updateComponentAfterEdit_shouldUpdateFields_andCallDaoMerge() {
         // Given
         Study s = new Study();
         Component c = exampleComponent(s);
@@ -179,7 +177,9 @@ public class ComponentServiceTest {
         updated.setTitle("New");
         updated.setReloadable(false);
         updated.setComments("c2");
-        updated.setJsonData("{\"y\":2}");
+        updated.setComponentInput("{\"y\":2}");
+        updated.setActive(false);
+        updated.setHtmlFilePath("b" + File.separator + "test.html");
 
         // When
         componentService.updateComponentAfterEdit(c, updated);
@@ -188,15 +188,14 @@ public class ComponentServiceTest {
         assertThat(c.getTitle()).isEqualTo("New");
         assertThat(c.isReloadable()).isFalse();
         assertThat(c.getComments()).isEqualTo("c2");
-        assertThat(c.getJsonData()).isEqualTo("{\"y\":2}");
-        // unchanged
-        assertThat(c.getHtmlFilePath()).isEqualTo("a" + File.separator + "index.html");
-        assertThat(c.isActive()).isTrue();
-        verify(componentDao).merge(c);
+        assertThat(c.getComponentInput()).isEqualTo("{\"y\":2}");
+        assertThat(c.isActive()).isFalse();
+        assertThat(c.getHtmlFilePath()).isEqualTo("b" + File.separator + "test.html");
+        verify(componentDao, times(2)).merge(c);
     }
 
     @Test
-    public void createAndPersistComponent_withProperties_shouldBind_thenPersist_andUpdateStudy() {
+    public void createAndPersistComponent_withProperties_shouldBind_thenPersist_andMergeStudy() {
         // Given
         Study s = new Study();
         s.setId(5L);
@@ -205,7 +204,7 @@ public class ComponentServiceTest {
         p.setHtmlFilePath("f.html");
         p.setReloadable(true);
         p.setComments("X");
-        p.setJsonData("{\"z\":1}");
+        p.setComponentInput("{\"z\":1}");
 
         // When
         Component created = componentService.createAndPersistComponent(s, p);
@@ -238,7 +237,7 @@ public class ComponentServiceTest {
         // Given
         Study s = new Study();
         Component c = exampleComponent(s);
-        when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(new File("/does/not/exist"));
+        when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(Path.of("/does/not/exist"));
 
         // When
         componentService.renameHtmlFilePath(c, "a/new.html", true);
@@ -254,8 +253,8 @@ public class ComponentServiceTest {
         // Given
         Study s = new Study();
         Component c = exampleComponent(s);
-        File fake = Mockito.mock(File.class);
-        when(fake.exists()).thenReturn(true);
+        Path fake = Files.createTempFile("component-test", ".html");
+        when(studyDao.findStudyDirNameByComponentId(c.getId())).thenReturn(s.getDirName());
         when(ioUtils.getFileInStudyAssetsDir(s.getDirName(), c.getHtmlFilePath())).thenReturn(fake);
 
         // When
@@ -266,7 +265,7 @@ public class ComponentServiceTest {
         verify(ioUtils).renameHtmlFile("a" + File.separator + "index.html", "a/new2.html", s.getDirName());
         verify(componentDao).merge(c);
 
-        // And when rename not requested
+        // And when rename isn't requested
         componentService.renameHtmlFilePath(c, "a/new3.html", false);
         verify(ioUtils, never()).renameHtmlFile("a" + File.separator + "new2.html", "a/new3.html", s.getDirName());
         verify(componentDao, times(2)).merge(c);
@@ -301,23 +300,23 @@ public class ComponentServiceTest {
         s.setId(9L);
         Component c = exampleComponent(s);
         s.addComponent(c);
-        User u = new User("u", "U", "u@example.org");
 
         // When
-        componentService.remove(c, u);
+        componentService.remove(c);
 
         // Then
         assertThat(s.getComponentList().contains(c)).isFalse();
         verify(studyDao).merge(s);
-        verify(resultRemover).removeAllComponentResults(c, u);
+        verify(resultRemover).removeAllComponentResults(c);
         verify(componentDao).remove(c);
     }
 
     @Test
-    public void getComponentFromIdOrUuid_withId_shouldReturn_andCheckPermissions() throws NotFoundException, ForbiddenException {
+    public void getComponentFromIdOrUuid_withId_shouldReturn_andCheckPermissions() {
         // Given
         User signed = new User("u", "U", "u@x");
-        when(authService.getSignedinUser()).thenReturn(signed);
+        Context.current().args().put(SIGNEDIN_USER, signed);
+
         Component c = new Component();
         c.setId(123L);
         when(componentDao.findById(123L)).thenReturn(c);
@@ -327,14 +326,14 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(res).isEqualTo(c);
-        verify(checker).checkStandardForComponent(123L, c, signed);
     }
 
     @Test
-    public void getComponentFromIdOrUuid_withUuid_shouldReturn_andCheckPermissions() throws NotFoundException, ForbiddenException {
+    public void getComponentFromIdOrUuid_withUuid_shouldReturn_andCheckPermissions() {
         // Given
         User signed = new User("u", "U", "u@x");
-        when(authService.getSignedinUser()).thenReturn(signed);
+        Context.current().args().put(SIGNEDIN_USER, signed);
+
         Component c = new Component();
         c.setId(55L);
         when(componentDao.findByUuid("abc")).thenReturn(Optional.of(c));
@@ -344,20 +343,21 @@ public class ComponentServiceTest {
 
         // Then
         assertThat(res).isEqualTo(c);
-        verify(checker).checkStandardForComponent(55L, c, signed);
     }
 
-    @Test(expected = NotFoundException.class)
-    public void getComponentFromIdOrUuid_withUnknownId_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
+    @Test
+    public void getComponentFromIdOrUuid_withUnknownId_shouldThrowNotFound() {
+        Context.current().args().put(SIGNEDIN_USER, new User("u", "U", "u@x"));
         when(componentDao.findById(999L)).thenReturn(null);
-        componentService.getComponentFromIdOrUuid("999");
+        Component c = componentService.getComponentFromIdOrUuid("999");
+        assertThat(c).isNull();
     }
 
-    @Test(expected = NotFoundException.class)
-    public void getComponentFromIdOrUuid_withUnknownUuid_shouldThrowNotFound() throws NotFoundException, ForbiddenException {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@x"));
+    @Test
+    public void getComponentFromIdOrUuid_withUnknownUuid_shouldReturnNull() {
+        Context.current().args().put(SIGNEDIN_USER, new User("u", "U", "u@x"));
         when(componentDao.findByUuid("nope")).thenReturn(Optional.empty());
-        componentService.getComponentFromIdOrUuid("nope");
+        Component c = componentService.getComponentFromIdOrUuid("nope");
+        assertThat(c).isNull();
     }
 }

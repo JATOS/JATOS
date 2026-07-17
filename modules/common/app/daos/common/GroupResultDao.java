@@ -42,11 +42,20 @@ public class GroupResultDao extends AbstractDao {
     }
 
     public GroupResult findById(Long id) {
-        return jpa.withTransaction((javax.persistence.EntityManager em) -> em.find(GroupResult.class, id));
+        return withReadOnlyTransaction((EntityManager em) -> em.find(GroupResult.class, id));
+    }
+
+    public GroupResult findByIdWithBatch(Long id) {
+        return withReadOnlyTransaction((EntityManager em) -> {
+            String queryStr = "SELECT gr FROM GroupResult gr LEFT JOIN FETCH gr.batch WHERE gr.id = :id";
+            return em.createQuery(queryStr, GroupResult.class)
+                    .setParameter("id", id)
+                    .getSingleResult();
+        });
     }
 
     public List<GroupResult> findAllByBatch(Batch batch) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch";
             TypedQuery<GroupResult> query = em.createQuery(queryStr, GroupResult.class);
             return query.setParameter("batch", batch).getResultList();
@@ -54,7 +63,7 @@ public class GroupResultDao extends AbstractDao {
     }
 
     public Integer countByBatch(Batch batch) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT COUNT(gr) FROM GroupResult gr WHERE gr.batch=:batch";
             Query query = em.createQuery(queryStr).setParameter("batch", batch);
             Number result = (Number) query.getSingleResult();
@@ -72,7 +81,7 @@ public class GroupResultDao extends AbstractDao {
      * historyMemberCount.
      */
     public List<GroupResult> findAllMaxNotReached(Batch batch) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
                     + "WHERE gr.batch=:batch "
                     + "AND b.id=:batch "
@@ -92,7 +101,7 @@ public class GroupResultDao extends AbstractDao {
      * Returns a list of IDs of all StudyResults that are part of the active member list of the given GroupResult.
      */
     public List<Long> findAllActiveMemberIds(GroupResult groupResult) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT sr.id FROM StudyResult sr WHERE sr.activeGroupResult = :groupResult";
             return em.createQuery(queryStr, Long.class)
                     .setParameter("groupResult", groupResult)
@@ -104,7 +113,7 @@ public class GroupResultDao extends AbstractDao {
      * Returns a list of IDs of all StudyResults that are part of the history member list of the given GroupResult.
      */
     public List<Long> findAllHistoryMemberIds(GroupResult groupResult) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT sr.id FROM StudyResult sr WHERE sr.historyGroupResult = :groupResult";
             return em.createQuery(queryStr, Long.class)
                     .setParameter("groupResult", groupResult)
@@ -120,7 +129,7 @@ public class GroupResultDao extends AbstractDao {
      * mismatched
      */
     public Long updateGroupSession(Long groupResultId, Long expectedVersion, String sessionData) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withTransaction(em -> {
             String query =
                     "UPDATE GroupResult gr " +
                             "SET gr.groupSessionData = :sessionData, " +

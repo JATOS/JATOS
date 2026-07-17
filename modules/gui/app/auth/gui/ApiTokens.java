@@ -1,13 +1,14 @@
 package auth.gui;
 
 import actions.common.AsyncAction.Executor;
+import actions.common.TransactionalAction.Transactional;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import daos.common.ApiTokenDao;
 import http.common.Http.Context;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.ApiToken;
 import models.common.User;
 import org.jsoup.Jsoup;
@@ -33,15 +34,15 @@ public class ApiTokens extends Controller {
 
     private final ApiTokenDao apiTokenDao;
     private final ApiTokenService apiTokenService;
-    private final JsonUtils jsonUtils;
+    private final DomainJsonMapper domainJsonMapper;
 
     @Inject
     ApiTokens(ApiTokenDao apiTokenDao,
               ApiTokenService apiTokenService,
-              JsonUtils jsonUtils) {
+              DomainJsonMapper domainJsonMapper) {
         this.apiTokenDao = apiTokenDao;
         this.apiTokenService = apiTokenService;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
     }
 
     @Async(Executor.IO)
@@ -53,7 +54,7 @@ public class ApiTokens extends Controller {
         for (ApiToken token : tokenList) {
             tokenData.add(Json.mapper().valueToTree(token));
         }
-        JsonNode data = jsonUtils.wrapAsDataEnvelope(tokenData);
+        JsonNode data = domainJsonMapper.wrapAsDataEnvelope(tokenData);
         return ok(data);
     }
 
@@ -71,10 +72,11 @@ public class ApiTokens extends Controller {
 
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER, ADMIN})
+    @Transactional
     public Result remove(Long id) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         ApiToken token = apiTokenDao.find(id);
-        if (token == null || token.getUser().equals(signedinUser)) {
+        if (token == null || !token.getUser().equals(signedinUser)) {
             return notFound("Token doesn't exist");
         }
         apiTokenDao.remove(token);
@@ -88,7 +90,7 @@ public class ApiTokens extends Controller {
 
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         ApiToken token = apiTokenDao.find(id);
-        if (token == null || token.getUser().equals(signedinUser)) {
+        if (token == null || !token.getUser().equals(signedinUser)) {
             return notFound("Token doesn't exist");
         }
         token.setActive(active);

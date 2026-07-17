@@ -8,7 +8,6 @@ import daos.common.BatchDao
 import models.common.Batch
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsValue, Json}
-import play.db.jpa.JPAApi
 
 import java.io.IOException
 import javax.inject.{Inject, Singleton}
@@ -18,7 +17,7 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
  * Utility class that builds BatchMsgs. So it mostly handles the JSON creation.
  */
 @Singleton
-class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
+class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -60,7 +59,7 @@ class BatchActionMsgBuilder @Inject()(jpa: JPAApi, batchDao: BatchDao) {
    * Builds a BatchMsg with the current batch session data and version
    */
   def buildSessionData(batchId: Long, action: BatchAction, tellWhom: TellWhom): BatchMsg = {
-    jpa.withTransaction(asJavaFunction(_ => {
+    batchDao.withReadOnlyTransaction(asJavaFunction(_ => {
       logger.debug(s".buildSessionData: batchId $batchId, action $action, tellWhom ${
         tellWhom
           .toString

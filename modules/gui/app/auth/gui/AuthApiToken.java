@@ -1,5 +1,6 @@
 package auth.gui;
 
+import auth.gui.AuthAction.AuthMethod;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.ApiTokenDao;
 import general.common.ApiEnvelope;
@@ -31,7 +32,7 @@ import static play.mvc.Results.unauthorized;
  * {@link ApiToken} objects are put in the {@link Context} for later use during request processing.
  */
 @Singleton
-public class AuthApiToken implements AuthAction.AuthMethod {
+public class AuthApiToken implements AuthMethod {
 
     public static final TypedKey<ApiToken> API_TOKEN = TypedKey.create("apiToken");
 
@@ -53,9 +54,8 @@ public class AuthApiToken implements AuthAction.AuthMethod {
     @Override
     public AuthResult authenticate(EnumSet<Role> allowedRoles) {
 
-        if (!HttpUtils.isApiRequest()) {
+        if (!HttpUtils.isApiRequest() || !HttpUtils.hasBearerToken())
             return AuthResult.wrongMethod();
-        }
 
         if (!Common.isJatosApiAllowed()) {
             JsonNode error = ApiEnvelope.wrap("JATOS API is not allowed", AUTH_ERROR).asJsonNode();
@@ -65,7 +65,6 @@ public class AuthApiToken implements AuthAction.AuthMethod {
         //noinspection OptionalGetWithoutIsPresent - it's checked in Helpers.isApiRequest
         String authorizationHeader = Context.current().requestHeader().header("Authorization").get();
         String fullTokenStr = authorizationHeader.substring("Bearer ".length()).trim();
-        apiTokenService.isValid(fullTokenStr);
         if (!apiTokenService.isValid(fullTokenStr)) {
             JsonNode error = ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode();
             return AuthResult.denied(unauthorized(error));

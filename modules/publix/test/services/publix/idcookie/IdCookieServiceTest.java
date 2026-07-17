@@ -1,30 +1,48 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
+import filters.publix.IdCookieFilter;
 import general.common.Common;
-import models.common.*;
+import http.common.Http.Context;
+import models.common.Batch;
+import models.common.Component;
+import models.common.ComponentResult;
+import models.common.Study;
+import models.common.StudyResult;
 import models.common.workers.GeneralSingleWorker;
+import models.common.workers.WorkerType;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-import testutils.publix.ContextMocker;
+import play.mvc.Http;
+import services.publix.idcookie.exceptions.IdCookieNotFoundException;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 public class IdCookieServiceTest {
 
-    private IdCookieAccessor accessor;
+    private IdCookieSerialiser idCookieSerialiser;
     private IdCookieService service;
 
     private static MockedStatic<Common> commonStatic;
 
     @BeforeClass
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void initStatics() {
         commonStatic = mockStatic(Common.class);
+        commonStatic.when(Common::getIdCookiesLimit).thenReturn(20);
+        commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/");
+        commonStatic.when(Common::isIdCookiesSecure).thenReturn(false);
+        commonStatic.when(Common::getIdCookiesSameSite).thenReturn(null);
     }
 
     @AfterClass
@@ -34,98 +52,380 @@ public class IdCookieServiceTest {
 
     @Before
     public void setup() {
-        ContextMocker.mock(); // ensure RequestScope/Context exists for internals
-        accessor = mock(IdCookieAccessor.class);
-        service = new IdCookieService(accessor);
+        idCookieSerialiser = new IdCookieSerialiser();
+        service = new IdCookieService(idCookieSerialiser);
+    }
+
+    @After
+    public void tearDown() {
+        Context.clear();
     }
 
     @Test
-    public void has_and_get_IdCookie() throws Exception {
-        IdCookieCollection col = new IdCookieCollection();
-        IdCookieModel m = new IdCookieModel();
-        m.setStudyResultId(5L);
-        m.setName(IdCookieModel.ID_COOKIE_NAME + "_5");
-        col.add(m);
-        when(accessor.extract()).thenReturn(col);
+    public void hasIdCookie_returnsTrueIfCookieForStudyResultExists() {
+        IdCookieModel idCookie = idCookieModel(5L);
+        setCurrentContextWith(idCookie);
 
-        assertTrue(service.hasIdCookie(5L));
-        assertSame(m, service.getIdCookie(5L));
-    }
-
-    @Test(expected = BadRequestPublixException.class)
-    public void getIdCookie_throws_when_missing() throws Exception {
-        when(accessor.extract()).thenReturn(new IdCookieCollection());
-        service.getIdCookie(99L);
+        assertThat(service.hasIdCookie(5L)).isTrue();
+        assertThat(service.hasIdCookie(99L)).isFalse();
     }
 
     @Test
-    public void oneIdCookieHasThisStudyAssets_checks_all() throws Exception {
-        IdCookieCollection col = new IdCookieCollection();
-        IdCookieModel a = new IdCookieModel(); a.setStudyResultId(1L); a.setName("n1"); a.setStudyAssets("a");
-        IdCookieModel b = new IdCookieModel(); b.setStudyResultId(2L); b.setName("n2"); b.setStudyAssets("b");
-        col.add(a); col.add(b);
-        when(accessor.extract()).thenReturn(col);
-        assertTrue(service.oneIdCookieHasThisStudyAssets("a"));
-        assertFalse(service.oneIdCookieHasThisStudyAssets("x"));
+    public void getIdCookie_returnsCookieForStudyResult() {
+        IdCookieModel idCookie = idCookieModel(5L);
+        setCurrentContextWith(idCookie);
+
+        assertThat(service.getIdCookie(5L)).isSameAs(idCookie);
     }
 
     @Test
-    public void writeIdCookie_reuses_existing_name_otherwise_creates_new() throws Exception {
-        // Existing cookie for studyResult 7 -> reuse its name
-        IdCookieCollection col = new IdCookieCollection();
-        IdCookieModel existing = new IdCookieModel();
-        existing.setStudyResultId(7L); existing.setName("JATOS_ID_7"); col.add(existing);
-        when(accessor.extract()).thenReturn(col);
+    public void getIdCookie_throwsIfCookieForStudyResultDoesNotExist() {
+        setCurrentContextWith(new IdCookieCollection());
 
-        Study study = new Study(); study.setId(1L); study.setDirName("dir");
-        Batch batch = new Batch(); batch.setId(2L);
-        StudyResult sr = new StudyResult(); sr.setId(7L); sr.setUuid("uuid-7"); sr.setStudy(study); sr.setBatch(batch);
-        GeneralSingleWorker w = new GeneralSingleWorker(); w.setId(9L); sr.setWorker(w);
-        Component comp = new Component(); comp.setId(3L);
-        study.getComponentList().add(comp);
-        ComponentResult cr = new ComponentResult(); cr.setId(4L); cr.setComponent(comp);
+        assertThatThrownBy(() -> service.getIdCookie(99L))
+                .isInstanceOf(IdCookieNotFoundException.class)
+                .hasMessageContaining("99");
+    }
 
-        // Use ArgumentCaptor to capture the IdCookieModel that is passed to the accessor's write method
-        ArgumentCaptor<IdCookieModel> captor = ArgumentCaptor.forClass(IdCookieModel.class);
-        service.writeIdCookie(sr, cr, JatosRun.RUN_STUDY);
-        verify(accessor).write(captor.capture());
-        IdCookieModel written = captor.getValue();
-        assertEquals("JATOS_ID_7", written.getName());
-        assertEquals(Long.valueOf(1L), written.getStudyId());
-        assertEquals(Long.valueOf(2L), written.getBatchId());
-        assertEquals(Long.valueOf(3L), written.getComponentId());
-        assertEquals(Long.valueOf(4L), written.getComponentResultId());
-        assertEquals(study.getComponentPosition(comp), written.getComponentPosition());
-        assertEquals(Long.valueOf(9L), written.getWorkerId());
-        assertEquals("GeneralSingle", written.getWorkerType());
-        assertEquals(JatosRun.RUN_STUDY, written.getJatosRun());
+    @Test
+    public void getJatosRun_returnsRunStoredInCookie() {
+        IdCookieModel idCookie = idCookieModel(5L);
+        idCookie.setJatosRun(JatosRun.RUN_STUDY);
+        setCurrentContextWith(idCookie);
+
+        assertThat(service.getJatosRun(5L)).isEqualTo(JatosRun.RUN_STUDY);
+    }
+
+    @Test
+    public void oneIdCookieHasThisStudyAssets_checksAllCookiesAttachedToRequest() {
+        IdCookieModel first = idCookieModel(1L);
+        first.setStudyAssets("study-assets-a");
+
+        IdCookieModel second = idCookieModel(2L);
+        second.setStudyAssets("study-assets-b");
+
+        Http.Request requestWithContext = requestWithContext(first, second);
+
+        assertThat(service.oneIdCookieHasThisStudyAssets(requestWithContext, "study-assets-a")).isTrue();
+        assertThat(service.oneIdCookieHasThisStudyAssets(requestWithContext, "study-assets-b")).isTrue();
+        assertThat(service.oneIdCookieHasThisStudyAssets(requestWithContext, "unknown-assets")).isFalse();
+    }
+
+    @Test
+    public void writeIdCookie_addsGeneratedCookieToCurrentCollection() {
+        IdCookieCollection collection = new IdCookieCollection();
+        setCurrentContextWith(collection);
+
+        Study study = new Study();
+        study.setId(1L);
+        study.setDirName("study-dir");
+
+        Batch batch = new Batch();
+        batch.setId(2L);
+
+        Component component = new Component();
+        component.setId(3L);
+        study.addComponent(component);
+
+        ComponentResult componentResult = new ComponentResult();
+        componentResult.setId(4L);
+        componentResult.setComponent(component);
+
+        GeneralSingleWorker worker = new GeneralSingleWorker();
+        worker.setId(9L);
+
+        StudyResult studyResult = new StudyResult();
+        studyResult.setId(7L);
+        studyResult.setUuid("uuid-7");
+        studyResult.setStudy(study);
+        studyResult.setBatch(batch);
+        studyResult.setWorker(worker);
+
+        service.writeIdCookie(studyResult, componentResult, JatosRun.RUN_STUDY);
+
+        IdCookieModel written = collection.findWithStudyResultId(7L);
+        assertThat(written).isNotNull();
+        assertThat(written.getStudyId()).isEqualTo(1L);
+        assertThat(written.getBatchId()).isEqualTo(2L);
+        assertThat(written.getComponentId()).isEqualTo(3L);
+        assertThat(written.getComponentResultId()).isEqualTo(4L);
+        assertThat(written.getWorkerId()).isEqualTo(9L);
+        assertThat(written.getWorkerType()).isEqualTo(WorkerType.GENERAL_SINGLE);
+        assertThat(written.getStudyAssets()).isEqualTo("study-dir");
+        assertThat(written.getStudyResultId()).isEqualTo(7L);
+        assertThat(written.getStudyResultUuid()).isEqualTo("uuid-7");
+        assertThat(written.getJatosRun()).isEqualTo(JatosRun.RUN_STUDY);
+    }
+
+    @Test
+    public void discardIdCookie_removesCookieForStudyResult() {
+        IdCookieCollection collection = new IdCookieCollection();
+        collection.add(idCookieModel(1L));
+        collection.add(idCookieModel(2L));
+        setCurrentContextWith(collection);
+
+        service.discardIdCookie(1L);
+
+        assertThat(collection.findWithStudyResultId(1L)).isNull();
+        assertThat(collection.findWithStudyResultId(2L)).isNotNull();
+    }
+
+    @Test
+    public void discardIdCookie_doesNothingIfCookieDoesNotExist() {
+        IdCookieModel idCookie = idCookieModel(2L);
+        IdCookieCollection collection = new IdCookieCollection();
+        collection.add(idCookie);
+        setCurrentContextWith(collection);
+
+        service.discardIdCookie(99L);
+
+        assertThat(collection.getAll()).containsExactly(idCookie);
     }
 
     @Test
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void maxIdCookiesReached_reflects_collection_isFull() throws Exception {
-        // set limit to 1 and fill collection with 1 item
+    public void maxIdCookiesReached_delegatesToCollectionIsFull() {
         commonStatic.when(Common::getIdCookiesLimit).thenReturn(1);
-        IdCookieCollection col = new IdCookieCollection();
-        IdCookieModel m = new IdCookieModel(); m.setStudyResultId(1L); m.setName("JATOS_ID_1");
-        col.put(m);
-        when(accessor.extract()).thenReturn(col);
-        assertTrue(service.maxIdCookiesReached());
+
+        IdCookieCollection collection = new IdCookieCollection();
+        collection.put(idCookieModel(1L));
+        setCurrentContextWith(collection);
+
+        assertThat(service.maxIdCookiesReached()).isTrue();
     }
 
     @Test
-    public void oldest_cookie_detection_and_id_extraction() throws Exception {
-        IdCookieCollection col = new IdCookieCollection();
-        IdCookieModel a = new IdCookieModel(); a.setStudyResultId(1L); a.setName("n1"); a.setCreationTime(200L); col.add(a);
-        IdCookieModel b = new IdCookieModel(); b.setStudyResultId(2L); b.setName("n2"); b.setCreationTime(100L); col.add(b);
-        when(accessor.extract()).thenReturn(col);
-        assertSame(b, service.getOldestIdCookie());
-        assertEquals(Long.valueOf(2L), service.getStudyResultIdFromOldestIdCookie());
+    public void getOldestIdCookie_returnsCookieWithSmallestCreationTime() {
+        IdCookieModel newer = idCookieModel(1L);
+        newer.setCreationTime(200L);
+
+        IdCookieModel older = idCookieModel(2L);
+        older.setCreationTime(100L);
+
+        setCurrentContextWith(newer, older);
+
+        assertThat(service.getOldestIdCookie()).isSameAs(older);
     }
 
     @Test
-    public void discardIdCookie_delegates_to_accessor() throws Exception {
-        service.discardIdCookie(77L);
-        verify(accessor).discard(77L);
+    public void getOldestIdCookie_ignoresCookiesWithoutCreationTime() {
+        IdCookieModel withoutCreationTime = idCookieModel(1L);
+        withoutCreationTime.setCreationTime(null);
+
+        IdCookieModel withCreationTime = idCookieModel(2L);
+        withCreationTime.setCreationTime(100L);
+
+        setCurrentContextWith(withoutCreationTime, withCreationTime);
+
+        assertThat(service.getOldestIdCookie()).isSameAs(withCreationTime);
     }
+
+    @Test
+    public void getOldestIdCookie_returnsNullForEmptyCollection() {
+        setCurrentContextWith(new IdCookieCollection());
+
+        assertThat(service.getOldestIdCookie()).isNull();
+    }
+
+    @Test
+    public void getStudyResultIdOfOldestIdCookie_returnsStudyResultIdOfOldestCookie() {
+        IdCookieModel newer = idCookieModel(1L);
+        newer.setCreationTime(200L);
+
+        IdCookieModel older = idCookieModel(2L);
+        older.setCreationTime(100L);
+
+        setCurrentContextWith(newer, older);
+
+        assertThat(service.getStudyResultIdOfOldestIdCookie()).isEqualTo(2L);
+    }
+
+    @Test
+    public void extractIdCookieNames_returnsOnlyIdCookieNames_caseInsensitive() {
+        Http.Request request = new Http.RequestBuilder()
+                .method("GET")
+                .uri("/")
+                .cookie(Http.Cookie.builder("JATOS_ID_1", "value").build())
+                .cookie(Http.Cookie.builder("jatos_id_2", "value").build())
+                .cookie(Http.Cookie.builder("OTHER_COOKIE", "value").build())
+                .build();
+
+        Set<String> names = service.extractIdCookieNames(request.cookies());
+
+        assertThat(names).containsExactlyInAnyOrder("JATOS_ID_1", "jatos_id_2");
+    }
+
+    @Test
+    public void extractFromCookies_extractsValidIdCookiesAndIgnoresOtherCookies() {
+        IdCookieModel model = idCookieModel(11L);
+        Http.Cookie validIdCookie = Http.Cookie.builder(
+                        model.getName(),
+                        idCookieSerialiser.asCookieValueString(model))
+                .build();
+
+        Http.Cookie otherCookie = Http.Cookie.builder("OTHER_COOKIE", "x=y").build();
+
+        Http.Request request = new Http.RequestBuilder()
+                .method("GET")
+                .uri("/")
+                .cookie(validIdCookie)
+                .cookie(otherCookie)
+                .build();
+
+        IdCookieCollection collection = service.extractFromCookies(request.cookies());
+
+        assertThat(collection.getAll()).hasSize(1);
+        assertThat(collection.findWithStudyResultId(11L)).isNotNull();
+        assertThat(collection.findWithStudyResultId(11L).getName()).isEqualTo(model.getName());
+    }
+
+    @Test
+    public void extractFromCookies_ignoresMalformedIdCookies() {
+        Http.Cookie malformedIdCookie = Http.Cookie.builder(IdCookieModel.ID_COOKIE_NAME + "_notANumber", "x=y").build();
+
+        Http.Request request = new Http.RequestBuilder()
+                .method("GET")
+                .uri("/")
+                .cookie(malformedIdCookie)
+                .build();
+
+        IdCookieCollection collection = service.extractFromCookies(request.cookies());
+
+        assertThat(collection.getAll()).isEmpty();
+    }
+
+    @Test
+    public void extractFromCookies_decodesUrlEncodedStringValues() {
+        IdCookieModel model = idCookieModel(11L);
+        model.setStudyAssets("study assets with spaces");
+        model.setUrlBasePath("/my jatos/");
+        model.setStudyResultUuid("uuid with spaces");
+
+        Http.Cookie cookie = Http.Cookie.builder(
+                        model.getName(),
+                        idCookieSerialiser.asCookieValueString(model))
+                .build();
+
+        Http.Request request = new Http.RequestBuilder()
+                .method("GET")
+                .uri("/")
+                .cookie(cookie)
+                .build();
+
+        IdCookieCollection collection = service.extractFromCookies(request.cookies());
+        IdCookieModel extracted = collection.findWithStudyResultId(11L);
+
+        assertThat(extracted).isNotNull();
+        assertThat(extracted.getStudyAssets()).isEqualTo("study assets with spaces");
+        assertThat(extracted.getUrlBasePath()).isEqualTo("/my jatos/");
+        assertThat(extracted.getStudyResultUuid()).isEqualTo("uuid with spaces");
+    }
+
+    @Test
+    public void generatePlayCookies_serialisesCurrentIdCookies() {
+        IdCookieSerialiser serialiser = mock(IdCookieSerialiser.class);
+        IdCookieService serviceWithMockedSerialiser = new IdCookieService(serialiser);
+
+        IdCookieModel idCookie = idCookieModel(5L);
+        setCurrentContextWith(idCookie);
+
+        when(serialiser.asCookieValueString(idCookie)).thenReturn("serialised=value");
+
+        Http.Cookie[] cookies = serviceWithMockedSerialiser.generatePlayCookies();
+
+        assertThat(cookies).hasSize(1);
+        assertThat(cookies[0].name()).isEqualTo(idCookie.getName());
+        assertThat(cookies[0].value()).isEqualTo("serialised=value");
+        assertThat(cookies[0].httpOnly()).isFalse();
+        assertThat(cookies[0].path()).contains("/");
+        assertThat(cookies[0].secure()).isFalse();
+    }
+
+    @Test
+    public void generatePlayCookieNames_returnsNamesOfCurrentIdCookies() {
+        IdCookieModel first = idCookieModel(1L);
+        first.setName(IdCookieModel.ID_COOKIE_NAME + "_1");
+
+        IdCookieModel second = idCookieModel(2L);
+        second.setName(IdCookieModel.ID_COOKIE_NAME + "_2");
+
+        setCurrentContextWith(first, second);
+
+        assertThat(service.generatePlayCookieNames())
+                .containsExactlyInAnyOrder(IdCookieModel.ID_COOKIE_NAME + "_1", IdCookieModel.ID_COOKIE_NAME + "_2");
+    }
+
+    @Test
+    public void generateDiscardCookies_generatesDiscardCookiesForGivenNames() {
+        Http.Cookie[] discardCookies = service.generateDiscardCookies(Set.of("JATOS_ID_1", "JATOS_ID_2"));
+
+        assertThat(discardCookies).hasSize(2);
+        assertThat(discardCookies)
+                .extracting(Http.Cookie::name)
+                .containsExactlyInAnyOrder("JATOS_ID_1", "JATOS_ID_2");
+        assertThat(discardCookies)
+                .allSatisfy(cookie -> {
+                    assertThat(cookie.maxAge()).isEqualTo(0);
+                    assertThat(cookie.path()).contains("/");
+                    assertThat(cookie.secure()).isFalse();
+                });
+    }
+
+    private void setCurrentContextWith(IdCookieModel... idCookies) {
+        IdCookieCollection collection = new IdCookieCollection();
+        for (IdCookieModel idCookie : idCookies) {
+            collection.add(idCookie);
+        }
+        setCurrentContextWith(collection);
+    }
+
+    private void setCurrentContextWith(IdCookieCollection collection) {
+        Http.Request request = new Http.RequestBuilder()
+                .method("GET")
+                .uri("/")
+                .build();
+
+        Context context = new Context(request);
+        context.args().put(IdCookieFilter.IDCOOKIES_TYPED_KEY, collection);
+        Context.setCurrent(context);
+    }
+
+    private Http.Request requestWithContext(IdCookieModel... idCookies) {
+        IdCookieCollection collection = new IdCookieCollection();
+        for (IdCookieModel idCookie : idCookies) {
+            collection.add(idCookie);
+        }
+
+        Http.Request request = new Http.RequestBuilder()
+                .method("GET")
+                .uri("/")
+                .build();
+
+        Context context = new Context(request);
+        context.args().put(IdCookieFilter.IDCOOKIES_TYPED_KEY, collection);
+
+        Http.Request requestWithContext = request.addAttr(Context.CONTEXT_TYPED_KEY, context);
+        return requestWithContext;
+    }
+
+    private IdCookieModel idCookieModel(long studyResultId) {
+        IdCookieModel model = new IdCookieModel();
+        model.setName(IdCookieModel.ID_COOKIE_NAME + "_" + studyResultId);
+        model.setIndex((int) studyResultId);
+        model.setWorkerId(100L);
+        model.setWorkerType(WorkerType.GENERAL_SINGLE);
+        model.setBatchId(200L);
+        model.setStudyId(300L);
+        model.setStudyResultId(studyResultId);
+        model.setStudyResultUuid("uuid-" + studyResultId);
+        model.setComponentId(null);
+        model.setComponentResultId(null);
+        model.setComponentPosition(null);
+        model.setStudyAssets("study-assets-" + studyResultId);
+        model.setUrlBasePath("/");
+        model.setJatosRun(JatosRun.RUN_STUDY);
+        model.setCreationTime(999L);
+        return model;
+    }
+
 }

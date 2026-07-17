@@ -8,8 +8,8 @@ import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import exceptions.common.JatosException;
 import general.common.Common;
-import http.common.Http.Context;
 import general.common.MessagesStrings;
+import http.common.Http.Context;
 import json.common.DefaultJson;
 import messaging.common.RequestScopeMessaging;
 import models.common.*;
@@ -25,8 +25,6 @@ import services.gui.ComponentService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import java.io.IOException;
 
 import static actions.common.AsyncAction.Executor;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
@@ -103,6 +101,7 @@ public class Components extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result submitCreated(Http.Request request, Long studyId) {
         Study study = studyDao.findByIdWithComponents(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -148,10 +147,9 @@ public class Components extends Controller {
         Form<ComponentProperties> form = formFactory.form(ComponentProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
-        ComponentProperties properties = form.get();
-        componentService.updateComponentAfterEdit(component, properties);
         try {
-            componentService.renameHtmlFilePath(component, properties.getHtmlFilePath(), properties.isHtmlFileRename());
+            ComponentProperties properties = form.get();
+            componentService.updateComponentAfterEdit(component, properties);
         } catch (JatosException e) {
             return badRequest(form.withError(ComponentProperties.HTML_FILE_PATH, e.getMessage()).errorsAsJson());
         }
@@ -159,10 +157,11 @@ public class Components extends Controller {
     }
 
     /**
-     * GET request to clone a component.
+     * GET a request to clone a component.
      */
-    @Transactional
+    @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result cloneComponent(Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -180,6 +179,7 @@ public class Components extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result remove(Long studyId, Long componentId) {
         Study study = studyDao.findByIdWithComponents(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

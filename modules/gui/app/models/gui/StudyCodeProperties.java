@@ -1,6 +1,6 @@
 package models.gui;
 
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;

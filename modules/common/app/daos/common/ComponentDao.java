@@ -10,6 +10,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * DAO for Component entity
@@ -30,27 +31,19 @@ public class ComponentDao extends AbstractDao {
         return super.merge(component);
     }
 
-    /**
-     * Change and persist the active property of a Component.
-     */
-    public void changeActive(Component component, boolean active) {
-        component.setActive(active);
-        merge(component);
-    }
-
     public void remove(Component component) {
         super.remove(component);
     }
 
     public Component findById(Long id) {
-        return jpa.withTransaction((javax.persistence.EntityManager em) -> em.find(Component.class, id));
+        return withReadOnlyTransaction((EntityManager em) -> em.find(Component.class, id));
     }
 
     /**
      * Finds the component by its ID and eagerly fetches the Study it belongs to.
      */
     public Component findByIdWithStudy(Long id) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c JOIN FETCH c.study WHERE c.id = :id";
             return em.createQuery(queryStr, Component.class)
                     .setParameter("id", id)
@@ -62,7 +55,7 @@ public class ComponentDao extends AbstractDao {
      * Finds the component with this UUID
      */
     public Optional<Component> findByUuid(String uuid) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.uuid=:uuid";
             List<Component> componentList = em.createQuery(queryStr, Component.class)
                     .setParameter("uuid", uuid)
@@ -77,7 +70,7 @@ public class ComponentDao extends AbstractDao {
      * Component does not have an index on its UUID field.
      */
     public Optional<Component> findByUuid(String uuid, Study study) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.study=:study AND c.uuid=:uuid";
             List<Component> componentList = em.createQuery(queryStr, Component.class)
                     .setParameter("study", study)
@@ -92,10 +85,33 @@ public class ComponentDao extends AbstractDao {
      * Finds all components with the given title and returns them in a list. If there is none it returns an empty list.
      */
     public List<Component> findByTitle(String title) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.title=:title";
             TypedQuery<Component> query = em.createQuery(queryStr, Component.class);
             return query.setParameter("title", title).getResultList();
+        });
+    }
+
+    /**
+     * Finds the UUID of a component from the given study that already exists in another study. The study doesn't have
+     * to be a managed entity.
+     */
+    public Optional<String> findUuidUsedByOtherStudy(Study study) {
+        List<String> componentUuids = study.getComponentList().stream()
+                .map(Component::getUuid)
+                .collect(Collectors.toList());
+        if (componentUuids.isEmpty()) return Optional.empty();
+
+        return withReadOnlyTransaction((EntityManager em) -> {
+            List<String> uuidList = em.createQuery(
+                            "SELECT c.uuid FROM Component c " +
+                                    "WHERE c.uuid IN :componentUuids AND c.study.uuid <> :studyUuid",
+                            String.class)
+                    .setParameter("componentUuids", componentUuids)
+                    .setParameter("studyUuid", study.getUuid())
+                    .setMaxResults(1)
+                    .getResultList();
+            return uuidList.isEmpty() ? Optional.empty() : Optional.of(uuidList.get(0));
         });
     }
 

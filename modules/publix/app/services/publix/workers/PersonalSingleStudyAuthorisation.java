@@ -56,7 +56,7 @@ public class PersonalSingleStudyAuthorisation extends StudyAuthorisation {
                     .workerTypeNotAllowed(worker.getWorkerType().uiValue(), study.getId(), batch.getId()));
         }
         // Personal single workers can't repeat the same study
-        if (studyResultDao.hasFinishedStudy(worker, study)) {
+        if (studyResultDao.hasStudyWithStudyRunDone(worker, study)) {
             throw new ForbiddenException(PublixErrorMessages.STUDY_CAN_BE_DONE_ONLY_ONCE);
         }
     }

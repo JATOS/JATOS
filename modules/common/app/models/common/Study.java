@@ -14,7 +14,7 @@ import java.util.*;
 
 import static javax.persistence.CascadeType.*;
 import static json.common.DefaultJson.JsonForIO;
-import static json.common.JsonUtils.asStringForDB;
+import static json.common.DomainJsonMapper.asStringForDB;
 
 /**
  * DB entity of a study. Used for JSON marshalling and JPA persistance.
@@ -71,8 +71,8 @@ public class Study {
     private boolean locked = false;
 
     /**
-     * A deactivated study cannot be run by a worker. A study can be deactivated by any admin or by a member user.
-     * By default, it's activated (true).
+     * A deactivated study cannot be run by a worker. A study can be deactivated by any admin or by a member user. By
+     * default, it's activated (true).
      */
     @JsonView({JsonForApi.class})
     private boolean active = true;
@@ -84,16 +84,16 @@ public class Study {
     private boolean groupStudy = false;
 
     /**
-     * A study with a linear study flow allows the component position to only increase or stay the same
-     * (no going back to earlier components).
+     * A study with a linear study flow allows the component position to only increase or stay the same (no going back
+     * to earlier components).
      */
     @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private boolean linearStudy = false;
 
     /**
-     * If true a preview of a study run of this study is allowed: the study link can be used many times as long as
-     * it does not go further than the first component. As soon as the second component is reached the usual
-     * restrictions of the worker apply. 'Single' workers only (PersonalSingleWorker or MultipleSingleWorker).
+     * If true a preview of a study run of this study is allowed: the study link can be used many times as long as it
+     * does not go further than the first component. As soon as the second component is reached the usual restrictions
+     * of the worker apply. 'Single' workers only (PersonalSingleWorker or MultipleSingleWorker).
      */
     @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private boolean allowPreview = false;
@@ -140,8 +140,8 @@ public class Study {
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "StudyUserMap", joinColumns = {
-            @JoinColumn(name = "study_id", referencedColumnName = "id") }, inverseJoinColumns = {
-            @JoinColumn(name = "user_username", referencedColumnName = "username") })
+            @JoinColumn(name = "study_id", referencedColumnName = "id")}, inverseJoinColumns = {
+            @JoinColumn(name = "user_username", referencedColumnName = "username")})
     @SuppressWarnings({"FieldMayBeFinal"})
     private Set<User> userList = new HashSet<>();
 
@@ -300,8 +300,8 @@ public class Study {
     }
 
     /**
-     * Adds a user to this study and the study to the user. Because Study is the owning side of the relationship,
-     * both updates are handled here to have one source of truth.
+     * Adds a user to this study and the study to the user. Because Study is the owning side of the relationship, both
+     * updates are handled here to have one source of truth.
      */
     public void addUser(User user) {
         if (user == null) return;
@@ -327,11 +327,6 @@ public class Study {
 
     public void removeAllUsers(List<User> userList) {
         userList.forEach(this::removeUser);
-    }
-
-
-    public boolean hasUser(User user) {
-        return userList.contains(user);
     }
 
     public List<Component> getComponentList() {
@@ -408,8 +403,8 @@ public class Study {
     }
 
     /**
-     * Adds a batch to this study and the study to the batch. Because Study is the owning side of the relationship,
-     * both updates are handled here to have one source of truth.
+     * Adds a batch to this study and the study to the batch. Because Study is the owning side of the relationship, both
+     * updates are handled here to have one source of truth.
      */
     public void addBatch(Batch batch) {
         if (batch == null) return;
@@ -422,8 +417,8 @@ public class Study {
     }
 
     /**
-     * Removes a batch from this study and the study from the batch. Because Study is the owning side of the relationship,
-     * both updates are handled here to have one source of truth.
+     * Removes a batch from this study and the study from the batch. Because Study is the owning side of the
+     * relationship, both updates are handled here to have one source of truth.
      */
     public void removeBatch(Batch batch) {
         if (batch == null) return;
@@ -435,10 +430,6 @@ public class Study {
     @JsonIgnore
     public Batch getDefaultBatch() {
         return this.batchList.get(0);
-    }
-
-    public boolean hasBatch(Batch batch) {
-        return batchList.contains(batch);
     }
 
     @Override

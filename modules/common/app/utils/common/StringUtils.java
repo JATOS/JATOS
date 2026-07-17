@@ -88,6 +88,8 @@ public class StringUtils {
     }
 
     public static String anonymizeDomain(String domain) {
+        if (domain == null) return "";
+
         int dotIndex = domain.lastIndexOf('.');
         if (dotIndex <= 0) {
             return anonymizePart(domain);

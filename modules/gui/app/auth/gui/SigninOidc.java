@@ -157,8 +157,7 @@ public abstract class SigninOidc extends Controller {
      * @throws ParseException     if parsing operations fail while working with OIDC configurations
      * @throws AuthException      if an authentication-related error occurs
      */
-    public final Result signin(String realHostUrl, boolean keepSignedin)
-            throws URISyntaxException, ParseException, AuthException {
+    public final Result signin(String realHostUrl, boolean keepSignedin) throws URISyntaxException, ParseException {
         oidcConfig.callbackUrl = HttpUtils.urlDecode(realHostUrl) + oidcConfig.callbackUrlPath;
         ClientID clientID = new ClientID(oidcConfig.clientId);
         URI callback = new URI(oidcConfig.callbackUrl);
@@ -200,7 +199,7 @@ public abstract class SigninOidc extends Controller {
 
             String normalizedUsername = getNormalizedUsername(userInfo);
             boolean keepSignedin = Boolean.parseBoolean(Context.current().response()
-                    .session().get("keepSignedin").orElse("false"));
+                    .getSession("keepSignedin").orElse("false"));
             userService.setLastSignin(normalizedUsername);
 
             authService.writeSessionCookie(normalizedUsername, keepSignedin);
@@ -237,13 +236,12 @@ public abstract class SigninOidc extends Controller {
         }
     }
 
-    private AuthorizationCode getAuthorisationCode()
-            throws AuthException, URISyntaxException, ParseException {
+    private AuthorizationCode getAuthorisationCode() throws URISyntaxException, ParseException {
         String uri = Context.current().requestHeader().uri();
         AuthenticationResponse response = AuthenticationResponseParser.parse(new URI(uri));
 
         // Check state, submitted with sign-in request, is still the same
-        Optional<String> state = Context.current().response().session().get("oidcState");
+        Optional<String> state = Context.current().response().getSession("oidcState");
         if (state.isEmpty() || !response.getState().getValue().equals(state.get())) {
             throw new AuthException("OIDC error - Unexpected authentication response");
         }
@@ -260,7 +258,7 @@ public abstract class SigninOidc extends Controller {
      * used at the authentication endpoint
      */
     private OIDCTokens requestToken(AuthorizationCode authorizationCode)
-            throws AuthException, URISyntaxException, ParseException, IOException {
+            throws  URISyntaxException, ParseException, IOException {
         URI callback = new URI(oidcConfig.callbackUrl);
         TokenRequest tokenRequest = buildTokenRequest(authorizationCode, callback);
         TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenRequest.toHTTPRequest().send());
@@ -288,14 +286,13 @@ public abstract class SigninOidc extends Controller {
         return tokenRequest;
     }
 
-    private void verifyIdToken(JWT idToken, OIDCProviderMetadata providerMetadata)
-            throws AuthException, MalformedURLException {
+    private void verifyIdToken(JWT idToken, OIDCProviderMetadata providerMetadata) throws MalformedURLException {
         Issuer issuer = providerMetadata.getIssuer();
         ClientID clientID = new ClientID(oidcConfig.clientId);
         JWSAlgorithm jwsAlg = JWSAlgorithm.parse(oidcConfig.idTokenSigningAlgorithm);
         URL jwkSetURL = providerMetadata.getJWKSetURI().toURL();
         IDTokenValidator validator = new IDTokenValidator(issuer, clientID, jwsAlg, jwkSetURL);
-        Nonce expectedNonce = Context.current().response().session().get("oidcNonce").map(Nonce::new).orElse(null);
+        Nonce expectedNonce = Context.current().response().getSession("oidcNonce").map(Nonce::new).orElse(null);
         try {
             validator.validate(idToken, expectedNonce);
         } catch (BadJOSEException | JOSEException e) {
@@ -304,7 +301,7 @@ public abstract class SigninOidc extends Controller {
     }
 
     private UserInfo getUserInfo(BearerAccessToken bearerAccessToken)
-            throws AuthException, ParseException, IOException, URISyntaxException {
+            throws ParseException, IOException, URISyntaxException {
         URI userInfoEndpoint = getProviderInfo().getUserInfoEndpointURI();
         UserInfoRequest userInfoRequest = new UserInfoRequest(userInfoEndpoint, bearerAccessToken);
         HTTPResponse userInfoHTTPResponse = userInfoRequest.toHTTPRequest().send();
@@ -316,7 +313,7 @@ public abstract class SigninOidc extends Controller {
         return userInfoResponse.toSuccessResponse().getUserInfo();
     }
 
-    private User getOrRegisterUser(UserInfo userInfo) throws AuthException, ValidationException, ForbiddenException {
+    private User getOrRegisterUser(UserInfo userInfo) {
         String normalizedUsername = getNormalizedUsername(userInfo);
         User user = userDao.findByUsername(normalizedUsername);
         if (user != null && user.getAuthMethod() != oidcConfig.authMethod) {
@@ -337,7 +334,7 @@ public abstract class SigninOidc extends Controller {
         }
     }
 
-    protected String getUsername(UserInfo userInfo, String usernameFrom) throws AuthException {
+    protected String getUsername(UserInfo userInfo, String usernameFrom) {
         switch (usernameFrom) {
             case "email":
                 return userInfo.getEmailAddress();
@@ -348,11 +345,11 @@ public abstract class SigninOidc extends Controller {
         }
     }
 
-    private String getNormalizedUsername(UserInfo userInfo) throws AuthException {
+    private String getNormalizedUsername(UserInfo userInfo) {
         return User.normalizeUsername(getUsername(userInfo, oidcConfig.usernameFrom));
     }
 
-    private String getName(UserInfo userInfo) throws AuthException {
+    private String getName(UserInfo userInfo) {
         if (!Strings.isNullOrEmpty(userInfo.getName())) {
             return userInfo.getName();
         }

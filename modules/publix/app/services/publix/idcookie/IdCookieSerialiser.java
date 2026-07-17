@@ -35,8 +35,7 @@ public class IdCookieSerialiser {
         return sb.toString();
     }
 
-    private void appendCookieEntry(StringBuilder sb, String key,
-                                   Object value, boolean cookieAnd) {
+    private void appendCookieEntry(StringBuilder sb, String key, Object value, boolean cookieAnd) {
         sb.append(key);
         sb.append(COOKIE_EQUALS);
         // Only encode here, right before turning it into a header string

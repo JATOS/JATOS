@@ -11,13 +11,12 @@ import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import http.common.Http.Context;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.*;
-import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
@@ -51,8 +50,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
     private final GeneralSingleCookieService generalSingleCookieService;
 
     @Inject
-    GeneralSinglePublix(JPAApi jpa,
-                        PublixUtils publixUtils,
+    GeneralSinglePublix(PublixUtils publixUtils,
                         GeneralSingleStudyAuthorisation studyAuthorisation,
                         ResultCreator resultCreator,
                         WorkerCreator workerCreator,
@@ -60,16 +58,16 @@ public class GeneralSinglePublix extends Publix implements IPublix {
                         IdCookieService idCookieService,
                         PublixErrorMessages errorMessages,
                         StudyAssets studyAssets,
-                        JsonUtils jsonUtils,
+                        DomainJsonMapper domainJsonMapper,
                         ComponentResultDao componentResultDao,
                         StudyResultDao studyResultDao,
                         StudyLogger studyLogger,
                         IOUtils ioUtils,
                         GeneralSingleCookieService generalSingleCookieService,
-                        IOExecutor dbContext,
+                        IOExecutor ioExecutor,
                         StudyAssetsExecutor studyAssetsExecutor) {
-        super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
-                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils, dbContext, studyAssetsExecutor);
+        super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -106,8 +104,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
             studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
             publixUtils.finishOldestStudyResult();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
-            studyLogger.log(studyLink, "Started study run with " + GeneralSingleWorker.UI_WORKER_TYPE
-                    + " worker", worker);
+            studyLogger.log(studyLink, "Started study run with " + WorkerType.GENERAL_SINGLE + " worker", worker);
         } else {
             worker = publixUtils.retrieveWorker(workerId);
             if (worker == null) {
@@ -122,7 +119,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
             }
         }
         idCookieService.writeIdCookie(studyResult);
-        Http.Cookie generalSingleCookie = generalSingleCookieService.get(study, worker);
+        Http.Cookie generalSingleCookie = generalSingleCookieService.generate(study, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         Component firstComponent = publixUtils.retrieveFirstActiveComponent(study);
 

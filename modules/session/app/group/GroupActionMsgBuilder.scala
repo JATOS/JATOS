@@ -7,7 +7,6 @@ import group.GroupDispatcher._
 import models.common.GroupResult
 import play.api.Logger
 import play.api.libs.json._
-import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaFunction
@@ -18,7 +17,7 @@ import scala.jdk.CollectionConverters._
  * Utility class that builds GroupMsgs. So it mostly handles the JSON creation.
  */
 @Singleton
-class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDao) {
+class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -56,7 +55,7 @@ class GroupActionMsgBuilder @Inject()(jpa: JPAApi, groupResultDao: GroupResultDa
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
-    jpa.withTransaction(asJavaFunction(_ => {
+    groupResultDao.withReadOnlyTransaction(asJavaFunction(_ => {
       logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
         s"$action , tellWhom ${tellWhom.toString}")
       val groupResult = groupResultDao.findById(groupResultId)

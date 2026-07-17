@@ -3,7 +3,7 @@ package models.common;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import org.apache.commons.lang3.StringUtils;

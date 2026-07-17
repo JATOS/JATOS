@@ -7,7 +7,7 @@ import controllers.publix.routes;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.MTWorkerDao;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import exceptions.common.BadRequestException;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
@@ -15,12 +15,11 @@ import general.common.StudyLogger;
 import group.GroupAdministration;
 import http.common.Http.Context;
 import http.common.HttpUtils;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.MTWorker;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
 import scala.Some;
@@ -53,8 +52,7 @@ public class MTPublix extends Publix implements IPublix {
     private final StudyLogger studyLogger;
 
     @Inject
-    MTPublix(JPAApi jpa,
-             PublixUtils publixUtils,
+    MTPublix(PublixUtils publixUtils,
              MTStudyAuthorisation studyAuthorisation,
              ResultCreator resultCreator,
              WorkerCreator workerCreator,
@@ -62,16 +60,16 @@ public class MTPublix extends Publix implements IPublix {
              IdCookieService idCookieService,
              PublixErrorMessages errorMessages,
              StudyAssets studyAssets,
-             JsonUtils jsonUtils,
+             DomainJsonMapper domainJsonMapper,
              ComponentResultDao componentResultDao,
              StudyResultDao studyResultDao,
              MTWorkerDao mtWorkerDao,
              StudyLogger studyLogger,
              IOUtils ioUtils,
-             IOExecutor dbContext,
+             IOExecutor ioContext,
              StudyAssetsExecutor studyAssetsExecutor) {
-        super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
-                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils, dbContext, studyAssetsExecutor);
+        super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioContext, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -124,7 +122,7 @@ public class MTPublix extends Publix implements IPublix {
                 + "studyId " + study.getId() + ", "
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId());
-        studyLogger.log(studyLink, "Started study run with " + MTWorker.UI_WORKER_TYPE + " worker", worker);
+        studyLogger.log(studyLink, "Started study run with " + WorkerType.MT + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyResult.getUuid(), firstComponent.getUuid(), null));
     }
@@ -137,8 +135,8 @@ public class MTPublix extends Publix implements IPublix {
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         String confirmationCode;
-        if (!PublixHelpers.studyRunDone(studyResult)) {
-            confirmationCode = publixUtils.finishStudyResult(successful, message, studyResult);
+        if (!PublixHelpers.studyResultDone(studyResult)) {
+            confirmationCode = publixUtils.finishStudyRun(successful, message, studyResult);
             groupAdministration.leave(studyResult);
         } else {
             confirmationCode = studyResult.getConfirmationCode();

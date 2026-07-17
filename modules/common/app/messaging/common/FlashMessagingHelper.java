@@ -23,9 +23,9 @@ public class FlashMessagingHelper {
         Messages messages = new Messages();
         Flash flash = request.flash();
         if (flash.get(INFO).isDefined()) messages.info(flash.get(INFO).get());
-        if (flash.get(SUCCESS).isDefined()) messages.info(flash.get(SUCCESS).get());
-        if (flash.get(ERROR).isDefined()) messages.info(flash.get(ERROR).get());
-        if (flash.get(WARNING).isDefined()) messages.info(flash.get(WARNING).get());
+        if (flash.get(SUCCESS).isDefined()) messages.success(flash.get(SUCCESS).get());
+        if (flash.get(ERROR).isDefined()) messages.error(flash.get(ERROR).get());
+        if (flash.get(WARNING).isDefined()) messages.warning(flash.get(WARNING).get());
         return unchecked(() -> Json.mapper().writeValueAsString(messages));
     }
 

@@ -22,7 +22,7 @@ import java.util.function.Function;
  * The {@link Context} is stored in two places, each with a different purpose:
  *
  * 1. Request attribute:
- *    The {@link Context} is attached to the current {@link RequestHeader} via {@link Context#REQUEST_ATTR}.
+ *    The {@link Context} is attached to the current {@link RequestHeader} via {@link Context#CONTEXT_TYPED_KEY}.
  *    This is the durable, request-scoped carrier of the context. It survives Play's asynchronous request
  *    processing and possible thread switches because it is stored on the request, not on a Java thread.
  *
@@ -32,14 +32,14 @@ import java.util.function.Function;
  *    short-lived and must be cleared or restored after the synchronous block finishes, because Play reuses
  *    threads between requests.
  *
- * The request attribute should be treated as the source of truth for propagating the context across Play filters,
- * actions, and asynchronous boundaries. The thread-local binding is only a convenience view of that request context
- * for the currently executing thread.
+ * Important:
+ * - The request attribute is the source of truth.
+ * - The thread-local binding is deliberately short-lived.
+ * - Response syncing applies to normal HTTP Results but not WebSockets
  *
  * The request lifecycle is handled by this filter:
- *
  * 1. Create a new {@link Context} for the incoming request.
- * 2. Attach the {@link Context} to the {@link RequestHeader} using {@link Context#REQUEST_ATTR}.
+ * 2. Attach the {@link Context} to the {@link RequestHeader} using {@link Context#CONTEXT_TYPED_KEY}.
  * 3. Temporarily bind the {@link Context} to the current thread while invoking the next filter.
  * 4. Clear the thread-local binding immediately after the synchronous invocation of the next filter returns.
  * 5. When the resulting {@link CompletionStage} completes, temporarily rebind the same {@link Context}.
@@ -47,12 +47,10 @@ import java.util.function.Function;
  * 7. Restore or clear the previous thread-local binding to prevent context leakage between reused threads.
  *
  * Other actions or filters that may run on a different thread should retrieve the context from
- * {@link RequestHeader#attrs()} or {@link play.mvc.Http.Request#attrs()} using {@link Context#REQUEST_ATTR}, then
+ * {@link RequestHeader#attrs()} or {@link play.mvc.Http.Request#attrs()} using {@link Context#CONTEXT_TYPED_KEY}, then
  * temporarily bind it with {@link Context#withContext(Context, java.util.function.Supplier)} before executing code
  * that relies on {@link Context#current()}.
  *
- * The filter also handles exceptions that may occur during request processing by propagating them correctly,
- * preserving useful exception chaining where applicable.
  * @formatter:on
  */
 @Singleton
@@ -66,7 +64,10 @@ public class ContextFilter extends Filter {
     @Override
     public CompletionStage<Result> apply(Function<RequestHeader, CompletionStage<Result>> nextFilter, Http.RequestHeader requestHeader) {
         Context context = new Context(requestHeader);
-        RequestHeader requestHeaderWithContext = requestHeader.addAttr(Context.REQUEST_ATTR, context);
+        // Attach the context to the request passed down the Play pipeline.
+        // Note: context.requestHeader() still refers to the original requestHeader,
+        // not this enriched requestHeaderWithContext.
+        RequestHeader requestHeaderWithContext = requestHeader.addAttr(Context.CONTEXT_TYPED_KEY, context);
 
         CompletionStage<Result> resultStage;
         try {
@@ -76,18 +77,19 @@ public class ContextFilter extends Filter {
             Context.clear();
         }
 
-        return resultStage.handle((result, throwable) -> Context.withContext(context, () -> {
-            if (throwable != null) {
-                throw propagate(throwable);
-            }
+        return resultStage.handle((result, throwable) ->
+                Context.withContext(context, () -> {
+                    if (throwable != null) {
+                        throw propagate(throwable);
+                    }
 
-            Result syncedResult = syncHeaders(result);
-            syncedResult = syncCookies(syncedResult);
-            syncedResult = syncSession(syncedResult);
-            syncedResult = syncFlash(syncedResult);
+                    Result syncedResult = syncHeaders(result);
+                    syncedResult = syncCookies(syncedResult);
+                    syncedResult = syncSession(syncedResult);
+                    syncedResult = syncFlash(syncedResult);
 
-            return syncedResult;
-        }));
+                    return syncedResult;
+                }));
     }
 
     private static Result syncHeaders(Result result) {

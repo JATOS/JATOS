@@ -2,6 +2,7 @@ package daos.common.worker;
 
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
@@ -26,7 +27,7 @@ public class MTWorkerDao extends WorkerDao {
      * case-insensitive way. The only possible worker types are "MT" or "MTSandbox".
      */
     public Optional<MTWorker> findByMTWorkerId(String mtWorkerId, WorkerType workerType) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr =
                     "SELECT w " +
                             "FROM Worker w " +

@@ -99,7 +99,7 @@ public class AuthService {
      * In most cases, getSignedinUser() is faster since it doesn't have to query the database.
      */
     public User getSignedinUserBySessionCookie() {
-        Optional<String> normalizedUsername = Context.current().response().session().get(AuthService.SESSION_USERNAME);
+        Optional<String> normalizedUsername = Context.current().response().getSession(SESSION_USERNAME);
         User signedinUser = null;
         if (normalizedUsername.isPresent()) {
             signedinUser = userDao.findByUsername(normalizedUsername.orElse(null));
@@ -125,7 +125,7 @@ public class AuthService {
      * signed in.
      */
     public boolean isSessionKeepSignedin() {
-        Optional<String> keepSignedin = Context.current().response().session().get(SESSION_KEEP_SIGNEDIN);
+        Optional<String> keepSignedin = Context.current().response().getSession(SESSION_KEEP_SIGNEDIN);
         boolean allowKeepSignedin = Common.getUserSessionAllowKeepSignedin();
         return allowKeepSignedin && keepSignedin.isPresent() && keepSignedin.get().equals("true");
     }
@@ -135,7 +135,7 @@ public class AuthService {
      */
     public boolean isSessionTimeout() {
         try {
-            String signinTimeStr = Context.current().response().session().get(SESSION_SIGNIN_TIME)
+            String signinTimeStr = Context.current().response().getSession(SESSION_SIGNIN_TIME)
                     .orElseThrow(IllegalArgumentException::new);
             Instant signinTime = Instant.ofEpochMilli(Long.parseLong(signinTimeStr));
             Instant now = Instant.now();
@@ -153,7 +153,7 @@ public class AuthService {
      */
     public boolean isInactivityTimeout() {
         try {
-            String lastActivityTimeStr = Context.current().response().session().get(SESSION_LAST_ACTIVITY_TIME)
+            String lastActivityTimeStr = Context.current().response().getSession(SESSION_LAST_ACTIVITY_TIME)
                     .orElseThrow(IllegalArgumentException::new);
             Instant lastActivityTime = Instant.ofEpochMilli(Long.parseLong(lastActivityTimeStr));
             Instant now = Instant.now();
@@ -176,7 +176,7 @@ public class AuthService {
     }
 
     public Long getSessionSigninTime() {
-        return Long.valueOf(Context.current().response().session().get(AuthService.SESSION_SIGNIN_TIME).orElse("-1"));
+        return Long.valueOf(Context.current().response().getSession(SESSION_SIGNIN_TIME).orElse("-1"));
     }
 
 }

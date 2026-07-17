@@ -3,13 +3,16 @@ package controllers.publix.workers;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.PersonalSingleWorker;
+import models.common.workers.WorkerType;
 import org.junit.Before;
 import org.junit.Test;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
@@ -18,13 +21,13 @@ import services.publix.ResultCreator;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.PersonalSingleStudyAuthorisation;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static play.test.Helpers.SEE_OTHER;
 import static play.test.Helpers.fakeRequest;
@@ -42,8 +45,6 @@ public class PersonalSinglePublixTest {
 
     private PersonalSinglePublix publix;
 
-    private final JPAApi jpa = mock(JPAApi.class);
-
     @Before
     public void setUp() {
         publixUtils = mock(PublixUtils.class);
@@ -54,21 +55,23 @@ public class PersonalSinglePublixTest {
         GroupAdministration groupAdministration = mock(GroupAdministration.class);
         StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
-        JsonUtils jsonUtils = mock(JsonUtils.class);
+        DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
         ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
         StudyResultDao studyResultDao = mock(StudyResultDao.class);
         IOUtils ioUtils = null; // not needed here
+        IOExecutor ioExecutor = mock(IOExecutor.class);
+        StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new PersonalSinglePublix(jpa, publixUtils, studyAuthorisation, resultCreator, groupAdministration,
-                idCookieService, errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao,
-                studyLogger, ioUtils);
+        publix = new PersonalSinglePublix(publixUtils, studyAuthorisation, resultCreator, groupAdministration,
+                idCookieService, errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao,
+                studyLogger, ioUtils, ioExecutor, studyAssetsExecutor);
     }
 
     private static Study newStudy(long id) {
         Study s = new Study();
         s.setId(id);
         return s;
-        }
+    }
 
     private static Batch newBatch(long id, Study study) {
         Batch b = new Batch();
@@ -88,7 +91,7 @@ public class PersonalSinglePublixTest {
         sl.setBatch(batch);
         sl.setStudyCode("code-ps");
         sl.setWorker(worker);
-        sl.setWorkerType(PersonalSingleWorker.WORKER_TYPE);
+        sl.setWorkerType(WorkerType.PERSONAL_SINGLE);
         return sl;
     }
 
@@ -111,7 +114,7 @@ public class PersonalSinglePublixTest {
     // -------------------- startStudy --------------------
 
     @Test
-    public void startStudy_firstCall_createsStudyResult_andRedirects() throws Exception {
+    public void startStudy_firstCall_createsStudyResult_andRedirects() {
         Study study = newStudy(1L);
         Batch batch = newBatch(2L, study);
         PersonalSingleWorker worker = newWorker(3L);
@@ -119,7 +122,7 @@ public class PersonalSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         // No previous StudyResult
-        when(worker.getLastStudyResult()).thenReturn(Optional.empty());
+        when(publixUtils.getLastStudyResult(worker)).thenReturn(Optional.empty());
         Component first = newComponent("comp-uuid-1");
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(first);
 
@@ -132,16 +135,16 @@ public class PersonalSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-1/comp-uuid-1/start"));
 
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult(request);
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
+        verify(publixUtils).finishOldestStudyResult();
         verify(resultCreator).createStudyResult(sl, worker);
-        verify(idCookieService).writeIdCookie(request, sr);
-        verify(publixUtils).setUrlQueryParameter(request, sr);
+        verify(idCookieService).writeIdCookie(sr);
+        verify(publixUtils).setUrlQueryParameter(sr);
         verify(studyLogger).log(eq(sl), contains("Started study run"), eq(worker));
     }
 
     @Test
-    public void startStudy_existingStudyResult_withCookie_doesNotFinishOldest() throws Exception {
+    public void startStudy_existingStudyResult_withCookie_doesNotFinishOldest() {
         Study study = newStudy(11L);
         Batch batch = newBatch(12L, study);
         PersonalSingleWorker worker = newWorker(13L);
@@ -149,8 +152,8 @@ public class PersonalSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         StudyResult existing = newStudyResult(20L, "sr-uuid-2", study, batch, worker);
-        when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(true);
+        when(publixUtils.getLastStudyResult(worker)).thenReturn(Optional.of(existing));
+        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(true);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-2"));
 
         Result res = publix.startStudy(request, sl);
@@ -159,15 +162,15 @@ public class PersonalSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-2/comp-uuid-2/start"));
 
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishOldestStudyResult(request);
-        verify(idCookieService).writeIdCookie(request, existing);
-        verify(publixUtils).setUrlQueryParameter(request, existing);
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
+        verify(publixUtils, never()).finishOldestStudyResult();
+        verify(idCookieService).writeIdCookie(existing);
+        verify(publixUtils).setUrlQueryParameter(existing);
         verifyNoInteractions(resultCreator);
     }
 
     @Test
-    public void startStudy_existingStudyResult_missingCookie_finishesOldest() throws Exception {
+    public void startStudy_existingStudyResult_missingCookie_finishesOldest() {
         Study study = newStudy(21L);
         Batch batch = newBatch(22L, study);
         PersonalSingleWorker worker = newWorker(23L);
@@ -175,8 +178,8 @@ public class PersonalSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         StudyResult existing = newStudyResult(30L, "sr-uuid-3", study, batch, worker);
-        when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(false);
+        when(publixUtils.getLastStudyResult(worker)).thenReturn(Optional.of(existing));
+        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(false);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-3"));
 
         Result res = publix.startStudy(request, sl);
@@ -185,8 +188,8 @@ public class PersonalSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-3/comp-uuid-3/start"));
 
-        verify(publixUtils).finishOldestStudyResult(request);
-        verify(idCookieService).writeIdCookie(request, existing);
+        verify(publixUtils).finishOldestStudyResult();
+        verify(idCookieService).writeIdCookie(existing);
         verifyNoInteractions(resultCreator);
     }
 }

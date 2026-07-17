@@ -2,7 +2,7 @@ package models.gui;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.google.common.base.Strings;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import general.common.MessagesStrings;
 import json.common.DefaultJson;
 import org.jsoup.Jsoup;
@@ -29,7 +29,6 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
     public static final String MAX_ACTIVE_MEMBERS = "maxActiveMembers";
     public static final String MAX_TOTAL_MEMBERS = "maxTotalMembers";
     public static final String MAX_TOTAL_WORKERS = "maxTotalWorkers";
-    public static final String ALLOWED_WORKER_TYPES = "allowedWorkerTypes";
     public static final String COMMENTS = "comments";
     public static final String BATCH_INPUT = "batchInput";
 
@@ -71,6 +70,8 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
      * permission to run this study.
      */
     private Set<WorkerType> allowedWorkerTypes = new HashSet<>();
+
+    private List<String> allowedWorkerTypeValues = new ArrayList<>();
 
     /**
      * User comments, reminders, something to share with others. They have no further meaning.
@@ -160,6 +161,14 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         if (types != null) {
             types.forEach(this::addAllowedWorkerType);
         }
+    }
+
+    public void setAllowedWorkerTypeValues(List<String> allowedWorkerTypeValues) {
+        this.allowedWorkerTypeValues = allowedWorkerTypeValues;
+    }
+
+    public List<String> getAllowedWorkerTypeValues() {
+        return this.allowedWorkerTypeValues;
     }
 
     public String getComments() {

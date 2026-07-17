@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import general.common.Common;
 import general.common.MessagesStrings;
-import json.common.StrictJson;
+import json.common.StrictStringDeserializer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
@@ -39,7 +39,7 @@ public class UserProperties implements Validatable<List<ValidationError>> {
      * - accept only JSON string or null
      * - reject numeric/boolean/object/array values (no implicit coercion like 123 -> "123")
      */
-    @JsonDeserialize(using = StrictJson.class)
+    @JsonDeserialize(using = StrictStringDeserializer.class)
     @JsonProperty(access = WRITE_ONLY)
     private String password;
 

@@ -9,7 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import exceptions.common.NotFoundException;
 import general.common.Common;
+import http.common.Http.Context;
 import models.common.Study;
 import models.common.User;
 import org.apache.commons.io.FileUtils;
@@ -23,7 +25,8 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.libs.Files.TemporaryFileCreator;
 import play.libs.Json;
-import play.mvc.Http;
+import play.mvc.Http.MultipartFormData.FilePart;
+import play.mvc.Http.RequestBuilder;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.ApiTokenService;
@@ -43,8 +46,6 @@ import static play.test.Helpers.*;
 
 /**
  * Parent class for all tests that need the JATOS application running.
- *
- * @author Kristian Lange
  */
 public class JatosTest {
 
@@ -72,6 +73,8 @@ public class JatosTest {
 
         admin = getAdmin();
         apiToken = createApiToken(admin);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
     @After
@@ -84,6 +87,8 @@ public class JatosTest {
         removeAllResultUploads();
         removeAllStudyLogs();
         removeAllLogs();
+
+        Context.clear();
     }
 
     public Long importExampleStudy() {
@@ -91,8 +96,8 @@ public class JatosTest {
         Materializer materializer = application.injector().instanceOf(Materializer.class);
         Path studyPath = Paths.get(Common.getBasepath(), TEST_RESOURCES_POTATO_COMPASS_JZIP);
         Source<ByteString, CompletionStage<IOResult>> source = FileIO.fromPath(studyPath);
-        Http.MultipartFormData.FilePart<Source<ByteString, ?>> part = new Http.MultipartFormData.FilePart<>("study", "filename", "text/plain", source);
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        FilePart<Source<ByteString, ?>> part = new FilePart<>("study", "filename", "text/plain", source);
+        RequestBuilder request = new RequestBuilder()
                 .method(POST)
                 .header("Authorization", "Bearer " + apiToken)
                 .bodyRaw(Collections.singletonList(part), temporaryFileCreator, materializer)
@@ -100,17 +105,13 @@ public class JatosTest {
 
         Result result = route(application, request);
         JsonNode content = Json.parse(contentAsString(result));
-        Long studyId = content.get("id").asLong();
+        Long studyId = content.get("data").get("id").asLong();
         return studyId;
     }
 
     public User getAdmin() {
         UserDao userDao = application.injector().instanceOf(UserDao.class);
-        return jpaApi.withTransaction((em) -> {
-            User user = userDao.findByUsername(UserService.ADMIN_USERNAME);
-            utils.common.Helpers.initializeAndUnproxy(user.getStudyList());
-            return user;
-        });
+        return userDao.findByUsernameWithStudies(UserService.ADMIN_USERNAME);
     }
 
     public User createUser(String username) {
@@ -118,24 +119,17 @@ public class JatosTest {
         user.setUsername(username);
         user.setName("Foo Bar");
         UserService userService = application.injector().instanceOf(UserService.class);
-        jpaApi.withTransaction(em -> {
-            userService.createAndPersistUser(user, "fooPassword", false, User.AuthMethod.DB);
-        });
-        return user;
+        return userService.createAndPersistUser(user, "fooPassword", false, User.AuthMethod.DB);
     }
 
     public String createApiToken(User user) {
         ApiTokenService apiTokenService = application.injector().instanceOf(ApiTokenService.class);
-        return jpaApi.withTransaction((em) -> {
-            return apiTokenService.create(user, "test-token", 0);
-        });
+        return apiTokenService.create(user, "test-token", 0).getRight();
     }
 
     public Study getStudy(Long id) {
         StudyDao studyDao = application.injector().instanceOf(StudyDao.class);
-        return jpaApi.withTransaction((em) -> {
-            return studyDao.findById(id);
-        });
+        return studyDao.findById(id);
     }
 
     public Study importAndGetExampleStudy() {
@@ -156,20 +150,16 @@ public class JatosTest {
     public void removeAllStudies() {
         StudyDao studyDao = application.injector().instanceOf(StudyDao.class);
         StudyService studyService = application.injector().instanceOf(StudyService.class);
-        jpaApi.withTransaction((em) -> {
-            studyDao.findAll().forEach(unchecked((study) -> studyService.removeStudyInclAssets(study, getAdmin())));
-        });
+        studyDao.findAll().forEach(unchecked(studyService::removeStudyInclAssets));
     }
 
     public void removeUser(String username) {
         UserService userService = application.injector().instanceOf(UserService.class);
-        jpaApi.withTransaction(unchecked((em) -> {
-            try {
-                userService.removeUser(username);
-            } catch (NotFoundException e) {
-                // We don't care
-            }
-        }));
+        try {
+            userService.removeUser(username);
+        } catch (NotFoundException e) {
+            // We don't care
+        }
     }
 
     public void removeAllStudyAssets() throws IOException {

@@ -2,72 +2,77 @@ package auth.gui;
 
 import daos.common.ApiTokenDao;
 import general.common.Common;
+import http.common.Http.Context;
+import http.common.HttpUtils;
 import models.common.ApiToken;
 import models.common.User;
+import models.common.User.Role;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import play.mvc.Http;
+import services.gui.ApiTokenService;
 import utils.common.HashUtils;
-import utils.common.Helpers;
 
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static auth.gui.AuthAction.AuthMethod.AuthResult.State.DENIED;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static auth.gui.AuthApiToken.API_TOKEN;
+import static auth.gui.AuthApiToken.AuthResult;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for AuthApiToken.
- *
- * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 public class AuthApiTokenTest {
 
     private ApiTokenDao apiTokenDao;
     private AuthApiToken authApiToken;
 
-    private MockedStatic<Helpers> helpersMock;
+    private MockedStatic<HttpUtils> httpUtilsMock;
     private MockedStatic<Common> commonMock;
 
     @Before
     public void setUp() {
-        // Install a mutable Http.Context for RequestScope
-        testutils.gui.ContextMocker.mock();
-
         apiTokenDao = mock(ApiTokenDao.class);
-        authApiToken = new AuthApiToken(apiTokenDao);
+        ApiTokenService apiTokenService = new ApiTokenService(apiTokenDao);
+        authApiToken = new AuthApiToken(apiTokenService, apiTokenDao);
 
-        helpersMock = Mockito.mockStatic(Helpers.class);
+        httpUtilsMock = Mockito.mockStatic(HttpUtils.class);
         commonMock = Mockito.mockStatic(Common.class);
-        // Default: API request and JATOS API allowed
-        helpersMock.when(() -> Helpers.isApiRequest(any())).thenReturn(true);
+        // Default: API request, Bearer token, and JATOS API allowed
+        httpUtilsMock.when(HttpUtils::isApiRequest).thenReturn(true);
+        httpUtilsMock.when(HttpUtils::hasBearerToken).thenReturn(true);
         //noinspection ResultOfMethodCallIgnored
         commonMock.when(Common::isJatosApiAllowed).thenReturn(true);
     }
 
     @After
     public void tearDown() {
-        if (helpersMock != null) helpersMock.close();
+        if (httpUtilsMock != null) httpUtilsMock.close();
         if (commonMock != null) commonMock.close();
     }
 
     private static String makeTokenWithChecksum(String body31) {
-        String checksum = HashUtils.getChecksum(body31);
+        String checksum = HashUtils.getChecksum(body31, ApiToken.TOKEN_CHECKSUM_LENGTH);
         return "jap_" + body31 + checksum;
     }
 
-    private static Http.Request requestWithAuth(String fullToken) {
-        return new Http.RequestBuilder()
+    private static void setContextRequestWithAuth(String fullToken) {
+        Http.Request request = new Http.RequestBuilder()
                 .header("Authorization", "Bearer " + fullToken)
                 .build();
+        Context context = new Context(request);
+        Context.setCurrent(context);
     }
 
     private static String randomBody31() {
@@ -78,12 +83,20 @@ public class AuthApiTokenTest {
 
     @Test
     public void authenticate_wrongMethod_whenNotApiRequest() {
-        helpersMock.when(() -> Helpers.isApiRequest(any())).thenReturn(false);
+        httpUtilsMock.when(HttpUtils::isApiRequest).thenReturn(false);
 
-        Http.Request req = new Http.RequestBuilder().build();
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
 
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.WRONG_METHOD);
+        assertThat(res.state).isEqualTo(AuthResult.State.WRONG_METHOD);
+    }
+
+    @Test
+    public void authenticate_wrongMethod_whenNotHasBearerToken() {
+        httpUtilsMock.when(HttpUtils::hasBearerToken).thenReturn(false);
+
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+
+        assertThat(res.state).isEqualTo(AuthResult.State.WRONG_METHOD);
     }
 
     @Test
@@ -91,22 +104,41 @@ public class AuthApiTokenTest {
         //noinspection ResultOfMethodCallIgnored
         commonMock.when(Common::isJatosApiAllowed).thenReturn(false);
 
-        String body = randomBody31();
-        String token = makeTokenWithChecksum(body);
-        Http.Request req = requestWithAuth(token);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+        assertThat(res.state).isEqualTo(DENIED);
+    }
 
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.DENIED);
+    @Test
+    public void authenticate_denied_wrongChecksumLength() {
+        String body = randomBody31();
+        String token = "jap_" + body + "abc"; // wrong checksum length
+        setContextRequestWithAuth(token);
+
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+        assertThat(res.state).isEqualTo(DENIED);
+        verifyNoInteractions(apiTokenDao);
+    }
+
+    @Test
+    public void authenticate_denied_wrongTokenBodyLength() {
+        String body = "abcd1234"; // wrong body length
+        String token = makeTokenWithChecksum(body);
+        setContextRequestWithAuth(token);
+
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+        assertThat(res.state).isEqualTo(DENIED);
+        verifyNoInteractions(apiTokenDao);
     }
 
     @Test
     public void authenticate_denied_onBadChecksum() {
         String body = randomBody31();
-        String token = "jap_" + body + "ABCDEF"; // wrong checksum
-        Http.Request req = requestWithAuth(token);
+        String token = "jap_" + body + "abcdef"; // bad checksum
+        setContextRequestWithAuth(token);
 
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.DENIED);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+        assertThat(res.state).isEqualTo(DENIED);
+        verifyNoInteractions(apiTokenDao);
     }
 
     @Test
@@ -116,10 +148,11 @@ public class AuthApiTokenTest {
         String hash = HashUtils.getHash(token, HashUtils.SHA_256);
         when(apiTokenDao.findByHash(hash)).thenReturn(Optional.empty());
 
-        Http.Request req = requestWithAuth(token);
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
+        setContextRequestWithAuth(token);
 
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.DENIED);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+
+        assertThat(res.state).isEqualTo(DENIED);
         verify(apiTokenDao).findByHash(hash);
     }
 
@@ -134,10 +167,11 @@ public class AuthApiTokenTest {
         t.setUser(new User());
         when(apiTokenDao.findByHash(hash)).thenReturn(Optional.of(t));
 
-        Http.Request req = requestWithAuth(token);
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
+        setContextRequestWithAuth(token);
 
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.DENIED);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+
+        assertThat(res.state).isEqualTo(DENIED);
     }
 
     @Test
@@ -153,12 +187,11 @@ public class AuthApiTokenTest {
         t.setUser(u);
         when(apiTokenDao.findByHash(hash)).thenReturn(Optional.of(t));
 
-        Http.Request req = requestWithAuth(token);
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
+        setContextRequestWithAuth(token);
 
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.DENIED);
-        // User should still be placed in RequestScope before check
-        assertThat(RequestScope.get(AuthService.SIGNEDIN_USER)).isSameAs(u);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+
+        assertThat(res.state).isEqualTo(DENIED);
     }
 
     @Test
@@ -175,10 +208,11 @@ public class AuthApiTokenTest {
         t.setUser(u);
         when(apiTokenDao.findByHash(hash)).thenReturn(Optional.of(t));
 
-        Http.Request req = requestWithAuth(token);
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.ADMIN);
+        setContextRequestWithAuth(token);
 
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.DENIED);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.ADMIN));
+
+        assertThat(res.state).isEqualTo(DENIED);
     }
 
     @Test
@@ -189,7 +223,7 @@ public class AuthApiTokenTest {
 
         User u = new User();
         u.setActive(true);
-        u.addRole(User.Role.USER);
+        u.updateRoles(Role.USER);
         ApiToken t = new ApiToken();
         t.setActive(true);
         t.setUser(u);
@@ -197,10 +231,11 @@ public class AuthApiTokenTest {
         t.setExpires(60); // Expires in 1 minute
         when(apiTokenDao.findByHash(hash)).thenReturn(Optional.of(t));
 
-        Http.Request req = requestWithAuth(token);
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
+        setContextRequestWithAuth(token);
 
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.DENIED);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+
+        assertThat(res.state).isEqualTo(DENIED);
     }
 
     @Test
@@ -211,18 +246,19 @@ public class AuthApiTokenTest {
 
         User u = new User();
         u.setActive(true);
-        u.addRole(User.Role.USER);
+        u.updateRoles(Role.USER);
         ApiToken t = new ApiToken();
         t.setActive(true);
         t.setUser(u);
         // no expires => never expires
         when(apiTokenDao.findByHash(hash)).thenReturn(Optional.of(t));
 
-        Http.Request req = requestWithAuth(token);
-        AuthAction.AuthMethod.AuthResult res = authApiToken.authenticate(req, User.Role.USER);
+        setContextRequestWithAuth(token);
 
-        assertThat(res.state).isEqualTo(AuthAction.AuthMethod.AuthResult.State.AUTHENTICATED);
-        assertThat(RequestScope.get(AuthApiToken.API_TOKEN)).isSameAs(t);
-        assertThat(RequestScope.get(AuthService.SIGNEDIN_USER)).isSameAs(u);
+        AuthResult res = authApiToken.authenticate(EnumSet.of(Role.USER));
+
+        assertThat(res.state).isEqualTo(AuthResult.State.AUTHENTICATED);
+        assertThat(Context.current().args().get(API_TOKEN)).isSameAs(t);
+        assertThat(Context.current().args().get(SIGNEDIN_USER)).isSameAs(u);
     }
 }

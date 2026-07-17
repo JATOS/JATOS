@@ -1,10 +1,11 @@
 package models.common.workers;
 
-import daos.common.worker.WorkerType;
-
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
+/**
+ * Converts {@link WorkerType} to/from database column.
+ */
 @Converter
 public class WorkerTypeConverter implements AttributeConverter<WorkerType, String> {
 

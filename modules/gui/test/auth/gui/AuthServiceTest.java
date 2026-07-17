@@ -2,29 +2,32 @@ package auth.gui;
 
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
+import exceptions.common.AuthException;
 import general.common.Common;
+import http.common.Http.Context;
 import models.common.User;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import play.mvc.Http;
+import play.test.Helpers;
 import utils.common.HashUtils;
 
-import javax.naming.NamingException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.Map;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static auth.gui.AuthService.*;
+import static auth.gui.AuthService.SESSION_SIGNIN_TIME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for AuthService.
- *
- * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 public class AuthServiceTest {
 
     private UserDao userDao;
@@ -38,14 +41,17 @@ public class AuthServiceTest {
         loginAttemptDao = Mockito.mock(LoginAttemptDao.class);
         signinLdap = Mockito.mock(SigninLdap.class);
         authService = new AuthService(userDao, loginAttemptDao, signinLdap);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
-    private Http.Session newSession() {
-        return new Http.Session(new HashMap<>());
+    @After
+    public void tearDown() {
+        Context.clear();
     }
 
     @Test
-    public void authenticate_DB_hashesPasswordAndDelegatesToUserDao() throws NamingException {
+    public void authenticate_DB_hashesPasswordAndDelegatesToUserDao() {
         User user = new User();
         user.setUsername("alice");
         user.setAuthMethod(User.AuthMethod.DB);
@@ -61,7 +67,7 @@ public class AuthServiceTest {
     }
 
     @Test
-    public void authenticate_LDAP_delegatesToSigninLdap() throws NamingException {
+    public void authenticate_LDAP_delegatesToSigninLdap() {
         User user = new User();
         user.setUsername("bob");
         user.setAuthMethod(User.AuthMethod.LDAP);
@@ -75,15 +81,15 @@ public class AuthServiceTest {
     }
 
     @Test
-    public void authenticate_nullArgs_returnsFalse() throws NamingException {
+    public void authenticate_nullArgs_returnsFalse() {
         assertThat(authService.authenticate(null, "pw")).isFalse();
         User user = new User();
         user.setAuthMethod(User.AuthMethod.DB);
         assertThat(authService.authenticate(user, null)).isFalse();
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void authenticate_unsupportedAuth_throws() throws NamingException {
+    @Test(expected = AuthException.class)
+    public void authenticate_unsupportedAuth_throws() {
         User user = new User();
         user.setAuthMethod(User.AuthMethod.OAUTH_GOOGLE); // any non-DB/LDAP
         authService.authenticate(user, "pw");
@@ -103,79 +109,78 @@ public class AuthServiceTest {
 
     @Test
     public void getSignedinUserBySessionCookie_returnsUserWhenPresent() {
-        Http.Session session = newSession();
-        session.put(AuthService.SESSION_USERNAME, "charlie");
+        Map<String, String> map = new HashMap<>();
+        map.put(SESSION_USERNAME, "charlie");
+        Context.current().response().putSession(map);
+
         User user = new User();
         when(userDao.findByUsername("charlie")).thenReturn(user);
 
-        User result = authService.getSignedinUserBySessionCookie(session);
+        User result = authService.getSignedinUserBySessionCookie();
 
         assertThat(result).isSameAs(user);
     }
 
     @Test
     public void getSignedinUserBySessionCookie_returnsNullWhenMissing() {
-        Http.Session session = newSession();
-        assertThat(authService.getSignedinUserBySessionCookie(session)).isNull();
+        assertThat(authService.getSignedinUserBySessionCookie()).isNull();
     }
 
     @Test
     public void writeSessionCookie_setsExpectedKeys_and_isSessionKeepSignedinReflectsAllowFlag() {
-        Http.Session session = newSession();
-
-        authService.writeSessionCookie(session, "dana", true);
+        authService.writeSessionCookie("dana", true);
 
         // Keys set
-        assertThat(session.get(AuthService.SESSION_USERNAME)).isEqualTo("dana");
-        assertThat(session.get(AuthService.SESSION_SIGNIN_TIME)).isNotNull();
-        assertThat(session.get(AuthService.SESSION_LAST_ACTIVITY_TIME)).isNotNull();
+        Http.Session session = Context.current().response().session();
+        assertThat(Context.current().response().getSession(SESSION_USERNAME).orElse(null)).isEqualTo("dana");
+        assertThat(Context.current().response().getSession(SESSION_SIGNIN_TIME)).isNotNull();
+        assertThat(Context.current().response().getSession(SESSION_LAST_ACTIVITY_TIME)).isNotNull();
 
         // Since the allow flag is false by default without app config
-        assertThat(session.get(AuthService.SESSION_KEEP_SIGNEDIN)).isEqualTo("false");
+        assertThat(session.get(SESSION_KEEP_SIGNEDIN).orElse(null)).isEqualTo("false");
 
         // Method should also honor the allow flag (default is false)
-        boolean keep = authService.isSessionKeepSignedin(session);
+        boolean keep = authService.isSessionKeepSignedin();
         assertThat(keep).isEqualTo(false);
     }
 
     @Test
     public void writeSessionCookie_and_sessionAllowKeepSignedin() {
-        Http.Session session = newSession();
-
         try (MockedStatic<Common> utilities = Mockito.mockStatic(Common.class)) {
             // Mock Common::getUserSessionAllowKeepSignedin to return true
             //noinspection ResultOfMethodCallIgnored
             utilities.when(Common::getUserSessionAllowKeepSignedin).thenReturn(true);
 
-            authService.writeSessionCookie(session, "dana", true);
+            authService.writeSessionCookie("dana", true);
 
-            assertThat(session.get(AuthService.SESSION_KEEP_SIGNEDIN)).isEqualTo("true");
+            Http.Session session = Context.current().response().session();
+            assertThat(session.get(SESSION_KEEP_SIGNEDIN).orElse(null)).isEqualTo("true");
 
-            boolean keep = authService.isSessionKeepSignedin(session);
+            boolean keep = authService.isSessionKeepSignedin();
             assertThat(keep).isEqualTo(true);
         }
     }
 
     @Test
     public void isSessionTimeout_trueWhenExpiredOrOnError() {
-        Http.Session session = newSession();
         // Missing value -> error path => true
-        assertThat(authService.isSessionTimeout(session)).isTrue();
+        assertThat(authService.isSessionTimeout()).isTrue();
 
         // Expired timestamp
-        session.put(AuthService.SESSION_SIGNIN_TIME, String.valueOf(Instant.now().minus(365, ChronoUnit.DAYS).toEpochMilli()));
-        assertThat(authService.isSessionTimeout(session)).isTrue();
+        Context.current().response().putSession(SESSION_SIGNIN_TIME,
+                String.valueOf(Instant.now().minus(365, ChronoUnit.DAYS).toEpochMilli()));
+        assertThat(authService.isSessionTimeout()).isTrue();
     }
 
     @Test
     public void isInactivityTimeout_trueWhenExpiredOrOnError() {
-        Http.Session session = newSession();
         // Missing value -> error path => true
-        assertThat(authService.isInactivityTimeout(session)).isTrue();
+        assertThat(authService.isInactivityTimeout()).isTrue();
 
         // Expired timestamp
-        session.put(AuthService.SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().minus(365, ChronoUnit.DAYS).toEpochMilli()));
-        assertThat(authService.isInactivityTimeout(session)).isTrue();
+        Context.current().response().putSession(SESSION_SIGNIN_TIME,
+                String.valueOf(Instant.now().minus(365, ChronoUnit.DAYS).toEpochMilli()));
+        assertThat(authService.isInactivityTimeout()).isTrue();
     }
 
     @Test
@@ -183,6 +188,6 @@ public class AuthServiceTest {
         User user = new User();
         user.setLastVisitedPageUrl("");
         String url = authService.getRedirectPageAfterSignin(user);
-        assertThat(url).isEqualTo(controllers.gui.routes.Home.home().url());
+        assertThat(url).isEqualTo(controllers.gui.routes.Home.home(Http.Status.OK).url());
     }
 }

@@ -1,6 +1,6 @@
 package services.publix.workers;
 
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import exceptions.common.ForbiddenException;
 import models.common.Batch;
 import models.common.Study;

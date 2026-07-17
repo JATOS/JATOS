@@ -11,20 +11,18 @@ import org.mockito.Mockito;
 
 import java.util.*;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for ComponentResultIdsExtractor.
- *
- * @author Kristian Lange
  */
 public class ComponentResultIdsExtractorTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    public void extract_fromNullOrEmptyMap_returnsEmpty() throws Exception {
+    public void extract_fromNullOrEmptyMap_returnsEmpty() {
         ComponentResultDao crDao = Mockito.mock(ComponentResultDao.class);
         StudyResultDao srDao = Mockito.mock(StudyResultDao.class);
         ComponentResultIdsExtractor extractor = new ComponentResultIdsExtractor(crDao, srDao);
@@ -34,7 +32,7 @@ public class ComponentResultIdsExtractorTest {
     }
 
     @Test
-    public void extract_fromMap_combinesDedupsAndSorts() throws Exception {
+    public void extract_fromMap_combinesDedupsAndSorts() {
         ComponentResultDao crDao = Mockito.mock(ComponentResultDao.class);
         StudyResultDao srDao = Mockito.mock(StudyResultDao.class);
         ComponentResultIdsExtractor extractor = new ComponentResultIdsExtractor(crDao, srDao);
@@ -73,7 +71,7 @@ public class ComponentResultIdsExtractorTest {
     }
 
     @Test(expected = BadRequestException.class)
-    public void extract_fromJson_unknownField_throwsBadRequest() throws Exception {
+    public void extract_fromJson_unknownField_throwsBadRequest() {
         ComponentResultDao crDao = Mockito.mock(ComponentResultDao.class);
         StudyResultDao srDao = Mockito.mock(StudyResultDao.class);
         ComponentResultIdsExtractor extractor = new ComponentResultIdsExtractor(crDao, srDao);
@@ -133,7 +131,7 @@ public class ComponentResultIdsExtractorTest {
     }
 
     @Test
-    public void extract_fromJson_nullOrNullNode_returnsEmpty() throws Exception {
+    public void extract_fromJson_nullOrNullNode_returnsEmpty() {
         ComponentResultDao crDao = Mockito.mock(ComponentResultDao.class);
         StudyResultDao srDao = Mockito.mock(StudyResultDao.class);
         ComponentResultIdsExtractor extractor = new ComponentResultIdsExtractor(crDao, srDao);

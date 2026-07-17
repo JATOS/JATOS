@@ -1,33 +1,38 @@
 package controllers.publix.workers;
 
 import controllers.publix.StudyAssets;
+import controllers.publix.workers.JatosPublix.JatosRun;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
+import exceptions.common.ForbiddenException;
 import exceptions.publix.ForbiddenReloadException;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import general.common.Common;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import http.common.Http.Context;
+import http.common.HttpUtils;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.JatosWorker;
+import models.common.workers.WorkerType;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.test.Helpers;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
-import services.publix.idcookie.IdCookieModel;
 import services.publix.idcookie.IdCookieService;
 import services.publix.workers.JatosStudyAuthorisation;
-import utils.common.Helpers;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import java.io.File;
 
@@ -42,25 +47,8 @@ import static play.test.Helpers.*;
  */
 public class JatosPublixTest {
 
-    private static MockedStatic<Common> commonStatic;
-    private static MockedStatic<Helpers> helpersStatic;
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    @BeforeClass
-    public static void initStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
-        commonStatic = mockStatic(Common.class);
-        commonStatic.when(Common::getTmpPath).thenReturn(tmp);
-        commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/");
-        helpersStatic = mockStatic(Helpers.class);
-        helpersStatic.when(Helpers::isAjax).thenReturn(false);
-    }
-
-    @AfterClass
-    public static void closeStatics() {
-        if (helpersStatic != null) helpersStatic.close();
-        if (commonStatic != null) commonStatic.close();
-    }
+    private static MockedStatic<Common> commonMocked;
+    private static MockedStatic<HttpUtils> httpUtilsMocked;
 
     private PublixUtils publixUtils;
     private JatosStudyAuthorisation studyAuthorisation;
@@ -69,11 +57,27 @@ public class JatosPublixTest {
     private IdCookieService idCookieService;
     private StudyAssets studyAssets;
     private StudyLogger studyLogger;
+    private ComponentResultDao componentResultDao;
 
     private JatosPublix publix;
 
-    private final JPAApi jpa = mock(JPAApi.class);
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @BeforeClass
+    public static void initStatics() {
+        String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
+        commonMocked = mockStatic(Common.class);
+        commonMocked.when(Common::getTmpPath).thenReturn(tmp);
+        commonMocked.when(Common::getJatosUrlBasePath).thenReturn("/");
+        httpUtilsMocked = mockStatic(HttpUtils.class);
+        httpUtilsMocked.when(HttpUtils::isHtmlRequest).thenReturn(false);
+    }
 
+    @AfterClass
+    public static void closeStatics() {
+        if (httpUtilsMocked != null) httpUtilsMocked.close();
+        if (commonMocked != null) commonMocked.close();
+    }
+    
     @Before
     public void setUp() {
         publixUtils = mock(PublixUtils.class);
@@ -84,22 +88,30 @@ public class JatosPublixTest {
         studyAssets = mock(StudyAssets.class);
         studyLogger = mock(StudyLogger.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
-        JsonUtils jsonUtils = mock(JsonUtils.class);
-        ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
+        DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
+        componentResultDao = mock(ComponentResultDao.class);
         StudyResultDao studyResultDao = mock(StudyResultDao.class);
         IOUtils ioUtils = null; // not needed here
+        IOExecutor ioExecutor = mock(IOExecutor.class);
+        StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new JatosPublix(jpa, publixUtils, studyAuthorisation, resultCreator, groupAdministration, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new JatosPublix(publixUtils, studyAuthorisation, resultCreator, groupAdministration, idCookieService,
+                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
+                ioExecutor, studyAssetsExecutor);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
-    private static Study newStudy(long id, String dirName) {
+    @SuppressWarnings("SameParameterValue")
+    private static Study newStudy(long id, String uuid, String dirName) {
         Study s = new Study();
         s.setId(id);
+        s.setUuid(uuid);
         s.setDirName(dirName);
         return s;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Batch newBatch(long id, Study study) {
         Batch b = new Batch();
         b.setId(id);
@@ -111,7 +123,7 @@ public class JatosPublixTest {
         StudyLink sl = new StudyLink();
         sl.setBatch(batch);
         sl.setStudyCode("code-1");
-        sl.setWorkerType(JatosWorker.WORKER_TYPE);
+        sl.setWorkerType(WorkerType.JATOS);
         return sl;
     }
 
@@ -123,6 +135,7 @@ public class JatosPublixTest {
         return c;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static StudyResult newStudyResult(long id, String uuid, Study study, Batch batch, JatosWorker worker) {
         StudyResult sr = new StudyResult();
         sr.setId(id);
@@ -146,22 +159,21 @@ public class JatosPublixTest {
     // -------------------- startStudy --------------------
 
     @Test
-    public void startStudy_runStudy_redirectsToFirstComponent() throws Exception {
-        Study study = newStudy(1L, "dir");
+    public void startStudy_runStudy_redirectsToFirstComponent() {
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         StudyLink sl = newStudyLink(batch);
         JatosWorker jw = new JatosWorker();
         jw.setId(5L);
         User user = new User();
         user.setWorker(jw);
+        Http.Request request = fakeRequest().build();
 
         Component first = new Component();
         first.setUuid("comp-uuid-1");
 
-        Http.Request request = fakeRequest().session("username", "alice").build();
-
-        when(publixUtils.retrieveSignedinUser(any())).thenReturn(user);
-        when(publixUtils.fetchJatosRunFromSession(any())).thenReturn(JatosPublix.JatosRun.RUN_STUDY);
+        when(publixUtils.retrieveSignedinUser()).thenReturn(user);
+        when(publixUtils.fetchJatosRunFromSession()).thenReturn(JatosRun.RUN_STUDY);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(first);
 
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);
@@ -172,25 +184,26 @@ public class JatosPublixTest {
         assertEquals(SEE_OTHER, res.status());
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid/comp-uuid-1/start"));
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(jw), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult(request);
-        verify(publixUtils).setUrlQueryParameter(request, sr);
-        verify(idCookieService).writeIdCookie(request, sr, JatosPublix.JatosRun.RUN_STUDY);
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(jw), eq(study), eq(batch));
+        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).setUrlQueryParameter(sr);
+        verify(idCookieService).writeIdCookie(sr, JatosRun.RUN_STUDY);
     }
 
     @Test
-    public void startStudy_runComponentStart_usesSessionUuid() throws Exception {
-        Study study = newStudy(1L, "dir");
+    public void startStudy_runComponentStart_usesSessionUuid() {
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         StudyLink sl = newStudyLink(batch);
         JatosWorker jw = new JatosWorker();
         User user = new User();
         user.setWorker(jw);
+        Http.Request request = fakeRequest().build();
 
-        Http.Request request = fakeRequest().session("run_component_uuid", "abc-123").build();
+        Context.current().response().putSession("run_component_uuid", "abc-123");
 
-        when(publixUtils.retrieveSignedinUser(any())).thenReturn(user);
-        when(publixUtils.fetchJatosRunFromSession(any())).thenReturn(JatosPublix.JatosRun.RUN_COMPONENT_START);
+        when(publixUtils.retrieveSignedinUser()).thenReturn(user);
+        when(publixUtils.fetchJatosRunFromSession()).thenReturn(JatosRun.RUN_COMPONENT_START);
 
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);
         when(resultCreator.createStudyResult(sl, jw)).thenReturn(sr);
@@ -200,12 +213,12 @@ public class JatosPublixTest {
         assertEquals(SEE_OTHER, res.status());
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid/abc-123/start"));
-        verify(idCookieService).writeIdCookie(request, sr, JatosPublix.JatosRun.RUN_COMPONENT_START);
+        verify(idCookieService).writeIdCookie(sr, JatosRun.RUN_COMPONENT_START);
     }
 
-    @Test(expected = ForbiddenPublixException.class)
-    public void startStudy_runComponentFinished_forbidden() throws Exception {
-        Study study = newStudy(1L, "dir");
+    @Test(expected = ForbiddenException.class)
+    public void startStudy_runComponentFinished_forbidden() {
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         StudyLink sl = newStudyLink(batch);
         JatosWorker jw = new JatosWorker();
@@ -213,8 +226,8 @@ public class JatosPublixTest {
         user.setWorker(jw);
         Http.Request request = fakeRequest().build();
 
-        when(publixUtils.retrieveSignedinUser(any())).thenReturn(user);
-        when(publixUtils.fetchJatosRunFromSession(any())).thenReturn(JatosPublix.JatosRun.RUN_COMPONENT_FINISHED);
+        when(publixUtils.retrieveSignedinUser()).thenReturn(user);
+        when(publixUtils.fetchJatosRunFromSession()).thenReturn(JatosRun.RUN_COMPONENT_FINISHED);
 
         publix.startStudy(request, sl);
     }
@@ -222,8 +235,8 @@ public class JatosPublixTest {
     // -------------------- startComponent --------------------
 
     @Test
-    public void startComponent_runStudy_success() throws Exception {
-        Study study = newStudy(1L, "dir");
+    public void startComponent_runStudy_success() {
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         jw.setId(7L);
@@ -231,46 +244,42 @@ public class JatosPublixTest {
         Component comp = newComponent(3L, "c-uuid", "index.html");
         ComponentResult cr = newComponentResult(20L, comp, sr);
 
-        IdCookieModel idCookie = mock(IdCookieModel.class);
-        when(idCookie.getJatosRun()).thenReturn(JatosPublix.JatosRun.RUN_STUDY);
-        when(idCookieService.getIdCookie(sr.getId())).thenReturn(idCookie);
+        when(idCookieService.getJatosRun(sr.getId())).thenReturn(JatosRun.RUN_STUDY);
 
         when(studyAssets.retrieveComponentHtmlFile("dir", "index.html")).thenReturn(play.mvc.Results.ok().asScala());
-        when(publixUtils.startComponent(comp, sr, null)).thenReturn(cr);
+        when(publixUtils.startComponentRun(comp, sr, null)).thenReturn(cr);
 
         Result res = publix.startComponent(fakeRequest().build(), sr, comp, null);
 
         assertEquals(OK, res.status());
-        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(jw), eq(study), eq(batch));
+        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(eq(jw), eq(study), eq(batch));
         verify(publixUtils).checkComponentBelongsToStudy(study, comp);
-        verify(idCookieService).writeIdCookie(sr, cr, JatosPublix.JatosRun.RUN_STUDY);
+        verify(idCookieService).writeIdCookie(sr, cr, JatosRun.RUN_STUDY);
     }
 
     @Test
-    public void startComponent_runComponentStart_transitionsToFinished() throws Exception {
-        Study study = newStudy(1L, "dir");
+    public void startComponent_runComponentStart_transitionsToFinished() {
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);
         Component comp = newComponent(3L, "c-uuid", "index.html");
         ComponentResult cr = newComponentResult(20L, comp, sr);
 
-        IdCookieModel idCookie = mock(IdCookieModel.class);
-        when(idCookie.getJatosRun()).thenReturn(JatosPublix.JatosRun.RUN_COMPONENT_START);
-        when(idCookieService.getIdCookie(sr.getId())).thenReturn(idCookie);
+        when(idCookieService.getJatosRun(sr.getId())).thenReturn(JatosRun.RUN_COMPONENT_START);
 
         when(studyAssets.retrieveComponentHtmlFile("dir", "index.html")).thenReturn(play.mvc.Results.ok().asScala());
-        when(publixUtils.startComponent(comp, sr, null)).thenReturn(cr);
+        when(publixUtils.startComponentRun(comp, sr, null)).thenReturn(cr);
 
         Result res = publix.startComponent(fakeRequest().build(), sr, comp, null);
 
         assertEquals(OK, res.status());
-        verify(idCookieService).writeIdCookie(sr, cr, JatosPublix.JatosRun.RUN_COMPONENT_FINISHED);
+        verify(idCookieService).writeIdCookie(sr, cr, JatosRun.RUN_COMPONENT_FINISHED);
     }
 
     @Test
-    public void startComponent_runComponentFinished_nextDifferent_redirectsFinishStudy() throws Exception {
-        Study study = newStudy(1L, "dir");
+    public void startComponent_runComponentFinished_nextDifferent_redirectsFinishStudy() {
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         StudyResult srReal = newStudyResult(10L, "sr-uuid", study, batch, jw);
@@ -278,14 +287,12 @@ public class JatosPublixTest {
         Component first = newComponent(3L, "first", "index.html");
         Component second = newComponent(4L, "second", "second.html");
         ComponentResult lastCr = newComponentResult(20L, first, srReal);
-        when(sr.getLastComponentResult()).thenReturn(java.util.Optional.of(lastCr));
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(java.util.Optional.of(lastCr));
 
-        IdCookieModel idCookie = mock(IdCookieModel.class);
-        when(idCookie.getJatosRun()).thenReturn(JatosPublix.JatosRun.RUN_COMPONENT_FINISHED);
-        when(idCookieService.getIdCookie(sr.getId())).thenReturn(idCookie);
+        when(idCookieService.getJatosRun(sr.getId())).thenReturn(JatosRun.RUN_COMPONENT_FINISHED);
 
         when(studyAssets.retrieveComponentHtmlFile(anyString(), anyString())).thenReturn(play.mvc.Results.ok().asScala());
-        when(publixUtils.startComponent(second, sr, null)).thenReturn(newComponentResult(21L, second, sr));
+        when(publixUtils.startComponentRun(second, sr, null)).thenReturn(newComponentResult(21L, second, sr));
 
         Result res = publix.startComponent(fakeRequest().build(), sr, second, null);
 
@@ -294,35 +301,29 @@ public class JatosPublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid/end"));
     }
 
-    @Test
-    public void startComponent_exception_finishesStudyUnsuccessful() throws Exception {
-        Study study = newStudy(1L, "dir");
+    @Test(expected = ForbiddenReloadException.class)
+    public void startComponent_exception_finishesStudyUnsuccessful() {
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);
         Component comp = newComponent(3L, "c-uuid", "index.html");
 
-        IdCookieModel idCookie = mock(IdCookieModel.class);
-        when(idCookie.getJatosRun()).thenReturn(JatosPublix.JatosRun.RUN_STUDY);
-        when(idCookieService.getIdCookie(sr.getId())).thenReturn(idCookie);
+        when(idCookieService.getJatosRun(sr.getId())).thenReturn(JatosRun.RUN_STUDY);
 
-        when(publixUtils.startComponent(comp, sr, null)).thenThrow(new ForbiddenReloadException("reload"));
+        when(publixUtils.startComponentRun(comp, sr, null)).thenThrow(new ForbiddenReloadException("s-uuid", "reload"));
 
-        Result res = publix.startComponent(fakeRequest().build(), sr, comp, null);
-
-        assertEquals(SEE_OTHER, res.status());
-        String loc = res.header("Location").orElse("");
-        assertTrue(loc.contains("/publix/sr-uuid/end"));
-        assertTrue(loc.contains("successful=false"));
+        // ForbiddenReloadException is not caught
+        publix.startComponent(fakeRequest().build(), sr, comp, null);
     }
 
     // -------------------- abortStudy --------------------
 
     @Test
-    public void abortStudy_nonAjax_redirectsToJatosUrl() throws Exception {
-        helpersStatic.when(Helpers::isAjax).thenReturn(false);
+    public void abortStudy_nonAjax_redirectsToJatosUrl() {
+        httpUtilsMocked.when(HttpUtils::isHtmlRequest).thenReturn(true);
 
-        Study study = newStudy(1L, "dir");
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);
@@ -332,18 +333,18 @@ public class JatosPublixTest {
         assertEquals(SEE_OTHER, res.status());
         String loc = res.header("Location").orElse("");
         assertTrue(loc.contains("/jatos/1"));
-        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(jw), eq(study), eq(batch));
-        verify(publixUtils).abortStudy(any(), eq(sr));
-        verify(groupAdministration).leaveGroup(sr);
+        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(eq(jw), eq(study), eq(batch));
+        verify(publixUtils).abortStudyRun(any(), eq(sr));
+        verify(groupAdministration).leave(sr);
         verify(idCookieService).discardIdCookie(sr.getId());
         verify(studyLogger).log(eq(study), any(), eq(jw));
     }
 
     @Test
-    public void abortStudy_ajax_ok() throws Exception {
-        helpersStatic.when(Helpers::isAjax).thenReturn(true);
+    public void abortStudy_ajax_ok() {
+        httpUtilsMocked.when(HttpUtils::isHtmlRequest).thenReturn(false);
 
-        Study study = newStudy(1L, "dir");
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);
@@ -355,10 +356,10 @@ public class JatosPublixTest {
     // -------------------- finishStudy --------------------
 
     @Test
-    public void finishStudy_nonAjax_redirectsToJatosUrl() throws Exception {
-        helpersStatic.when(Helpers::isAjax).thenReturn(false);
+    public void finishStudy_nonAjax_redirectsToJatosUrl() {
+        httpUtilsMocked.when(HttpUtils::isHtmlRequest).thenReturn(true);
 
-        Study study = newStudy(1L, "dir");
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);
@@ -368,18 +369,18 @@ public class JatosPublixTest {
         assertEquals(SEE_OTHER, res.status());
         String loc = res.header("Location").orElse("");
         assertTrue(loc.contains("/jatos/1"));
-        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(jw), eq(study), eq(batch));
-        verify(publixUtils).finishStudyResult(any(), any(), eq(sr));
-        verify(groupAdministration).leaveGroup(sr);
+        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(eq(jw), eq(study), eq(batch));
+        verify(publixUtils).finishStudyRun(any(), any(), eq(sr));
+        verify(groupAdministration).leave(sr);
         verify(idCookieService).discardIdCookie(sr.getId());
         verify(studyLogger).log(eq(study), any(), eq(jw));
     }
 
     @Test
-    public void finishStudy_ajax_ok() throws Exception {
-        helpersStatic.when(Helpers::isAjax).thenReturn(true);
+    public void finishStudy_ajax_ok() {
+        httpUtilsMocked.when(HttpUtils::isHtmlRequest).thenReturn(false);
 
-        Study study = newStudy(1L, "dir");
+        Study study = newStudy(1L, "s-uuid", "dir");
         Batch batch = newBatch(2L, study);
         JatosWorker jw = new JatosWorker();
         StudyResult sr = newStudyResult(10L, "sr-uuid", study, batch, jw);

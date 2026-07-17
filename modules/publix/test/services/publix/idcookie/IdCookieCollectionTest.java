@@ -27,7 +27,7 @@ public class IdCookieCollectionTest {
     }
 
     @Test
-    public void add_put_remove_and_lookup_behaviour() throws Exception {
+    public void add_put_remove_and_lookup_behaviour() {
         IdCookieCollection col = new IdCookieCollection();
 
         IdCookieModel c1 = build(10L);
@@ -52,7 +52,7 @@ public class IdCookieCollectionTest {
     }
 
     @Test(expected = IdCookieAlreadyExistsException.class)
-    public void add_throws_on_duplicate_key() throws Exception {
+    public void add_throws_on_duplicate_key() {
         IdCookieCollection col = new IdCookieCollection();
         IdCookieModel c1 = build(1L);
         IdCookieModel c1dup = build(1L);
@@ -61,7 +61,7 @@ public class IdCookieCollectionTest {
     }
 
     @Test(expected = IdCookieCollectionFullException.class)
-    public void put_throws_when_full_and_new_key() throws Exception {
+    public void put_throws_when_full_and_new_key() {
         // Set limit to 1
         commonStatic.when(Common::getIdCookiesLimit).thenReturn(1);
 
@@ -73,7 +73,7 @@ public class IdCookieCollectionTest {
     }
 
     @Test
-    public void put_allows_overwrite_even_when_full() throws Exception {
+    public void put_allows_overwrite_even_when_full() {
         // Set limit to 1
         commonStatic.when(Common::getIdCookiesLimit).thenReturn(1);
 

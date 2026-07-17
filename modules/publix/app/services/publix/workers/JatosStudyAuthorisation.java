@@ -39,11 +39,11 @@ public class JatosStudyAuthorisation extends StudyAuthorisation {
         User user = ((JatosWorker) worker).getUser();
         // User has to be a member user of this study
         boolean isSuperuser = Common.isUserRoleAllowSuperuser() && user.isSuperuser();
-        if (!(study.hasUser(user) || isSuperuser)) {
+        if (!(studyDao.hasUser(study, user) || isSuperuser)) {
             throw new ForbiddenException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }
         // User has to be signed in
-        Optional<String> username = Context.current().response().session().get(JatosPublix.SESSION_USERNAME);
+        Optional<String> username = Context.current().response().getSession(JatosPublix.SESSION_USERNAME);
         if (username.isEmpty() || !user.getUsername().equals(username.get())) {
             throw new ForbiddenException(PublixErrorMessages.workerNotAllowedStudy(worker, study.getId()));
         }

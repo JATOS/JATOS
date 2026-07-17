@@ -1,6 +1,6 @@
 package models.common;
 
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import models.common.workers.Worker;
 import models.common.workers.WorkerTypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;

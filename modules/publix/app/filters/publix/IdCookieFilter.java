@@ -59,7 +59,7 @@ public class IdCookieFilter extends Filter {
             return nextFilter.apply(requestHeader);
         }
 
-        Context context = requestHeader.attrs().get(Context.REQUEST_ATTR);
+        Context context = requestHeader.attrs().get(Context.CONTEXT_TYPED_KEY);
 
         CompletionStage<Result> resultStage = Context.withContext(context, () -> {
             initFromRequestCookies(requestHeader.cookies());

@@ -1,6 +1,7 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
+import models.common.workers.WorkerType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -25,7 +26,7 @@ public class IdCookieSerialiserTest {
         m.setStudyResultId(7L);
         m.setStudyResultUuid("uuid-123");
         m.setWorkerId(8L);
-        m.setWorkerType("GeneralSingle");
+        m.setWorkerType(WorkerType.GENERAL_SINGLE);
 
         IdCookieSerialiser s = new IdCookieSerialiser();
         String cookie = s.asCookieValueString(m);
@@ -36,7 +37,7 @@ public class IdCookieSerialiserTest {
                 "componentResultId=4&" +
                 "creationTime=5&" +
                 "studyAssets=studyAssetsDir&" +
-                "urlBasePath=/jatos&" +
+                "urlBasePath=%2Fjatos&" +
                 "jatosRun=RUN_STUDY&" +
                 "studyId=6&" +
                 "studyResultId=7&" +

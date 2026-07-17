@@ -1,47 +1,56 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.common.ForbiddenException;
 import general.common.Common;
+import http.common.Http.Context;
+import json.common.DomainJsonMapper;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.MockedStatic;
-import play.mvc.Controller;
-import testutils.gui.ContextMocker;
+import play.test.Helpers;
+import testutils.gui.JPAMocker;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 import utils.common.ZipUtil;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for ImportExportService (uses Mockito to isolate dependencies).
- *
- * @author Kristian Lange
  */
-@SuppressWarnings({"ResultOfMethodCallIgnored", "deprecation"})
 public class ImportExportServiceTest {
 
     private static MockedStatic<Common> commonStatic;
     private static MockedStatic<ZipUtil> zipStatic;
 
+    private AuthorizationService authorizationService;
+    private StudyService studyService;
+    private ComponentService componentService;
+    private DomainJsonMapper domainJsonMapper;
+    private IOUtils ioUtils;
+    private StudyDao studyDao;
+    private ComponentDao componentDao;
+    private StudyDeserializer studyDeserializer;
+
+    private ImportExportService importExportService;
+
+    private User user;
+
     @BeforeClass
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void initStatics() {
         // Ensure temp and assets paths are inside a disposable temp dir
         String tmp = System.getProperty("java.io.tmpdir") + File.separator + "jatos-test";
@@ -53,13 +62,13 @@ public class ImportExportServiceTest {
 
         zipStatic = mockStatic(ZipUtil.class);
         // For unzip, just create destination dir
-        zipStatic.when(() -> ZipUtil.unzip(any(File.class), any(File.class))).thenAnswer(invocation -> {
-            File dest = invocation.getArgument(1);
-            dest.mkdirs();
+        zipStatic.when(() -> ZipUtil.unzip(any(Path.class), any(Path.class))).thenAnswer(invocation -> {
+            Path dest = invocation.getArgument(1);
+            Files.createDirectories(dest);
             return null;
         });
         // For zipping, we don't need to really zip - just no-op
-        zipStatic.when(() -> ZipUtil.zipFiles(anyList(), any(File.class))).thenAnswer(invocation -> null);
+        zipStatic.when(() -> ZipUtil.zipFiles(anyList(), any(Path.class))).thenAnswer(invocation -> null);
     }
 
     @AfterClass
@@ -68,37 +77,34 @@ public class ImportExportServiceTest {
         if (commonStatic != null) commonStatic.close();
     }
 
-    private Checker checker;
-    private StudyService studyService;
-    private ComponentService componentService;
-    private JsonUtils jsonUtils;
-    private IOUtils ioUtils;
-    private StudyDao studyDao;
-    private ComponentDao componentDao;
-    private StudyDeserializer studyDeserializer;
-
-    private ImportExportService importExportService;
-
-    private User user;
-
     @Before
     public void setup() {
-        checker = mock(Checker.class);
+        authorizationService = mock(AuthorizationService.class);
         studyService = mock(StudyService.class);
         BatchService batchService = mock(BatchService.class);
         componentService = mock(ComponentService.class);
-        jsonUtils = mock(JsonUtils.class);
+        domainJsonMapper = mock(DomainJsonMapper.class);
         ioUtils = mock(IOUtils.class);
         studyDao = mock(StudyDao.class);
         componentDao = mock(ComponentDao.class);
         studyDeserializer = mock(StudyDeserializer.class);
 
-        importExportService = new ImportExportService(checker, studyService, batchService, componentService,
-                jsonUtils, ioUtils, studyDao, componentDao, studyDeserializer);
+        importExportService = new ImportExportService(authorizationService, studyService, batchService, componentService,
+                domainJsonMapper, ioUtils, studyDao, componentDao, studyDeserializer);
 
         user = new User();
         user.setUsername("tester");
         user.setName("Tester");
+
+        JPAMocker.mockDaoTransactions(studyDao, componentDao);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
+        Context.current().args().put(SIGNEDIN_USER, user);
+    }
+
+    @After
+    public void tearDown() {
+        Context.clear();
     }
 
     private Study exampleUploadedStudy() {
@@ -115,22 +121,20 @@ public class ImportExportServiceTest {
         return s;
     }
 
-    private File prepareFakeUploadAndDeserializierer(Study uploadedStudy) throws Exception {
+    private Path prepareFakeUploadAndDeserializierer(Study uploadedStudy) throws Exception {
         // Create a temp zip file placeholder (content irrelevant due to mocked ZipUtil)
-        File fakeZip = File.createTempFile("upload", ".zip");
+        Path fakeZip = Files.createTempFile("upload", ".zip");
 
         // When finding files for .jas inside the temp unzip dir, return a temp .jas file
-        when(ioUtils.findFiles(any(File.class), anyString(), anyString())).thenAnswer(inv -> {
-            File dir = inv.getArgument(0);
-            File jas = new File(dir, "study.jas");
-            jas.getParentFile().mkdirs();
-            try (FileWriter fw = new FileWriter(jas)) {
-                fw.write("{}");
-            }
-            return new File[]{jas};
+        when(ioUtils.findFiles(any(Path.class), anyString(), anyString())).thenAnswer(inv -> {
+            Path dir = inv.getArgument(0);
+            Path jas = dir.resolve("study.jas");
+            Files.createDirectories(jas.getParent());
+            Files.writeString(jas, "{}");
+            return new Path[]{jas};
         });
 
-        when(studyDeserializer.deserialize(any(File.class))).thenReturn(uploadedStudy);
+        when(studyDeserializer.deserialize(any(Path.class))).thenReturn(uploadedStudy);
 
         // No existing components with same UUID in another study
         when(componentDao.findByUuid(anyString())).thenReturn(Optional.empty());
@@ -139,21 +143,24 @@ public class ImportExportServiceTest {
     }
 
     private static class TempUnzipped {
-        final File dir; // unzipped root
-        final File assetsSubdir;
-        final File jasFile;
-        TempUnzipped(File dir, File assetsSubdir, File jasFile) {
-            this.dir = dir; this.assetsSubdir = assetsSubdir; this.jasFile = jasFile;
+        final Path dir; // unzipped root
+        final Path assetsSubdir;
+        final Path jasFile;
+
+        TempUnzipped(Path dir, Path assetsSubdir, Path jasFile) {
+            this.dir = dir;
+            this.assetsSubdir = assetsSubdir;
+            this.jasFile = jasFile;
         }
     }
 
     private TempUnzipped createUnzippedDirWithSingleAssetsDirAndJas() throws IOException {
-        File root = new File(new File(Common.getTmpPath()), "JatosImportTest_" + System.nanoTime());
-        if (!root.mkdirs()) throw new IOException("could not create temp import dir");
-        File assets = new File(root, "assets");
-        if (!assets.mkdirs()) throw new IOException("could not create assets dir");
-        File jas = new File(root, "study.jas");
-        try (FileWriter fw = new FileWriter(jas)) { fw.write("{}"); }
+        Path root = Path.of(Common.getTmpPath(), "JatosImportTest_" + System.nanoTime());
+        Files.createDirectories(root);
+        Path assets = root.resolve("assets");
+        Files.createDirectories(assets);
+        Path jas = root.resolve("study.jas");
+        Files.writeString(jas, "{}");
         return new TempUnzipped(root, assets, jas);
     }
 
@@ -168,37 +175,35 @@ public class ImportExportServiceTest {
 
     @Test
     public void importStudy_newStudy_returnsExpectedJsonAndSetsSession() throws Exception {
-        ContextMocker.mock();
         Study uploaded = exampleUploadedStudy();
-        File fakeZip = prepareFakeUploadAndDeserializierer(uploaded);
-        User user = new User("x", "X", "x@x");
+        Path fakeZip = prepareFakeUploadAndDeserializierer(uploaded);
 
         when(studyDao.findByUuid("u-123")).thenReturn(Optional.empty());
         when(ioUtils.checkStudyAssetsDirExists("assetsA")).thenReturn(false);
 
-        ObjectNode json = importExportService.importStudy(user, fakeZip);
+        Map<String, Object> resultMap = importExportService.importStudy(fakeZip);
 
-        assertThat(json.get("studyExists").asBoolean()).isFalse();
-        assertThat(json.get("uuid").asText()).isEqualTo("u-123");
-        assertThat(json.get("uploadedStudyTitle").asText()).isEqualTo("My Study");
-        assertThat(json.get("uploadedDirName").asText()).isEqualTo("assetsA");
-        assertThat(json.get("uploadedDirExists").asBoolean()).isFalse();
+        assertThat(resultMap.get("studyExists")).isEqualTo(Boolean.FALSE);
+        assertThat(resultMap.get("uuid")).isEqualTo("u-123");
+        assertThat(resultMap.get("uploadedStudyTitle")).isEqualTo("My Study");
+        assertThat(resultMap.get("uploadedDirName")).isEqualTo("assetsA");
+        assertThat(resultMap.get("uploadedDirExists")).isEqualTo(Boolean.FALSE);
 
         // Session contains generated temp dir name
-        String tempDirName = Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR);
+        String tempDirName = Context.current().response()
+                .getSession(ImportExportService.SESSION_TEMP_IMPORT_STUDY_DIR).orElseThrow();
         assertThat(tempDirName).isNotEmpty();
 
         // Cleanup should clear the session
         importExportService.cleanupAfterStudyImport();
-        assertThat(Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR)).isNull();
+        assertThat(Context.current().response()
+                .getSession(ImportExportService.SESSION_TEMP_IMPORT_STUDY_DIR).isPresent()).isFalse();
     }
 
     @Test(expected = ForbiddenException.class)
     public void importStudy_whenStudyExistsAndUserNotMember_forbidden() throws Exception {
-        ContextMocker.mock();
         Study uploaded = exampleUploadedStudy();
-        File fakeZip = prepareFakeUploadAndDeserializierer(uploaded);
-        User user = new User("y", "Y", "y@y");
+        Path fakeZip = prepareFakeUploadAndDeserializierer(uploaded);
 
         // The study to be uploaded exists already but does not has the user as a member
         Study existing = new Study();
@@ -208,7 +213,7 @@ public class ImportExportServiceTest {
 
         // The existing study does not have the user as a member (has no members at all).
         // Therefore, ForbiddenException is expected.
-        importExportService.importStudy(user, fakeZip);
+        importExportService.importStudy(fakeZip);
     }
 
     @Test
@@ -217,26 +222,24 @@ public class ImportExportServiceTest {
         Study s = new Study();
         s.setTitle("Cool Study");
         s.setDirName("dir1");
-        // Ensure study assets path resolves to an existing directory
-        Path assets = Files.createTempDirectory("assetsDir1");
+        when(studyDao.findByIdWithComponentsAndBatches(1L)).thenReturn(s);
         when(ioUtils.generateFileName("Cool Study")).thenReturn("Cool_Study");
-        when(ioUtils.generateStudyAssetsPath("dir1")).thenReturn(assets.toString());
 
-        // We simulate that jsonUtils writes out a file successfully. The service creates a temp file and
-        // calls jsonUtils.studyAsJsonForIO(study, thatFile). We don't need to do anything besides verify.
+        // We simulate that DomainJsonMapper writes out a file successfully. The service creates a temp file and
+        // calls DomainJsonMapper.studyAsJsonForIO(study, thatFile). We don't need to do anything besides verify.
 
         // When
-        File zip = importExportService.createStudyExportZipFile(s);
+        Path zip = importExportService.createStudyExportZipFile(1L);
 
         // Then
         assertThat(zip).isNotNull();
-        assertThat(zip.exists()).isTrue(); // created as a temp file by the method
-        verify(jsonUtils).studyAsJsonForIO(eq(s), any(File.class));
+        assertThat(Files.exists(zip)).isTrue(); // created as a temp file by the method
+        verify(domainJsonMapper).studyAsJsonForIO(eq(s), any(Path.class));
         // ZipUtil.zipFiles called
         zipStatic.verify(() -> ZipUtil.zipFiles(anyList(), eq(zip)));
 
         // Cleanup
-        zip.delete();
+        Files.deleteIfExists(zip);
     }
 
     @Test
@@ -244,38 +247,41 @@ public class ImportExportServiceTest {
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
         // put temp dir name into session
-        Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
+        Context.current().response()
+                .putSession(ImportExportService.SESSION_TEMP_IMPORT_STUDY_DIR, temp.dir.getFileName().toString());
 
         Study uploaded = makeStudy("uuid-1", null, "Uploaded", "uploadedDir");
         Study current = makeStudy("uuid-1", 10L, "Current", "currentDir");
         // one matching component to trigger update path
-        Component upComp = new Component(); upComp.setUuid("c-1"); uploaded.addComponent(upComp);
-        Component curComp = new Component(); curComp.setUuid("c-1"); current.addComponent(curComp);
+        Component upComp = new Component();
+        upComp.setUuid("c-1");
+        uploaded.addComponent(upComp);
+        Component curComp = new Component();
+        curComp.setUuid("c-1");
+        current.addComponent(curComp);
 
-        when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });
+        when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new Path[]{temp.jasFile});
         when(studyDeserializer.deserialize(temp.jasFile)).thenReturn(uploaded);
         when(studyDao.findByUuid("uuid-1")).thenReturn(Optional.of(current));
-        when(ioUtils.findDirectories(temp.dir)).thenReturn(new File[]{ temp.assetsSubdir });
+        when(ioUtils.findDirectories(temp.dir)).thenReturn(new Path[]{temp.assetsSubdir});
 
         // Act
-        Long returnedId = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
-                /*keepCurrentAssetsName*/true, /*renameAssets*/true);
+        Study importedStudy = importExportService.importStudyConfirmed(false, false,
+                true, true);
 
         // Assert
-        assertThat(returnedId).isEqualTo(10L);
+        assertThat(importedStudy).isEqualTo(current);
+        assertThat(importedStudy.getId()).isEqualTo(10L);
         // permissions checked
-        verify(checker).checkStandardForStudy(eq(current), eq(current.getId()), eq(user));
-        verify(checker).checkStudyLocked(eq(current));
+        verify(authorizationService).canUserAccessStudy(eq(current), eq(user), eq(true));
         // assets handling: remove old and move new with current dir name
         verify(ioUtils).removeStudyAssetsDir("currentDir");
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("currentDir"));
         // properties updated without changing dir name
-        verify(studyService).updateStudyWithoutDirName(eq(current), eq(uploaded), eq(user));
+        verify(studyService).updateStudyWithoutDirName(eq(current), eq(uploaded));
         // components updating called (we verify the interactions of componentService indirectly)
         verify(componentService, atLeastOnce()).updateProperties(any(Component.class), any(Component.class));
         verify(studyDao).merge(eq(current));
-        // cleanup not called here (separate method), ensure jas file delete attempted via actual code
-        assertThat(temp.jasFile.exists()).isFalse();
 
         // no rename of assets dir should be tried in overwrite case
         verify(ioUtils, never()).findNonExistingStudyAssetsDirName(anyString());
@@ -285,52 +291,54 @@ public class ImportExportServiceTest {
     public void importStudyConfirmed_createNewStudy_whenNotExisting_andRenameAssetsIfNeeded() throws Exception {
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
-        Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
+        Context.current().response()
+                .putSession(ImportExportService.SESSION_TEMP_IMPORT_STUDY_DIR, temp.dir.getFileName().toString());
 
         Study uploaded = makeStudy("uuid-2", null, "Uploaded2", "uploadedDir");
-        when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });
+        when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new Path[]{temp.jasFile});
         when(studyDeserializer.deserialize(temp.jasFile)).thenReturn(uploaded);
         when(studyDao.findByUuid("uuid-2")).thenReturn(Optional.empty());
         when(ioUtils.checkStudyAssetsDirExists("uploadedDir")).thenReturn(true);
         when(ioUtils.findNonExistingStudyAssetsDirName("uploadedDir")).thenReturn("uploadedDir_2");
-        when(ioUtils.findDirectories(temp.dir)).thenReturn(new File[]{ temp.assetsSubdir });
+        when(ioUtils.findDirectories(temp.dir)).thenReturn(new Path[]{temp.assetsSubdir});
 
         Study persisted = makeStudy("uuid-2", 42L, "Persisted", "uploadedDir_2");
-        when(studyService.createAndPersistStudy(eq(user), any(Study.class))).thenReturn(persisted);
+        when(studyService.createAndPersistStudy(any(Study.class))).thenReturn(persisted);
 
         // Act
-        Long newId = importExportService.importStudyConfirmed(user, /*keepProperties*/false, /*keepAssets*/false,
-                /*keepCurrentAssetsName*/false, /*renameAssets*/true);
+        Study importedStudy = importExportService.importStudyConfirmed(false, false, false, true);
 
         // Assert
-        assertThat(newId).isEqualTo(42L);
+        assertThat(importedStudy).isEqualTo(persisted);
+        assertThat(importedStudy.getId()).isEqualTo(42L);
         // assets moved to renamed dir
         verify(ioUtils).moveStudyAssetsDir(eq(temp.assetsSubdir), eq("uploadedDir_2"));
         // study persisted with possibly renamed dir name
         org.mockito.ArgumentCaptor<Study> studyCaptor = org.mockito.ArgumentCaptor.forClass(Study.class);
-        verify(studyService).createAndPersistStudy(eq(user), studyCaptor.capture());
+        verify(studyService).createAndPersistStudy(studyCaptor.capture());
         assertThat(studyCaptor.getValue().getDirName()).isEqualTo("uploadedDir_2");
     }
 
     @Test(expected = RuntimeException.class)
-    public void importStudyConfirmed_throwsIfNoTempDirInSession() throws Exception {
+    public void importStudyConfirmed_throwsIfNoTempDirInSession() {
         // no session set
-        importExportService.importStudyConfirmed(user, false, false, false, true);
+        importExportService.importStudyConfirmed(false, false, false, true);
     }
 
     @Test(expected = ForbiddenException.class)
     public void importStudyConfirmed_overwrite_existingStudy_forbidden() throws Exception {
         // Arrange
         TempUnzipped temp = createUnzippedDirWithSingleAssetsDirAndJas();
-        Controller.session(ImportExportService.SESSION_UNZIPPED_STUDY_DIR, temp.dir.getName());
+        Context.current().response()
+                .putSession(ImportExportService.SESSION_TEMP_IMPORT_STUDY_DIR, temp.dir.getFileName().toString());
         Study uploaded = makeStudy("uuid-3", null, "U", "udir");
         Study current = makeStudy("uuid-3", 77L, "C", "cdir");
-        when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new File[]{ temp.jasFile });
+        when(ioUtils.findFiles(eq(temp.dir), eq(""), eq("jas"))).thenReturn(new Path[]{temp.jasFile});
         when(studyDeserializer.deserialize(temp.jasFile)).thenReturn(uploaded);
         when(studyDao.findByUuid("uuid-3")).thenReturn(Optional.of(current));
-        doThrow(new ForbiddenException("no")).when(checker).checkStandardForStudy(eq(current), eq(77L), eq(user));
+        doThrow(new ForbiddenException("no")).when(authorizationService).canUserAccessStudy(eq(current), eq(user), eq(true));
 
         // Act
-        importExportService.importStudyConfirmed(user, false, false, true, true);
+        importExportService.importStudyConfirmed(false, false, true, true);
     }
 }

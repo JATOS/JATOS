@@ -6,9 +6,10 @@ import play.data.validation.ValidationError;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.OneToOne;
 import java.util.List;
+
+import static models.common.workers.WorkerType.JATOS;
 
 /**
  * DB entity of the concrete Worker who originates from JATOS itself.
@@ -17,9 +18,9 @@ import java.util.List;
 @DiscriminatorValue(JatosWorker.WORKER_TYPE)
 public class JatosWorker extends Worker {
 
-	public static final String WORKER_TYPE = "Jatos";
-	public static final String SHORT_WORKER_TYPE = "ja";
-	public static final String UI_WORKER_TYPE = "Jatos";
+	static final String WORKER_TYPE = "Jatos";
+	static final String SHORT_WORKER_TYPE = "ja";
+	static final String UI_WORKER_TYPE = "Jatos";
 
 	/**
 	 * Corresponding User. This relationship is bidirectional.
@@ -33,6 +34,11 @@ public class JatosWorker extends Worker {
 
 	public JatosWorker(User user) {
 		this.user = user;
+	}
+
+	@Override
+	public WorkerType getWorkerType() {
+		return JATOS;
 	}
 
 	public void setUser(User user) {

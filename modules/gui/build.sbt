@@ -1,5 +1,5 @@
 name := "jatos-gui"
-version := "3.10.4"
+version := "3.10.5"
 organization := "org.jatos"
 scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
@@ -12,7 +12,7 @@ libraryDependencies ++= Seq(
   "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
   "org.mockito" % "mockito-inline" % "4.11.0" % Test,
-  "org.easytesting" % "fest-assert" % "1.4" % Test
+  "org.assertj" % "assertj-core" % "3.26.0" % Test
 )
 
 // Routes from submodules

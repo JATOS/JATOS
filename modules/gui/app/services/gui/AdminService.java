@@ -8,16 +8,19 @@ import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import http.common.Http.Context;
-import models.common.Study;
-import models.common.StudyResultStatus;
-import models.common.User;
 import json.common.DefaultJson;
-import utils.common.StringUtils;
+import models.common.AdminStudyData;
+import models.common.Study;
+import models.common.User;
 import utils.common.IOUtils;
+import utils.common.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
@@ -53,50 +56,76 @@ public class AdminService {
         this.defaultJson = defaultJson;
     }
 
-    public List<Map<String, Object>> getStudiesData(Collection<Study> studyList, boolean studyAssetsSizeFlag,
-                                                    boolean resultDataSizeFlag, boolean resultFileSizeFlag) {
-        List<Map<String, Object>> studies = new ArrayList<>();
-        for (Study study : studyList) {
-            int studyResultCount = studyResultDao.countByStudy(study);
+    public List<Map<String, Object>> getAllStudiesData(
+            boolean studyAssetsSizeFlag,
+            boolean resultDataSizeFlag,
+            boolean resultFileSizeFlag) {
+        return getStudiesData(
+                studyDao.findAllAdminStudyData(resultDataSizeFlag),
+                studyAssetsSizeFlag,
+                resultDataSizeFlag,
+                resultFileSizeFlag);
+    }
+
+    public List<Map<String, Object>> getStudiesDataByUser(
+            String username,
+            boolean studyAssetsSizeFlag,
+            boolean resultDataSizeFlag,
+            boolean resultFileSizeFlag) {
+        return getStudiesData(
+                studyDao.findAdminStudyDataByUsername(username, resultDataSizeFlag),
+                studyAssetsSizeFlag,
+                resultDataSizeFlag,
+                resultFileSizeFlag);
+    }
+
+    private List<Map<String, Object>> getStudiesData(
+            Collection<AdminStudyData> studyDataList,
+            boolean studyAssetsSizeFlag,
+            boolean resultDataSizeFlag,
+            boolean resultFileSizeFlag) {
+        return studyDataList.stream().map(studyData -> {
+            long studyResultCount = studyData.getStudyResultCount();
+
             Map<String, Object> studyInfo = new HashMap<>();
-            studyInfo.put("id", study.getId());
-            studyInfo.put("uuid", study.getUuid());
-            studyInfo.put("title", study.getTitle());
-            studyInfo.put("active", study.isActive());
+            studyInfo.put("id", studyData.getId());
+            studyInfo.put("uuid", studyData.getUuid());
+            studyInfo.put("title", studyData.getTitle());
+            studyInfo.put("active", studyData.isActive());
             studyInfo.put("studyResultCount", studyResultCount);
-            studyInfo.put("members", study.getUserList().stream().map(u -> ImmutableMap.of(
+            studyInfo.put("members", studyData.getMembers().stream().map(u -> ImmutableMap.of(
                     "username", u.getUsername(),
                     "name", u.getName(),
-                    "authMethod", u.getAuthMethod().name()
+                    "authMethod", u.getAuthMethod()
             )).collect(Collectors.toList()));
+
             if (studyAssetsSizeFlag) {
-                studyInfo.put("studyAssetsSize", getStudyAssetDirSize(study));
+                studyInfo.put("studyAssetsSize", getStudyAssetDirSize(studyData.getDirName()));
             } else {
                 studyInfo.put("studyAssetsSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
             if (resultDataSizeFlag) {
-                studyInfo.put("resultDataSize", getResultDataSize(study, studyResultCount));
+                studyInfo.put("resultDataSize", getResultDataSize(studyData.getResultDataSize(), studyResultCount));
             } else {
                 studyInfo.put("resultDataSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
             if (resultFileSizeFlag) {
-                studyInfo.put("resultFileSize", getResultFileSize(study, studyResultCount));
+                studyInfo.put("resultFileSize", getResultFileSize(studyData.getId(), studyResultCount));
             } else {
                 studyInfo.put("resultFileSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
-            Optional<StudyResultStatus> srsOpt = studyResultDao.findLastStarted(study);
-            if (srsOpt.isPresent()) {
-                studyInfo.put("lastStarted", srsOpt.get().getStartDate());
-            } else {
-                studyInfo.put("lastStarted", null);
-            }
-            studies.add(studyInfo);
-        }
-        return studies;
+
+            studyInfo.put("lastStarted", studyData.getLastStarted());
+            return studyInfo;
+        }).collect(Collectors.toList());
     }
 
     public Map<String, Object> getStudyAssetDirSize(Study study) {
-        long size = ioUtils.getStudyAssetsDirSize(study.getDirName());
+        return getStudyAssetDirSize(study.getDirName());
+    }
+
+    public Map<String, Object> getStudyAssetDirSize(String dirName) {
+        long size = ioUtils.getStudyAssetsDirSize(dirName);
         return ImmutableMap.of(
                 "humanReadable", StringUtils.humanReadableByteCount(size),
                 "size", size);
@@ -104,6 +133,10 @@ public class AdminService {
 
     public ImmutableMap<String, Object> getResultDataSize(Study study, int studyResultCount) {
         long size = componentResultDao.sizeByStudy(study);
+        return getResultDataSize(size, studyResultCount);
+    }
+
+    public ImmutableMap<String, Object> getResultDataSize(long size, long studyResultCount) {
         long averagePerResult = studyResultCount != 0 ? size / studyResultCount : 0;
         String resultDataSizePerStudyResultCount = (studyResultCount != 0
                 ? StringUtils.humanReadableByteCount(averagePerResult)
@@ -116,7 +149,11 @@ public class AdminService {
     }
 
     public ImmutableMap<String, Object> getResultFileSize(Study study, int studyResultCount) {
-        long size = studyResultDao.findIdsByStudyId(study.getId())
+        return getResultFileSize(study.getId(), studyResultCount);
+    }
+
+    public ImmutableMap<String, Object> getResultFileSize(Long studyId, long studyResultCount) {
+        long size = studyResultDao.findIdsByStudyId(studyId)
                 .stream()
                 .mapToLong(ioUtils::getResultUploadDirSize)
                 .sum();

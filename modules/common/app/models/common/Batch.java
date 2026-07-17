@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import models.common.workers.Worker;
 import models.common.workers.WorkerTypeConverter;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForIO;
 import json.common.DefaultJson.JsonForPublix;
@@ -34,7 +34,7 @@ public class Batch {
     private Long id;
 
     /**
-     * Universally (world-wide) unique ID.
+     * Universally (worldwide) unique ID.
      */
     @Column(nullable = false)
     @JsonView({JsonForIO.class, JsonForApi.class})
@@ -234,10 +234,6 @@ public class Batch {
         return allowedWorkerTypes.contains(workerType);
     }
 
-    public void setWorkerList(Set<Worker> workerList) {
-        this.workerList = workerList;
-    }
-
     public Set<Worker> getWorkerList() {
         return this.workerList;
     }
@@ -285,7 +281,7 @@ public class Batch {
     }
 
     public void setBatchInput(String batchInput) {
-        this.batchInput = JsonUtils.asStringForDB(batchInput);
+        this.batchInput = DomainJsonMapper.asStringForDB(batchInput);
     }
 
     public String getBatchSessionData() {

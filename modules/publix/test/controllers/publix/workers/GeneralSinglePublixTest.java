@@ -3,16 +3,22 @@ package controllers.publix.workers;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
+import exceptions.common.ForbiddenException;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import http.common.Http.Context;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.GeneralSingleWorker;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import org.junit.Before;
 import org.junit.Test;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.test.Helpers;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.ResultCreator;
@@ -21,7 +27,6 @@ import services.publix.idcookie.IdCookieService;
 import services.publix.workers.GeneralSingleCookieService;
 import services.publix.workers.GeneralSingleStudyAuthorisation;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
 import java.util.Optional;
 
@@ -47,8 +52,6 @@ public class GeneralSinglePublixTest {
 
     private GeneralSinglePublix publix;
 
-    private final JPAApi jpa = mock(JPAApi.class);
-
     @Before
     public void setUp() {
         publixUtils = mock(PublixUtils.class);
@@ -56,19 +59,24 @@ public class GeneralSinglePublixTest {
         resultCreator = mock(ResultCreator.class);
         workerCreator = mock(WorkerCreator.class);
         idCookieService = mock(IdCookieService.class);
-        generalSingleCookieService = mock(GeneralSingleCookieService.class);
         studyLogger = mock(StudyLogger.class);
         GroupAdministration groupAdministration = mock(GroupAdministration.class);
         StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
-        JsonUtils jsonUtils = mock(JsonUtils.class);
+        DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
         ComponentResultDao componentResultDao = mock(ComponentResultDao.class);
         StudyResultDao studyResultDao = mock(StudyResultDao.class);
-        IOUtils ioUtils = null; // not needed here
+        IOUtils ioUtils = null;
+        generalSingleCookieService = mock(GeneralSingleCookieService.class);
+        IOExecutor ioExecutor = mock(IOExecutor.class);
+        StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new GeneralSinglePublix(jpa, publixUtils, studyAuthorisation, resultCreator, workerCreator,
-                groupAdministration, idCookieService, generalSingleCookieService, errorMessages, studyAssets, jsonUtils,
-                componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new GeneralSinglePublix(publixUtils, studyAuthorisation, resultCreator, workerCreator,
+                groupAdministration, idCookieService, errorMessages, studyAssets, domainJsonMapper,
+                componentResultDao, studyResultDao, studyLogger, ioUtils, generalSingleCookieService, ioExecutor,
+                studyAssetsExecutor);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
     private static Study newStudy(long id) {
@@ -94,7 +102,7 @@ public class GeneralSinglePublixTest {
         StudyLink sl = new StudyLink();
         sl.setBatch(batch);
         sl.setStudyCode("code-gs");
-        sl.setWorkerType(GeneralSingleWorker.WORKER_TYPE);
+        sl.setWorkerType(WorkerType.GENERAL_SINGLE);
         return sl;
     }
 
@@ -117,7 +125,7 @@ public class GeneralSinglePublixTest {
     // -------------------- startStudy --------------------
 
     @Test
-    public void startStudy_firstCall_noWorkerCookie_createsWorkerAndStudyResult_andRedirects() throws Exception {
+    public void startStudy_firstCall_noWorkerCookie_createsWorkerAndStudyResult_andRedirects() {
         Study study = newStudy(1L);
         Batch batch = newBatch(2L, study);
         GeneralSingleWorker worker = newGSWorker(3L);
@@ -125,7 +133,7 @@ public class GeneralSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         // No worker id cookie for this study
-        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(null);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(null);
 
         when(workerCreator.createAndPersistGeneralSingleWorker(batch)).thenReturn(worker);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-1"));
@@ -139,18 +147,18 @@ public class GeneralSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-1/comp-uuid-1/start"));
 
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult(request);
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
+        verify(publixUtils).finishOldestStudyResult();
         verify(resultCreator).createStudyResult(sl, worker);
-        verify(generalSingleCookieService).set(study, worker);
-        verify(idCookieService).writeIdCookie(request, sr);
-        verify(publixUtils).setUrlQueryParameter(request, sr);
+        verify(generalSingleCookieService).generate(study, worker);
+        verify(idCookieService).writeIdCookie(sr);
+        verify(publixUtils).setUrlQueryParameter(sr);
         verify(studyLogger).log(eq(sl), contains("Started study run"), eq(worker));
     }
 
     @Test
-    public void startStudy_previewAllowed_withWorkerCookie_andExistingIdCookie_doesNotFinishOldest_orSetCookie() throws Exception {
-        // We check the path where the study has preview allowed and this is not the first call of startStudy.
+    public void startStudy_previewAllowed_withWorkerCookie_andExistingIdCookie_doesNotFinishOldest_orSetNewCookie() {
+        // We check the path where the study has preview allowed, and this is not the first call of startStudy.
         // We don't have to set StudyResult.StudyState.PRE because this state would be checked in
         // StudyAuthorisation::checkWorkerAllowedToStartStudy and this is mocked and does not throw an exception.
         Study study = newStudy(11L);
@@ -161,12 +169,12 @@ public class GeneralSinglePublixTest {
 
         // Worker cookie present
         long wid1 = 13L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(wid1);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(wid1);
         when(publixUtils.retrieveWorker(wid1)).thenReturn(worker);
 
         StudyResult existing = newStudyResult(20L, "sr-uuid-2", study, batch, worker);
-        when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(true);
+        when(publixUtils.getLastStudyResult(worker)).thenReturn(Optional.of(existing));
+        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(true);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-2"));
 
         Result res = publix.startStudy(request, sl);
@@ -175,16 +183,16 @@ public class GeneralSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-2/comp-uuid-2/start"));
 
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishOldestStudyResult(request);
-        verify(generalSingleCookieService, never()).set(any(), any());
-        verify(idCookieService).writeIdCookie(request, existing);
-        verify(publixUtils).setUrlQueryParameter(request, existing);
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
+        verify(publixUtils, never()).finishOldestStudyResult();
+        verify(generalSingleCookieService).generate(any(), any());
+        verify(idCookieService).writeIdCookie(existing);
+        verify(publixUtils).setUrlQueryParameter(existing);
         verifyNoInteractions(resultCreator);
     }
 
     @Test
-    public void startStudy_withWorkerCookie_missingIdCookie_finishesOldest_andSetsCookie() throws Exception {
+    public void startStudy_withWorkerCookie_missingIdCookie_finishesOldest_andSetsCookie() {
         Study study = newStudy(21L);
         Batch batch = newBatch(22L, study);
         GeneralSingleWorker worker = newGSWorker(23L);
@@ -192,12 +200,12 @@ public class GeneralSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         long wid2 = 23L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(wid2);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(wid2);
         when(publixUtils.retrieveWorker(wid2)).thenReturn(worker);
 
         StudyResult existing = newStudyResult(30L, "sr-uuid-3", study, batch, worker);
-        when(worker.getLastStudyResult()).thenReturn(Optional.of(existing));
-        when(idCookieService.hasIdCookie(request, existing.getId())).thenReturn(false);
+        when(publixUtils.getLastStudyResult(worker)).thenReturn(Optional.of(existing));
+        when(idCookieService.hasIdCookie(existing.getId())).thenReturn(false);
         when(publixUtils.retrieveFirstActiveComponent(study)).thenReturn(newComponent("comp-uuid-3"));
 
         Result res = publix.startStudy(request, sl);
@@ -206,28 +214,28 @@ public class GeneralSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-3/comp-uuid-3/start"));
 
-        verify(publixUtils).finishOldestStudyResult(request);
-        verify(generalSingleCookieService).set(study, worker);
-        verify(idCookieService).writeIdCookie(request, existing);
+        verify(publixUtils).finishOldestStudyResult();
+        verify(generalSingleCookieService).generate(study, worker);
+        verify(idCookieService).writeIdCookie(existing);
         verifyNoInteractions(resultCreator);
     }
 
-    @Test(expected = ForbiddenPublixException.class)
-    public void startStudy_withWorkerCookie_butWorkerMissing_throws() throws Exception {
+    @Test(expected = ForbiddenException.class)
+    public void startStudy_withWorkerCookie_butWorkerMissing_throws() {
         Study study = newStudy(31L);
         Batch batch = newBatch(32L, study);
         StudyLink sl = newStudyLink(batch);
         Http.Request request = fakeRequest().build();
 
         Long unknownWorkerId = 999L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(unknownWorkerId);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(unknownWorkerId);
         when(publixUtils.retrieveWorker(unknownWorkerId)).thenReturn(null);
 
         publix.startStudy(request, sl);
     }
 
-    @Test(expected = ForbiddenPublixException.class)
-    public void startStudy_withWorkerCookie_noLastStudyResult_throws() throws Exception {
+    @Test(expected = ForbiddenException.class)
+    public void startStudy_withWorkerCookie_noLastStudyResult_throws() {
         Study study = newStudy(41L);
         Batch batch = newBatch(42L, study);
         GeneralSingleWorker worker = newGSWorker(43L);
@@ -235,9 +243,9 @@ public class GeneralSinglePublixTest {
         Http.Request request = fakeRequest().build();
 
         long wid3 = 43L;
-        when(generalSingleCookieService.fetchWorkerIdByStudy(request, study)).thenReturn(wid3);
+        when(generalSingleCookieService.fetchWorkerIdByStudy(study)).thenReturn(wid3);
         when(publixUtils.retrieveWorker(wid3)).thenReturn(worker);
-        when(worker.getLastStudyResult()).thenReturn(Optional.empty());
+        when(publixUtils.getLastStudyResult(worker)).thenReturn(Optional.empty());
 
         publix.startStudy(request, sl);
     }

@@ -1,5 +1,6 @@
 package http.common;
 
+import exceptions.common.JatosException;
 import play.api.mvc.DiscardingCookie;
 import play.libs.typedmap.TypedKey;
 import play.libs.typedmap.TypedMap;
@@ -7,9 +8,8 @@ import play.mvc.Http.*;
 import scala.Option;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static http.common.Http.Context.current;
@@ -18,10 +18,8 @@ import static http.common.Http.Context.current;
  * Provides a framework for handling HTTP requests and responses. It is primarily used for propagating HTTP-related
  * operations across threads and managing request-specific data in a thread-safe manner.
  *
- * Additionally, it provides a way to store arguments ({@link Args}) within the context of an HTTP request. This allows for
- * passing data between different parts of the application.
- *
- * It is derived from Play Framework's Http.Context class.
+ * Additionally, it provides a way to store arguments ({@link Args}) within the context of an HTTP request. This allows
+ * for passing data between different parts of the application.
  */
 @SuppressWarnings("unused")
 public class Http {
@@ -31,17 +29,35 @@ public class Http {
      */
     public static class Context {
 
+        public static final TypedKey<Context> CONTEXT_TYPED_KEY = TypedKey.create("http.common.Http.Context");
+
         private final static ThreadLocal<Context> current = new ThreadLocal<>();
 
         /**
-         * Retrieves the current HTTP context, for the current thread.
-         *
-         * @return the context
+         * Retrieves the current HTTP context from the current RequestHeader.
+         */
+        public static Context current(RequestHeader request) {
+            return currentOptional(request)
+                    .orElseThrow(() -> new JatosException("There is no HTTP Context attached to this request."));
+        }
+
+        /**
+         * Retrieves the current HTTP context from the current RequestHeader.
+         */
+        public static Optional<Context> currentOptional(RequestHeader request) {
+            return request.attrs().containsKey(Http.Context.CONTEXT_TYPED_KEY)
+                    ? Optional.of(request.attrs().get(Http.Context.CONTEXT_TYPED_KEY))
+                    : Optional.empty();
+        }
+
+        /**
+         * Retrieves the current HTTP context, for the current thread. This is a convenient way to access the Context
+         * when it is available.
          */
         public static Context current() {
             Context c = current.get();
             if (c == null) {
-                throw new RuntimeException("There is no HTTP Context available from here.");
+                throw new JatosException("There is no HTTP Context available from here.");
             }
             return c;
         }
@@ -70,12 +86,12 @@ public class Http {
         /**
          * Creates a new HTTP context.
          *
-         * @param requestHeader the HTTP request
+         * @param request the HTTP request
          */
-        public Context(RequestHeader requestHeader) {
-            this.id = requestHeader.asScala().id();
-            this.requestHeader = requestHeader;
-            this.response = new Response(requestHeader.session());
+        public Context(RequestHeader request) {
+            this.id = request.asScala().id();
+            this.requestHeader = request;
+            this.response = new Response(request.session());
             this.args = new Args();
         }
 
@@ -112,15 +128,6 @@ public class Http {
         }
 
         /**
-         * Helper to propagate the current context through a CompletionStage. This version only handles restoration. The
-         * caller must do cleanup.
-         */
-        public static <T> CompletionStage<T> withContext(CompletionStage<T> stage) {
-            Context captured = current();
-            return stage.whenComplete((r, t) -> setCurrent(captured));
-        }
-
-        /**
          * Runs a block with the given HTTP Context bound to the current thread. Restores the previously bound context
          * afterward.
          */
@@ -139,29 +146,24 @@ public class Http {
         }
 
         /**
-         * Overload that allows running a 'before' block synchronously.
+         * Wraps a given function with a specific HTTP context, ensuring that the context is applied
+         * during the execution of the function and restored afterward.
          */
-        public static <T> CompletionStage<T> withContext(Runnable before, CompletionStage<T> stage) {
-            if (before != null) {
-                before.run();
-            }
-            return withContext(stage);
+        public static <T, R> Function<T, R> wrap(Context context, Function<T, R> function) {
+            return value -> Context.withContext(context, () -> function.apply(value));
         }
 
         /**
-         * Runs a block of code in a different thread (via the provided executor) while propagating the current HTTP
-         * Context.
+         * Creates an {@link Executor} that ensures all tasks are executed within the given {@link Context}.
+         * The returned executor wraps the provided {@code delegate} executor, allowing tasks to be
+         * context-aware by associating the specified {@code context} to each task during execution.
          */
-        public static <T> CompletableFuture<T> withContext(Executor executor, Supplier<T> block) {
-            Context captured = current();
-            return CompletableFuture.supplyAsync(() -> {
-                try {
-                    setCurrent(captured);
-                    return block.get();
-                } finally {
-                    clear();
-                }
-            }, executor);
+        public static Executor contextAwareExecutor(Context context, Executor delegate) {
+            return command -> delegate.execute(() ->
+                    Context.withContext(context, () -> {
+                        command.run();
+                        return null;
+                    }));
         }
     }
 
@@ -183,8 +185,9 @@ public class Http {
         }
 
         /**
-         * Gets the current response headers. Cookies and Play's session are stored separately in the {@link #cookies()}
-         * and the {@link #session()} list.
+         * Gets the current response headers as an unmodifiable map. Cookies and Play's session are stored separately in
+         * the {@link #cookies()} and the {@link #session()} list. Use setHeader(), removeHeader(), and clearHeaders()
+         * to modify the headers.
          *
          * @return the current response headers.
          */
@@ -325,6 +328,16 @@ public class Http {
             return sessionChanged;
         }
 
+        /**
+         * Returns one value from the response's session.
+         */
+        public Optional<String> getSession(String key) {
+            return session.get(key);
+        }
+
+        /**
+         * Adds or replaces multiple values in the response's session.
+         */
         public void putSession(Map<String, String> map) {
             Map<String, String> data = new HashMap<>(session.data());
             data.putAll(map);
@@ -341,7 +354,7 @@ public class Http {
         }
 
         /**
-         * Removes one value from the response's session.
+         * Removes one entry from the response's session.
          */
         public void removeSession(String key) {
             Map<String, String> data = new HashMap<>(session.data());
@@ -456,7 +469,7 @@ public class Http {
         }
 
         public void clear() {
-            args.remove();
+            args = TypedMap.empty();
         }
     }
 

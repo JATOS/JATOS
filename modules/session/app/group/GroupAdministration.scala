@@ -4,7 +4,6 @@ import daos.common.{GroupResultDao, StudyResultDao}
 import models.common.GroupResult.GroupState
 import models.common.{Batch, GroupResult, StudyResult}
 import play.api.Logger
-import play.db.jpa.JPAApi
 
 import java.sql.Timestamp
 import java.util.Date
@@ -21,8 +20,7 @@ import scala.jdk.CollectionConverters._
 @Singleton
 class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegistry,
                                     studyResultDao: StudyResultDao,
-                                    groupResultDao: GroupResultDao,
-                                    jpa: JPAApi) {
+                                    groupResultDao: GroupResultDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -33,7 +31,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * maxTotalMembers not reached). If there is none, create a new GroupResult.
    */
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
-    jpa.withTransaction(asJavaFunction(_ => {
+    groupResultDao.withTransaction(asJavaFunction(_ => {
       val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch)
       val groupMaxNotReached =
         if (allGroupMaxNotReached.isEmpty) groupResultDao.persist(new GroupResult(batch))
@@ -55,7 +53,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * Closes the group channel. Finishes a group if necessary.
    */
   def leave(studyResult: StudyResult): Unit = {
-    jpa.withTransaction(asJavaFunction((_: EntityManager) => {
+    groupResultDao.withTransaction(asJavaFunction((_: EntityManager) => {
       if (!studyResult.getStudy.isGroupStudy) return
 
       val groupResult = studyResult.getActiveGroupResult
@@ -105,7 +103,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * GroupResult. If there is more than one, it assigns to the one with the most active members.
    */
   private def reassignGroupResult(studyResult: StudyResult, batch: Batch): Option[GroupResult] = {
-    jpa.withTransaction(asJavaFunction(_ => {
+    groupResultDao.withTransaction(asJavaFunction(_ => {
       val currentGroupResult = studyResult.getActiveGroupResult
       if (currentGroupResult == null) {
         logger.info(s".reassignGroupResult: The study result with ID ${studyResult.getId} isn't member in any group.")

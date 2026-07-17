@@ -32,7 +32,7 @@ public class SigninSram extends SigninOidc {
     }
 
     @Override
-    protected String getUsername(UserInfo userInfo, String usernameFrom) throws AuthException {
+    protected String getUsername(UserInfo userInfo, String usernameFrom) {
         if (usernameFrom.equals("eduperson_principal_name")) {
             return userInfo.getStringListClaim("voperson_external_id").stream().findFirst()
                     .orElseThrow(() -> new AuthException("OIDC error - could not get username value from OIDC claims"));

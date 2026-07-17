@@ -11,16 +11,15 @@ import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
-import http.common.Http.Context;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import http.common.Http.Context;
 import json.common.DefaultJson;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
-import play.db.jpa.JPAApi;
 import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
 
@@ -38,7 +37,6 @@ public class PublixUtils {
 
     private static final Logger.ALogger LOGGER = Logger.of(PublixUtils.class);
 
-    private final JPAApi jpa;
     private final ResultCreator resultCreator;
     private final IdCookieService idCookieService;
     private final GroupAdministration groupAdministration;
@@ -52,8 +50,7 @@ public class PublixUtils {
     private final DefaultJson defaultJson;
 
     @Inject
-    public PublixUtils(JPAApi jpa,
-                       ResultCreator resultCreator,
+    public PublixUtils(ResultCreator resultCreator,
                        IdCookieService idCookieService,
                        GroupAdministration groupAdministration,
                        StudyResultDao studyResultDao,
@@ -64,7 +61,6 @@ public class PublixUtils {
                        StudyLogger studyLogger,
                        IOUtils ioUtils,
                        DefaultJson defaultJson) {
-        this.jpa = jpa;
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
         this.groupAdministration = groupAdministration;
@@ -85,15 +81,15 @@ public class PublixUtils {
         return workerDao.findById(workerId);
     }
 
-    public ComponentResult startComponent(Component component, StudyResult studyResult) {
-        return startComponent(component, studyResult, null);
+    public ComponentResult startComponentRun(Component component, StudyResult studyResult) {
+        return startComponentRun(component, studyResult, null);
     }
 
     /**
      * Start or restart a component. It either returns a newly started component or an exception but never null.
      */
-    public ComponentResult startComponent(Component component, StudyResult studyResult, String message) {
-        return jpa.withTransaction(em -> {
+    public ComponentResult startComponentRun(Component component, StudyResult studyResult, String message) {
+        return componentResultDao.withTransaction(em -> {
             // Deal with the last component
             Optional<ComponentResult> lastResultOpt = componentResultDao.findLastByStudyResult(studyResult);
             if (lastResultOpt.isPresent()) {
@@ -135,7 +131,7 @@ public class PublixUtils {
     }
 
     private void finishComponentResult(ComponentResult componentResult, ComponentState state, String message) {
-        jpa.withTransaction(em -> {
+        componentResultDao.withTransaction(em -> {
             componentResult.setComponentState(state);
             componentResult.setEndDate(new Timestamp(new Date().getTime()));
             componentResult.setMessage(message);
@@ -152,8 +148,8 @@ public class PublixUtils {
      * that might still be open, deletes all result data and ends the study with state ABORTED and sets the given
      * message.
      */
-    public void abortStudy(String message, StudyResult studyResult) {
-        jpa.withTransaction(em -> {
+    public void abortStudyRun(String message, StudyResult studyResult) {
+        studyResultDao.withTransaction(em -> {
             // Put the current ComponentResult into state ABORTED and set the end date
             Timestamp endDate = new Timestamp(new Date().getTime());
             retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
@@ -161,7 +157,7 @@ public class PublixUtils {
                 currentComponentResult.setEndDate(endDate);
             });
             // Finish the other ComponentResults
-            finishAllComponentResults(studyResult);
+            finishAllComponentResultsNotDoneByStudyResult(studyResult);
 
             // Clear all data and set ABORTED for all(!) ComponentResults
             for (ComponentResult componentResult : studyResult.getComponentResultList()) {
@@ -196,8 +192,8 @@ public class PublixUtils {
      * @param studyResult A StudyResult
      * @return The confirmation code or null if it was unsuccessful
      */
-    public String finishStudyResult(Boolean successful, String message, StudyResult studyResult) {
-        return jpa.withTransaction(em -> {
+    public String finishStudyRun(Boolean successful, String message, StudyResult studyResult) {
+        return studyResultDao.withTransaction(em -> {
             String confirmationCode;
             StudyState studyState;
             ComponentState componentState;
@@ -215,7 +211,7 @@ public class PublixUtils {
                     finishComponentResult(componentResult, componentState, null));
             studyResult.setStudyState(studyState);
 
-            finishAllComponentResults(studyResult);
+            finishAllComponentResultsNotDoneByStudyResult(studyResult);
             studyResult.setConfirmationCode(confirmationCode);
             studyResult.setMessage(message);
             studyResult.setEndDate(endDate);
@@ -226,9 +222,9 @@ public class PublixUtils {
         });
     }
 
-    private void finishAllComponentResults(StudyResult studyResult) {
+    private void finishAllComponentResultsNotDoneByStudyResult(StudyResult studyResult) {
         studyResult.getComponentResultList().stream()
-                .filter(componentResult -> !PublixHelpers.componentDone(componentResult))
+                .filter(componentResult -> !PublixHelpers.componentResultDone(componentResult))
                 .forEach(componentResult -> finishComponentResult(componentResult, ComponentState.FINISHED, null));
     }
 
@@ -238,14 +234,14 @@ public class PublixUtils {
      * recently decreased, there will be more than one. This method should only be called during the start of a study.
      */
     public void finishOldestStudyResult() {
-        jpa.withTransaction(em -> {
+        studyResultDao.withTransaction(em -> {
             while (idCookieService.maxIdCookiesReached()) {
                 Long abandonedStudyResultId = idCookieService.getStudyResultIdOfOldestIdCookie();
                 StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);
                 // If the abandoned study result isn't done, finish it.
-                if (abandonedStudyResult != null && !PublixHelpers.studyRunDone(abandonedStudyResult)) {
+                if (abandonedStudyResult != null && !PublixHelpers.studyResultDone(abandonedStudyResult)) {
                     groupAdministration.leave(abandonedStudyResult);
-                    finishStudyResult(false, PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
+                    finishStudyRun(false, PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
                             abandonedStudyResult);
                     studyLogger.log(abandonedStudyResult.getStudy(), "Finish abandoned study",
                             abandonedStudyResult.getWorker());
@@ -260,7 +256,7 @@ public class PublixUtils {
      */
     public Optional<ComponentResult> retrieveCurrentComponentResult(StudyResult studyResult) {
         Optional<ComponentResult> last = componentResultDao.findLastByStudyResult(studyResult);
-        if (last.isPresent() && !PublixHelpers.componentDone(last.get())) {
+        if (last.isPresent() && !PublixHelpers.componentResultDone(last.get())) {
             return last;
         } else {
             return Optional.empty();
@@ -274,7 +270,7 @@ public class PublixUtils {
     public ComponentResult retrieveStartedComponentResult(Component component, StudyResult studyResult) {
         Optional<ComponentResult> current = retrieveCurrentComponentResult(studyResult);
         // Start the component if it was never started or if it's a reload of the component
-        return current.orElseGet(() -> startComponent(component, studyResult));
+        return current.orElseGet(() -> startComponentRun(component, studyResult));
     }
 
     /**
@@ -400,7 +396,7 @@ public class PublixUtils {
      * Retrieves the currently signed-in user or throws a ForbiddenException if none is signed in.
      */
     public User retrieveSignedinUser() {
-        String normalizedUsername = Context.current().response().session().get(JatosPublix.SESSION_USERNAME)
+        String normalizedUsername = Context.current().response().getSession(JatosPublix.SESSION_USERNAME)
                 .orElseThrow(() -> new ForbiddenException("No user signed in"));
 
         User signedinUser = userDao.findByUsername(normalizedUsername);
@@ -414,7 +410,7 @@ public class PublixUtils {
      * Retrieves the JatosRun object that maps to the jatos run parameter in the session.
      */
     public JatosPublix.JatosRun fetchJatosRunFromSession() {
-        String sessionValue = Context.current().response().session().get("jatos_run")
+        String sessionValue = Context.current().response().getSession("jatos_run")
                 .orElseThrow(() -> new ForbiddenException("This study or component was never started in JATOS."));
 
         try {

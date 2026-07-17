@@ -166,14 +166,14 @@
 
     $("#allowKeepSignedin").toggleClass("d-none", !window.common.allowKeepSignedin);
 
-    @if(request.flash.get(FlashScopeMessaging.SUCCESS).isDefined) {
-        $('#password').after('<p class="text-success m-1">@request.flash.get(FlashScopeMessaging.SUCCESS)</p>');
+    @if(request.flash.get(FlashMessagingHelper.SUCCESS).isDefined) {
+        $('#password').after('<p class="text-success m-1">@request.flash.get(FlashMessagingHelper.SUCCESS)</p>');
     }
-    @if(request.flash.get(FlashScopeMessaging.WARNING).isDefined) {
-        $('#password').after('<p class="text-warning m-1">@request.flash.get(FlashScopeMessaging.WARNING)</p>');
+    @if(request.flash.get(FlashMessagingHelper.WARNING).isDefined) {
+        $('#password').after('<p class="text-warning m-1">@request.flash.get(FlashMessagingHelper.WARNING)</p>');
     }
-    @if(request.flash.get(FlashScopeMessaging.ERROR).isDefined) {
-        $('#password').after('<p class="text-danger m-1">@request.flash.get(FlashScopeMessaging.ERROR)</p>');
+    @if(request.flash.get(FlashMessagingHelper.ERROR).isDefined) {
+        $('#password').after('<p class="text-danger m-1">@request.flash.get(FlashMessagingHelper.ERROR)</p>');
     }
 
     $('#oidcSigninButton').click(function() {

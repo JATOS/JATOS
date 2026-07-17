@@ -6,10 +6,16 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
-import exceptions.publix.*;
+import exceptions.common.BadRequestException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
+import exceptions.publix.ForbiddenNonLinearFlowException;
+import exceptions.publix.ForbiddenReloadException;
 import general.common.Common;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import http.common.Http.Context;
+import json.common.DefaultJson;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
@@ -21,16 +27,22 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import play.mvc.Http;
+import play.test.Helpers;
 import services.publix.idcookie.IdCookieService;
+import testutils.publix.JPAMocker;
 import utils.common.IOUtils;
 
+import javax.persistence.EntityManager;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import static controllers.publix.workers.JatosPublix.SESSION_USERNAME;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -70,21 +82,26 @@ public class PublixUtilsTest {
 
     @Before
     public void setup() {
+        resultCreator = mock(ResultCreator.class);
         IdCookieService idCookieService = mock(IdCookieService.class);
         GroupAdministration groupAdministration = mock(GroupAdministration.class);
-        WorkerDao workerDao = mock(WorkerDao.class);
-        StudyLogger studyLogger = mock(StudyLogger.class);
-        resultCreator = mock(ResultCreator.class);
         studyResultDao = mock(StudyResultDao.class);
         componentDao = mock(ComponentDao.class);
         componentResultDao = mock(ComponentResultDao.class);
+        WorkerDao workerDao = mock(WorkerDao.class);
         userDao = mock(UserDao.class);
+        StudyLogger studyLogger = mock(StudyLogger.class);
         ioUtils = mock(IOUtils.class);
+        DefaultJson defaultJson = new DefaultJson();
 
-        publixUtils = new PublixUtils(resultCreator, idCookieService, groupAdministration,
-                studyResultDao, componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils);
+        publixUtils = new PublixUtils(resultCreator, idCookieService, groupAdministration, studyResultDao,
+                componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils, defaultJson);
+
+        EntityManager entityManager = Mockito.mock(EntityManager.class);
+        JPAMocker.mockDaoTransactions(entityManager, studyResultDao, componentDao, componentResultDao, workerDao, userDao);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Study newStudyWithComponents(boolean linear, Component... components) {
         Study s = new Study();
         s.setId(1L);
@@ -124,7 +141,7 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void retrieveFirstActiveComponent_returnsFirstActive() throws Exception {
+    public void retrieveFirstActiveComponent_returnsFirstActive() {
         Component c1 = newComponent(1, "c1", false, true);
         Component c2 = newComponent(2, "c2", true, true);
         Study s = newStudyWithComponents(true, c1, c2);
@@ -133,8 +150,8 @@ public class PublixUtilsTest {
         assertEquals(c2, first);
     }
 
-    @Test(expected = NotFoundPublixException.class)
-    public void retrieveFirstActiveComponent_throwsWhenNoneActive() throws Exception {
+    @Test(expected = NotFoundException.class)
+    public void retrieveFirstActiveComponent_throwsWhenNoneActive() {
         Component c1 = newComponent(1, "c1", false, true);
         Component c2 = newComponent(2, "c2", false, true);
         Study s = newStudyWithComponents(true, c1, c2);
@@ -142,7 +159,7 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void retrieveComponent_success() throws Exception {
+    public void retrieveComponent_success() {
         Component c = newComponent(5, "x", true, true);
         Study s = new Study();
         s.setId(99L);
@@ -153,27 +170,30 @@ public class PublixUtilsTest {
         assertSame(c, res);
     }
 
-    @Test(expected = NotFoundPublixException.class)
-    public void retrieveComponent_notFound() throws Exception {
+    @Test(expected = NotFoundException.class)
+    public void retrieveComponent_notFound() {
         Study s = new Study();
         s.setId(11L);
         when(componentDao.findById(123L)).thenReturn(null);
         publixUtils.retrieveComponent(s, 123L);
     }
 
-    @Test(expected = BadRequestPublixException.class)
-    public void retrieveComponent_wrongStudy() throws Exception {
-        Study s = new Study(); s.setId(1L);
-        Study other = new Study(); other.setId(2L);
+    @Test(expected = BadRequestException.class)
+    public void retrieveComponent_wrongStudy() {
+        Study s = new Study();
+        s.setId(1L);
+        Study other = new Study();
+        other.setId(2L);
         Component c = newComponent(5, "x", true, true);
         c.setStudy(other);
         when(componentDao.findById(5L)).thenReturn(c);
         publixUtils.retrieveComponent(s, 5L);
     }
 
-    @Test(expected = ForbiddenPublixException.class)
-    public void retrieveComponent_inactive() throws Exception {
-        Study s = new Study(); s.setId(1L);
+    @Test(expected = ForbiddenException.class)
+    public void retrieveComponent_inactive() {
+        Study s = new Study();
+        s.setId(1L);
         Component c = newComponent(5, "x", false, true);
         c.setStudy(s);
         when(componentDao.findById(5L)).thenReturn(c);
@@ -185,7 +205,9 @@ public class PublixUtilsTest {
         Study s = new Study();
         StudyResult sr = newStudyResult(s);
         Component c = newComponent(1, "a", true, true);
-        newComponentResult(sr, c, ComponentState.STARTED);
+        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
 
         Optional<ComponentResult> current = publixUtils.retrieveCurrentComponentResult(sr);
         assertTrue(current.isPresent());
@@ -196,18 +218,22 @@ public class PublixUtilsTest {
         Study s = new Study();
         StudyResult sr = newStudyResult(s);
         Component c = newComponent(1, "a", true, true);
-        newComponentResult(sr, c, ComponentState.FINISHED);
+        ComponentResult cr = newComponentResult(sr, c, ComponentState.FINISHED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
 
         Optional<ComponentResult> current = publixUtils.retrieveCurrentComponentResult(sr);
         assertFalse(current.isPresent());
     }
 
     @Test
-    public void retrieveStartedComponentResult_returnsExistingCurrent() throws Exception {
+    public void retrieveStartedComponentResult_returnsExistingCurrent() {
         Study s = new Study();
         StudyResult sr = newStudyResult(s);
         Component c = newComponent(1, "a", true, true);
         ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
 
         ComponentResult res = publixUtils.retrieveStartedComponentResult(c, sr);
         assertSame(cr, res);
@@ -215,11 +241,12 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void retrieveStartedComponentResult_startsNewIfNone() throws Exception {
+    public void retrieveStartedComponentResult_startsNewIfNone() {
         Study s = new Study();
         Component c = newComponent(1, "a", true, true);
         StudyResult sr = newStudyResult(s);
         ComponentResult created = new ComponentResult();
+
         when(resultCreator.createComponentResult(sr, c)).thenReturn(created);
 
         ComponentResult res = publixUtils.retrieveStartedComponentResult(c, sr);
@@ -228,16 +255,18 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void startComponent_allowsReloadWhenReloadable() throws Exception {
+    public void startComponent_Run_allowsReloadWhenReloadable() {
         Component c = newComponent(1, "a", true, true);
         Study s = newStudyWithComponents(true, c);
         StudyResult sr = newStudyResult(s);
         ComponentResult last = newComponentResult(sr, c, ComponentState.STARTED);
 
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(last));
+
         ComponentResult created = new ComponentResult();
         when(resultCreator.createComponentResult(sr, c)).thenReturn(created);
 
-        ComponentResult res = publixUtils.startComponent(c, sr, "msg");
+        ComponentResult res = publixUtils.startComponentRun(c, sr, "msg");
         assertSame(created, res);
         // Last should be set to RELOADED and updated
         assertEquals(ComponentState.RELOADED, last.getComponentState());
@@ -245,15 +274,17 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void startComponent_forbidsReloadWhenNotReloadable() {
+    public void startComponent_Run_forbidsReloadWhenNotReloadable() {
         Component c = newComponent(1, "a", true, false);
         Study s = newStudyWithComponents(true, c);
         StudyResult sr = newStudyResult(s);
         sr.setStudyState(StudyState.STARTED);
-        newComponentResult(sr, c, ComponentState.STARTED);
+        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
 
         try {
-            publixUtils.startComponent(c, sr, "msg");
+            publixUtils.startComponentRun(c, sr, "msg");
             fail("Expected ForbiddenReloadException");
         } catch (ForbiddenReloadException e) {
             // ok
@@ -261,34 +292,37 @@ public class PublixUtilsTest {
             fail("Unexpected exception: " + e);
         }
         // Last should be set to FAIL and updated
-        ComponentResult last = sr.getLastComponentResult().get();
+        ComponentResult last = lastElement(sr.getComponentResultList()).orElseThrow();
+        componentResultDao.findLastByStudyResult(sr);
         assertEquals(ComponentState.FAIL, last.getComponentState());
         verify(componentResultDao, atLeastOnce()).merge(last);
     }
 
     @Test
-    public void startComponent_forbidsNonLinearFlow() {
+    public void startComponent_Run_forbidsNonLinearFlow() {
         Component c1 = newComponent(1, "a", true, true);
         Component c2 = newComponent(2, "b", true, true);
         Study s = newStudyWithComponents(true, c1, c2); // linear
         StudyResult sr = newStudyResult(s);
-        newComponentResult(sr, c2, ComponentState.STARTED); // last was c2
+        ComponentResult cr = newComponentResult(sr, c2, ComponentState.STARTED); // last was c2
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
 
         try {
-            publixUtils.startComponent(c1, sr, "x"); // try to go back to c1
+            publixUtils.startComponentRun(c1, sr, "x"); // try to go back to c1
             fail("Expected ForbiddenNonLinearFlowException");
         } catch (ForbiddenNonLinearFlowException e) {
             // ok
         } catch (Exception e) {
             fail("Unexpected exception: " + e);
         }
-        ComponentResult last = sr.getLastComponentResult().get();
+        ComponentResult last = lastElement(sr.getComponentResultList()).orElseThrow();
         assertEquals(ComponentState.FAIL, last.getComponentState());
         verify(componentResultDao, atLeastOnce()).merge(last);
     }
 
     @Test
-    public void finishStudyResult_successful() {
+    public void finishStudyRun_successful() {
         Study s = new Study();
         StudyResult sr = newStudyResult(s);
         Worker worker = mock(Worker.class);
@@ -298,7 +332,9 @@ public class PublixUtilsTest {
         ComponentResult current = newComponentResult(sr, c, ComponentState.STARTED);
         ComponentResult other = newComponentResult(sr, c, ComponentState.STARTED);
 
-        String code = publixUtils.finishStudyResult(true, "done", sr);
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(current));
+
+        String code = publixUtils.finishStudyRun(true, "done", sr);
         assertEquals("CONF", code);
         assertEquals(StudyState.FINISHED, sr.getStudyState());
         assertEquals("done", sr.getMessage());
@@ -312,7 +348,7 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void finishStudyResult_unsuccessful() {
+    public void finishStudyRun_unsuccessful() {
         Study s = new Study();
         StudyResult sr = newStudyResult(s);
         Worker worker = mock(Worker.class);
@@ -321,7 +357,9 @@ public class PublixUtilsTest {
         Component c = newComponent(1, "a", true, true);
         ComponentResult current = newComponentResult(sr, c, ComponentState.STARTED);
 
-        String code = publixUtils.finishStudyResult(false, "fail", sr);
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(current));
+
+        String code = publixUtils.finishStudyRun(false, "fail", sr);
         assertNull(code);
         assertEquals(StudyState.FAIL, sr.getStudyState());
         assertEquals(ComponentState.FAIL, current.getComponentState());
@@ -329,7 +367,7 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void abortStudy_setsAbortedAndPurgesAndRemoves() throws IOException {
+    public void abortStudy_Run_setsAbortedAndPurgesAndRemoves() throws IOException {
         Study s = new Study();
         StudyResult sr = newStudyResult(s);
         sr.setStudySessionData("x");
@@ -337,7 +375,7 @@ public class PublixUtilsTest {
         ComponentResult cr1 = newComponentResult(sr, c, ComponentState.STARTED);
         ComponentResult cr2 = newComponentResult(sr, c, ComponentState.STARTED);
 
-        publixUtils.abortStudy("bye", sr);
+        publixUtils.abortStudyRun("bye", sr);
 
         assertEquals(StudyState.ABORTED, sr.getStudyState());
         assertEquals("bye", sr.getMessage());
@@ -352,7 +390,7 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void setPreStudyState_transitionsWhenMovedBeyondFirst() throws Exception {
+    public void setPreStudyState_transitionsWhenMovedBeyondFirst() {
         Component c1 = newComponent(1, "a", true, true);
         Component c2 = newComponent(2, "b", true, true);
         Study s = newStudyWithComponents(true, c1, c2);
@@ -366,7 +404,7 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void setPreStudyState_keepsPreOnFirstComponent() throws Exception {
+    public void setPreStudyState_keepsPreOnFirstComponent() {
         Component c1 = newComponent(1, "a", true, true);
         Study s = newStudyWithComponents(true, c1);
         StudyResult sr = newStudyResult(s);
@@ -379,7 +417,7 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void isFirstComponentInPreviewStudy_trueOnlyOnFirstAndPre() throws Exception {
+    public void isFirstComponentInPreviewStudy_trueOnlyOnFirstAndPre() {
         Component c1 = newComponent(1, "a", true, true);
         Component c2 = newComponent(2, "b", true, true);
         Study s = newStudyWithComponents(true, c1, c2);
@@ -399,13 +437,11 @@ public class PublixUtilsTest {
     @Test
     public void setUrlQueryParameter_extractsAndStoresJson() {
         StudyResult sr = new StudyResult();
-        Map<String, String[]> map = new HashMap<>();
-        map.put("a", new String[]{"1"});
-        map.put("b", new String[]{"x"});
-        Http.Request request = Mockito.mock(Http.Request.class);
-        when(request.queryString()).thenReturn(map);
 
-        publixUtils.setUrlQueryParameter(request, sr);
+        Http.Request request = Helpers.fakeRequest("GET", "/jatos?a=1&b=x").build();
+        Context.setCurrent(new Context(request));
+
+        publixUtils.setUrlQueryParameter(sr);
 
         String json = sr.getUrlQueryParameters();
         assertTrue(json.contains("\"a\":\"1\""));
@@ -413,64 +449,61 @@ public class PublixUtilsTest {
     }
 
     @Test
-    public void retrieveSignedinUser_successAndFailures() throws Exception {
-        Http.Session session = mock(Http.Session.class);
-        when(session.getOptional(JatosPublix.SESSION_USERNAME)).thenReturn(Optional.of("alice"));
-
-        Http.Request request = mock(Http.Request.class);
-        when(request.session()).thenReturn(session);
+    public void retrieveSignedinUser_successAndFailures() {
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
+        Context.current().response().putSession(SESSION_USERNAME, "alice");
 
         User user = new User();
         user.setUsername("alice");
         when(userDao.findByUsername("alice")).thenReturn(user);
 
-        User res = publixUtils.retrieveSignedinUser(request);
+        User res = publixUtils.retrieveSignedinUser();
         assertSame(user, res);
 
         // No username in session
-        when(session.getOptional(JatosPublix.SESSION_USERNAME)).thenReturn(Optional.empty());
+        Context.current().response().removeSession(SESSION_USERNAME);
         try {
-            publixUtils.retrieveSignedinUser(request);
+            publixUtils.retrieveSignedinUser();
             fail("Expected ForbiddenPublixException");
-        } catch (ForbiddenPublixException e) {
+        } catch (ForbiddenException e) {
             // expected
         }
 
         // User not found
-        when(session.getOptional(JatosPublix.SESSION_USERNAME)).thenReturn(Optional.of("bob"));
+        Context.current().response().putSession(SESSION_USERNAME, "bob");
         when(userDao.findByUsername("bob")).thenReturn(null);
         try {
-            publixUtils.retrieveSignedinUser(request);
+            publixUtils.retrieveSignedinUser();
             fail("Expected ForbiddenPublixException");
-        } catch (ForbiddenPublixException e) {
+        } catch (ForbiddenException e) {
             // expected
         }
     }
 
     @Test
-    public void fetchJatosRunFromSession_parsesValueOrThrows() throws Exception {
-        Http.Session session = mock(Http.Session.class);
-        // First time return "RUN_STUDY", second "INVALID", and third Optional.empty()
-        when(session.getOptional("jatos_run")).thenReturn(Optional.of("RUN_STUDY"))
-                .thenReturn(Optional.of("INVALID")).thenReturn(Optional.empty());
+    public void fetchJatosRunFromSession_parsesValueOrThrows() {
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
 
         // Valid
-        JatosPublix.JatosRun run = publixUtils.fetchJatosRunFromSession(session);
+        Context.current().response().putSession("jatos_run", "RUN_STUDY");
+        JatosPublix.JatosRun run = publixUtils.fetchJatosRunFromSession();
         assertEquals(JatosPublix.JatosRun.RUN_STUDY, run);
 
         // Malformed
+        Context.current().response().putSession("jatos_run", "INVALID");
         try {
-            publixUtils.fetchJatosRunFromSession(session);
+            publixUtils.fetchJatosRunFromSession();
             fail("Expected BadRequestPublixException");
-        } catch (BadRequestPublixException e) {
+        } catch (BadRequestException e) {
             // expected
         }
 
         // Missing
+        Context.current().response().removeSession("jatos_run");
         try {
-            publixUtils.fetchJatosRunFromSession(session);
+            publixUtils.fetchJatosRunFromSession();
             fail("Expected ForbiddenPublixException");
-        } catch (ForbiddenPublixException e) {
+        } catch (ForbiddenException e) {
             // expected
         }
     }
@@ -482,19 +515,27 @@ public class PublixUtilsTest {
         Component c = newComponent(1, "a", true, true);
         ComponentResult cr1 = newComponentResult(sr, c, ComponentState.FINISHED);
         ComponentResult cr2 = newComponentResult(sr, c, ComponentState.FINISHED);
+        when(componentResultDao.findIdsByStudyResultAndComponent(sr.getId(), c))
+                .thenReturn(new ArrayList<>(List.of(cr1.getId(), cr2.getId())));
 
         // The list is [cr1, cr2]; logic reverses it and checks cr2 first
-        File f1 = File.createTempFile("jatos-test1", ".txt");
-        File f2 = File.createTempFile("jatos-test2", ".txt");
+        Path f1 = Files.createTempFile("jatos-test1", ".txt");
+        Path f2 = Files.createTempFile("jatos-test2", ".txt");
         // Simulate first check returns non-existent, second exists
         when(ioUtils.getResultUploadFileSecurely(sr.getId(), cr1.getId(), "x.txt")).thenReturn(f1);
         when(ioUtils.getResultUploadFileSecurely(sr.getId(), cr2.getId(), "x.txt")).thenReturn(f2);
         // Delete f1 to make exists() false
-        //noinspection ResultOfMethodCallIgnored
-        f2.delete();
+        Files.deleteIfExists(f2);
 
-        Optional<File> res = publixUtils.retrieveLastUploadedResultFile(sr, c, "x.txt");
+        Optional<Path> res = publixUtils.retrieveLastUploadedResultFile(sr, c, "x.txt");
         assertTrue(res.isPresent());
         assertEquals(f1, res.get());
+    }
+
+    public static <T> Optional<T> lastElement(List<T> list) {
+        if (list == null || list.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(list.get(list.size() - 1));
     }
 }

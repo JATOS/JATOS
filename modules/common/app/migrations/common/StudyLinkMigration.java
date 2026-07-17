@@ -2,7 +2,7 @@ package migrations.common;
 
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.Worker;

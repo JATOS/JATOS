@@ -7,7 +7,6 @@ import com.google.common.base.Strings;
 import daos.common.ComponentDao;
 import daos.common.StudyLinkDao;
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerType;
 import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
@@ -17,6 +16,7 @@ import models.common.Component;
 import models.common.Study;
 import models.common.StudyLink;
 import models.common.StudyResult;
+import models.common.workers.WorkerType;
 import play.Logger;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -26,6 +26,8 @@ import services.publix.PublixHelpers;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Optional;
+
+import static actions.common.TransactionalAction.Mode.READ_ONLY;
 
 /**
  * Interceptor for Publix: handles all requests for JATOS' public API (Publix) and forwards them to one of the
@@ -64,6 +66,7 @@ public class PublixInterceptor extends Controller {
      * 2. Takes the study code as a query parameter. A text shown can be customized in the study properties.
      * It always shows a ▶ button that the worker has to press to confirm the intention of running the study.
      */
+    // @formatter:on
     @Async(Executor.IO)
     public Result studyEntry(String studyCode) {
         String studyEntryMsg = null;
@@ -93,8 +96,8 @@ public class PublixInterceptor extends Controller {
     }
 
     /**
-     * Facilitates multiple study runs in parallel, each in its own iframe. If 'frames' is 1 (or lower), it just redirects
-     * to the normal run endpoint.
+     * Facilitates multiple study runs in parallel, each in its own iframe. If 'frames' is 1 (or lower), it just
+     * redirects to the normal run endpoint.
      */
     public Result runx(String code, Long frames, Long hSplit, Long vSplit) {
         LOGGER.info(".runx: code " + code + ", frames " + frames + ", hSplit " + hSplit + ", vSplit " + vSplit);
@@ -125,14 +128,14 @@ public class PublixInterceptor extends Controller {
     @Async(Executor.IO)
     @Transactional
     public Result startComponent(Http.Request request, String studyResultUuid, String componentUuid, String message) {
-            StudyResult studyResult = fetchStudyResult(studyResultUuid);
-            Component component = fetchComponent(componentUuid, studyResult.getStudy());
-            checkStudyResultAndComponent(studyResult, component);
-            LOGGER.info(".startComponent: studyResultId " + studyResult.getId() + ", " + "componentId " + component.getId());
+        StudyResult studyResult = fetchStudyResult(studyResultUuid);
+        Component component = fetchComponent(componentUuid, studyResult.getStudy());
+        checkStudyResultAndComponent(studyResult, component);
+        LOGGER.info(".startComponent: studyResultId " + studyResult.getId() + ", " + "componentId " + component.getId());
 
-            return publixDispatcher
-                    .forWorkerType(studyResult.getWorkerType())
-                    .startComponent(request, studyResult, component, message);
+        return publixDispatcher
+                .forWorkerType(studyResult.getWorkerType())
+                .startComponent(request, studyResult, component, message);
     }
 
     @Async(Executor.IO)
@@ -209,16 +212,16 @@ public class PublixInterceptor extends Controller {
     }
 
     @Async(Executor.IO)
-    @Transactional
+    @Transactional(READ_ONLY)
     public Result downloadResultFile(Http.Request request, String studyResultUuid, String filename, String componentId) {
-            StudyResult studyResult = fetchStudyResult(studyResultUuid);
-            LOGGER.info(".downloadResultFile: studyResultId " + studyResult.getId() + ", "
-                    + "componentId " + componentId + ", "
-                    + "filename " + filename);
+        StudyResult studyResult = fetchStudyResult(studyResultUuid);
+        LOGGER.info(".downloadResultFile: studyResultId " + studyResult.getId() + ", "
+                + "componentId " + componentId + ", "
+                + "filename " + filename);
 
-            return publixDispatcher
-                    .forWorkerType(studyResult.getWorkerType())
-                    .downloadResultFile(request, studyResult, filename, componentId);
+        return publixDispatcher
+                .forWorkerType(studyResult.getWorkerType())
+                .downloadResultFile(request, studyResult, filename, componentId);
     }
 
     @IdCookies
@@ -246,7 +249,7 @@ public class PublixInterceptor extends Controller {
     }
 
     @Async(Executor.IO)
-    @Transactional
+    @Transactional(READ_ONLY)
     public Result log(Http.Request request, String studyResultUuid, String componentUuid) {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);
         Component component = fetchComponent(componentUuid, studyResult.getStudy());
@@ -274,7 +277,7 @@ public class PublixInterceptor extends Controller {
     }
 
     private void checkStudyResultAndComponent(StudyResult studyResult, Component component) {
-        if (PublixHelpers.studyRunDone(studyResult)) {
+        if (PublixHelpers.studyResultDone(studyResult)) {
             throw new ForbiddenException(
                     "Study run is already finished (study result " + studyResult.getId() + ")");
         }

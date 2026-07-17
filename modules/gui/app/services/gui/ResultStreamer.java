@@ -1,12 +1,8 @@
 package services.gui;
 
-import exceptions.common.JatosException;
-import general.common.ApiEnvelope.ErrorCode;
-import http.common.Http.Context;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
-import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,17 +11,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerType;
+import exceptions.common.JatosException;
 import general.common.Common;
 import general.common.StudyLogger;
+import http.common.Http.Context;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import play.Logger;
-import play.db.jpa.JPAApi;
 import play.libs.Json;
 import play.mvc.Http;
 import utils.common.IOUtils;
-import json.common.JsonUtils;
 import utils.common.ZipUtil;
 
 import javax.inject.Inject;
@@ -56,29 +53,26 @@ public class ResultStreamer {
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final StudyDao studyDao;
-    private final JsonUtils jsonUtils;
+    private final DomainJsonMapper domainJsonMapper;
     private final AuthorizationService authorizationService;
     private final StudyLogger studyLogger;
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
-    private final JPAApi jpaApi;
 
     @Inject
     ResultStreamer(ComponentResultDao componentResultDao,
                    StudyResultDao studyResultDao,
                    StudyDao studyDao,
-                   JsonUtils jsonUtils,
+                   DomainJsonMapper domainJsonMapper,
                    AuthorizationService authorizationService,
                    StudyLogger studyLogger,
-                   ComponentResultIdsExtractor componentResultIdsExtractor,
-                   JPAApi jpaApi) {
+                   ComponentResultIdsExtractor componentResultIdsExtractor) {
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.studyDao = studyDao;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
         this.authorizationService = authorizationService;
         this.studyLogger = studyLogger;
         this.componentResultIdsExtractor = componentResultIdsExtractor;
-        this.jpaApi = jpaApi;
     }
 
     /**
@@ -102,16 +96,16 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByStudyPaginated(Writer writer, Study study) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = jpaApi.withTransaction(entityManager -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(entityManager -> {
             return studyResultDao.countByStudy(study);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (first + maxDbQuerySize) >= resultCount;
-            jpaApi.withTransaction(entityManager -> {
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
                 List<StudyResult> resultList = studyResultDao.findAllByStudy(study, first, maxDbQuerySize);
-                Errors.rethrow().run(() -> writeStudyResults(writer, isLastPage, resultList));
+                writeStudyResults(writer, isLastPage, resultList);
             });
         }
     }
@@ -152,33 +146,32 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByBatchPaginated(Writer writer, Batch batch) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = jpaApi.withTransaction(entityManager -> {
-            return studyResultDao.countByBatch(batch, WorkerType.JATOS);
+        int resultCount = studyResultDao.withReadOnlyTransaction(entityManager -> {
+            return studyResultDao.countByBatchExcludingWorkerType(batch, WorkerType.JATOS);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (first + maxDbQuerySize) >= resultCount;
-            jpaApi.withTransaction(entityManager -> {
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
                 List<StudyResult> resultList = studyResultDao.findAllByBatch(batch, WorkerType.JATOS, first, maxDbQuerySize);
-                Errors.rethrow().run(() -> writeStudyResults(writer, isLastPage, resultList));
+                writeStudyResults(writer, isLastPage, resultList);
             });
         }
     }
 
     private void fetchStudyResultsByBatchAndWorkerTypePaginated(Writer writer, Batch batch, WorkerType workerType) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = jpaApi.withTransaction(entityManager -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(entityManager -> {
             return studyResultDao.countByBatchAndWorkerType(batch, workerType);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            jpaApi.withTransaction(entityManager -> {
-                List<StudyResult> resultList = studyResultDao
-                        .findAllByBatchAndWorkerType(batch, workerType, first, maxDbQuerySize);
-                Errors.rethrow().run(() -> writeStudyResults(writer, isLastPage, resultList));
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
+                List<StudyResult> resultList = studyResultDao.findAllByBatchAndWorkerType(batch, workerType, first, maxDbQuerySize);
+                writeStudyResults(writer, isLastPage, resultList);
             });
         }
     }
@@ -204,16 +197,16 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByGroupPaginated(Writer writer, GroupResult group) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = jpaApi.withTransaction(entityManager -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(entityManager -> {
             return studyResultDao.countByGroup(group);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            jpaApi.withTransaction(entityManager -> {
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
                 List<StudyResult> resultList = studyResultDao.findAllByGroup(group, first, maxDbQuerySize);
-                Errors.rethrow().run(() -> writeStudyResults(writer, isLastPage, resultList));
+                writeStudyResults(writer, isLastPage, resultList);
             });
         }
     }
@@ -240,16 +233,16 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByWorkerPaginated(Writer writer, Worker worker, User user) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = jpaApi.withTransaction(entityManager -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(entityManager -> {
             return studyResultDao.countByWorker(worker, user);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            jpaApi.withTransaction(entityManager -> {
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
                 List<StudyResult> resultList = studyResultDao.findAllByWorker(worker, user, first, maxDbQuerySize);
-                Errors.rethrow().run(() -> writeStudyResults(writer, isLastPage, resultList));
+                writeStudyResults(writer, isLastPage, resultList);
             });
         }
     }
@@ -275,19 +268,16 @@ public class ResultStreamer {
 
     private void fetchComponentResultsPaginated(Writer writer, Component component) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = jpaApi.withTransaction(entityManager -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(entityManager -> {
             return componentResultDao.countByComponent(component);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            jpaApi.withTransaction(entityManager -> {
-                Errors.rethrow().run(() -> {
-                    List<ComponentResult> resultList = componentResultDao.findAllByComponent(component, first,
-                            maxDbQuerySize);
-                    writeComponentResult(writer, isLastPage, resultList);
-                });
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
+                List<ComponentResult> resultList = componentResultDao.findAllByComponent(component, first, maxDbQuerySize);
+                writeComponentResults(writer, isLastPage, resultList);
             });
         }
     }
@@ -315,7 +305,7 @@ public class ResultStreamer {
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-                        fetchComponentResultDataByIds(writer, componentResultIdList, signedinUser);
+                        writeComponentResultDataByIds(writer, componentResultIdList, signedinUser);
                         writer.flush();
                     } catch (Exception e) {
                         LOGGER.error(".streamComponentResult: ", e);
@@ -327,54 +317,66 @@ public class ResultStreamer {
      * Fetches the ComponentResults that correspond to the IDs, checks them and writes their result data into the given
      * Writer. Fetches them one by one to reduce memory usage.
      */
-    private void fetchComponentResultDataByIds(Writer writer, List<Long> componentResultIdList, User user) {
+    void writeComponentResultDataByIds(Writer writer, List<Long> componentResultIdList, User user) {
         Set<Study> studies = new HashSet<>();
         for (Long componentResultId : componentResultIdList) {
-            jpaApi.withTransaction(entityManager -> {
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);
                 if (componentResult != null) {
-                    Errors.rethrow().run(() -> authorizationService.canUserAccessComponentResult(componentResult, user, false));
+                    authorizationService.canUserAccessComponentResult(componentResult, user, false);
                     studies.add(componentResult.getStudyResult().getStudy());
-                    Errors.rethrow().run(() -> writeComponentResultData(writer, componentResult));
+                    writeComponentResultData(writer, componentResult);
                 } else {
-                    LOGGER.warn("A component result with ID " + componentResultId + " doesn't exist.");
+                    LOGGER.warn(".fetchComponentResultDataByIds: A component result with ID " + componentResultId + " doesn't exist.");
                 }
             });
         }
         studies.forEach(study -> studyLogger.log(study, user, "Exported result data to file"));
     }
 
-    private void writeStudyResults(Writer writer, boolean isLastPage, List<StudyResult> resultList) throws IOException {
-        List<Long> srids = resultList.stream().map(StudyResult::getId).collect(Collectors.toList());
-        Map<Long, Integer> componentResultCounts = studyResultDao.countComponentResultsForStudyResultIds(srids);
-        for (int i = 0; i < resultList.size(); i++) {
-            StudyResult result = resultList.get(i);
-            Integer componentResultCount = componentResultCounts.get(result.getId());
-            JsonNode resultNode = jsonUtils.studyResultAsJsonNode(result, componentResultCount);
-            writer.write(resultNode.toString());
-            boolean isLastResult = (i + 1) >= resultList.size();
-            if (!isLastPage || !isLastResult) {
-                writer.write(",\n");
+    void writeStudyResults(Writer writer, boolean isLastPage, List<StudyResult> resultList) {
+        try {
+            List<Long> srids = resultList.stream().map(StudyResult::getId).collect(Collectors.toList());
+            Map<Long, Integer> componentResultCounts = studyResultDao.countComponentResultsForStudyResultIds(srids);
+            for (int i = 0; i < resultList.size(); i++) {
+                StudyResult result = resultList.get(i);
+                Integer componentResultCount = componentResultCounts.get(result.getId());
+                JsonNode resultNode = domainJsonMapper.studyResultAsJsonNode(result, componentResultCount);
+                writer.write(resultNode.toString());
+                boolean isLastResult = (i + 1) >= resultList.size();
+                if (!isLastPage || !isLastResult) {
+                    writer.write(",\n");
+                }
             }
+        } catch (IOException e) {
+            throw new JatosException(e);
         }
     }
 
-    private void writeComponentResult(Writer writer, boolean isLastPage, List<ComponentResult> resultList) throws IOException {
-        for (int j = 0; j < resultList.size(); j++) {
-            ComponentResult result = resultList.get(j);
-            JsonNode resultNode = jsonUtils.componentResultAsJsonNode(result);
-            writer.write(resultNode.toString());
-            boolean isLastResult = (j + 1) >= resultList.size();
-            if (!isLastPage || !isLastResult) {
-                writer.write(",\n");
+    void writeComponentResults(Writer writer, boolean isLastPage, List<ComponentResult> resultList) {
+        try {
+            for (int j = 0; j < resultList.size(); j++) {
+                ComponentResult result = resultList.get(j);
+                JsonNode resultNode = domainJsonMapper.componentResultAsJsonNode(result);
+                writer.write(resultNode.toString());
+                boolean isLastResult = (j + 1) >= resultList.size();
+                if (!isLastPage || !isLastResult) {
+                    writer.write(",\n");
+                }
             }
+        } catch (IOException e) {
+            throw new JatosException(e);
         }
     }
 
-    private void writeComponentResultData(Writer writer, ComponentResult componentResult) throws IOException {
-        String resultData = componentResultDao.getData(componentResult.getId());
-        if (resultData == null) return;
-        writer.write(resultData + System.lineSeparator());
+    void writeComponentResultData(Writer writer, ComponentResult componentResult) {
+        try {
+            String resultData = componentResultDao.getData(componentResult.getId());
+            if (resultData == null) return;
+            writer.write(resultData + System.lineSeparator());
+        } catch (IOException e) {
+            throw new JatosException(e);
+        }
     }
 
     public enum ResultType {
@@ -407,9 +409,8 @@ public class ResultStreamer {
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (ZipOutputStream zipOut = new ZipOutputStream(outputStream, UTF_8)) {
-                        jpaApi.withTransaction(entityManager -> {
-                            Errors.rethrow().run(() -> writeResults(componentResultIds, signedinUser, zipOut,
-                                    resultsType, wrapObject));
+                        studyResultDao.withReadOnlyTransaction(entityManager -> {
+                            writeResults(componentResultIds, signedinUser, zipOut, resultsType, wrapObject);
                         });
                         zipOut.flush();
                     } catch (Exception e) {
@@ -426,7 +427,9 @@ public class ResultStreamer {
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
         Collections.sort(crids);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        return writeResults(crids, signedinUser, null, ResultType.METADATA_ONLY, wrapObject);
+        return studyResultDao.withReadOnlyTransaction(entityManager -> {
+            return writeResults(crids, signedinUser, null, ResultType.METADATA_ONLY, wrapObject);
+        });
     }
 
     /**
@@ -434,8 +437,8 @@ public class ResultStreamer {
      * metadata in JSON format. The content of what is written into the ZipOutputStream can be specified by a
      * ResultsType.
      */
-    private Path writeResults(List<Long> componentResultIds, User signedinUser, ZipOutputStream zipOut,
-                              ResultType resultsType, Map<String, Object> wrapObject) {
+    Path writeResults(List<Long> componentResultIds, User signedinUser, ZipOutputStream zipOut,
+                      ResultType resultsType, Map<String, Object> wrapObject) {
         try {
             List<Long> studyResultIds = studyResultDao.findIdsByComponentResultIds(componentResultIds);
 
@@ -469,7 +472,7 @@ public class ResultStreamer {
                 }
 
                 List<Long> sridsByStudy = studyResultDao.findIdsFromListThatBelongToStudy(studyResultIds, study.getId());
-                writeStudyResults(componentResultIds, sridsByStudy, zipOut, jGenerator, resultsType);
+                writeStudyResultsToZip(componentResultIds, sridsByStudy, zipOut, jGenerator, resultsType);
 
                 if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                     jGenerator.writeEndArray();
@@ -490,14 +493,14 @@ public class ResultStreamer {
                 ZipUtil.addFileToZip(zipOut, Path.of(""), Path.of("metadata.json"), metadataFile);
                 Files.delete(metadataFile);
             }
-            return resultsType == ResultType.METADATA_ONLY ? metadataFile: null;
+            return resultsType == ResultType.METADATA_ONLY ? metadataFile : null;
         } catch (IOException e) {
-            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
+            throw new JatosException(e);
         }
     }
 
-    private void writeStudyResults(List<Long> crids, List<Long> srids, ZipOutputStream zipOut,
-                                   JsonGenerator jGenerator, ResultType resultsType) {
+    private void writeStudyResultsToZip(List<Long> crids, List<Long> srids, ZipOutputStream zipOut,
+                                        JsonGenerator jGenerator, ResultType resultsType) {
         try {
             int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
 
@@ -508,53 +511,49 @@ public class ResultStreamer {
                     // Filter: Keep only the crids that are in the original request's crids (StudyResult can have more)
                     List<Long> someCrids = componentResultDao.findIdsByStudyResultId(studyResult.getId())
                             .stream().filter(crids::contains).collect(Collectors.toList());
-                    ArrayNode componentResultArrayNode = writeComponentResults(studyResult.getId(), someCrids, zipOut, resultsType);
+                    ArrayNode componentResultArrayNode = writeComponentResultsToZip(studyResult.getId(), someCrids, zipOut, resultsType);
 
                     if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
-                        ObjectNode studyResultNode = jsonUtils.studyResultMetadata(studyResult);
+                        ObjectNode studyResultNode = domainJsonMapper.studyResultMetadata(studyResult);
                         studyResultNode.set("componentResults", componentResultArrayNode);
                         jGenerator.writeTree(studyResultNode);
                     }
                 }
             }
         } catch (IOException e) {
-            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
+            throw new JatosException(e);
         }
     }
 
-    private ArrayNode writeComponentResults(Long studyResultId, List<Long> componentResultList, ZipOutputStream zipOut,
-                                            ResultType resultsType) {
+    ArrayNode writeComponentResultsToZip(Long studyResultId, List<Long> componentResultList, ZipOutputStream zipOut,
+                                         ResultType resultsType) {
         ArrayNode componentResultArrayNode = Json.mapper().createArrayNode();
         for (Long componentResultId : componentResultList) {
             // We have to do it one by one to save memory in case of large result data
-            jpaApi.withTransaction(entityManager -> {
+            studyResultDao.withReadOnlyTransaction(entityManager -> {
                 switch (resultsType) {
                     case METADATA_ONLY: {
                         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-                        componentResultArrayNode.add(jsonUtils.componentResultMetadata(componentResult));
+                        componentResultArrayNode.add(domainJsonMapper.componentResultMetadata(componentResult));
                         break;
                     }
                     case FILES_ONLY: {
-                        Errors.rethrow().run(() -> addFilesToZip(zipOut, studyResultId, componentResultId));
+                        addFilesToZip(zipOut, studyResultId, componentResultId);
                         break;
                     }
                     case DATA_ONLY: {
-                        Errors.rethrow().run(() -> {
-                            String data = componentResultDao.getData(componentResultId);
-                            String path = IOUtils.getResultsPathForZip(studyResultId, componentResultId) + "/data.txt";
-                            ZipUtil.addDataToZip(zipOut, data, path);
-                        });
+                        String data = componentResultDao.getData(componentResultId);
+                        String path = IOUtils.getResultsPathForZip(studyResultId, componentResultId) + "/data.txt";
+                        ZipUtil.addDataToZip(zipOut, data, path);
                         break;
                     }
                     case COMBINED: {
                         ComponentResult componentResult = componentResultDao.findById(componentResultId);
-                        componentResultArrayNode.add(jsonUtils.componentResultMetadata(componentResult));
-                        Errors.rethrow().run(() -> addFilesToZip(zipOut, studyResultId, componentResultId));
-                        Errors.rethrow().run(() -> {
-                            String data = componentResultDao.getData(componentResultId);
-                            String path = IOUtils.getResultsPathForZip(studyResultId, componentResultId) + "/data.txt";
-                            ZipUtil.addDataToZip(zipOut, data, path);
-                        });
+                        componentResultArrayNode.add(domainJsonMapper.componentResultMetadata(componentResult));
+                        addFilesToZip(zipOut, studyResultId, componentResultId);
+                        String data = componentResultDao.getData(componentResultId);
+                        String path = IOUtils.getResultsPathForZip(studyResultId, componentResultId) + "/data.txt";
+                        ZipUtil.addDataToZip(zipOut, data, path);
                         break;
                     }
                 }

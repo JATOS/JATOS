@@ -2,39 +2,41 @@ package controllers.gui;
 
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
+import actions.common.TransactionalAction.Transactional;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.*;
-import daos.common.worker.WorkerType;
 import exceptions.common.*;
-import general.common.*;
+import general.common.ApiEnvelope;
 import general.common.ApiEnvelope.ErrorCode;
+import general.common.Common;
+import general.common.StudyLogger;
 import http.common.Http.Context;
 import http.common.HttpUtils;
 import json.common.DefaultJson;
 import json.common.DirectoryStructureToJson;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import json.common.StrictJson;
-import play.libs.Files.TemporaryFile;
-import utils.common.*;
 import models.common.*;
 import models.common.User.Role;
+import models.common.workers.WorkerType;
 import models.gui.*;
 import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.http.HttpEntity;
+import play.libs.Files.TemporaryFile;
 import play.libs.Json;
 import play.mvc.*;
-import play.mvc.Http;
 import play.mvc.Http.MultipartFormData.FilePart;
 import scala.Option;
 import services.gui.*;
+import utils.common.IOUtils;
+import utils.common.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -45,6 +47,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.*;
 
+import static actions.common.TransactionalAction.Mode.READ_ONLY;
 import static auth.gui.AuthAction.Auth;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
@@ -81,7 +84,7 @@ public class Api extends Controller {
     private final ResultRemover resultRemover;
     private final ResultStreamer resultStreamer;
     private final AuthorizationService authorizationService;
-    private final JsonUtils jsonUtils;
+    private final DomainJsonMapper domainJsonMapper;
     private final LogFileReader logFileReader;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
@@ -110,7 +113,7 @@ public class Api extends Controller {
         ResultRemover resultRemover,
         ResultStreamer resultStreamer,
         AuthorizationService authorizationService,
-        JsonUtils jsonUtils,
+        DomainJsonMapper domainJsonMapper,
         LogFileReader logFileReader,
         StudyLogger studyLogger,
         IOUtils ioUtils,
@@ -138,7 +141,7 @@ public class Api extends Controller {
         this.resultRemover = resultRemover;
         this.resultStreamer = resultStreamer;
         this.authorizationService = authorizationService;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
         this.logFileReader = logFileReader;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
@@ -255,7 +258,7 @@ public class Api extends Controller {
     @Async(Executor.IO)
     @Auth(roles = ADMIN, types = {TOKEN, SESSION})
     @BodyParser.Of(BodyParser.Raw.class)
-    public Result createUser(Http.Request request) throws JsonProcessingException {
+    public Result createUser(Http.Request request) {
         JsonNode json = apiService.getJsonFromBody(request);
         NewUserProperties props = strictJson.jsonNodeAsObj(json, NewUserProperties.class);
         apiService.validateProps(props);
@@ -442,7 +445,7 @@ public class Api extends Controller {
 
         ArrayNode studiesArray = Json.mapper().createArrayNode();
         for (Study s : studies) {
-            studiesArray.add(jsonUtils.studyAsJsonForApi(s, withComponentProperties, withBatchProperties));
+            studiesArray.add(domainJsonMapper.studyAsJsonForApi(s, withComponentProperties, withBatchProperties));
         }
         return ok(ApiEnvelope.wrap(studiesArray).asJsonNode());
     }
@@ -498,7 +501,7 @@ public class Api extends Controller {
 
         Study study = studyService.createAndPersistStudyAndAssetsDir(props, renameAssets);
 
-        JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
+        JsonNode studyNode = domainJsonMapper.studyAsJsonForApi(study, false, false);
         return created(ApiEnvelope.wrap(studyNode).asJsonNode());
     }
 
@@ -536,7 +539,7 @@ public class Api extends Controller {
             Study study = importExportService.importStudyConfirmed(keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
 
-            JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
+            JsonNode studyNode = domainJsonMapper.studyAsJsonForApi(study, false, false);
             JsonNode envelope = ApiEnvelope.wrap(studyNode).asJsonNode();
             boolean wasOverwritten = Boolean.TRUE.equals(importInfo.get("studyExists"));
             return wasOverwritten ? ok(envelope) : created(envelope);
@@ -570,7 +573,7 @@ public class Api extends Controller {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, signedinUser);
 
-        JsonNode studiesNode = jsonUtils.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
+        JsonNode studiesNode = domainJsonMapper.studyAsJsonForApi(study, withComponentProperties, withBatchProperties);
         return ok(ApiEnvelope.wrap(studiesNode).asJsonNode());
     }
 
@@ -582,12 +585,13 @@ public class Api extends Controller {
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
     @BodyParser.Of(BodyParser.Raw.class)
-    public Result updateStudyProperties(Http.Request request, String id) {
+    @Transactional
+    public Result updateStudyProperties(Http.Request request, String id) throws IOException {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyService.getStudyFromIdOrUuid(id);
         authorizationService.canUserAccessStudy(study, signedinUser, true);
 
-        boolean isMemberOrSuperuser = study.hasUser(signedinUser) || UserService.isAllowedSuperuser(signedinUser);
+        boolean isMemberOrSuperuser = authorizationService.isMemberOrSuperuser(study, signedinUser);
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
 
         JsonNode json = apiService.getJsonFromBody(request);
@@ -614,12 +618,13 @@ public class Api extends Controller {
 
         studyService.updateStudyAndRenameAssets(study, props);
 
-        JsonNode studyNode = jsonUtils.studyAsJsonForApi(study, false, false);
+        JsonNode studyNode = domainJsonMapper.studyAsJsonForApi(study, false, false);
         return ok(ApiEnvelope.wrap(studyNode).asJsonNode());
     }
 
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Transactional
     public Result deleteStudy(String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -781,12 +786,14 @@ public class Api extends Controller {
 
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Transactional
     public Result addMemberToStudy(String id, Long userId) {
         return changeMemberOfStudy(id, userId, true);
     }
 
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Transactional
     public Result removeMemberFromStudy(String id, Long userId) {
         return changeMemberOfStudy(id, userId, false);
     }
@@ -848,6 +855,7 @@ public class Api extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Transactional
     @BodyParser.Of(BodyParser.Raw.class)
     public Result createComponent(Http.Request request, String studyId) {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
@@ -861,7 +869,7 @@ public class Api extends Controller {
 
         Component component = componentService.createAndPersistComponent(study, props);
 
-        JsonNode componentNode = jsonUtils.componentAsJsonNodeForApi(component);
+        JsonNode componentNode = domainJsonMapper.componentAsJsonNodeForApi(component);
         return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
     }
 
@@ -874,7 +882,7 @@ public class Api extends Controller {
 
         ArrayNode componentArray = Json.mapper().createArrayNode();
         for (Component c : study.getComponentList()) {
-            componentArray.add(jsonUtils.componentAsJsonNodeForApi(c));
+            componentArray.add(domainJsonMapper.componentAsJsonNodeForApi(c));
         }
         return ok(ApiEnvelope.wrap(componentArray).asJsonNode());
     }
@@ -886,7 +894,7 @@ public class Api extends Controller {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessComponent(component, signedinUser);
 
-        JsonNode componentNode = jsonUtils.componentAsJsonNodeForApi(component);
+        JsonNode componentNode = domainJsonMapper.componentAsJsonNodeForApi(component);
         return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
     }
 
@@ -904,15 +912,15 @@ public class Api extends Controller {
         props = strictJson.updateFromJson(props, jsonObj);
         apiService.validateProps(props);
 
-        componentService.renameHtmlFilePath(component, props.getHtmlFilePath(), props.isHtmlFileRename());
         componentService.updateComponentAfterEdit(component, props);
 
-        JsonNode componentNode = jsonUtils.componentAsJsonNodeForApi(component);
+        JsonNode componentNode = domainJsonMapper.componentAsJsonNodeForApi(component);
         return ok(ApiEnvelope.wrap(componentNode).asJsonNode());
     }
 
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Transactional
     public Result deleteComponent(String id) {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -931,7 +939,7 @@ public class Api extends Controller {
 
         ArrayNode batchArray = Json.mapper().createArrayNode();
         for (Batch b : study.getBatchList()) {
-            batchArray.add(jsonUtils.batchAsJsonForApi(b));
+            batchArray.add(domainJsonMapper.batchAsJsonForApi(b));
         }
         return ok(ApiEnvelope.wrap(batchArray).asJsonNode());
     }
@@ -943,7 +951,7 @@ public class Api extends Controller {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessBatch(batch, signedinUser);
 
-        JsonNode batchNode = jsonUtils.batchAsJsonForApi(batch);
+        JsonNode batchNode = domainJsonMapper.batchAsJsonForApi(batch);
         return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
     }
 
@@ -963,7 +971,7 @@ public class Api extends Controller {
         Batch batch = batchService.bindToBatch(props);
         batchService.initAndPersistBatch(batch, study);
 
-        JsonNode batchNode = jsonUtils.batchAsJsonForApi(batch);
+        JsonNode batchNode = domainJsonMapper.batchAsJsonForApi(batch);
         return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
     }
 
@@ -984,7 +992,7 @@ public class Api extends Controller {
         batchService.updateBatch(batch, props);
         batchDao.merge(batch);
 
-        JsonNode batchNode = jsonUtils.batchAsJsonForApi(batch);
+        JsonNode batchNode = domainJsonMapper.batchAsJsonForApi(batch);
         return ok(ApiEnvelope.wrap(batchNode).asJsonNode());
     }
 
@@ -1042,12 +1050,13 @@ public class Api extends Controller {
 
         List<GroupResult> groups = groupResultDao.findAllByBatch(batch);
 
-        JsonNode groupArray = jsonUtils.allGroupResults(groups);
+        JsonNode groupArray = domainJsonMapper.allGroupResults(groups);
         return ok(ApiEnvelope.wrap(groupArray).asJsonNode());
     }
 
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Transactional(READ_ONLY)
     public Result getGroupSession(Long id, boolean asText) {
         GroupResult groupResult = groupResultDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -1063,6 +1072,7 @@ public class Api extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Transactional
     @BodyParser.Of(BodyParser.Raw.class)
     public Result updateGroupSession(Http.Request request, Long id, Option<Long> version) {
         GroupResult groupResult = groupResultDao.findById(id);
@@ -1136,7 +1146,7 @@ public class Api extends Controller {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudyLink(studyLink, signedinUser);
 
-        JsonNode linkNode = jsonUtils.getStudyLinkData(studyLink);
+        JsonNode linkNode = domainJsonMapper.getStudyLinkData(studyLink);
         return ok(ApiEnvelope.wrap(linkNode).asJsonNode());
     }
 
@@ -1153,7 +1163,7 @@ public class Api extends Controller {
         studyLink.setActive(active);
         studyLinkDao.merge(studyLink);
 
-        JsonNode linkNode = jsonUtils.getStudyLinkData(studyLink);
+        JsonNode linkNode = domainJsonMapper.getStudyLinkData(studyLink);
         return ok(ApiEnvelope.wrap(linkNode).asJsonNode());
     }
 
@@ -1274,7 +1284,8 @@ public class Api extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
-    public Result exportSingleResultFile(Long componentResultId, String filename) {
+    @Transactional(READ_ONLY)
+    public Result exportSingleResultFile(Long componentResultId, String filename) throws IOException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessComponentResult(componentResult, signedinUser, false);

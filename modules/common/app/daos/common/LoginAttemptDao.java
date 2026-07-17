@@ -32,12 +32,12 @@ public class LoginAttemptDao extends AbstractDao {
     }
 
     public LoginAttempt find(Long id) {
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.find(LoginAttempt.class, id));
     }
 
     public void removeByUsername(String username) {
-        jpa.withTransaction(em -> {
+        withTransaction(em -> {
             em.createQuery("DELETE FROM LoginAttempt WHERE username = :username")
                     .setParameter("username", username)
                     .executeUpdate();
@@ -48,7 +48,7 @@ public class LoginAttemptDao extends AbstractDao {
      * Removes all LoginAttempts that are older than 1 minute
      */
     public void removeOldAttempts() {
-        jpa.withTransaction(em -> {
+        withTransaction(em -> {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MINUTE, -1);
             em.createQuery("DELETE FROM LoginAttempt WHERE date < :date")
@@ -61,7 +61,7 @@ public class LoginAttemptDao extends AbstractDao {
      * Returns the count of LoginAttempts that happened within the last minute for the given username and remoteAddress
      */
     public int countLoginAttemptsOfLastMin(String username, String remoteAddress) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MINUTE, -1);
             Number result = (Number) em.createQuery("SELECT COUNT(la) FROM LoginAttempt la " +

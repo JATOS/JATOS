@@ -5,9 +5,6 @@ import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.google.common.base.Strings;
-import exceptions.common.JatosException;
-import general.common.ApiEnvelope;
-import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import general.common.MessagesStrings;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +18,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static exceptions.common.JatosException.unchecked;
 
 /**
  * Utility class that handles access to the system's file system.
@@ -89,7 +88,7 @@ public class IOUtils {
             throw new NoSuchFileException(source.toString());
         }
         if (!Files.isRegularFile(source)) {
-            throw new JatosException("Source is not a regular file: " + source);
+            throw new IOException("Source is not a regular file: " + source);
         }
         if (Files.isDirectory(target)) {
             throw new FileAlreadyExistsException(target.toString(), null, "Target is a directory");
@@ -101,7 +100,7 @@ public class IOUtils {
         Path absoluteTarget = target.toAbsolutePath();
         Path targetParent = absoluteTarget.getParent();
         if (targetParent == null) {
-            throw new JatosException("Target has no parent directory: " + target);
+            throw new IOException("Target has no parent directory: " + target);
         }
         Files.createDirectories(targetParent);
 
@@ -342,7 +341,7 @@ public class IOUtils {
      */
     public Path getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new JatosException(MessagesStrings.FILE_MISSING);
+            throw new IOException(MessagesStrings.FILE_MISSING);
         }
         Path studyAssetsPath = generateStudyAssetsPath(dirName);
         return getFileSecurely(studyAssetsPath, filePath);
@@ -412,7 +411,7 @@ public class IOUtils {
             return;
         }
         if (!Files.isDirectory(dir)) {
-            throw new JatosException(MessagesStrings.dirPathIsntDir(dir.getFileName().toString()));
+            throw new IOException(MessagesStrings.dirPathIsntDir(dir.getFileName().toString()));
         }
         deleteRecursively(dir);
     }
@@ -428,7 +427,7 @@ public class IOUtils {
     public String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath) throws IOException {
         Path htmlFile = getFileInStudyAssetsDir(studyAssetsDirName, htmlFilePath);
         if (!Files.isRegularFile(htmlFile)) {
-            throw new JatosException(MessagesStrings.filePathIsntFile(htmlFile.getFileName().toString()));
+            throw new IOException(MessagesStrings.filePathIsntFile(htmlFile.getFileName().toString()));
         }
 
         Path clonedHtmlFile = generateCloneFile(htmlFile);
@@ -440,15 +439,6 @@ public class IOUtils {
     }
 
     /**
-     * Removes the part from the file's path that is the study assets path. The remaining string is only the local path
-     * within the study assets directory.
-     */
-    private String generateLocalFilePathInStudyAssets(Path localFile, String studyAssetsDirName) {
-        Path studyAssetsPath = generateStudyAssetsPath(studyAssetsDirName);
-        return studyAssetsPath.relativize(localFile).toString();
-    }
-
-    /**
      * Copies study assets' directory. Adds suffix '_clone' to the name of the new assets dir. If a dir with suffix
      * '_clone' already exists, it adds '_' + number instead.
      */
@@ -456,7 +446,7 @@ public class IOUtils {
         Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
         Path srcDir = getFileSecurely(studyAssetsRootPath, srcDirName);
         if (!Files.isDirectory(srcDir)) {
-            throw new JatosException(MessagesStrings.dirPathIsntDir(srcDir.getFileName().toString()));
+            throw new IOException(MessagesStrings.dirPathIsntDir(srcDir.getFileName().toString()));
         }
 
         Path destDir = generateCloneFile(srcDir);
@@ -507,7 +497,7 @@ public class IOUtils {
         Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
         Path targetDir = getFileSecurely(studyAssetsRootPath, targetDirName);
         if (Files.exists(targetDir)) {
-            throw new JatosException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getFileName().toString()));
+            throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getFileName().toString()));
         }
         moveRecursively(srcDir, targetDir);
     }
@@ -521,7 +511,7 @@ public class IOUtils {
         Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
         Path dir = getFileSecurely(studyAssetsRootPath, dirName);
         if (Files.exists(dir)) {
-            throw new JatosException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dirName));
+            throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dirName));
         }
         Files.createDirectories(dir);
     }
@@ -561,7 +551,7 @@ public class IOUtils {
             return;
         }
         if (Files.exists(newDir)) {
-            throw new JatosException(MessagesStrings.studyAssetsNotRenamedBecauseExists(oldDirName, newDirName));
+            throw new IOException(MessagesStrings.studyAssetsNotRenamedBecauseExists(oldDirName, newDirName));
         }
         if (!Files.exists(oldDir)) {
             createStudyAssetsDir(newDirName);
@@ -610,7 +600,7 @@ public class IOUtils {
         }
 
         if (Files.exists(newHtmlFile)) {
-            throw new JatosException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
+            throw new IOException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
         }
 
         moveFile(oldHtmlFile, newHtmlFile, false);
@@ -666,14 +656,10 @@ public class IOUtils {
         }
     }
 
-    public Path getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename) {
-        try {
-            Path baseDirPath = getResultUploadsDir(studyResultId, componentResultId);
-            Files.createDirectories(baseDirPath);
-            return getFileSecurely(baseDirPath, filename);
-        } catch (IOException e) {
-            throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
-        }
+    public Path getResultUploadFileSecurely(Long studyResultId, Long componentResultId, String filename) throws IOException {
+        Path baseDirPath = getResultUploadsDir(studyResultId, componentResultId);
+        Files.createDirectories(baseDirPath);
+        return getFileSecurely(baseDirPath, filename);
     }
 
     public void removeResultUploadsDir(Long studyResultId) throws IOException {
@@ -699,7 +685,10 @@ public class IOUtils {
                 .mapMaterializedValue(action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
     }
 
+    /**
+     * Wrapes any exception in a JatosException (which is a RuntimeException)
+     */
     public static Runnable deleteFile(Path file) {
-        return () -> JatosException.unchecked(() -> Files.deleteIfExists(file));
+        return () -> unchecked(() -> Files.deleteIfExists(file));
     }
 }

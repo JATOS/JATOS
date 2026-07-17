@@ -10,7 +10,6 @@ import models.common.*;
 import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -30,7 +29,6 @@ public class ResultRemover {
 
     private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
-    private final JPAApi jpa;
     private final AuthorizationService authorizationService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
@@ -40,15 +38,13 @@ public class ResultRemover {
     private final IOUtils ioUtils;
 
     @Inject
-    ResultRemover(JPAApi jpa,
-                  AuthorizationService authorizationService,
+    ResultRemover(AuthorizationService authorizationService,
                   ComponentResultDao componentResultDao,
                   StudyResultDao studyResultDao,
                   GroupResultDao groupResultDao,
                   WorkerDao workerDao,
                   StudyLogger studyLogger,
                   IOUtils ioUtils) {
-        this.jpa = jpa;
         this.authorizationService = authorizationService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
@@ -65,7 +61,7 @@ public class ResultRemover {
      * @param componentResultIdList List of IDs of ComponentResults
      */
     public void removeComponentResults(List<Long> componentResultIdList, boolean removeEmptyStudyResults) {
-        jpa.withTransaction(em -> {
+        studyResultDao.withTransaction(em -> {
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
             authorizationService.canUserAccessComponentResults(componentResultList, signedinUser, true);
@@ -105,7 +101,7 @@ public class ResultRemover {
      * result upload files.
      */
     void removeAllComponentResults(Component component) {
-        jpa.withTransaction(em -> {
+        componentResultDao.withTransaction(em -> {
             List<ComponentResult> componentResultList = componentResultDao.findAllByComponent(component);
             componentResultList.forEach(this::removeComponentResultFromStudyResult);
             for (ComponentResult componentResult : componentResultList) {
@@ -132,7 +128,7 @@ public class ResultRemover {
      * Removes all StudyResults that belong to the given batch. Removes result upload files.
      */
     void removeAllStudyResults(Batch batch) {
-        jpa.withTransaction(em -> {
+        studyResultDao.withTransaction(em -> {
             List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
             for (StudyResult studyResult : studyResultList) {
                 removeStudyResult(studyResult.getId());
@@ -146,7 +142,7 @@ public class ResultRemover {
      * Remove ComponentResult from its StudyResult and then remove itself. Removes result upload files.
      */
     private void removeComponentResult(long componentResultId) {
-        jpa.withTransaction(em -> {
+        componentResultDao.withTransaction(em -> {
             ComponentResult componentResult = componentResultDao.findById(componentResultId);
             StudyResult studyResult = componentResult.getStudyResult();
             if (studyResult == null) {
@@ -173,7 +169,7 @@ public class ResultRemover {
      * this StudyResult from the GroupResult and then remove StudyResult itself. Removes result upload files.
      */
     private void removeStudyResult(long studyResultId) {
-        jpa.withTransaction(em -> {
+        studyResultDao.withTransaction(em -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
 
             // Remove all component results of this study result
@@ -184,7 +180,7 @@ public class ResultRemover {
     }
 
     private void removeEmptyStudyResult(StudyResult studyResult) {
-        jpa.withTransaction(entityManager -> {
+        studyResultDao.withTransaction(entityManager -> {
             // Remove study result from the worker
             Worker worker = studyResult.getWorker();
             worker.removeStudyResult(studyResult);

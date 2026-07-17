@@ -171,10 +171,10 @@
                 type : 'DELETE',
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 beforeSend: WaitingModal.show,
-                success : function(result) {
+                success : function() {
                     window.location.replace(window.routes.Home.home);
                 },
-                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't delete study"),
+                error: (err) => err.responseJSON ? Alerts.error(err.responseJSON?.error?.message) : Alerts.error("Couldn't delete study"),
                 complete: WaitingModal.hide
             });
         };

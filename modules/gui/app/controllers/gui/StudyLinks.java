@@ -1,15 +1,18 @@
 package controllers.gui;
 
 import actions.common.AsyncAction.Async;
-import exceptions.common.NotFoundException;
-import http.common.Http.Context;
 import actions.common.AsyncAction.Executor;
+import actions.common.TransactionalAction.Transactional;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import exceptions.common.ForbiddenException;
+import exceptions.common.NotFoundException;
+import http.common.Http.Context;
+import json.common.DefaultJson;
+import json.common.DomainJsonMapper;
 import messaging.common.RequestScopeMessaging;
 import models.common.*;
 import models.common.GroupResult.GroupState;
@@ -21,15 +24,13 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.*;
-import json.common.DefaultJson;
-import json.common.JsonUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
@@ -55,7 +56,7 @@ public class StudyLinks extends Controller {
     private final StudyLinkDao studyLinkDao;
     private final FormFactory formFactory;
     private final DefaultJson defaultJson;
-    private final JsonUtils jsonUtils;
+    private final DomainJsonMapper domainJsonMapper;
 
     @Inject
     StudyLinks(AuthorizationService authorizationService,
@@ -71,7 +72,7 @@ public class StudyLinks extends Controller {
                StudyLinkDao studyLinkDao,
                FormFactory formFactory,
                DefaultJson defaultJson,
-               JsonUtils jsonUtils) {
+               DomainJsonMapper domainJsonMapper) {
         this.authorizationService = authorizationService;
         this.workerService = workerService;
         this.batchService = batchService;
@@ -85,7 +86,7 @@ public class StudyLinks extends Controller {
         this.studyLinkDao = studyLinkDao;
         this.formFactory = formFactory;
         this.defaultJson = defaultJson;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
     }
 
     /**
@@ -116,9 +117,9 @@ public class StudyLinks extends Controller {
         authorizationService.canUserAccessStudy(study, signedinUser);
         authorizationService.canUserAccessBatch(batch, signedinUser);
 
-        Integer resultCount = studyResultDao.countByBatch(batch, WorkerType.JATOS);
+        Integer resultCount = studyResultDao.countByBatchExcludingWorkerType(batch, WorkerType.JATOS);
         Integer groupCount = groupResultDao.countByBatch(batch);
-        return ok(jsonUtils.getBatchByStudyForUI(batch, resultCount, groupCount));
+        return ok(domainJsonMapper.getBatchByStudyForUI(batch, resultCount, groupCount));
     }
 
     /**
@@ -134,10 +135,10 @@ public class StudyLinks extends Controller {
 
         List<Batch> batchList = study.getBatchList();
         List<Integer> resultCountList = new ArrayList<>();
-        batchList.forEach(batch -> resultCountList.add(studyResultDao.countByBatch(batch, WorkerType.JATOS)));
+        batchList.forEach(batch -> resultCountList.add(studyResultDao.countByBatchExcludingWorkerType(batch, WorkerType.JATOS)));
         List<Integer> groupCountList = new ArrayList<>();
         batchList.forEach(batch -> groupCountList.add(groupResultDao.countByBatch(batch)));
-        return ok(jsonUtils.allBatchesByStudyForUI(batchList, resultCountList, groupCountList));
+        return ok(domainJsonMapper.allBatchesByStudyForUI(batchList, resultCountList, groupCountList));
     }
 
     /**
@@ -145,6 +146,7 @@ public class StudyLinks extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result submitCreatedBatch(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -168,7 +170,7 @@ public class StudyLinks extends Controller {
     @Auth(roles = USER)
     @SuppressWarnings("unused")
     public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) {
-        GroupResult groupResult = groupResultDao.findById(groupResultId);
+        GroupResult groupResult = groupResultDao.findByIdWithBatch(groupResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
 
@@ -208,13 +210,11 @@ public class StudyLinks extends Controller {
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
 
         BatchProperties batchProperties = form.get();
-        // Have to bind ALLOWED_WORKER_TYPES from checkboxes by hand
-        String[] allowedWorkerArray = request.body().asFormUrlEncoded().get(BatchProperties.ALLOWED_WORKER_TYPES);
-        if (allowedWorkerArray != null) {
-            Arrays.stream(allowedWorkerArray)
-                    .map(WorkerType::fromWireValue)
-                    .forEach(batchProperties::addAllowedWorkerType);
-        }
+        // Have to bind "allowedWorkerTypeValues" from checkboxes by hand
+        batchProperties.getAllowedWorkerTypeValues().stream()
+                .filter(Objects::nonNull)
+                .map(WorkerType::fromWireValue)
+                .forEach(batchProperties::addAllowedWorkerType);
 
         batchService.updateBatch(currentBatch, batchProperties);
         return ok();
@@ -250,6 +250,7 @@ public class StudyLinks extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result removeBatch(Long studyId, Long batchId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -275,11 +276,11 @@ public class StudyLinks extends Controller {
         authorizationService.canUserAccessStudy(study, signedinUser);
         authorizationService.canUserAccessBatch(batch, signedinUser);
 
-        Map<String, Integer> studyResultCountsPerWorker = workerService.retrieveStudyResultCountsPerWorker(batch);
+        Map<WorkerType, Integer> studyResultCountsPerType = studyResultDao.countByBatchForAllWorkerTypes(batch);
         Integer personalSingleLinkCount = studyLinkDao.countByBatchAndWorkerType(batch, WorkerType.PERSONAL_SINGLE);
         Integer personalMultipleLinkCount = studyLinkDao
                 .countByBatchAndWorkerType(batch, WorkerType.PERSONAL_MULTIPLE);
-        JsonNode studyLinksSetupData = jsonUtils.studyLinksSetupData(batch, studyResultCountsPerWorker,
+        JsonNode studyLinksSetupData = domainJsonMapper.studyLinksSetupData(batch, studyResultCountsPerType,
                 personalSingleLinkCount, personalMultipleLinkCount);
         return ok(studyLinksSetupData);
     }
@@ -299,7 +300,7 @@ public class StudyLinks extends Controller {
         WorkerType standardizedWorkerType = WorkerType.fromWireValue(workerType);
 
         List<StudyLink> studyLinkList = studyLinkDao.findAllByBatchAndWorkerType(batch, standardizedWorkerType);
-        return ok(jsonUtils.studyLinksData(studyLinkList));
+        return ok(domainJsonMapper.studyLinksData(studyLinkList));
     }
 
     /**
@@ -330,6 +331,7 @@ public class StudyLinks extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result editWorkerComment(Http.Request request, Long workerId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Worker worker = workerDao.findById(workerId);

@@ -285,7 +285,6 @@
                         "className": "btn-outline-secondary",
                         "init": (dt, node, config) => {
                             node.removeClass("btn-secondary");
-                            //if (workerType !== "PersonalSingle") node.disable();
                         },
                         "attr":  {
                             "data-bs-tooltip": "Show only study links that were already used by a worker.",
@@ -317,7 +316,7 @@
             let buttonText, count, hideBadge, tooltip;
             if (workerType === "PersonalMultiple") {
                 buttonText = "Results";
-                count = full.studyResultCount,
+                count = full.studyResultCount;
                 hideBadge = false;
                 tooltip = count > 0
                     ? `This study link has ${count} result(s) so far. Click here to go to a result page that only shows the study results of the worker that is associated to this study link.`
@@ -366,7 +365,7 @@
         $.ajax({
             url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, "", 1),
             success: () => studyLinksTable.ajax.reload(),
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study codes")
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts.error("Couldn't get study codes")
         });
     });
 

@@ -34,11 +34,11 @@ public class BatchDao extends AbstractDao {
     }
 
     public Batch findById(Long id) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> em.find(Batch.class, id));
+        return withReadOnlyTransaction((EntityManager em) -> em.find(Batch.class, id));
     }
 
     public Optional<Batch> findByUuid(String uuid) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT s FROM Batch s WHERE " + "s.uuid=:uuid";
             List<Batch> batchList = em.createQuery(queryStr, Batch.class)
                     .setParameter("uuid", uuid)
@@ -52,7 +52,7 @@ public class BatchDao extends AbstractDao {
      * Finds a study by its ID and eagerly fetches the batchList to avoid LazyInitializationException.
      */
     public Batch findByIdWithStudy(Long id) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT b FROM Batch b LEFT JOIN FETCH b.study WHERE b.id = :id";
             return em.createQuery(queryStr, Batch.class)
                     .setParameter("id", id)
@@ -65,7 +65,7 @@ public class BatchDao extends AbstractDao {
      * database.
      */
     public Batch findDefaultBatchByStudy(Study study) {
-        Optional<Batch> batch = jpa.withTransaction("default", true, (EntityManager em) -> {
+        Optional<Batch> batch = withReadOnlyTransaction((EntityManager em) -> {
             String hql = "SELECT b FROM Study s JOIN s.batchList b WHERE s = :study ORDER BY INDEX(b)";
             return em.createQuery(hql, Batch.class)
                     .setParameter("study", study)
@@ -84,7 +84,7 @@ public class BatchDao extends AbstractDao {
      * mismatched
      */
     public Long updateBatchSession(Long batchId, Long expectedVersion, String sessionData) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withTransaction(em -> {
             String query =
                     "UPDATE Batch b " +
                             "SET b.batchSessionData = :sessionData, " +
@@ -106,7 +106,7 @@ public class BatchDao extends AbstractDao {
      * Returns the number of Workers belonging to the given Batch.
      */
     public int countWorkers(Batch batch) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             Number result = (Number) em
                     .createNativeQuery("SELECT COUNT(*) FROM BatchWorkerMap WHERE batch_id = :batchId")
                     .setParameter("batchId", batch.getId())
@@ -125,10 +125,15 @@ public class BatchDao extends AbstractDao {
         return currentCount > batch.getMaxTotalWorkers();
     }
 
+    // todo in the past we had an exception with the "select 1 from BatchWorkerMap ..."
     public void addWorkerToBatch(Long batchId, Long workerId) {
-        jpa.withTransaction("default", true, (EntityManager em) -> {
-            em.createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) "
-                            + "VALUES (:batchId, :workerId)")
+        withTransaction(em -> {
+            em.createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) " +
+                            "SELECT :batchId, :workerId " +
+                            "WHERE NOT EXISTS (" +
+                            "SELECT 1 FROM BatchWorkerMap " +
+                            "WHERE batch_id = :batchId AND worker_id = :workerId" +
+                            ")")
                     .setParameter("batchId", batchId)
                     .setParameter("workerId", workerId)
                     .executeUpdate();
@@ -136,7 +141,7 @@ public class BatchDao extends AbstractDao {
     }
 
     public void removeWorkerFromBatch(Long batchId, Long workerId) {
-        jpa.withTransaction("default", true, (EntityManager em) -> {
+        withTransaction((EntityManager em) -> {
             em.createNativeQuery("DELETE FROM BatchWorkerMap WHERE batch_id = :batchId AND worker_id = :workerId")
                     .setParameter("batchId", batchId)
                     .setParameter("workerId", workerId)

@@ -4,15 +4,10 @@ import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
 import daos.common.UserDao;
 import exceptions.common.AuthException;
 import exceptions.common.ForbiddenException;
 import exceptions.common.ValidationException;
-import general.common.Common;
 import http.common.Http.Context;
 import models.common.User;
 import models.gui.NewUserProperties;
@@ -28,7 +23,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
 import java.util.List;
 
 import static messaging.common.FlashMessagingHelper.ERROR;
@@ -50,14 +44,17 @@ public class SigninGoogle extends Controller {
     private final AuthService authService;
     private final UserDao userDao;
     private final UserService userService;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @Inject
     SigninGoogle(AuthService authService,
                  UserService userService,
-                 UserDao userDao) {
+                 UserDao userDao,
+                 GoogleIdTokenVerifier googleIdTokenVerifier) {
         this.authService = authService;
         this.userDao = userDao;
         this.userService = userService;
+        this.googleIdTokenVerifier = googleIdTokenVerifier;
     }
 
     /**
@@ -66,7 +63,7 @@ public class SigninGoogle extends Controller {
     @Async(Executor.IO)
     public Result signin(Http.Request request) throws GeneralSecurityException, IOException {
         String idTokenString = request.body().asFormUrlEncoded().get("credential")[0];
-        GoogleIdToken idToken = fetchOAuthGoogleIdToken(idTokenString);
+        GoogleIdToken idToken = googleIdTokenVerifier.verify(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google sign in: Invalid ID token.");
             Context.current().response().putFlash(ERROR, "Google sign in: Invalid ID token");
@@ -100,20 +97,7 @@ public class SigninGoogle extends Controller {
         return redirect(redirectPage);
     }
 
-    /**
-     * Verifies and fetches an ID token from Google OAuth by sending an HTTP POST to Google. The actual authentication
-     * happens in the frontend with Google's gapi library.
-     */
-    protected GoogleIdToken fetchOAuthGoogleIdToken(String idTokenString) throws GeneralSecurityException, IOException {
-        HttpTransport transport = new NetHttpTransport();
-        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
-                .setAudience(Collections.singletonList(Common.getOauthGoogleClientId())).build();
-        return verifier.verify(idTokenString);
-    }
-
-    private User getOrRegisterUser(GoogleIdToken.Payload idTokenPayload)
-            throws AuthException, ValidationException, ForbiddenException {
+    private User getOrRegisterUser(GoogleIdToken.Payload idTokenPayload) {
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
         User user = userDao.findByUsername(normalizedUsername);
         if (user != null && !user.isOauthGoogle()) {

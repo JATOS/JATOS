@@ -1,25 +1,24 @@
 package services.gui;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.BadRequestException;
-import exceptions.common.ForbiddenException;
-import exceptions.common.NotFoundException;
 import models.common.Batch;
-import models.common.Study;
 import models.common.StudyLink;
-import models.common.workers.*;
+import models.common.workers.Worker;
+import models.common.workers.WorkerType;
+import models.gui.StudyCodeProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import testutils.gui.JPAMocker;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,8 +26,6 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for StudyLinkService.
- *
- * @author Kristian Lange
  */
 public class StudyLinkServiceTest {
 
@@ -36,135 +33,140 @@ public class StudyLinkServiceTest {
     private WorkerDao workerDao;
     private StudyLinkDao studyLinkDao;
     private WorkerService workerService;
-    private StudyService studyService;
-    private Checker checker;
 
     private StudyLinkService studyLinkService;
 
     @Before
     public void setUp() {
-        batchDao = mock(BatchDao.class);
-        workerDao = mock(WorkerDao.class);
-        studyLinkDao = mock(StudyLinkDao.class);
-        workerService = mock(WorkerService.class);
-        studyService = mock(StudyService.class);
-        checker = mock(Checker.class);
+        batchDao = Mockito.mock(BatchDao.class);
+        workerDao = Mockito.mock(WorkerDao.class);
+        studyLinkDao = Mockito.mock(StudyLinkDao.class);
+        workerService = Mockito.mock(WorkerService.class);
 
-        studyLinkService = new StudyLinkService(batchDao, workerDao, studyLinkDao, workerService, studyService, checker);
+        studyLinkService = new StudyLinkService(batchDao, workerDao, studyLinkDao, workerService);
+
+        JPAMocker.mockDaoTransactions(batchDao, workerDao, studyLinkDao);
     }
 
     @Test
-    public void getStudyCodes_personal_defaultBatch_andCommentDecoded() throws Exception {
-        // Study with default batch
-        Batch defaultBatch = new Batch();
-        defaultBatch.setId(100L);
-        Study study = new Study();
-        study.setId(200L);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(defaultBatch)));
+    public void getStudyCodes_personalSingle_returnsPersistedStudyCode() {
+        Batch batch = new Batch();
+        batch.setId(100L);
 
-        when(studyService.getStudyFromIdOrUuid("study-uuid-x")).thenReturn(study);
-        when(workerService.extractWorkerType("PersonalMultiple")).thenReturn(PersonalMultipleWorker.WORKER_TYPE);
+        StudyCodeProperties props = new StudyCodeProperties();
+        props.setType(WorkerType.PERSONAL_SINGLE);
+        props.setAmount(1);
+        props.setComment("participant comment");
 
-        // Capture created worker to assert decoded comment
+        List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
+
+        assertThat(studyCodes).hasSize(1);
+        assertThat(studyCodes.get(0)).isNotEmpty();
+
         ArgumentCaptor<Worker> workerCaptor = ArgumentCaptor.forClass(Worker.class);
+        verify(workerService).validateWorker(workerCaptor.capture());
+        assertEquals("participant comment", workerCaptor.getValue().getComment());
 
-        String encodedComment = "Hello%20World%2Bplus"; // -> "Hello World+plus"
-        JsonNode node = studyLinkService.getStudyCodes("study-uuid-x", scala.Option$.MODULE$.empty(),
-                "PersonalMultiple", encodedComment, null);
-
-        // Returned JSON should have one code (amount null -> 1)
-        assertThat(node.isArray()).isTrue();
-        assertThat(node.size()).isEqualTo(1);
-        assertThat(node.get(0).asText()).isNotEmpty();
-
-        // Worker creation happened with decoded comment
-        verify(workerDao).persist(workerCaptor.capture());
-        Worker created = workerCaptor.getValue();
-        assertEquals("Hello World+plus", created.getComment());
-
-        verify(studyLinkDao, times(1)).persist(any(StudyLink.class));
-        verify(batchDao, times(1)).merge(eq(defaultBatch));
-        verifyNoMoreInteractions(checker); // no batchId -> no checker call
+        verify(workerDao).persist(workerCaptor.getValue());
+        verify(batchDao).addWorkerToBatch(eq(batch.getId()), eq(workerCaptor.getValue().getId()));
+        verify(studyLinkDao).persist(any(StudyLink.class));
     }
 
     @Test
-    public void getStudyCodes_personal_withBatchId_checksPermissions() throws ForbiddenException, NotFoundException, BadRequestException {
-        // Create batch and study relations
+    public void getStudyCodes_personalMultiple_returnsRequestedNumberOfStudyCodes() {
         Batch batch = new Batch();
         batch.setId(101L);
-        Study study = new Study();
-        study.setId(201L);
-        study.addBatch(batch);
 
-        when(studyService.getStudyFromIdOrUuid("study-uuid-y")).thenReturn(study);
+        StudyCodeProperties props = new StudyCodeProperties();
+        props.setType(WorkerType.PERSONAL_MULTIPLE);
+        props.setAmount(3);
+        props.setComment("comment");
 
-        // Capture created worker to assert a decoded comment
-        ArgumentCaptor<Worker> workerCaptor = ArgumentCaptor.forClass(Worker.class);
+        List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
-        scala.Option<Long> batchId = new scala.Some<>(101L);
-        JsonNode node = studyLinkService.getStudyCodes("study-uuid-y", batchId, "PersonalSingle", null, 2);
+        assertThat(studyCodes).hasSize(3);
+        studyCodes.forEach(studyCode -> {
+            assertThat(studyCode).isNotNull();
+            assertThat(studyCode).isNotEmpty();
+        });
 
-        assertThat(node.isArray()).isTrue();
-        assertThat(node.size()).isEqualTo(2);
-        assertThat(node.get(0).asText().length()).isEqualTo(11);
-
-        // Worker creation happened with a decoded comment
-        verify(workerDao, times(2)).create(workerCaptor.capture());
-        Worker created = workerCaptor.getValue();
-        assertEquals("Hello World", created.getComment());
-
-        verify(studyLinkDao, times(2)).create(any(StudyLink.class));
-        verify(batchDao, times(2)).addWorkerToBatch(eq(batch.getId()), eq(created.getId()));
-        verifyNoMoreInteractions(authorizationService); // no batchId -> no checker call
+        verify(workerService, times(3)).validateWorker(any(Worker.class));
+        verify(workerDao, times(3)).persist(any(Worker.class));
+        verify(batchDao, times(3)).addWorkerToBatch(eq(batch.getId()), any());
+        verify(studyLinkDao, times(3)).persist(any(StudyLink.class));
     }
 
     @Test
-    public void getStudyCodes_general_existingLinkReturned() throws Exception {
+    public void getStudyCodes_personal_returnsOneCodeForZeroAmount() {
         Batch batch = new Batch();
-        batch.setId(300L);
-        Study study = new Study();
-        study.setId(400L);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
+        batch.setId(102L);
 
-        when(studyService.getStudyFromIdOrUuid("study-uuid-z")).thenReturn(study);
-        when(workerService.extractWorkerType("GeneralMultiple")).thenReturn(GeneralMultipleWorker.WORKER_TYPE);
+        StudyCodeProperties props = new StudyCodeProperties();
+        props.setType(WorkerType.PERSONAL_SINGLE);
+        props.setAmount(0);
 
-        StudyLink existing = new StudyLink(batch, GeneralMultipleWorker.WORKER_TYPE);
-        when(studyLinkDao.findFirstByBatchAndWorkerType(batch, GeneralMultipleWorker.WORKER_TYPE))
-                .thenReturn(Optional.of(existing));
+        List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
-        JsonNode node = studyLinkService.getStudyCodes("study-uuid-z", scala.Option$.MODULE$.empty(),
-                "GeneralMultiple", null, null);
-        assertThat(node.isArray()).isTrue();
-        assertThat(node.size()).isEqualTo(1);
-        assertThat(node.get(0).asText()).isEqualTo(existing.getStudyCode());
+        assertThat(studyCodes).hasSize(1);
+        assertThat(studyCodes.get(0)).isNotEmpty();
 
+        verify(workerDao).persist(any(Worker.class));
+        verify(studyLinkDao).persist(any(StudyLink.class));
+    }
+
+    @Test
+    public void getStudyCodes_general_returnsExistingStudyCode() {
+        Batch batch = new Batch();
+        batch.setId(200L);
+
+        StudyCodeProperties props = new StudyCodeProperties();
+        props.setType(WorkerType.GENERAL_SINGLE);
+
+        StudyLink existingStudyLink = new StudyLink(batch, WorkerType.GENERAL_SINGLE);
+        when(studyLinkDao.findFirstByBatchAndWorkerType(batch, WorkerType.GENERAL_SINGLE))
+                .thenReturn(Optional.of(existingStudyLink));
+
+        List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
+
+        assertThat(studyCodes).hasSize(1);
+        assertEquals(existingStudyLink.getStudyCode(), studyCodes.get(0));
+
+        verify(studyLinkDao).findFirstByBatchAndWorkerType(batch, WorkerType.GENERAL_SINGLE);
         verify(studyLinkDao, never()).persist(any(StudyLink.class));
+        verifyNoInteractions(workerDao, batchDao, workerService);
     }
 
     @Test
-    public void getStudyCodes_general_createsIfMissing() throws Exception {
+    public void getStudyCodes_general_createsAndReturnsStudyCodeIfMissing() {
         Batch batch = new Batch();
-        batch.setId(301L);
-        Study study = new Study();
-        study.setId(401L);
-        study.setBatchList(new ArrayList<>(Collections.singletonList(batch)));
+        batch.setId(201L);
 
-        when(studyService.getStudyFromIdOrUuid("study-uuid-a")).thenReturn(study);
-        when(workerService.extractWorkerType("GeneralSingle")).thenReturn(GeneralSingleWorker.WORKER_TYPE);
+        StudyCodeProperties props = new StudyCodeProperties();
+        props.setType(WorkerType.GENERAL_MULTIPLE);
 
-        when(studyLinkDao.findFirstByBatchAndWorkerType(batch, GeneralSingleWorker.WORKER_TYPE))
+        when(studyLinkDao.findFirstByBatchAndWorkerType(batch, WorkerType.GENERAL_MULTIPLE))
                 .thenReturn(Optional.empty());
+        when(studyLinkDao.persist(any(StudyLink.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Ensure create returns the same instance passed in so we can assert its code
-        when(studyLinkDao.persist(any(StudyLink.class))).thenAnswer(inv -> inv.getArgument(0));
+        List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
-        JsonNode node = studyLinkService.getStudyCodes("study-uuid-a", scala.Option$.MODULE$.empty(),
-                "GeneralSingle", null, null);
-        assertThat(node.isArray()).isTrue();
-        assertThat(node.size()).isEqualTo(1);
-        assertThat(node.get(0).asText()).isNotEmpty();
+        assertThat(studyCodes).hasSize(1);
+        assertThat(studyCodes.get(0)).isNotEmpty();
 
-        verify(studyLinkDao, times(1)).persist(any(StudyLink.class));
+        ArgumentCaptor<StudyLink> studyLinkCaptor = ArgumentCaptor.forClass(StudyLink.class);
+        verify(studyLinkDao).persist(studyLinkCaptor.capture());
+        assertEquals(studyLinkCaptor.getValue().getStudyCode(), studyCodes.get(0));
+
+        verifyNoInteractions(workerDao, batchDao, workerService);
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void getStudyCodes_unknownType_throwsBadRequestException() {
+        Batch batch = new Batch();
+
+        StudyCodeProperties props = new StudyCodeProperties();
+        props.setType(null);
+
+        studyLinkService.getStudyCodes(batch, props);
     }
 }

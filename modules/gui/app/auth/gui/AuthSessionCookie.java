@@ -1,8 +1,7 @@
 package auth.gui;
 
-import controllers.gui.Home;
+import auth.gui.AuthAction.AuthMethod;
 import http.common.HttpUtils;
-import messaging.common.RequestScopeMessaging;
 import models.common.User;
 import models.common.User.Role;
 import play.Logger;
@@ -11,7 +10,6 @@ import play.mvc.Http;
 import services.gui.UserService;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import java.time.Instant;
 import java.util.EnumSet;
 
@@ -43,17 +41,15 @@ import static play.mvc.Results.*;
  * The {@link User} object is put in the {@link Context} for later use during request processing.
  */
 // @formatter:on
-public class AuthSessionCookie implements AuthAction.AuthMethod {
+public class AuthSessionCookie implements AuthMethod {
 
     private static final ALogger LOGGER = Logger.of(AuthSessionCookie.class);
 
-    private final Provider<Home> homeProvider;
     private final AuthService authService;
     private final UserService userService;
 
     @Inject
-    AuthSessionCookie(Provider<Home> homeProvider, AuthService authService, UserService userService) {
-        this.homeProvider = homeProvider;
+    AuthSessionCookie(AuthService authService, UserService userService) {
         this.authService = authService;
         this.userService = userService;
     }
@@ -98,6 +94,7 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
             return call403DueToAuthorization(signedinUser.getUsername());
         }
 
+        // Successfully authenticated
         userService.setLastSeen(signedinUser);
         Context.current().response().putSession(
                 AuthService.SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
@@ -110,61 +107,45 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         String urlPath = Context.current().requestHeader().path();
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " tried to access page " + urlPath);
         String msg = "You are not allowed to access this page. Please sign in.";
-
-        Context.current().response().clearSession();
-
-        if (HttpUtils.isHtmlRequest()) {
-            if (HttpUtils.isNotSigninPage()) {
-                Context.current().response().putFlash(ERROR, msg);
-            }
-            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()));
-        } else {
-            return AuthResult.denied(unauthorized(msg));
-        }
+        return deny(
+                true,
+                HttpUtils.isSigninUrl(urlPath) ? null : ERROR,
+                msg,
+                redirect(auth.gui.routes.Signin.signin()),
+                unauthorized(msg));
     }
-
-
 
     private AuthResult call401DueToSessionTimeout(String username) {
         LOGGER.info("Session of user " + username + " has expired and the user has been signed out.");
         String msg = "Your session has expired. You have been signed out. Please sign in again.";
-
-        Context.current().response().clearSession();
-
-        if (HttpUtils.isHtmlRequest()) {
-            Context.current().response().putFlash(SUCCESS, msg);
-            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()));
-        } else {
-            return AuthResult.denied(unauthorized(msg));
-        }
+        return deny(
+                true,
+                SUCCESS,
+                msg,
+                redirect(auth.gui.routes.Signin.signin()),
+                unauthorized(msg));
     }
 
     private AuthResult call401DueToInactivityTimeout(String username) {
         LOGGER.info("User " + username + " has been signed out due to inactivity.");
         String msg = "You have been signed out due to inactivity.";
-
-        Context.current().response().clearSession();
-
-        if (HttpUtils.isHtmlRequest()) {
-            Context.current().response().putFlash(SUCCESS, msg);
-            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()));
-        } else {
-            return AuthResult.denied(unauthorized(msg));
-        }
+        return deny(
+                true,
+                SUCCESS,
+                msg,
+                redirect(auth.gui.routes.Signin.signin()),
+                unauthorized(msg));
     }
 
     private AuthResult call403DueToUserDeactivated(String username) {
         LOGGER.info("User " + username + " has been signed out because an admin deactivated this user.");
         String msg = "Your user was deactivated by an admin.";
-
-        Context.current().response().clearSession();
-
-        if (HttpUtils.isHtmlRequest()) {
-            Context.current().response().putFlash(WARNING, msg);
-            return AuthResult.denied(redirect(auth.gui.routes.Signin.signin()));
-        } else {
-            return AuthResult.denied(forbidden(msg));
-        }
+        return deny(
+                true,
+                WARNING,
+                msg,
+                redirect(auth.gui.routes.Signin.signin()),
+                forbidden(msg));
     }
 
     private AuthResult call403DueToAuthorization(String username) {
@@ -173,13 +154,33 @@ public class AuthSessionCookie implements AuthAction.AuthMethod {
         String msg = "Your user isn't allowed to access page " + urlPath + ".";
 
         // Do not clear the session cookie - do not sign out
+        return deny(
+                false,
+                ERROR,
+                msg,
+                HttpUtils.isGuiUrl(urlPath)
+                        ? redirect(controllers.gui.routes.Home.home(Http.Status.FORBIDDEN))
+                        : redirect(auth.gui.routes.Signin.signin()),
+                forbidden(msg));
+    }
+
+    private AuthResult deny(boolean clearSession,
+                            String flashType,
+                            String flashMsg,
+                            play.mvc.Result htmlResult,
+                            play.mvc.Result nonHtmlResult) {
+        if (clearSession) {
+            Context.current().response().clearSession();
+        }
 
         if (HttpUtils.isHtmlRequest()) {
-            RequestScopeMessaging.error(msg);
-            return AuthResult.denied(homeProvider.get().home(Http.Status.FORBIDDEN));
-        } else {
-            return AuthResult.denied(forbidden(msg));
+            if (flashType != null && flashMsg != null) {
+                Context.current().response().putFlash(flashType, flashMsg);
+            }
+            return AuthResult.denied(htmlResult);
         }
+
+        return AuthResult.denied(nonHtmlResult);
     }
 
 }

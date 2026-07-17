@@ -1,9 +1,10 @@
 package json.common;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.CoercionAction;
 import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
 import com.fasterxml.jackson.databind.type.LogicalType;
@@ -26,7 +27,7 @@ import java.util.Optional;
  * Additionally, it implements a custom deserializer that can be used `@JsonDeserialize` on fields.
  */
 @Singleton
-public class StrictJson extends JsonDeserializer<String> {
+public class StrictJson {
 
     private final ObjectMapper mapper;
 
@@ -69,24 +70,6 @@ public class StrictJson extends JsonDeserializer<String> {
 
     public ObjectMapper mapper() {
         return mapper;
-    }
-
-    /**
-     * Can be used as `@JsonDeserialize(using = StrictJsonMapper.class)` on fields. Handles deserialization of JSON
-     * strings, returning the text content directly. Throws an error for inputs that are not valid JSON strings.
-     */
-    @Override
-    public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        JsonToken t = p.currentToken();
-        if (t == JsonToken.VALUE_STRING) {
-            return p.getText();
-        }
-        if (t == JsonToken.VALUE_NULL) {
-            return null;
-        }
-        // This becomes a JsonMappingException with a proper path
-        ctxt.reportInputMismatch(String.class, "Expected a JSON string");
-        return null; // unreachable
     }
 
     public <T> T jsonNodeAsObj(JsonNode node, Class<T> clazz) {

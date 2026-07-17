@@ -7,8 +7,6 @@ import static org.junit.Assert.assertNull;
 
 /**
  * Tests for the User class, normalizeUsername method
- *
- * @author Kristian Lange
  */
 public class UserTest {
 

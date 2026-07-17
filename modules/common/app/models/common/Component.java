@@ -3,7 +3,7 @@ package models.common;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForIO;
 import json.common.DefaultJson.JsonForPublix;
@@ -147,7 +147,7 @@ public class Component {
     }
 
     public void setComponentInput(String componentInput) {
-        this.componentInput = JsonUtils.asStringForDB(componentInput);
+        this.componentInput = DomainJsonMapper.asStringForDB(componentInput);
     }
 
     public boolean isReloadable() {

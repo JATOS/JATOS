@@ -117,7 +117,7 @@ public class Signin extends Controller {
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER, ADMIN})
     public Result signout() {
-        LOGGER.info(".signout: " + Context.current().response().session().get(AuthService.SESSION_USERNAME));
+        LOGGER.info(".signout: " + Context.current().response().getSession(AuthService.SESSION_USERNAME));
         Context.current().response().clearSession();
         Context.current().response().putFlash(SUCCESS, "You've been signed out.");
         return redirect(auth.gui.routes.Signin.signin());

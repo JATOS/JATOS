@@ -3,30 +3,38 @@ package controllers.publix;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import exceptions.publix.ForbiddenReloadException;
+import executor.common.IOExecutor;
+import executor.common.StudyAssetsExecutor;
 import general.common.Common;
 import general.common.StudyLogger;
 import group.GroupAdministration;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.GeneralSingleWorker;
+import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import play.db.jpa.JPAApi;
+import org.mockito.Mockito;
+import play.libs.Files.TemporaryFile;
+import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieService;
+import testutils.publix.JPAMocker;
 import utils.common.IOUtils;
-import utils.common.JsonUtils;
 
+import javax.persistence.EntityManager;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -35,22 +43,25 @@ import java.util.Optional;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static play.mvc.Results.ok;
 import static play.test.Helpers.*;
 
 /**
- * Unit tests for Publix controller base class.
+ * Unit tests for the Publix controller base class.
  */
 public class PublixTest {
 
     // Minimal concrete subclass for testing (Publix itself is abstract only by generic type)
     private static class TestPublix extends Publix {
-        public TestPublix(JPAApi jpa, PublixUtils publixUtils, StudyAuthorisation studyAuthorisation,
+        public TestPublix(PublixUtils publixUtils, StudyAuthorisation studyAuthorisation,
                           GroupAdministration groupAdministration, IdCookieService idCookieService,
-                          PublixErrorMessages errorMessages, StudyAssets studyAssets, JsonUtils jsonUtils,
+                          PublixErrorMessages errorMessages, StudyAssets studyAssets, DomainJsonMapper domainJsonMapper,
                           ComponentResultDao componentResultDao, StudyResultDao studyResultDao,
-                          StudyLogger studyLogger, IOUtils ioUtils) {
-            super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages,
-                    studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+                          StudyLogger studyLogger, IOUtils ioUtils, IOExecutor ioExecutor,
+                          StudyAssetsExecutor studyAssetsExecutor) {
+            super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages,
+                    studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
+                    studyAssetsExecutor);
         }
 
         @Override
@@ -81,15 +92,15 @@ public class PublixTest {
     private IdCookieService idCookieService;
     private PublixErrorMessages errorMessages;
     private StudyAssets studyAssets;
-    private JsonUtils jsonUtils;
+    private DomainJsonMapper domainJsonMapper;
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
     private StudyLogger studyLogger;
     private IOUtils ioUtils;
+    private IOExecutor ioExecutor;
+    private StudyAssetsExecutor studyAssetsExecutor;
 
     private TestPublix publix;
-
-    private final JPAApi jpa = mock(JPAApi.class); // Not used directly here
 
     @Before
     public void setUp() {
@@ -99,14 +110,20 @@ public class PublixTest {
         idCookieService = mock(IdCookieService.class);
         errorMessages = mock(PublixErrorMessages.class);
         studyAssets = mock(StudyAssets.class);
-        jsonUtils = mock(JsonUtils.class);
+        domainJsonMapper = mock(DomainJsonMapper.class);
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         studyLogger = mock(StudyLogger.class);
         ioUtils = null; // Not needed for tested paths and heavy to initialize
+        ioExecutor = mock(IOExecutor.class);
+        studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
+                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
+                ioExecutor, studyAssetsExecutor);
+
+        EntityManager entityManager = Mockito.mock(EntityManager.class);
+        JPAMocker.mockDaoTransactions(entityManager, componentResultDao, studyResultDao);
     }
 
     private static StudyResult newStudyResult(Study study, Batch batch, Worker worker) {
@@ -143,10 +160,11 @@ public class PublixTest {
         return request;
     }
 
-    @Test
-    public void startComponent_redirectsOnForbiddenReloadOrNonLinear() throws Exception {
+    @Test(expected = ForbiddenReloadException.class)
+    public void startComponent_redirectsOnForbiddenReloadOrNonLinear() {
         // Arrange
         Study study = new Study();
+        study.setUuid("s-uuid");
         study.setDirName("studyDir");
         Component component = newComponent(5L);
         Worker worker = new GeneralSingleWorker();
@@ -154,24 +172,21 @@ public class PublixTest {
         StudyResult sr = newStudyResult(study, batch, worker);
 
         // publixUtils.startComponent throws -> should redirect to finishStudy
-        when(publixUtils.startComponent(any(), any(), any())).thenAnswer(inv -> { throw new ForbiddenReloadException("nope"); });
+        when(publixUtils.startComponentRun(any(), any(), any())).thenAnswer(inv -> {
+            throw new ForbiddenReloadException(study.getUuid(), "nope");
+        });
 
         // Act
-        Result result = publix.startComponent(mockTextRequest(""), sr, component, "msg");
-
-        // Assert
-        assertEquals(SEE_OTHER, result.status()); // redirect
-        // destination URL contains finishStudy and sr UUID
-        assertTrue(result.redirectLocation().isPresent());
-        verifyNoInteractions(idCookieService);
+        // Throws ForbiddenReloadException
+        publix.startComponent(mockTextRequest(""), sr, component, "msg");
     }
 
     @Test
-    public void getInitData_updatesStatesAndReturnsOk() throws Exception {
+    public void getInitData_updatesStatesAndReturnsOk() {
         Study study = new Study();
         study.setDirName("dir");
         Component component = newComponent(7L);
-        Worker worker = new models.common.workers.MTWorker();
+        Worker worker = new MTWorker();
         Batch batch = new Batch();
         batch.setId(3L);
         StudyResult sr = newStudyResult(study, batch, worker);
@@ -179,7 +194,7 @@ public class PublixTest {
 
         ComponentResult cr = newComponentResult(20L);
         when(publixUtils.retrieveStartedComponentResult(component, sr)).thenReturn(cr);
-        when(jsonUtils.initData(batch, sr, study, component)).thenReturn(play.libs.Json.newObject());
+        when(domainJsonMapper.initData(batch, sr, study, component)).thenReturn(Json.newObject());
 
         Result result = publix.getInitData(mockTextRequest(""), sr, component);
 
@@ -192,9 +207,9 @@ public class PublixTest {
     }
 
     @Test
-    public void setStudySessionData_updatesDaoWithTextBody() throws PublixException {
+    public void setStudySessionData_updatesDaoWithTextBody() {
         Study study = new Study();
-        StudyResult sr = newStudyResult(study, new Batch(), new models.common.workers.MTWorker());
+        StudyResult sr = newStudyResult(study, new Batch(), new MTWorker());
         String sessionData = "{\"foo\":1}";
 
         Result result = publix.setStudySessionData(mockTextRequest(sessionData), sr);
@@ -221,7 +236,7 @@ public class PublixTest {
     }
 
     @Test
-    public void submitOrAppendResultData_forbiddenIfNoCurrentComponentResult() throws PublixException {
+    public void submitOrAppendResultData_forbiddenIfNoCurrentComponentResult() {
         Study study = new Study();
         Component component = newComponent(1L);
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
@@ -235,7 +250,7 @@ public class PublixTest {
     }
 
     @Test
-    public void submitOrAppendResultData_dataSizeTooLarge() throws PublixException {
+    public void submitOrAppendResultData_dataSizeTooLarge() {
         Study study = new Study();
         Component component = newComponent(2L);
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
@@ -252,7 +267,7 @@ public class PublixTest {
     }
 
     @Test
-    public void submitOrAppendResultData_appendVsReplace_basedOnFlag() throws PublixException {
+    public void submitOrAppendResultData_appendVsReplace_basedOnFlag() {
         Study study = new Study();
         Component component = newComponent(2L);
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
@@ -273,7 +288,7 @@ public class PublixTest {
     }
 
     @Test
-    public void uploadResultFile_forbiddenIfUploadsDisabled() throws PublixException {
+    public void uploadResultFile_forbiddenIfUploadsDisabled() {
         Study study = new Study();
         Component component = newComponent(3L);
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
@@ -288,7 +303,7 @@ public class PublixTest {
     }
 
     @Test
-    public void uploadResultFile_missingFile_returnsBadRequest() throws PublixException {
+    public void uploadResultFile_missingFile_returnsBadRequest() {
         // Enable uploads
         //noinspection ResultOfMethodCallIgnored
         commonStatic.when(Common::isResultUploadsEnabled).thenReturn(true);
@@ -305,7 +320,7 @@ public class PublixTest {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    public void uploadResultFile_fileTooLarge_usesCommonMaxSize_returnsBadRequest() throws PublixException {
+    public void uploadResultFile_fileTooLarge_usesCommonMaxSize_returnsBadRequest() {
         // Enable uploads and set limits
         commonStatic.when(Common::isResultUploadsEnabled).thenReturn(true);
         commonStatic.when(Common::getResultUploadsMaxFileSize).thenReturn(100L);
@@ -313,8 +328,9 @@ public class PublixTest {
 
         // Mock ioUtils and re-create publix with it
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
+                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
+                ioExecutor, studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(31L);
@@ -322,7 +338,7 @@ public class PublixTest {
         when(publixUtils.retrieveCurrentComponentResult(sr)).thenReturn(Optional.of(newComponentResult(101L)));
 
         // Create request with file size larger than allowed
-        play.libs.Files.TemporaryFile tmp = mock(play.libs.Files.TemporaryFile.class);
+        TemporaryFile tmp = mock(TemporaryFile.class);
         Http.Request req = mockMultipartRequestWithFile(200L, tmp);
 
         // For filename check pass and dir size ok
@@ -332,27 +348,28 @@ public class PublixTest {
 
             Result result = publix.uploadResultFile(req, sr, component, "big.bin");
             assertEquals(REQUEST_ENTITY_TOO_LARGE, result.status());
-            verify(tmp, never()).moveFileTo(any(Path.class), anyBoolean());
+            verify(tmp, never()).moveTo(any(Path.class), anyBoolean());
         }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    public void uploadResultFile_limitPerStudyRunExceeded_returnsBadRequest() throws PublixException {
+    public void uploadResultFile_limitPerStudyRunExceeded_returnsBadRequest() {
         commonStatic.when(Common::isResultUploadsEnabled).thenReturn(true);
         commonStatic.when(Common::getResultUploadsMaxFileSize).thenReturn(Long.MAX_VALUE);
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(10L);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
+                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
+                ioExecutor, studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(32L);
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
         when(publixUtils.retrieveCurrentComponentResult(sr)).thenReturn(Optional.of(newComponentResult(102L)));
 
-        play.libs.Files.TemporaryFile tmp = mock(play.libs.Files.TemporaryFile.class);
+        TemporaryFile tmp = mock(TemporaryFile.class);
         Http.Request req = mockMultipartRequestWithFile(5L, tmp);
 
         try (MockedStatic<IOUtils> ioStatic = mockStatic(IOUtils.class)) {
@@ -366,21 +383,22 @@ public class PublixTest {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    public void uploadResultFile_badFilename_returnsBadRequest() throws PublixException {
+    public void uploadResultFile_badFilename_returnsBadRequest() {
         commonStatic.when(Common::isResultUploadsEnabled).thenReturn(true);
         commonStatic.when(Common::getResultUploadsMaxFileSize).thenReturn(Long.MAX_VALUE);
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(Long.MAX_VALUE);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
+                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
+                ioExecutor, studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(33L);
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
         when(publixUtils.retrieveCurrentComponentResult(sr)).thenReturn(Optional.of(newComponentResult(103L)));
 
-        play.libs.Files.TemporaryFile tmp = mock(play.libs.Files.TemporaryFile.class);
+        TemporaryFile tmp = mock(TemporaryFile.class);
         Http.Request req = mockMultipartRequestWithFile(1L, tmp);
 
         try (MockedStatic<IOUtils> ioStatic = mockStatic(IOUtils.class)) {
@@ -400,8 +418,9 @@ public class PublixTest {
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(Long.MAX_VALUE);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils);
+        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
+                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
+                ioExecutor, studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(34L);
@@ -409,10 +428,10 @@ public class PublixTest {
         ComponentResult cr = newComponentResult(104L);
         when(publixUtils.retrieveCurrentComponentResult(sr)).thenReturn(Optional.of(cr));
 
-        play.libs.Files.TemporaryFile tmp = mock(play.libs.Files.TemporaryFile.class);
+        TemporaryFile tmp = mock(TemporaryFile.class);
         Http.Request req = mockMultipartRequestWithFile(1L, tmp);
 
-        File dstFile = new File("/tmp/uploaded-ok.bin");
+        Path dstFile = Path.of("/tmp/uploaded-ok.bin");
         when(ioUtils.getResultUploadDirSize(sr.getId())).thenReturn(0L);
         when(ioUtils.getResultUploadFileSecurely(sr.getId(), cr.getId(), "good.bin")).thenReturn(dstFile);
 
@@ -421,13 +440,13 @@ public class PublixTest {
 
             Result result = publix.uploadResultFile(req, sr, component, "good.bin");
             assertEquals(OK, result.status());
-            verify(tmp).moveFileTo(any(Path.class), eq(true));
+            verify(tmp).moveTo(any(Path.class), eq(true));
             verify(studyLogger).logResultUploading(any(Path.class), eq(cr));
         }
     }
 
     @Test
-    public void downloadResultFile_notFoundIfNoFilePresent() throws PublixException {
+    public void downloadResultFile_notFoundIfNoFilePresent() {
         Study study = new Study();
         Worker worker = new GeneralSingleWorker();
         Batch batch = new Batch();
@@ -439,11 +458,11 @@ public class PublixTest {
 
         assertEquals(NOT_FOUND, result.status());
         // Authorisation is checked irrespective of file presence
-        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(worker), eq(study), eq(batch));
+        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(eq(worker), eq(study), eq(batch));
     }
 
     @Test(expected = NumberFormatException.class)
-    public void downloadResultFile_badComponentId_throwsNumberFormat() throws PublixException {
+    public void downloadResultFile_badComponentId_throwsNumberFormat() {
         Study study = new Study();
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
 
@@ -452,7 +471,7 @@ public class PublixTest {
     }
 
     @Test
-    public void downloadResultFile_notFound_withComponentId_whenNoFile() throws PublixException {
+    public void downloadResultFile_notFound_withComponentId_whenNoFile() {
         Study study = new Study();
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
 
@@ -472,8 +491,8 @@ public class PublixTest {
         StudyResult sr = newStudyResult(study, new Batch(), new GeneralSingleWorker());
 
         Component comp = newComponent(77L);
-        File file = File.createTempFile("uploaded-ok", ".bin");
-        file.deleteOnExit();
+        Path file = Files.createTempFile("uploaded-ok", ".bin");
+        file.toFile().deleteOnExit();
         when(publixUtils.retrieveComponent(study, 77L)).thenReturn(comp);
         when(publixUtils.retrieveLastUploadedResultFile(eq(sr), eq(comp), eq("file.txt")))
                 .thenReturn(Optional.of(file));
@@ -484,18 +503,21 @@ public class PublixTest {
     }
 
     @Test
-    public void log_sanitizesAndReturnsOk() throws PublixException {
-        Study study = new Study(); study.setId(9L);
-        Batch batch = new Batch(); batch.setId(8L);
+    public void log_sanitizesAndReturnsOk() {
+        Study study = new Study();
+        study.setId(9L);
+        Batch batch = new Batch();
+        batch.setId(8L);
         Component component = newComponent(7L);
-        Worker worker = new GeneralSingleWorker(); worker.setId(6L);
+        Worker worker = new GeneralSingleWorker();
+        worker.setId(6L);
         StudyResult sr = newStudyResult(study, batch, worker);
 
         Result result = publix.log(mockTextRequest("Hello\nWorld\t  !!  "), sr, component);
 
         assertEquals(OK, result.status());
         // We mostly ensure it doesn't throw and calls authorisation.
-        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(worker), eq(study), eq(batch));
+        verify(studyAuthorisation).checkWorkerAllowedToDoStudy(eq(worker), eq(study), eq(batch));
     }
 
     // Helpers to craft HTTP requests
@@ -510,10 +532,10 @@ public class PublixTest {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static Http.Request mockMultipartRequestWithFile(long fileSize, play.libs.Files.TemporaryFile tmp) {
+    private static Http.Request mockMultipartRequestWithFile(long fileSize, TemporaryFile tmp) {
         Http.Request request = mock(Http.Request.class, RETURNS_DEEP_STUBS);
-        Http.MultipartFormData<play.libs.Files.TemporaryFile> m = mock(Http.MultipartFormData.class);
-        Http.MultipartFormData.FilePart<play.libs.Files.TemporaryFile> fp = mock(Http.MultipartFormData.FilePart.class);
+        Http.MultipartFormData<TemporaryFile> m = mock(Http.MultipartFormData.class);
+        Http.MultipartFormData.FilePart<TemporaryFile> fp = mock(Http.MultipartFormData.FilePart.class);
         when(fp.getFileSize()).thenReturn(fileSize);
         when(fp.getRef()).thenReturn(tmp);
         when(m.getFile("file")).thenReturn(fp);

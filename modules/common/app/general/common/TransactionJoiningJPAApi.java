@@ -1,5 +1,6 @@
 package general.common;
 
+import play.Logger;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Singleton;
@@ -25,6 +26,8 @@ import java.util.function.Function;
 @Singleton
 public class TransactionJoiningJPAApi implements JPAApi {
 
+    private static final Logger.ALogger LOGGER = Logger.of(TransactionJoiningJPAApi.class);
+
     private final JPAApi delegate;
     private static final ThreadLocal<EntityManager> emContext = new ThreadLocal<>();
 
@@ -36,6 +39,7 @@ public class TransactionJoiningJPAApi implements JPAApi {
     public <T> T withTransaction(String name, boolean readOnly, Function<EntityManager, T> block) {
         EntityManager em = emContext.get();
         if (em == null) {
+            LOGGER.debug("No active transaction, creating new one");
             return delegate.withTransaction(name, readOnly, (innerEm) -> {
                 try {
                     emContext.set(innerEm);
@@ -45,6 +49,7 @@ public class TransactionJoiningJPAApi implements JPAApi {
                 }
             });
         } else {
+            LOGGER.debug("Active transaction, use existing one");
             return block.apply(em);
         }
     }

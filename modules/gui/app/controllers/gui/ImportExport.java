@@ -141,7 +141,7 @@ public class ImportExport extends Controller {
 
         Path zipFile;
         try {
-            zipFile = importExportService.createStudyExportZipFile(study);
+            zipFile = importExportService.createStudyExportZipFile(study.getId());
         } catch (Exception e) {
             String errorMsg = "Export of study \"" + study.getTitle() + "\" (ID " + study.getId() + ") failed.";
             LOGGER.error(".exportStudy: " + errorMsg, e);

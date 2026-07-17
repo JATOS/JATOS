@@ -161,11 +161,12 @@
         renderStudyLinksManagerButton("PersonalSingle", studyLinksSetupData.personalSingleLinkCount, studyLinksSetupDiv);
         renderStudyLinksManagerButton("PersonalMultiple", studyLinksSetupData.personalMultipleLinkCount, studyLinksSetupDiv);
 
-        renderResultsButton("PersonalSingle", studyLinksSetupData.studyResultCountsPerWorker.PersonalSingle, studyLinksSetupDiv);
-        renderResultsButton("PersonalMultiple", studyLinksSetupData.studyResultCountsPerWorker.PersonalMultiple, studyLinksSetupDiv);
-        renderResultsButton("GeneralSingle", studyLinksSetupData.studyResultCountsPerWorker.GeneralSingle, studyLinksSetupDiv);
-        renderResultsButton("GeneralMultiple", studyLinksSetupData.studyResultCountsPerWorker.GeneralMultiple, studyLinksSetupDiv);
-        renderResultsButton("MT", studyLinksSetupData.studyResultCountsPerWorker.MT, studyLinksSetupDiv);
+        const countsPerType = studyLinksSetupData.studyResultCountsPerType;
+        renderResultsButton("PersonalSingle", countsPerType.PersonalSingle, studyLinksSetupDiv);
+        renderResultsButton("PersonalMultiple", countsPerType.PersonalMultiple, studyLinksSetupDiv);
+        renderResultsButton("GeneralSingle", countsPerType.GeneralSingle, studyLinksSetupDiv);
+        renderResultsButton("GeneralMultiple", countsPerType.GeneralMultiple, studyLinksSetupDiv);
+        renderResultsButton("MT", countsPerType.MT + countsPerType.MTSandbox, studyLinksSetupDiv);
     }
 
     function renderStudyLinksManagerButton(type, count, studyLinksSetupDiv) {
@@ -235,7 +236,7 @@
         $.ajax({
             url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, "", 1),
             success: (response) => renderSingleStudyLinkDisplayModal(response.data, batch, type),
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get study code")
+            error: (err) => err.responseJSON ? Alerts.error(err.responseJSON?.error?.message) : Alerts.error("Couldn't get study code")
         });
     });
 

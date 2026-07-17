@@ -33,7 +33,7 @@ public class RequestLoggingFilter extends Filter {
     public CompletionStage<Result> apply(Function<Http.RequestHeader, CompletionStage<Result>> nextFilter,
                                          Http.RequestHeader requestHeader) {
         long startTime = System.currentTimeMillis();
-        Context context = requestHeader.attrs().get(Context.REQUEST_ATTR);
+        Context context = requestHeader.attrs().get(Context.CONTEXT_TYPED_KEY);
 
         return nextFilter.apply(requestHeader)
                 .thenApply(result -> Context.withContext(context, () -> {

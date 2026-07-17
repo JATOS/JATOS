@@ -1,9 +1,8 @@
 package controllers.gui;
 
 import actions.common.AsyncAction.Async;
-import actions.common.TransactionalAction.Transactional;
-import http.common.Http.Context;
 import actions.common.AsyncAction.Executor;
+import actions.common.TransactionalAction.Transactional;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
@@ -13,28 +12,32 @@ import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
-import daos.common.worker.WorkerType;
-import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
+import http.common.Http.Context;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.*;
-import json.common.JsonUtils;
+import services.gui.AuthorizationService;
+import services.gui.BreadcrumbsService;
+import services.gui.ResultRemover;
+import services.gui.ResultStreamer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+import static actions.common.TransactionalAction.Mode.READ_ONLY;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
+import static messaging.common.FlashMessagingHelper.ERROR;
 import static models.common.User.Role.USER;
 import static models.common.User.Role.VIEWER;
-import static messaging.common.FlashMessagingHelper.ERROR;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
@@ -51,7 +54,7 @@ public class StudyResults extends Controller {
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
     private final WorkerDao workerDao;
-    private final JsonUtils jsonUtils;
+    private final DomainJsonMapper domainJsonMapper;
 
     @Inject
     StudyResults(AuthorizationService authorizationService,
@@ -62,7 +65,7 @@ public class StudyResults extends Controller {
                  StudyResultDao studyResultDao,
                  GroupResultDao groupResultDao,
                  WorkerDao workerDao,
-                 JsonUtils jsonUtils) {
+                 DomainJsonMapper domainJsonMapper) {
         this.authorizationService = authorizationService;
         this.breadcrumbsService = breadcrumbsService;
         this.resultRemover = resultRemover;
@@ -72,7 +75,7 @@ public class StudyResults extends Controller {
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
         this.workerDao = workerDao;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
     }
 
     /**
@@ -129,7 +132,7 @@ public class StudyResults extends Controller {
     @SaveLastVisitedPageUrl
     public Result groupsStudyResults(Http.Request request, Long studyId, Long groupId) {
         Study study = studyDao.findById(studyId);
-        GroupResult groupResult = groupResultDao.findById(groupId);
+        GroupResult groupResult = groupResultDao.findByIdWithBatch(groupId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         try {
             authorizationService.canUserAccessStudy(study, signedinUser);
@@ -152,6 +155,7 @@ public class StudyResults extends Controller {
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER})
     @SaveLastVisitedPageUrl
+    @Transactional(READ_ONLY)
     public Result workersStudyResults(Http.Request request, Long workerId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Worker worker = workerDao.findById(workerId);
@@ -172,6 +176,7 @@ public class StudyResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @Transactional
     public Result remove(Http.Request request) {
         if (request.body().asJson() == null) return badRequest("Malformed request body");
         if (!request.body().asJson().has("studyResultIds")) return badRequest("Malformed JSON");
@@ -188,7 +193,7 @@ public class StudyResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER})
-    public Result tableDataByStudy(Long studyId) throws ForbiddenException, NotFoundException {
+    public Result tableDataByStudy(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, signedinUser);
@@ -203,7 +208,7 @@ public class StudyResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER})
-    public Result tableDataByBatch(Long batchId, String workerType) throws ForbiddenException, NotFoundException, BadRequestException {
+    public Result tableDataByBatch(Long batchId, String workerType) {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessBatch(batch, signedinUser);
@@ -218,8 +223,8 @@ public class StudyResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER})
-    public Result tableDataByGroup(Long groupResultId) throws ForbiddenException, NotFoundException {
-        GroupResult groupResult = groupResultDao.findById(groupResultId);
+    public Result tableDataByGroup(Long groupResultId) {
+        GroupResult groupResult = groupResultDao.findByIdWithBatch(groupResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessGroupResult(groupResult, signedinUser);
 
@@ -233,7 +238,7 @@ public class StudyResults extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER})
-    public Result tableDataByWorker(Long workerId) throws BadRequestException {
+    public Result tableDataByWorker(Long workerId) {
         Worker worker = workerDao.findById(workerId);
         if (worker == null) {
             throw new NotFoundException("Worker doesn't exist");
@@ -247,14 +252,14 @@ public class StudyResults extends Controller {
      * Returns for one study result the component result's data
      */
     @Async(Executor.IO)
-    @Transactional
+    @Transactional(READ_ONLY)
     @Auth(roles = {VIEWER, USER})
-    public Result tableDataComponentResultsByStudyResult(Long studyResultId) throws ForbiddenException, NotFoundException {
+    public Result tableDataComponentResultsByStudyResult(Long studyResultId) {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudyResult(studyResult, signedinUser, false);
 
-        return ok(jsonUtils.getComponentResultsByStudyResult(studyResult));
+        return ok(domainJsonMapper.getComponentResultsByStudyResult(studyResult));
     }
 
 }

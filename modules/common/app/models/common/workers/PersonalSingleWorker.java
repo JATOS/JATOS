@@ -11,6 +11,8 @@ import javax.persistence.Entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import static models.common.workers.WorkerType.PERSONAL_SINGLE;
+
 /**
  * DB entity of the concrete Worker if a study is run as Personal Single Worker. This kind of worker is for an external
  * run. The worker can run the study only once. The worker is created by a JATOS user before the study is started.
@@ -19,9 +21,9 @@ import java.util.List;
 @DiscriminatorValue(PersonalSingleWorker.WORKER_TYPE)
 public class PersonalSingleWorker extends Worker {
 
-    public static final String WORKER_TYPE = "PersonalSingle";
-    public static final String SHORT_WORKER_TYPE = "ps";
-    public static final String UI_WORKER_TYPE = "Personal Single";
+    static final String WORKER_TYPE = "PersonalSingle";
+    static final String SHORT_WORKER_TYPE = "ps";
+    static final String UI_WORKER_TYPE = "Personal Single";
 
     public PersonalSingleWorker() {
     }
@@ -29,6 +31,11 @@ public class PersonalSingleWorker extends Worker {
     @JsonCreator
     public PersonalSingleWorker(String comment) {
         this.comment = comment;
+    }
+
+    @Override
+    public WorkerType getWorkerType() {
+        return PERSONAL_SINGLE;
     }
 
     @Override

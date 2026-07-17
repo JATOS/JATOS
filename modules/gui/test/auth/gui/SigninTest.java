@@ -1,10 +1,16 @@
 package auth.gui;
 
+import auth.gui.Signin.SigninData;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
+import exceptions.common.JatosException;
+import general.common.ApiEnvelope.ErrorCode;
 import general.common.MessagesStrings;
+import http.common.Http.Context;
+import json.common.DefaultJson;
 import models.common.User;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import play.data.Form;
@@ -12,24 +18,23 @@ import play.data.FormFactory;
 import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
+import play.test.Helpers;
 import services.gui.UserService;
-import testutils.gui.ContextMocker;
 
 import javax.naming.NamingException;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static play.mvc.Http.Status.*;
+import static play.mvc.Http.Status.OK;
+import static play.mvc.Http.Status.UNAUTHORIZED;
 import static play.test.Helpers.contentAsString;
 
 /**
  * Unit tests for Signin controller.
- * 
- * @author Kristian Lange
  */
-@SuppressWarnings("deprecation")
 public class SigninTest {
 
     private AuthService authService;
@@ -42,19 +47,26 @@ public class SigninTest {
 
     @Before
     public void setUp() {
-        ContextMocker.mock();
-
         authService = mock(AuthService.class);
         formFactory = mock(FormFactory.class);
         userDao = mock(UserDao.class);
         loginAttemptDao = mock(LoginAttemptDao.class);
         userService = mock(UserService.class);
+        DefaultJson defaultJson = new DefaultJson();
 
-        controller = new Signin(authService, formFactory, userDao, loginAttemptDao, userService);
+        controller = new Signin(authService, formFactory, userDao, loginAttemptDao, userService, defaultJson);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
-    private Signin.SigninData makeSigninData(String username, String password, boolean keepSignedin) {
-        Signin.SigninData d = new Signin.SigninData();
+    @After
+    public void tearDown() {
+        Context.clear();
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private SigninData makeSigninData(String username, String password, boolean keepSignedin) {
+        SigninData d = new SigninData();
         d.setUsername(username);
         d.setPassword(password);
         d.setKeepSignedin(keepSignedin);
@@ -62,23 +74,22 @@ public class SigninTest {
     }
 
     @SuppressWarnings("unchecked")
-    private void mockFormBinding(Signin.SigninData data) {
-        Form<Signin.SigninData> emptyForm = (Form<Signin.SigninData>) mock(Form.class);
-        Form<Signin.SigninData> boundForm = (Form<Signin.SigninData>) mock(Form.class);
-        when(formFactory.form(Signin.SigninData.class)).thenReturn(emptyForm);
+    private void mockFormBinding(SigninData data) {
+        Form<SigninData> emptyForm = (Form<SigninData>) mock(Form.class);
+        Form<SigninData> boundForm = (Form<SigninData>) mock(Form.class);
+        when(formFactory.form(SigninData.class)).thenReturn(emptyForm);
         when(emptyForm.bindFromRequest(any(Http.Request.class))).thenReturn(boundForm);
         when(boundForm.withDirectFieldAccess(eq(true))).thenReturn(boundForm);
         when(boundForm.get()).thenReturn(data);
     }
 
     private static Http.Request emptyRequest() {
-        return new Http.RequestBuilder().build();
-        // Controller methods use Context.current() for request/session, so the argument isn't heavily used.
+        return Helpers.fakeRequest().remoteAddress("1.2.3.4").build();
     }
 
     @Test
     public void authenticate_unauthorized_onRepeatedSigninAttempt_beforeAuth() {
-        Signin.SigninData data = makeSigninData("Bob", "pwd", false);
+        SigninData data = makeSigninData("Bob", "pwd", false);
         mockFormBinding(data);
         when(authService.isRepeatedSigninAttempt(eq("bob"), eq("1.2.3.4"))).thenReturn(true);
 
@@ -91,23 +102,27 @@ public class SigninTest {
     }
 
     @Test
-    public void authenticate_internalServerError_onLdapException() throws Exception {
-        Signin.SigninData data = makeSigninData("Bob", "pwd", false);
+    public void authenticate_withLdapException() {
+        SigninData data = makeSigninData("Bob", "pwd", false);
         mockFormBinding(data);
         when(authService.isRepeatedSigninAttempt(eq("bob"), eq("1.2.3.4"))).thenReturn(false);
         User user = mock(User.class);
         when(userDao.findByUsername("bob")).thenReturn(user);
-        when(authService.authenticate(user, "pwd")).thenThrow(new NamingException("ldap-down"));
+        when(authService.authenticate(user, "pwd"))
+                .thenThrow(new JatosException("ldap down", new NamingException("ldap-down"), ErrorCode.LDAP_ERROR));
 
-        Result res = controller.authenticate(emptyRequest());
-
-        assertThat(res.status()).isEqualTo(INTERNAL_SERVER_ERROR);
-        assertThat(contentAsString(res)).isEqualTo(MessagesStrings.LDAP_PROBLEMS);
+        try {
+            controller.authenticate(emptyRequest());
+            fail("Expected JatosException");
+        } catch (JatosException e) {
+            assertThat(e.getCause()).isInstanceOf(NamingException.class);
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.LDAP_ERROR);
+        }
     }
 
     @Test
-    public void authenticate_unauthorized_onFailedAuth_thenNotRepeatedAfterCreate() throws Exception {
-        Signin.SigninData data = makeSigninData("Bob", "pwd", false);
+    public void authenticate_unauthorized_onFailedAuth_thenNotRepeatedAfterCreate() {
+        SigninData data = makeSigninData("Bob", "pwd", false);
         mockFormBinding(data);
         when(authService.isRepeatedSigninAttempt(eq("bob"), eq("1.2.3.4"))).thenReturn(false, false);
         User user = mock(User.class);
@@ -122,8 +137,8 @@ public class SigninTest {
     }
 
     @Test
-    public void authenticate_unauthorized_onFailedAuth_thenRepeatedAfterCreate() throws Exception {
-        Signin.SigninData data = makeSigninData("Bob", "pwd", false);
+    public void authenticate_unauthorized_onFailedAuth_thenRepeatedAfterCreate() {
+        SigninData data = makeSigninData("Bob", "pwd", false);
         mockFormBinding(data);
         // The first isRepeatedSigninAttempt is false, second is true
         when(authService.isRepeatedSigninAttempt(eq("bob"), eq("1.2.3.4"))).thenReturn(false, true);
@@ -139,22 +154,15 @@ public class SigninTest {
     }
 
     @Test
-    public void authenticate_success_writesSession_setsLastSignin_removesAttempts_andReturnsJson() throws Exception {
+    public void authenticate_success_writesSession_setsLastSignin_removesAttempts_andReturnsJson() {
         // Arrange
-        Signin.SigninData data = makeSigninData("Bob", "pwd", true);
+        SigninData data = makeSigninData("Bob", "pwd", true);
         mockFormBinding(data);
         when(authService.isRepeatedSigninAttempt(eq("bob"), eq("1.2.3.4"))).thenReturn(false);
         User user = mock(User.class);
         when(userDao.findByUsername("bob")).thenReturn(user);
         when(authService.authenticate(user, "pwd")).thenReturn(true);
         when(authService.getRedirectPageAfterSignin(user)).thenReturn("/home");
-        // When writeSessionCookie is called, populate signinTime so the controller can return it as JSON
-        doAnswer(inv -> {
-            Http.Session s = inv.getArgument(0);
-            s.put(AuthService.SESSION_SIGNIN_TIME, String.valueOf(System.currentTimeMillis()));
-            s.put(AuthService.SESSION_USERNAME, "bob");
-            return null;
-        }).when(authService).writeSessionCookie(any(Http.Session.class), eq("bob"), eq(true));
 
         // Act
         Result res = controller.authenticate(emptyRequest());
@@ -166,7 +174,7 @@ public class SigninTest {
         assertThat(json.get("redirectUrl").asText()).isEqualTo("/home");
         assertThat(json.get("userSigninTime").isNumber()).isTrue();
 
-        verify(authService, times(1)).writeSessionCookie(any(Http.Session.class), eq("bob"), eq(true));
+        verify(authService, times(1)).writeSessionCookie(eq("bob"), eq(true));
         verify(userService, times(1)).setLastSignin("bob");
         verify(loginAttemptDao, times(1)).removeByUsername("bob");
     }

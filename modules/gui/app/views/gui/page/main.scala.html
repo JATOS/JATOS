@@ -56,10 +56,10 @@
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
 
-    // Show messages from RequestScopeMessaging and FlashScopeMessaging
+    // Show messages from RequestScopeMessaging and FlashMessagingHelper
     const messagesRequestScope = @Html(RequestScopeMessaging.asJson());
     Alerts.showList(messagesRequestScope);
-    const messagesFlashScope = @Html(FlashScopeMessaging.asJson(request));
+    const messagesFlashScope = @Html(FlashMessagingHelper.asJson(request));
     Alerts.showList(messagesFlashScope);
 
     $(document).ready(() => Helpers.activateTooltips());

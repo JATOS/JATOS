@@ -5,7 +5,7 @@ import daos.common.GroupResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import daos.common.worker.WorkerType;
+import models.common.workers.WorkerType;
 import exceptions.common.NotFoundException;
 import http.common.Http.Context;
 import general.common.StudyLogger;
@@ -17,7 +17,6 @@ import models.common.workers.Worker;
 import models.gui.BatchProperties;
 import play.Logger;
 import play.data.validation.ValidationError;
-import play.db.jpa.JPAApi;
 import utils.common.StringUtils;
 
 import javax.inject.Inject;
@@ -37,7 +36,6 @@ public class BatchService {
 
     private static final Logger.ALogger LOGGER = Logger.of(BatchService.class);
 
-    private final JPAApi jpa;
     private final ResultRemover resultRemover;
     private final BatchDao batchDao;
     private final StudyDao studyDao;
@@ -47,15 +45,13 @@ public class BatchService {
     private final StudyLogger studyLogger;
 
     @Inject
-    BatchService(JPAApi jpa,
-                 ResultRemover resultRemover,
+    BatchService(ResultRemover resultRemover,
                  BatchDao batchDao,
                  StudyDao studyDao,
                  WorkerDao workerDao,
                  GroupResultDao groupResultDao,
                  StudyLinkDao studyLinkDao,
                  StudyLogger studyLogger) {
-        this.jpa = jpa;
         this.resultRemover = resultRemover;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
@@ -184,7 +180,7 @@ public class BatchService {
      * batch) and persists the changes to the database.
      */
     public void remove(Batch batch) {
-        jpa.withTransaction(entityManager -> {
+        batchDao.withTransaction(entityManager -> {
             // Delete all StudyResults and all ComponentResults
             resultRemover.removeAllStudyResults(batch);
 

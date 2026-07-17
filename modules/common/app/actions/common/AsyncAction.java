@@ -66,13 +66,13 @@ public class AsyncAction extends Action<AsyncAction.Async> {
     public CompletionStage<Result> call(Http.Request req) {
         Executor executor = (configuration != null) ? configuration.value() : Executor.DEFAULT;
 
-        Context context = req.attrs().get(Context.REQUEST_ATTR);
+        Context context = Context.current(req);
 
         if (executor == Executor.DEFAULT) {
             return Context.withContext(context, () -> delegate.call(req));
         } else {
-            return supplyAsync(() ->
-                    Context.withContext(context, () -> delegate.call(req)), executors.get(executor))
+            var contextAwareExecutor = Context.contextAwareExecutor(context, executors.get(executor));
+            return supplyAsync(() -> delegate.call(req), contextAwareExecutor)
                     .thenCompose(Function.identity());
         }
     }

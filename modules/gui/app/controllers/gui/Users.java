@@ -9,7 +9,7 @@ import daos.common.UserDao;
 import exceptions.common.AuthException;
 import http.common.Http.Context;
 import json.common.DefaultJson;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.User;
 import models.common.User.Role;
 import models.gui.ChangePasswordProperties;
@@ -48,7 +48,7 @@ public class Users extends Controller {
     private final BreadcrumbsService breadcrumbsService;
     private final FormFactory formFactory;
     private final DefaultJson defaultJson;
-    private final JsonUtils jsonUtils;
+    private final DomainJsonMapper domainJsonMapper;
 
     @Inject
     Users(UserDao userDao,
@@ -57,14 +57,14 @@ public class Users extends Controller {
           BreadcrumbsService breadcrumbsService,
           FormFactory formFactory,
           DefaultJson defaultJson,
-          JsonUtils jsonUtils) {
+          DomainJsonMapper domainJsonMapper) {
         this.userDao = userDao;
         this.userService = userService;
         this.authService = authService;
         this.breadcrumbsService = breadcrumbsService;
         this.formFactory = formFactory;
         this.defaultJson = defaultJson;
-        this.jsonUtils = jsonUtils;
+        this.domainJsonMapper = domainJsonMapper;
     }
 
     @Async(Executor.IO)
@@ -82,12 +82,11 @@ public class Users extends Controller {
     @Async(Executor.IO)
     @Auth(roles = ADMIN)
     public Result allUserData() {
-        List<User> userList = userDao.findAll();
+        List<User> userList = userDao.findAllWithStudies();
 
         ArrayNode allUserData = userList.stream()
-                .map(jsonUtils::getSingleUserData)
+                .map(domainJsonMapper::getSingleUserData)
                 .collect(Json.mapper()::createArrayNode, ArrayNode::add, ArrayNode::addAll);
-
         return ok(allUserData);
     }
 
@@ -120,7 +119,7 @@ public class Users extends Controller {
     @Auth(roles = {VIEWER, USER, ADMIN})
     public Result signedinUserData() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        return ok(jsonUtils.getSingleUserData(signedinUser));
+        return ok(domainJsonMapper.getSingleUserData(signedinUser));
     }
 
     /**
@@ -132,7 +131,7 @@ public class Users extends Controller {
         Form<NewUserProperties> form = formFactory.form(NewUserProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
         User newUser = userService.registerUser(form.get());
-        return ok(jsonUtils.getSingleUserData(newUser));
+        return ok(domainJsonMapper.getSingleUserData(newUser));
     }
 
     /**

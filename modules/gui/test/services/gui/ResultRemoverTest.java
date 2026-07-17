@@ -6,50 +6,37 @@ import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
 import general.common.StudyLogger;
+import http.common.Http.Context;
 import models.common.*;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import play.data.validation.ValidationError;
-import testutils.gui.ContextMocker;
+import play.test.Helpers;
+import testutils.gui.JPAMocker;
 import utils.common.IOUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link ResultRemover}
- *
- * @author Kristian Lange
  */
 public class ResultRemoverTest {
 
     private static org.mockito.MockedStatic<general.common.Common> commonStatic;
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    @org.junit.BeforeClass
-    public static void initCommonStatics() {
-        String tmp = System.getProperty("java.io.tmpdir") + java.io.File.separator + "jatos-test";
-        commonStatic = org.mockito.Mockito.mockStatic(general.common.Common.class);
-        commonStatic.when(general.common.Common::getTmpPath).thenReturn(tmp);
-        commonStatic.when(general.common.Common::getStudyAssetsRootPath).thenReturn(tmp);
-        commonStatic.when(general.common.Common::getResultUploadsPath).thenReturn(tmp);
-        commonStatic.when(general.common.Common::isStudyLogsEnabled).thenReturn(false);
-    }
-
-    @org.junit.AfterClass
-    public static void tearDownCommonStatics() {
-        if (commonStatic != null) commonStatic.close();
-    }
-
-    private Checker checker;
+    private AuthorizationService authorizationService;
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
-    private GroupResultDao groupResultDao;
     private WorkerDao workerDao;
     private StudyLogger studyLogger;
     private IOUtils ioUtils;
@@ -62,18 +49,34 @@ public class ResultRemoverTest {
     private Component component;
     private Worker worker;
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @org.junit.BeforeClass
+    public static void initCommonStatics() {
+        String tmp = System.getProperty("java.io.tmpdir") + java.io.File.separator + "jatos-test";
+        commonStatic = org.mockito.Mockito.mockStatic(general.common.Common.class);
+        commonStatic.when(general.common.Common::getTmpPath).thenReturn(tmp);
+        commonStatic.when(general.common.Common::getStudyAssetsRootPath).thenReturn(tmp);
+        commonStatic.when(general.common.Common::getResultUploadsPath).thenReturn(tmp);
+        commonStatic.when(general.common.Common::isStudyLogsEnabled).thenReturn(false);
+    }
+
+    @AfterClass
+    public static void tearDownCommonStatics() {
+        if (commonStatic != null) commonStatic.close();
+    }
+
     @Before
     public void setup() {
-        ContextMocker.mock();
-        checker = mock(Checker.class);
+        authorizationService = mock(AuthorizationService.class);
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
-        groupResultDao = mock(GroupResultDao.class);
+        GroupResultDao groupResultDao = mock(GroupResultDao.class);
         workerDao = mock(WorkerDao.class);
         studyLogger = mock(StudyLogger.class);
         ioUtils = mock(IOUtils.class);
 
-        resultRemover = new ResultRemover(checker, componentResultDao, studyResultDao, groupResultDao, workerDao, studyLogger, ioUtils);
+        resultRemover = new ResultRemover(authorizationService, componentResultDao, studyResultDao, groupResultDao,
+                workerDao, studyLogger, ioUtils);
 
         // Minimal model graph used by several tests
         user = newUser();
@@ -81,6 +84,16 @@ public class ResultRemoverTest {
         batch = newBatch(study);
         component = newComponent(study);
         worker = newWorker();
+
+        JPAMocker.mockDaoTransactions(componentResultDao, studyResultDao, groupResultDao, workerDao);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
+        Context.current().args().put(SIGNEDIN_USER, user);
+    }
+
+    @After
+    public void tearDown() {
+        Context.clear();
     }
 
     private User newUser() {
@@ -125,13 +138,8 @@ public class ResultRemoverTest {
             }
 
             @Override
-            public String getWorkerType() {
-                return "TEST";
-            }
-
-            @Override
-            public String getUIWorkerType() {
-                return "TEST";
+            public WorkerType getWorkerType() {
+                return WorkerType.PERSONAL_SINGLE;
             }
         };
         worker.setId(40L);
@@ -165,7 +173,7 @@ public class ResultRemoverTest {
         when(componentResultDao.findById(200L)).thenReturn(cr1);
         when(componentResultDao.findById(201L)).thenReturn(cr2);
 
-        resultRemover.removeComponentResults(Arrays.asList(200L, 201L), user, true);
+        resultRemover.removeComponentResults(Arrays.asList(200L, 201L), true);
 
         // studyResult should have both removed, uploads dir removed twice, and component results removed
         verify(studyResultDao, atLeastOnce()).merge(sr);
@@ -182,7 +190,7 @@ public class ResultRemoverTest {
         verify(studyLogger).log(eq(study), eq(user), contains("Removed result data and files"));
 
         // permission check invoked
-        verify(checker).checkComponentResults(anyList(), eq(user), eq(true));
+        verify(authorizationService).canUserAccessComponentResults(anyList(), eq(user), eq(true));
     }
 
     @Test
@@ -190,12 +198,12 @@ public class ResultRemoverTest {
         StudyResult sr = newStudyResult(101L);
         ComponentResult cr1 = newComponentResult(210L, sr);
         // another component that is not in the input list keeps the StudyResult non-empty
-        ComponentResult other = newComponentResult(211L, sr);
+        newComponentResult(211L, sr);
 
         when(componentResultDao.findByIds(Collections.singletonList(210L))).thenReturn(Collections.singletonList(cr1));
         when(componentResultDao.findById(210L)).thenReturn(cr1);
 
-        resultRemover.removeComponentResults(Collections.singletonList(210L), user, true);
+        resultRemover.removeComponentResults(Collections.singletonList(210L), true);
 
         // Only the specified component removed, and sr not removed
         verify(componentResultDao).remove(cr1);
@@ -205,13 +213,13 @@ public class ResultRemoverTest {
     }
 
     @Test(expected = ForbiddenException.class)
-    public void removeComponentResults_shouldPropagateForbidden() throws Exception {
+    public void removeComponentResults_shouldPropagateForbidden() {
         StudyResult sr = newStudyResult(102L);
         ComponentResult cr1 = newComponentResult(220L, sr);
         when(componentResultDao.findByIds(Collections.singletonList(220L))).thenReturn(Collections.singletonList(cr1));
-        doThrow(new ForbiddenException("no")).when(checker).checkComponentResults(anyList(), any(User.class), anyBoolean());
+        doThrow(new ForbiddenException("no")).when(authorizationService).canUserAccessComponentResults(anyList(), any(User.class), anyBoolean());
 
-        resultRemover.removeComponentResults(Collections.singletonList(220L), user, true);
+        resultRemover.removeComponentResults(Collections.singletonList(220L), true);
     }
 
     @Test
@@ -225,7 +233,7 @@ public class ResultRemoverTest {
         when(studyResultDao.findById(300L)).thenReturn(sr1);
         when(studyResultDao.findById(301L)).thenReturn(sr2);
 
-        resultRemover.removeStudyResults(Arrays.asList(300L, 301L), user);
+        resultRemover.removeStudyResults(Arrays.asList(300L, 301L));
 
         // all component results of each study result removed via dao.remove
         verify(componentResultDao).remove(cr1);
@@ -241,7 +249,7 @@ public class ResultRemoverTest {
         verify(studyLogger).log(eq(study), eq(user), contains("Removed result data and files"));
 
         // permissions checked
-        verify(checker).checkStudyResults(anyList(), eq(user), eq(true));
+        verify(authorizationService).canUserAccessStudyResults(anyList(), eq(user), eq(true));
     }
 
     @Test
@@ -254,7 +262,7 @@ public class ResultRemoverTest {
         when(componentResultDao.findById(600L)).thenReturn(cr1);
         when(componentResultDao.findById(601L)).thenReturn(cr2);
 
-        resultRemover.removeAllComponentResults(component, user);
+        resultRemover.removeAllComponentResults(component);
 
         // studyResult updated (removed both component results from list)
         verify(studyResultDao, atLeastOnce()).merge(sr);
@@ -280,7 +288,7 @@ public class ResultRemoverTest {
         ComponentResult cr1 = newComponentResult(800L, sr1);
         ComponentResult cr2 = newComponentResult(801L, sr2);
 
-        resultRemover.removeAllStudyResults(batch, user);
+        resultRemover.removeAllStudyResults(batch);
 
         // components removed
         verify(componentResultDao).remove(cr1);

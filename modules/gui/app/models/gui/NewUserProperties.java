@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.Strings;
 import general.common.Common;
 import general.common.MessagesStrings;
-import json.common.StrictJson;
+import json.common.StrictStringDeserializer;
 import models.common.User;
 import models.common.User.AuthMethod;
 import models.common.User.Role;
@@ -19,7 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static models.common.User.Role.*;
+import static models.common.User.Role.USER;
+import static models.common.User.Role.VIEWER;
 
 /**
  * DTO of new user properties + validation rules
@@ -43,7 +44,7 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
      * Deserialize this field strictly as a JSON string: 1) accept only JSON string or null, 2) reject
      * numeric/boolean/object/array values (no implicit coercion like 123 -> "123")
      */
-    @JsonDeserialize(using = StrictJson.class)
+    @JsonDeserialize(using = StrictStringDeserializer.class)
     private String password;
 
     private AuthMethod authMethod = AuthMethod.DB;

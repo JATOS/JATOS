@@ -1,19 +1,19 @@
 package http.common;
 
 import com.google.common.base.Strings;
+import general.common.Common;
 import http.common.Http.Context;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
+import play.api.mvc.RequestHeader;
 import play.mvc.Http;
 
-import java.net.InetAddress;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -34,9 +34,34 @@ public class HttpUtils {
         return isHtmlRequest(Context.current().requestHeader());
     }
 
-    public static boolean isNotSigninPage() {
-        String urlPath = Context.current().requestHeader().path();
-        return !urlPath.isEmpty() && !urlPath.matches("(/|/jatos|/jatos/|/jatos/signin|/jatos/signin/)");
+    public static boolean isHtmlRequest(RequestHeader requestHeader) {
+        return isHtmlRequest(requestHeader.asJava());
+    }
+
+    public static boolean isGuiUrl(String url) {
+        if (url == null) return false;
+        String path = URI.create(url).getPath();
+        String base = Common.getJatosUrlBasePath().replaceAll("/$", "");
+        return Pattern.matches(Pattern.quote(base) + "/jatos(?:$|/(?!api(?:/|$)).*)", path);
+    }
+
+    public static boolean isSigninUrl(String url) {
+        if (!isGuiUrl(url)) return false;
+        String path = URI.create(url).getPath();
+        return path.matches(".*/jatos/signin/?");
+    }
+
+    /**
+     * Checks if the given request is a JATOS API request. An API request has a URL path that starts with
+     * '/jatos/api/' after JATOS' configured base URL path.
+     */
+    public static boolean isApiRequest(Http.RequestHeader request) {
+        String base = Common.getJatosUrlBasePath().replaceAll("/$", "");
+        return request.path().startsWith(base + "/jatos/api/");
+    }
+
+    public static boolean isApiRequest() {
+        return isApiRequest(Context.current().requestHeader());
     }
 
     /**
@@ -50,7 +75,8 @@ public class HttpUtils {
     /**
      * Checks if the HTTP request has an "Authorization: Bearer" header. This does not check any authentication.
      */
-    public static boolean isApiRequest() {
+    public static boolean hasBearerToken() {
+        if (isGuiUrl(Context.current().requestHeader().path())) return false;
         Optional<String> authHeader = Context.current().requestHeader().header("Authorization");
         return authHeader.isPresent() && authHeader.get().startsWith("Bearer ");
     }

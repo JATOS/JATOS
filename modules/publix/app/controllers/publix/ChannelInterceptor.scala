@@ -1,16 +1,14 @@
 package controllers.publix
 
-import daos.common.{AbstractDao, StudyResultDao}
-import daos.common.worker.WorkerType
+import daos.common.StudyResultDao
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
 import executor.common.IOExecutor
 import http.common.Http.Context
 import models.common.StudyResult
+import models.common.workers.WorkerType
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc._
-import play.db.jpa.JPAApi
-import utils.common.StringUtils
 
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaFunction
@@ -23,7 +21,6 @@ import scala.concurrent.Future
  */
 @Singleton
 class ChannelInterceptor @Inject()(components: ControllerComponents,
-                                   jpa: JPAApi,
                                    studyResultDao: StudyResultDao,
                                    jatosBatchChannel: JatosBatchChannel,
                                    personalSingleBatchChannel: PersonalSingleBatchChannel,
@@ -53,9 +50,9 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @return WebSocket that transports JSON strings.
    */
   def openBatch(studyResultUuid: String): WebSocket =
-    WebSocket.acceptOrResult[JsValue, JsValue] { _ =>
-      inIOContext {
-        jpa.withTransaction(asJavaFunction(_ => {
+    WebSocket.acceptOrResult[JsValue, JsValue] { request =>
+      inIOContext(request) {
+        studyResultDao.withReadOnlyTransaction(asJavaFunction(_ => {
           try {
             val studyResult = fetchStudyResult(studyResultUuid)
             studyResult.getWorkerType match {
@@ -99,8 +96,8 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @return WebSocket that transfers JSON
    */
   def joinGroup(studyResultUuid: String): WebSocket =
-    WebSocket.acceptOrResult[JsValue, JsValue] { _ =>
-      inIOContext {
+    WebSocket.acceptOrResult[JsValue, JsValue] { request =>
+      inIOContext(request) {
         try {
           val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
           studyResult.getWorkerType match {
@@ -128,7 +125,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
             case _ => Left(Results.BadRequest)
           }
         } catch {
-          // Due to returning a WebSocket we can't throw a PublixExceptions like with other publix endpoints
+          // Due to returning a WebSocket, we can't throw a PublixExceptions like with other publix endpoints
           case e: NotFoundException =>
             logger.info(s".join: ${e.getMessage}")
             Left(Results.NotFound)
@@ -156,8 +153,8 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @param studyResultUuid Study result's UUID
    * @return Result
    */
-  def reassignGroup(studyResultUuid: String): Action[AnyContent] = Action.async { _ =>
-    inIOContext {
+  def reassignGroup(studyResultUuid: String): Action[AnyContent] = Action.async { request =>
+    inIOContext(request) {
       try {
         val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
         studyResult.getWorkerType match {
@@ -193,9 +190,9 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @param studyResultUuid Study result's UUID
    * @return Result
    */
-  def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action.async { _ =>
-    inIOContext {
-      jpa.withTransaction(asJavaFunction(_ => {
+  def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action.async { request =>
+    inIOContext(request) {
+      studyResultDao.withTransaction(asJavaFunction(_ => {
         try {
           val studyResult = fetchStudyResult(studyResultUuid)
           studyResult.getWorkerType match {
@@ -224,11 +221,19 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
   }
 
   /**
-   * Helper to wrap logic in the IOExecutor and set up the HTTP Context.
-   * Works for both standard Actions (returning Result) and WebSockets (returning Either).
+   * Helper to run blocking channel setup logic on the IO executor with an HTTP Context bound
+   * to the worker thread.
+   *
+   * For normal HTTP requests, ContextFilter attaches the Context to the request. For WebSocket
+   * requests this is not guaranteed, so we create a fallback Context if none is attached.
+   *
+   * The Context is bound only while the block runs and is restored/cleared afterward by
+   * Context.withContext.
    */
-  private def inIOContext[T](block: => T): Future[T] = {
-    val context = Context.current()
+  private def inIOContext[T](request: RequestHeader)(block: => T): Future[T] = {
+    val context = Context.currentOptional(request.asJava)
+      .orElseGet(() => new Context(request.asJava))
+
     Future {
       Context.withContext(context, () => block)
     }(ioExecutor)
@@ -242,17 +247,10 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
   }
 
   private def fetchStudyResultAndInitLazy(uuid: String): StudyResult = {
-    jpa.withTransaction(asJavaFunction(_ => {
-      val studyResult = fetchStudyResult(uuid)
-      AbstractDao.initializeAndUnproxy(studyResult.getBatch, studyResult.getHistoryGroupResult)
-      if (studyResult.getStudy != null) {
-        AbstractDao.initializeAndUnproxy(studyResult.getStudy, studyResult.getStudy.getUserList)
-      }
-      if (studyResult.getActiveGroupResult != null) {
-        AbstractDao.initializeAndUnproxy(studyResult.getActiveGroupResult, studyResult.getActiveGroupResult.getActiveMemberList)
-      }
-      studyResult
-    }))
+    if (uuid == null || uuid == "undefined") throw new ForbiddenException("Error getting study result UUID")
+    val srOptional = studyResultDao.findByUuidWithBatchStudyAndGroup(uuid)
+    if (!srOptional.isPresent) throw new BadRequestException("Study result " + uuid + " doesn't exist.")
+    srOptional.get()
   }
 
 }

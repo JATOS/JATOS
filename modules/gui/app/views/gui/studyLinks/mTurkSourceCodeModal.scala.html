@@ -44,7 +44,7 @@
         const batch = $('#mtSourceCodeModal').data('batch');
         $.ajax({
             url: window.routes.Api.getStudyCodes(window.study.id, batch.id, "MTurk", "", 1),
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study code")
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts.error("Couldn't get study code")
         }).done(response => fillSourceCodeMTurkModal(response.data));
     });
 

@@ -6,17 +6,13 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Singleton;
 import javax.persistence.EntityManager;
-import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-/**
- * Abstract DAO: Of the JPA calls, only refresh() is public - persist(), merge()
- * and remove() are protected. The latter ones usually involve changes in
- * different entities and should be handled by the DAO of that type.
- */
 @Singleton
 public abstract class AbstractDao {
 
-    protected final JPAApi jpa;
+    private final JPAApi jpa;
 
     protected AbstractDao(JPAApi jpa) {
         this.jpa = jpa;
@@ -25,6 +21,7 @@ public abstract class AbstractDao {
     protected void persist(Object entity) {
         jpa.withTransaction(em -> {
             em.persist(entity);
+            return null;
         });
     }
 
@@ -37,28 +34,41 @@ public abstract class AbstractDao {
     protected void remove(Object entity) {
         jpa.withTransaction(em -> {
             em.remove(entity);
+            return null;
         });
     }
 
     protected void refresh(Object entity) {
         jpa.withTransaction(em -> {
             em.refresh(entity);
+            return null;
         });
     }
 
-	public void flush() {
-        jpa.withTransaction(EntityManager::flush);
-	}
+    public <T> T withReadOnlyTransaction(Function<EntityManager, T> block) {
+        return jpa.withTransaction("default", true, block);
+    }
 
-    /**
-     * Initialize all given objects that are loaded lazily in a Hibernate object
-     */
-    public static void initializeAndUnproxy(Object... objs) {
-        Arrays.stream(objs).forEach(AbstractDao::initializeAndUnproxy);
+    public void withReadOnlyTransaction(Consumer<EntityManager> block) {
+        jpa.withTransaction("default", true, em -> {
+            block.accept(em);
+            return null;
+        });
+    }
+
+    public <T> T withTransaction(Function<EntityManager, T> block) {
+        return jpa.withTransaction("default", false, block);
+    }
+
+    public void withTransaction(Consumer<EntityManager> block) {
+        jpa.withTransaction("default", false, em -> {
+            block.accept(em);
+            return null;
+        });
     }
 
     /**
-     * Initialize an object that is loaded lazily in a Hibernate object
+     * Initialize an object loaded lazily in a Hibernate object
      */
     @SuppressWarnings("unchecked")
     public static <T> T initializeAndUnproxy(T obj) {

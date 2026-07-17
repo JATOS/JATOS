@@ -24,7 +24,7 @@ public class ApiTokenService {
     private final ApiTokenDao apiTokenDao;
 
     @Inject
-    ApiTokenService(ApiTokenDao apiTokenDao) {
+    public ApiTokenService(ApiTokenDao apiTokenDao) {
         this.apiTokenDao = apiTokenDao;
     }
 

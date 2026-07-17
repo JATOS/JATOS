@@ -10,9 +10,8 @@ import models.gui.ComponentProperties;
 import play.Logger;
 import play.Logger.ALogger;
 import play.data.validation.ValidationError;
-import play.db.jpa.JPAApi;
-import utils.common.StringUtils;
 import utils.common.IOUtils;
+import utils.common.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -34,19 +33,16 @@ public class ComponentService {
 
     private static final ALogger LOGGER = Logger.of(ComponentService.class);
 
-    private final JPAApi jpa;
     private final ResultRemover resultRemover;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final IOUtils ioUtils;
 
     @Inject
-    ComponentService(JPAApi jpa,
-                     ResultRemover resultRemover,
+    ComponentService(ResultRemover resultRemover,
                      StudyDao studyDao,
                      ComponentDao componentDao,
                      IOUtils ioUtils) {
-        this.jpa = jpa;
         this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
@@ -98,9 +94,11 @@ public class ComponentService {
     }
 
     /**
-     * Update a component's properties with the ones from updatedComponent, but not htmlFilePath and not active.
+     * Update a component's properties with the ones from updatedComponent
      */
     public void updateComponentAfterEdit(Component component, ComponentProperties updatedProps) {
+        renameHtmlFilePath(component, updatedProps.getHtmlFilePath(), updatedProps.isHtmlFileRename());
+
         component.setTitle(updatedProps.getTitle());
         component.setReloadable(updatedProps.isReloadable());
         component.setActive(updatedProps.isActive());
@@ -137,8 +135,9 @@ public class ComponentService {
         props.setDate(component.getDate());
         props.setHtmlFilePath(component.getHtmlFilePath());
         if (component.getStudy() != null) {
-            props.setHtmlFileExists(ioUtils.checkFileInStudyAssetsDirExists(component.getStudy().getDirName(),
-                    component.getHtmlFilePath()));
+            String studyDirName = studyDao.findStudyDirNameByComponentId(component.getId());
+            boolean htmlFileExists = ioUtils.checkFileInStudyAssetsDirExists(studyDirName, component.getHtmlFilePath());
+            props.setHtmlFileExists(htmlFileExists);
         }
         props.setId(component.getId());
         props.setComponentInput(component.getComponentInput());
@@ -153,12 +152,10 @@ public class ComponentService {
      * Initialise and persist the given Component. Updates its study.
      */
     public Component createAndPersistComponent(Study study, Component component) {
-        return jpa.withTransaction(em -> {
-            study.addComponent(component);
-            componentDao.persist(component);
-            studyDao.merge(study);
-            return component;
-        });
+        study.addComponent(component);
+        componentDao.persist(component);
+        studyDao.merge(study);
+        return component;
     }
 
     /**
@@ -198,7 +195,7 @@ public class ComponentService {
 
         // What if the current HTML file doesn't exist
         Path currentFile = null;
-        String dirName = component.getStudy().getDirName();
+        String dirName = studyDao.findStudyDirNameByComponentId(component.getId());
         String htmlFilePath = component.getHtmlFilePath();
         if (!htmlFilePath.trim().isEmpty()) {
             currentFile = unchecked(() -> ioUtils.getFileInStudyAssetsDir(dirName, htmlFilePath));
@@ -210,7 +207,9 @@ public class ComponentService {
         }
 
         // Rename HTML file
-        if (htmlFileRename) unchecked(() -> ioUtils.renameHtmlFile(htmlFilePath, newHtmlFilePath, dirName));
+        if (htmlFileRename) {
+            unchecked(() -> ioUtils.renameHtmlFile(htmlFilePath, newHtmlFilePath, dirName));
+        }
         component.setHtmlFilePath(newHtmlFilePath);
         componentDao.merge(component);
     }
@@ -234,18 +233,16 @@ public class ComponentService {
      * itself.
      */
     public void remove(Component component) {
-        jpa.withTransaction(entityManager -> {
-            Study study = component.getStudy();
+        Study study = component.getStudy();
 
-            // Remove component's ComponentResults
-            resultRemover.removeAllComponentResults(component);
+        // Remove component's ComponentResults
+        resultRemover.removeAllComponentResults(component);
 
-            // Remove component from study
-            study.removeComponent(component);
-            studyDao.merge(study);
+        // Remove component from study
+        study.removeComponent(component);
+        studyDao.merge(study);
 
-            componentDao.remove(component);
-        });
+        componentDao.remove(component);
     }
 
     public Component getComponentFromIdOrUuid(String idOrUuid) {

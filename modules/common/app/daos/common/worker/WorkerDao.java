@@ -36,11 +36,11 @@ public class WorkerDao extends AbstractDao {
     }
 
     public Worker findById(Long id) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> em.find(Worker.class, id));
+        return withReadOnlyTransaction((EntityManager em) -> em.find(Worker.class, id));
     }
 
     public List<Worker> findAll() {
-        return jpa.withTransaction("default", true, (EntityManager em) ->
+        return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("SELECT w FROM Worker w", Worker.class).getResultList());
     }
 
@@ -48,7 +48,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the number of Worker rows
      */
     public int count() {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT COUNT(w) FROM Worker w").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -58,7 +58,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the total number of Worker (including the deleted ones)
      */
     public int countTotal() {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT max(id) FROM Worker").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -68,7 +68,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the number of StudyResults that belong to the given Worker.
      */
     public int countStudyResults(Worker worker) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             Number result = (Number) em.createQuery(
                             "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.worker = :worker")
                     .setParameter("worker", worker)
@@ -81,7 +81,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the first StudyResult of the given Worker.
      */
     public Optional<StudyResult> findFirstStudyResult(Worker worker) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             try {
                 StudyResult result = em.createQuery(
                                 "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id ASC",
@@ -100,7 +100,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the last StudyResult of the given Worker.
      */
     public Optional<StudyResult> findLastStudyResult(Worker worker) {
-        return jpa.withTransaction("default", true, (EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             try {
                 StudyResult result = em.createQuery(
                                 "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id DESC",

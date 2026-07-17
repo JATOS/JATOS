@@ -1,6 +1,7 @@
 package services.publix;
 
 import daos.common.BatchDao;
+import daos.common.StudyDao;
 import exceptions.common.ForbiddenException;
 import models.common.Batch;
 import models.common.Study;
@@ -11,7 +12,10 @@ import javax.inject.Inject;
 public abstract class StudyAuthorisation {
 
     @Inject
-    private BatchDao batchDao;
+    protected BatchDao batchDao;
+
+    @Inject
+    protected StudyDao studyDao;
 
     /**
      * Checks whether the given worker is allowed to start this study in this batch. If the worker has no permission, a

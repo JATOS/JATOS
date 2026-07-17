@@ -9,12 +9,12 @@ import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
 import group.GroupAdministration;
-import json.common.JsonUtils;
+import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.PersonalSingleWorker;
+import models.common.workers.WorkerType;
 import play.Logger;
 import play.Logger.ALogger;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixErrorMessages;
@@ -45,23 +45,22 @@ public class PersonalSinglePublix extends Publix implements IPublix {
     private final StudyLogger studyLogger;
 
     @Inject
-    PersonalSinglePublix(JPAApi jpa,
-                         PublixUtils publixUtils,
+    PersonalSinglePublix(PublixUtils publixUtils,
                          PersonalSingleStudyAuthorisation studyAuthorisation,
                          ResultCreator resultCreator,
                          GroupAdministration groupAdministration,
                          IdCookieService idCookieService,
                          PublixErrorMessages errorMessages,
                          StudyAssets studyAssets,
-                         JsonUtils jsonUtils,
+                         DomainJsonMapper domainJsonMapper,
                          ComponentResultDao componentResultDao,
                          StudyResultDao studyResultDao,
                          StudyLogger studyLogger,
                          IOUtils ioUtils,
-                         IOExecutor dbContext,
+                         IOExecutor ioContext,
                          StudyAssetsExecutor studyAssetsExecutor) {
-        super(jpa, publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
-                jsonUtils, componentResultDao, studyResultDao, studyLogger, ioUtils, dbContext, studyAssetsExecutor);
+        super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioContext, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
         this.resultCreator = resultCreator;
@@ -111,8 +110,7 @@ public class PersonalSinglePublix extends Publix implements IPublix {
                 + "batchId " + batch.getId() + ", "
                 + "workerId " + worker.getId() + ", "
                 + "preview " + study.isAllowPreview());
-        studyLogger.log(studyLink, "Started study run with " + PersonalSingleWorker.UI_WORKER_TYPE
-                + " worker", worker);
+        studyLogger.log(studyLink, "Started study run with " + WorkerType.PERSONAL_SINGLE + " worker", worker);
         return redirect(controllers.publix.routes.PublixInterceptor.startComponent(
                 studyResult.getUuid(), component.getUuid(), null));
     }

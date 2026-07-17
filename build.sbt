@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 
 name := "JATOS"
-version := "3.10.4"
+version := "3.10.5"
 organization := "org.jatos"
 scalaVersion := "2.13.17"
 maintainer := "lange.kristian@gmail.com"
@@ -61,36 +61,52 @@ PlayKeys.externalizeResources := false
 
 // JATOS root project with GUI. Container for all the submodules
 lazy val jatos = (project in file("."))
-    .enablePlugins(PlayScala, SbtWeb)
-    .aggregate(publix, common, gui)
-    .dependsOn(publix, common, gui)
-    .settings(
-      aggregateReverseRoutes := Seq(publix, common, gui),
-      pipelineStages in Assets += digest
-    )
+  .enablePlugins(PlayScala, SbtWeb)
+  .aggregate(publix, common, gui)
+  .dependsOn(publix, common, gui)
+  .settings(
+    aggregateReverseRoutes := Seq(publix, common, gui),
+    pipelineStages in Assets += digest,
+
+    // StudyAssets serves publix module assets under the dependency-style asset path
+    // used by the running application: /public/lib/jatos-publix/...
+    // The root integration test app does not naturally put publix's public assets
+    // on its test classpath under that namespace, so mirror that layout for tests.
+    Test / resourceGenerators += Def.task {
+      val sourceDir = baseDirectory.value / "modules" / "publix" / "public"
+      val targetDir = (Test / resourceManaged).value / "public" / "lib" / "jatos-publix"
+
+      IO.delete(targetDir)
+      IO.copyDirectory(sourceDir, targetDir)
+
+      (targetDir ** "*").get.filter(_.isFile)
+    }.taskValue,
+
+    Keys.fork in Test := false,
+  )
 
 // Submodule jatos-utils: common utils for JSON, disk IO and such
 lazy val common = (project in file("modules/common"))
-    .enablePlugins(PlayJava, PlayScala, BuildInfoPlugin)
-    .settings(
-      buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-      buildInfoPackage := "general.common"
-    )
+  .enablePlugins(PlayJava, PlayScala, BuildInfoPlugin)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "general.common"
+  )
 
 // Submodule jatos-session: does group and batch session
 lazy val session = (project in file("modules/session"))
-    .enablePlugins(PlayJava, PlayScala)
-    .dependsOn(common)
+  .enablePlugins(PlayJava, PlayScala)
+  .dependsOn(common)
 
 // Submodule jatos-publix: responsible for running studies
 lazy val publix = (project in file("modules/publix"))
-    .enablePlugins(PlayJava, PlayScala)
-    .dependsOn(common, session)
+  .enablePlugins(PlayJava, PlayScala)
+  .dependsOn(common, session)
 
 // Submodule jatos-gui: responsible for running studies
 lazy val gui = (project in file("modules/gui"))
-    .enablePlugins(PlayJava, PlayScala, SbtWeb)
-    .dependsOn(common)
+  .enablePlugins(PlayJava, PlayScala, SbtWeb)
+  .dependsOn(common)
 
 // Routes from submodules
 routesGenerator := InjectedRoutesGenerator
@@ -132,6 +148,4 @@ mappings in Universal := (mappings in Universal).value filter {
 mappings in Universal := (mappings in Universal).value filter {
   case (file, path) => !path.contains("share/doc")
 }
-
-Keys.fork in Test := false
 

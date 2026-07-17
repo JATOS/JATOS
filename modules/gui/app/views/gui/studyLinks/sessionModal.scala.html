@@ -67,7 +67,7 @@
         $.ajax({
             url: dataUrl,
             success: fillSessionModal,
-            error: (err) => Alerts.error("Couldn't load session data.")
+            error: (err) => err.responseJSON ? Alerts.error(err.responseJSON?.error?.message) : Alerts.error("Couldn't load session data.")
         });
     }
 

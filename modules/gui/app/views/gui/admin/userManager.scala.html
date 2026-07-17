@@ -655,7 +655,7 @@
                 $(checkbox).prop('checked', isActive);
                 user.active = isActive;
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle user activation")
+            error: (err) => err.responseJSON ? Alerts.error(err.responseJSON?.error?.message) : Alerts.error("Couldn't toggle user activation")
         });
     });
 
@@ -677,10 +677,7 @@
                 const isUser = user.roles.includes("USER");
                 $(checkbox).prop('checked', isUser);
             },
-            error: (err) => {
-                const message = err?.responseJSON?.error?.message ?? "Couldn't change user roles";
-                alerts.error(message);
-            }
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts("Couldn't change user roles")
         });
     });
 

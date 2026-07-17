@@ -6,15 +6,15 @@ package exceptions.publix;
  */
 public class ForbiddenNonLinearFlowException extends RuntimeException {
 
-    private final String uuid;
+    private final String studyUuid;
 
-    public ForbiddenNonLinearFlowException(String uuid, String message) {
+    public ForbiddenNonLinearFlowException(String studyUuid, String message) {
         super(message);
-        this.uuid = uuid;
+        this.studyUuid = studyUuid;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getStudyUuid() {
+        return studyUuid;
     }
 
 }

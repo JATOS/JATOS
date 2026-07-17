@@ -58,10 +58,7 @@
             success: function(response) {
                 $('#listLgsList').html(generateListLogsHtml(response.data));
             },
-            error: (err) => {
-                const message = err?.responseJSON?.error?.message ?? "Couldn't list logs";
-                alerts.error(message);
-            }
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts.error("Couldn't list logs")
         });
     });
 
@@ -99,7 +96,7 @@
                 $('#logModal .modal-body pre code').text(result);
                 $("#logModal").modal('show');
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get the log")
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts.error("Couldn't get the log")
         });
     });
 

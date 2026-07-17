@@ -10,6 +10,12 @@ import models.common.workers.MTWorker;
 import models.common.workers.PersonalSingleWorker;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import testutils.publix.JPAMocker;
+
+import javax.persistence.EntityManager;
+
+import java.util.function.Function;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -31,6 +37,9 @@ public class ResultCreatorTest {
         studyResultDao = mock(StudyResultDao.class);
         workerDao = mock(WorkerDao.class);
         resultCreator = new ResultCreator(componentResultDao, studyResultDao, workerDao);
+
+        EntityManager entityManager = Mockito.mock(EntityManager.class);
+        JPAMocker.mockDaoTransactions(entityManager, componentResultDao, studyResultDao, workerDao);
     }
 
     @Test
@@ -51,6 +60,7 @@ public class ResultCreatorTest {
         assertEquals(study, sr.getStudy());
         assertEquals(StudyState.PRE, sr.getStudyState());
         assertTrue(worker.getStudyResultList().contains(sr));
+        verify(studyResultDao).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(studyResultDao).persist(sr);
         verify(workerDao).merge(worker);
         verifyNoMoreInteractions(studyResultDao, workerDao, componentResultDao);
@@ -83,6 +93,7 @@ public class ResultCreatorTest {
         assertEquals(StudyState.STARTED, sr2.getStudyState());
 
         // DAO interactions happened for both calls
+        verify(studyResultDao, times(2)).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(studyResultDao, times(2)).persist(any(StudyResult.class));
         verify(workerDao).merge(mtWorker);
         verify(workerDao).merge(previewWorker);
@@ -111,6 +122,7 @@ public class ResultCreatorTest {
         assertTrue(studyResult.getComponentResultList().contains(componentResult));
 
         verify(componentResultDao).persist(componentResult);
+        verify(studyResultDao, times(2)).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(studyResultDao, atLeastOnce()).persist(any(StudyResult.class));
         verify(studyResultDao).merge(studyResult);
         verify(workerDao).merge(worker);

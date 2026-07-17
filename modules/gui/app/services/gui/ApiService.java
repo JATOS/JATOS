@@ -38,13 +38,13 @@ public class ApiService {
     private final DefaultJson defaultJson;
 
     @Inject
-    private ApiService(IOUtils ioUtils,
+    ApiService(IOUtils ioUtils,
                        DefaultJson defaultJson) {
         this.ioUtils = ioUtils;
         this.defaultJson = defaultJson;
     }
 
-    public void validateProps(Constraints.Validatable<List<ValidationError>> props) throws BadRequestException {
+    public void validateProps(Constraints.Validatable<List<ValidationError>> props) {
         List<ValidationError> errors = props.validate();
         if (errors != null && !errors.isEmpty()) {
             String msg = "Error in field '" + errors.get(0).key() + "' - " + errors.get(0).message();
@@ -52,7 +52,7 @@ public class ApiService {
         }
     }
 
-    public <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType) throws BadRequestException {
+    public <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType) {
         if (json == null || json.get(fieldName) == null) {
             throw new BadRequestException("Missing " + fieldName + " field", ErrorCode.INVALID_REQUEST);
         }
@@ -66,14 +66,14 @@ public class ApiService {
         }
     }
 
-    public <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType, T defaultValue) throws BadRequestException {
+    public <T> T getFieldFromJson(JsonNode json, String fieldName, Class<T> fieldType, T defaultValue) {
         if (json == null || json.get(fieldName) == null) {
             return defaultValue;
         }
         return getFieldFromJson(json, fieldName, fieldType);
     }
 
-    public boolean getActiveFlagFromJson(JsonNode json) throws BadRequestException {
+    public boolean getActiveFlagFromJson(JsonNode json) {
         return getFieldFromJson(json, "active", Boolean.class);
     }
 
@@ -81,7 +81,7 @@ public class ApiService {
      * Controller method needs to be annotated with @BodyParser.Of(BodyParser.Raw.class) for this method to work
      * properly
      */
-    public JsonNode getJsonFromBody(Http.Request request) throws BadRequestException {
+    public JsonNode getJsonFromBody(Http.Request request) {
         Http.RawBuffer raw = request.body().asRaw();
         byte[] bytes = raw != null ? raw.asBytes().toArray() : null;
         if (bytes == null || bytes.length == 0) {
@@ -115,7 +115,7 @@ public class ApiService {
      * if the field is an object or an array. If the JSON object has a field 'jsonData' (deprecated name), this is used
      * instead. If the field is missing or already a string, no changes are made.
      */
-    public ObjectNode normalizeJsonInputField(JsonNode json, String fieldName) throws BadRequestException {
+    public ObjectNode normalizeJsonInputField(JsonNode json, String fieldName) {
         if (!json.isObject()) {
             throw new BadRequestException("Request body is not a JSON object", ErrorCode.INVALID_JSON);
         }
@@ -136,8 +136,7 @@ public class ApiService {
      * Extracts a file from the request body. It can handle different content type headers. It always tries
      * "multipart/form-data". Additionally, it tries all content types in the list "allowedRawTypes".
      */
-    public Path extractFile(Http.Request request, String filePartName, List<String> allowedRawTypes)
-            throws BadRequestException {
+    public Path extractFile(Http.Request request, String filePartName, List<String> allowedRawTypes) {
         String contentType = request.contentType().orElse("").toLowerCase();
 
         if (contentType.startsWith("multipart/form-data") && filePartName != null) {
@@ -212,7 +211,7 @@ public class ApiService {
      * @param study    Study where the study assets belong to
      * @return Path to the file in the study assets
      */
-    public Path getAssetsFilePath(String filepath, String filename, Study study) throws BadRequestException {
+    public Path getAssetsFilePath(String filepath, String filename, Study study) {
         String assetsFilePathStr;
         if (!Strings.isNullOrEmpty(filepath)) {
             filepath = HttpUtils.urlDecode(filepath).trim();

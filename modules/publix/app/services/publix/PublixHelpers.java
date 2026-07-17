@@ -13,7 +13,7 @@ public class PublixHelpers {
     /**
      * True if StudyResult's state is in FINISHED or ABORTED or FAIL. False otherwise.
      */
-    public static boolean studyRunDone(StudyResult studyResult) {
+    public static boolean studyResultDone(StudyResult studyResult) {
         StudyState state = studyResult.getStudyState();
         return state == StudyState.FINISHED || state == StudyState.ABORTED || state == StudyState.FAIL;
     }
@@ -21,7 +21,7 @@ public class PublixHelpers {
     /**
      * True if ComponentResult's state is in FINISHED or ABORTED or FAIL or RELOADED. False otherwise.
      */
-    public static boolean componentDone(ComponentResult componentResult) {
+    public static boolean componentResultDone(ComponentResult componentResult) {
         ComponentState state = componentResult.getComponentState();
         return ComponentState.FINISHED == state
                 || ComponentState.ABORTED == state

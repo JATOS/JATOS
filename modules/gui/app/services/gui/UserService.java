@@ -21,7 +21,6 @@ import org.hibernate.Hibernate;
 import play.data.Form;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
-import play.db.jpa.JPAApi;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;
@@ -50,30 +49,27 @@ public class UserService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final ApiTokenDao apiTokenDao;
-    private final JPAApi jpa;
 
     @Inject
     UserService(StudyService studyService,
                 UserDao userDao,
                 StudyDao studyDao,
                 WorkerDao workerDao,
-                ApiTokenDao apiTokenDao,
-                JPAApi jpa) {
+                ApiTokenDao apiTokenDao) {
         this.studyService = studyService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.apiTokenDao = apiTokenDao;
-        this.jpa = jpa;
     }
 
     /**
      * Retrieves the user with the given username from the DB.
      */
-    public User retrieveUser(String normalizedUsername) {
-        User user = userDao.findByUsername(normalizedUsername);
+    public User retrieveUser(String username) {
+        User user = userDao.findByUsername(username);
         if (user == null) {
-            throw new NotFoundException("An user with username \"" + normalizedUsername + "\" doesn't exist.");
+            throw new NotFoundException("An user with username \"" + username + "\" doesn't exist.");
         }
         return user;
     }
@@ -90,15 +86,14 @@ public class UserService {
      * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
     public User bindToUserAndPersist(NewUserProperties props) {
-        return jpa.withTransaction((em) -> {
+        return userDao.withTransaction((em) -> {
             User user = new User(props.getUsername(),
                     props.getName(),
                     props.getEmail(),
                     props.getRole());
             String password = props.getPassword();
             AuthMethod authMethod = props.getAuthMethod();
-            createAndPersistUser(user, password, false, authMethod);
-            return user;
+            return createAndPersistUser(user, password, false, authMethod);
         });
     }
 
@@ -115,8 +110,8 @@ public class UserService {
     /**
      * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
-    public void createAndPersistUser(User user, String password, boolean adminRole, AuthMethod authMethod) {
-        jpa.withTransaction(em -> {
+    public User createAndPersistUser(User user, String password, boolean adminRole, AuthMethod authMethod) {
+        userDao.withTransaction(em -> {
             user.setAuthMethod(authMethod);
 
             // Set password only if DB authentication
@@ -138,12 +133,13 @@ public class UserService {
             workerDao.persist(worker);
             userDao.persist(user);
 
-            // todo still necessary?
             // We have to flush and refresh the user to get the ID
-            userDao.flush();
+            em.flush();
             userDao.refresh(user);
+            // Although it is empty, we need to initialize user's study list
             Hibernate.initialize(user.getStudyList());
         });
+        return user;
     }
 
     public void updateUser(User user, UserProperties props) {
@@ -218,11 +214,12 @@ public class UserService {
         } else {
             user.removeRole(Role.ADMIN);
         }
+        userDao.merge(user);
         return user.getRoleList();
     }
 
     public void setLastSignin(String normalizedUsername) {
-        jpa.withTransaction(em -> {
+        userDao.withTransaction(em -> {
             User user = userDao.findByUsername(normalizedUsername);
             user.setLastLogin(new Timestamp(new Date().getTime()));
             userDao.merge(user);
@@ -242,7 +239,7 @@ public class UserService {
      * is the last member (which subsequently removes all components, results and the study assets too).
      */
     public void removeUser(User user) {
-        jpa.withTransaction(em -> {
+        userDao.withTransaction(em -> {
             // Remove Study (including batches, components, study results, component
             // results, group results)
             for (Study study : Lists.newArrayList(user.getStudyList())) {
@@ -271,10 +268,6 @@ public class UserService {
         user.setLastSeen(new Timestamp(new Date().getTime()));
         userDao.merge(user);
 
-    }
-
-    public static boolean isAllowedSuperuser(User user) {
-        return Common.isUserRoleAllowSuperuser() && user.isSuperuser();
     }
 
     /**

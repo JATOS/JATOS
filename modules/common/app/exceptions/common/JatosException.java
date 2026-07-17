@@ -5,8 +5,8 @@ import general.common.ApiEnvelope.ErrorCode;
 import static general.common.ApiEnvelope.ErrorCode.UNSPECIFIED;
 
 /**
- * Parent class of all exceptions thrown in JATOS. It is a RuntimeException. Always has an ErrorCode. Can wrap a
- * 'cause' Throwable. It is handled globally by the ErrorHandler.
+ * Parent class of all exceptions thrown in JATOS. It is a RuntimeException. Always has an ErrorCode. Can wrap a 'cause'
+ * Throwable. It is handled globally by the ErrorHandler.
  */
 public class JatosException extends RuntimeException {
 

@@ -9,7 +9,6 @@ import models.common.GroupResult
 import models.common.GroupResult.GroupState
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
 import javax.persistence.EntityManager
@@ -22,8 +21,7 @@ import scala.util.Try
  * a GroupChannelActor.
  */
 @Singleton
-class GroupActionHandler @Inject()(jpa: JPAApi,
-                                   groupResultDao: GroupResultDao,
+class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
                                    msgBuilder: GroupActionMsgBuilder) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -51,7 +49,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
    * Applies the patch to the group session
    */
   private def handlePatch(json: JsObject, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
-    jpa.withTransaction(asJavaFunction(_ => {
+    groupResultDao.withTransaction(asJavaFunction(_ => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult == null) {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
@@ -123,7 +121,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
    * members
    */
   private def handleActionFix(groupResultId: Long): List[GroupMsg] = {
-    jpa.withTransaction(asJavaFunction((_: EntityManager) => {
+    groupResultDao.withTransaction(asJavaFunction((_: EntityManager) => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)

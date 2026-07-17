@@ -6,6 +6,8 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import java.util.List;
 
+import static models.common.workers.WorkerType.GENERAL_SINGLE;
+
 /**
  * DB entity of the concrete Worker if a study is run as an General Single Worker. A General Single Worker is a worker
  * for an external run, the worker can run the study only once. The worker is created during start of the study.
@@ -14,11 +16,16 @@ import java.util.List;
 @DiscriminatorValue(GeneralSingleWorker.WORKER_TYPE)
 public class GeneralSingleWorker extends Worker {
 
-	public static final String WORKER_TYPE = "GeneralSingle";
-    public static final String SHORT_WORKER_TYPE = "gs";
-	public static final String UI_WORKER_TYPE = "General Single";
+	static final String WORKER_TYPE = "GeneralSingle";
+    static final String SHORT_WORKER_TYPE = "gs";
+	static final String UI_WORKER_TYPE = "General Single";
 
 	public GeneralSingleWorker() {
+	}
+
+	@Override
+	public WorkerType getWorkerType() {
+		return GENERAL_SINGLE;
 	}
 
 	@Override

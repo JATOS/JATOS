@@ -11,6 +11,8 @@ import javax.persistence.Entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import static models.common.workers.WorkerType.PERSONAL_MULTIPLE;
+
 /**
  * DB entity of the concrete Worker for a Personal Multiple Run (worker for an external run that can be used multiple
  * times and always assigns the results to the same worker).
@@ -19,9 +21,9 @@ import java.util.List;
 @DiscriminatorValue(PersonalMultipleWorker.WORKER_TYPE)
 public class PersonalMultipleWorker extends Worker {
 
-    public static final String WORKER_TYPE = "PersonalMultiple";
-    public static final String SHORT_WORKER_TYPE = "pm";
-    public static final String UI_WORKER_TYPE = "Personal Multiple";
+    static final String WORKER_TYPE = "PersonalMultiple";
+    static final String SHORT_WORKER_TYPE = "pm";
+    static final String UI_WORKER_TYPE = "Personal Multiple";
 
     public PersonalMultipleWorker() {
     }
@@ -29,6 +31,11 @@ public class PersonalMultipleWorker extends Worker {
     @JsonCreator
     public PersonalMultipleWorker(String comment) {
         this.comment = comment;
+    }
+
+    @Override
+    public WorkerType getWorkerType() {
+        return PERSONAL_MULTIPLE;
     }
 
     @Override

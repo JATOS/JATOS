@@ -1,25 +1,32 @@
 package services.gui;
 
-import auth.gui.AuthService;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import daos.common.worker.WorkerDao;
 import exceptions.common.BadRequestException;
-import exceptions.common.NotFoundException;
+import exceptions.common.ForbiddenException;
+import exceptions.common.ValidationException;
 import general.common.StudyLogger;
+import http.common.Http.Context;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
 import models.common.User;
+import models.common.workers.JatosWorker;
 import models.gui.StudyProperties;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import play.test.Helpers;
+import testutils.gui.JPAMocker;
+import utils.common.IOUtils;
 
-import java.util.Optional;
-import java.util.UUID;
+import javax.persistence.EntityManager;
+import java.io.IOException;
+import java.util.*;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -28,31 +35,33 @@ import static org.mockito.Mockito.*;
  */
 public class StudyServiceTest {
 
-    private StudyDao studyDao;
+    private EntityManager entityManager;
+    private BatchService batchService;
+    private ComponentService componentService;
     private BatchDao batchDao;
+    private UserDao userDao;
+    private StudyDao studyDao;
     private IOUtils ioUtils;
     private StudyLogger studyLogger;
-    private AuthService authService;
-    private Checker checker;
 
     private StudyService studyService;
 
     @Before
     public void setUp() {
-        BatchService batchService = mock(BatchService.class);
-        ComponentService componentService = mock(ComponentService.class);
-        BatchDao batchDao = mock(BatchDao.class);
-        UserDao userDao = mock(UserDao.class);
-        WorkerDao workerDao = mock(WorkerDao.class);
-        studyDao = mock(StudyDao.class);
+        batchService = mock(BatchService.class);
+        componentService = mock(ComponentService.class);
         batchDao = mock(BatchDao.class);
+        userDao = mock(UserDao.class);
+        studyDao = mock(StudyDao.class);
         ioUtils = mock(IOUtils.class);
         studyLogger = mock(StudyLogger.class);
-        authService = mock(AuthService.class);
-        checker = mock(Checker.class);
 
-        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao,
-                ioUtils, studyLogger, authService);
+        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao, ioUtils, studyLogger);
+
+        entityManager = Mockito.mock(EntityManager.class);
+        JPAMocker.mockDaoTransactions(entityManager, batchDao, userDao, studyDao);
+
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
     private Study newStudyWithComponents(String title, String dirName, int numberOfComponents) {
@@ -79,36 +88,27 @@ public class StudyServiceTest {
 
 
     @Test
-    public void changeComponentPosition_valid_reorders_andUpdates() throws Exception {
+    public void changeComponentPosition_valid_reorders_andUpdates() {
         Study s = newStudyWithComponents("T", "d", 3);
         Component c1 = s.getComponentList().get(0);
         Component c2 = s.getComponentList().get(1);
         Component c3 = s.getComponentList().get(2);
 
         // move c2 to position 1
-        studyService.changeComponentPosition("1", s, c2);
+        studyService.changeComponentPosition(1, s, c2);
 
         assertThat(s.getComponentList()).containsExactly(c2, c1, c3);
         verify(studyDao).merge(s);
     }
 
     @Test(expected = BadRequestException.class)
-    public void changeComponentPosition_invalidNumber_throws() throws Exception {
+    public void changeComponentPosition_outOfBounds_throws() {
         Study s = newStudyWithComponents("T", "d", 2);
-        studyService.changeComponentPosition("abc", s, s.getComponentList().get(0));
-    }
-
-    @Test(expected = BadRequestException.class)
-    public void changeComponentPosition_outOfBounds_throws() throws Exception {
-        Study s = newStudyWithComponents("T", "d", 2);
-        studyService.changeComponentPosition("5", s, s.getComponentList().get(0));
+        studyService.changeComponentPosition(5, s, s.getComponentList().get(0));
     }
 
     @Test
-    public void getStudyFromIdOrUuid_numericId_branch_checksPermission_andReturns() throws Exception {
-        User signedIn = new User("alice", "Alice", "alice@example.org");
-        when(authService.getSignedinUser()).thenReturn(signedIn);
-
+    public void getStudyFromIdOrUuid_numericId_branch() {
         Study s = new Study();
         s.setId(42L);
         when(studyDao.findById(42L)).thenReturn(s);
@@ -116,14 +116,10 @@ public class StudyServiceTest {
         Study result = studyService.getStudyFromIdOrUuid("42");
 
         assertThat(result).isEqualTo(s);
-        verify(checker).checkStandardForStudy(s, 42L, signedIn);
     }
 
     @Test
-    public void getStudyFromIdOrUuid_uuid_branch_checksPermission_andReturns() throws Exception {
-        User signedIn = new User("bob", "Bob", "bob@example.org");
-        when(authService.getSignedinUser()).thenReturn(signedIn);
-
+    public void getStudyFromIdOrUuid_uuid_branch() {
         Study s = new Study();
         s.setId(5L);
         String uuid = UUID.randomUUID().toString();
@@ -131,21 +127,20 @@ public class StudyServiceTest {
 
         Study result = studyService.getStudyFromIdOrUuid(uuid);
         assertThat(result).isEqualTo(s);
-        verify(checker).checkStandardForStudy(s, 5L, signedIn);
     }
 
-    @Test(expected = NotFoundException.class)
-    public void getStudyFromIdOrUuid_numeric_notFound_throws() throws Exception {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@example.org"));
+    @Test
+    public void getStudyFromIdOrUuid_numeric_notFound_throws() {
         when(studyDao.findById(99L)).thenReturn(null);
-        studyService.getStudyFromIdOrUuid("99");
+        Study study = studyService.getStudyFromIdOrUuid("99");
+        assertThat(study).isNull();
     }
 
-    @Test(expected = NotFoundException.class)
-    public void getStudyFromIdOrUuid_uuid_notFound_throws() throws Exception {
-        when(authService.getSignedinUser()).thenReturn(new User("u", "U", "u@example.org"));
+    @Test
+    public void getStudyFromIdOrUuid_uuid_notFound_throws() {
         when(studyDao.findByUuid("nope")).thenReturn(Optional.empty());
-        studyService.getStudyFromIdOrUuid("nope");
+        Study study = studyService.getStudyFromIdOrUuid("nope");
+        assertThat(study).isNull();
     }
 
     @Test
@@ -156,10 +151,12 @@ public class StudyServiceTest {
         existing.setDescription("old");
         Study updated = new Study();
         updated.setDescription("new");
+
         User user = new User("u", "U", "u@example.org");
+        Context.current().args().put(SIGNEDIN_USER, user);
 
         // When
-        studyService.updateStudy(existing, updated, user);
+        studyService.updateStudyAndRenameAssets(existing, updated);
 
         // Then
         verify(studyDao).merge(existing);
@@ -173,31 +170,35 @@ public class StudyServiceTest {
         existing.setDescription("same");
         Study updated = new Study();
         updated.setDescription("same");
-        User user = new User("u", "U", "u@example.org");
 
-        studyService.updateStudy(existing, updated, user);
+        User user = new User("u", "U", "u@example.org");
+        Context.current().args().put(SIGNEDIN_USER, user);
+
+        studyService.updateStudyAndRenameAssets(existing, updated);
 
         verify(studyDao).merge(existing);
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
     }
 
     @Test
-    public void updateStudy_withProperties_logsWhenChanged() {
+    public void updateStudy_withProperties_logsWhenChanged() throws IOException {
         Study s = new Study();
         s.setDescription("old");
         StudyProperties props = new StudyProperties();
         props.setTitle("t");
         props.setDescription("new");
-        User user = new User("u", "U", "u@example.org");
 
-        studyService.updateStudy(s, props, user);
+        User user = new User("u", "U", "u@example.org");
+        Context.current().args().put(SIGNEDIN_USER, user);
+
+        studyService.updateStudyAndRenameAssets(s, props);
 
         verify(studyDao).merge(s);
         verify(studyLogger).logStudyDescriptionHash(s, user);
     }
 
     @Test
-    public void clone_clonesProperties_components_andAssetsDir() throws Exception {
+    public void clone_clonesProperties_components_andAssetsDir() throws IOException {
         Study original = newStudyWithComponents("My Study", "origDir", 2);
         original.setDescription("desc");
         original.setComments("comments");
@@ -252,7 +253,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void cloneTitle_incrementsNumber_ifTitleAlreadyExists() throws Exception {
+    public void cloneTitle_incrementsNumber_ifTitleAlreadyExists() throws IOException {
         Study original = newStudyWithComponents("My Study", "origDir", 0);
 
         // The first candidate exists, the second exists, the third is free
@@ -270,7 +271,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void changeUserMember_addsMember_andAddsWorkerToBatches_andPersists() throws Exception {
+    public void changeUserMember_addsMember_andAddsWorkerToBatches_andPersists() {
         Study study = new Study();
         Batch b = mock(Batch.class);
         study.addBatch(b);
@@ -286,23 +287,23 @@ public class StudyServiceTest {
 
         assertThat(study.getUserList().contains(user)).isTrue();
         verify(batchDao).addWorkerToBatch(b.getId(), worker.getId());
-        verify(studyDao).update(study);
+        verify(studyDao).merge(study);
     }
 
     @Test
-    public void changeUserMember_addMember_noopIfAlreadyMember() throws Exception {
+    public void changeUserMember_addMember_noopIfAlreadyMember() {
         Study study = new Study();
         User user = mock(User.class);
         study.addUser(user);
 
         studyService.changeUserMember(study, user, true);
 
-        verify(studyDao, never()).update(any());
-        verify(userDao, never()).update(any());
+        verify(studyDao, never()).merge(any());
+        verify(userDao, never()).merge(any());
     }
 
     @Test
-    public void changeUserMember_removesMember_andRemovesWorkerFromBatches_andPersists() throws Exception {
+    public void changeUserMember_removesMember_andRemovesWorkerFromBatches_andPersists() {
         Study study = new Study();
         User remaining = mock(User.class);
         User toRemove = mock(User.class);
@@ -320,11 +321,11 @@ public class StudyServiceTest {
 
         assertThat(study.getUserList().contains(toRemove)).isFalse();
         verify(batchDao).removeWorkerFromBatch(b.getId(), worker.getId());
-        verify(studyDao).update(study);
+        verify(studyDao).merge(study);
     }
 
     @Test(expected = ForbiddenException.class)
-    public void changeUserMember_removeLastMember_throwsForbidden() throws Exception {
+    public void changeUserMember_removeLastMember_throwsForbidden() {
         Study study = new Study();
         User onlyUser = mock(User.class);
         study.addUser(onlyUser);
@@ -352,7 +353,7 @@ public class StudyServiceTest {
 
         assertThat(study.getUserList()).contains(u1, u2);
         verify(batchDao, times(2)).addWorkerToBatch(anyLong(), anyLong());
-        verify(studyDao).update(study);
+        verify(studyDao).merge(study);
     }
 
     @Test
@@ -371,22 +372,22 @@ public class StudyServiceTest {
         study.addUser(signedIn);
         study.addUser(other);
 
-        when(authService.getSignedinUser()).thenReturn(signedIn);
+        Context.current().args().put(SIGNEDIN_USER, signedIn);
         when(userDao.findAll()).thenReturn(new ArrayList<>(Arrays.asList(signedIn, other)));
 
         studyService.removeAllUserMembers(study);
 
         assertThat(study.getUserList()).contains(signedIn);
-        assertThat(study.getUserList()).excludes(other);
+        assertThat(study.getUserList()).doesNotContain(other);
 
         verify(batchDao).removeWorkerFromBatch(anyLong(), anyLong());
         verify(other).removeStudy(study);
 
-        verify(studyDao).update(study);
+        verify(studyDao).merge(study);
     }
 
     @Test
-    public void createAndPersistStudyAndAssetsDir_setsDirNameToUuid_ifMissing_createsDir_andPersists() throws Exception {
+    public void createAndPersistStudyAndAssetsDir_setsDirNameToUuid_ifMissing_createsDir_andPersists() throws IOException {
         StudyService spy = spy(studyService);
 
         StudyProperties props = new StudyProperties();
@@ -394,51 +395,54 @@ public class StudyServiceTest {
         props.setDescription("d");
         props.setDirName(null);
 
-        User user = mock(User.class);
-
         // We don't care about the internals of createAndPersistStudy in this test
-        doAnswer(inv -> inv.getArgument(1)).when(spy).createAndPersistStudy(any(), any(Study.class));
+        doAnswer(inv -> inv.getArgument(0)).when(spy).createAndPersistStudy(any(Study.class));
 
-        Study created = spy.createAndPersistStudyAndAssetsDir(user, props, true);
+        Study created = spy.createAndPersistStudyAndAssetsDir(props, true);
 
         assertThat(created.getDirName()).isNotEmpty();
         verify(ioUtils).createStudyAssetsDir(created.getDirName());
-        verify(spy).createAndPersistStudy(user, created);
+        verify(spy).createAndPersistStudy(created);
     }
 
     @Test
-    public void createAndPersistStudy_createsDefaultBatch_whenNoBatches_addsUser_updatesAndLogs() {
+    public void createAndPersistStudy_createsDefaultBatch_whenNoBatches_addsSignedInUser_persistsAndLogs() {
         Study study = new Study();
         study.setUuid(UUID.randomUUID().toString());
         study.setTitle("t");
         study.setDescription("desc");
         study.setDirName("dir");
 
-        User user = new User("alice", "Alice", "alice@example.org");
-        when(userDao.findByUsername("alice")).thenReturn(user);
+        User signedInUser = new User("alice", "Alice", "alice@example.org");
+        Context.current().args().put(SIGNEDIN_USER, signedInUser);
 
         Batch defaultBatch = mock(Batch.class);
         when(batchService.createDefaultBatch()).thenReturn(defaultBatch);
 
-        Study returned = studyService.createAndPersistStudy(user, study);
+        when(entityManager.merge(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(entityManager.merge(any(Study.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Study returned = studyService.createAndPersistStudy(study);
 
         assertThat(returned).isSameAs(study);
+        assertThat(study.getUserList()).contains(signedInUser);
+        assertThat(study.getBatchList()).contains(defaultBatch);
 
-        verify(studyDao).create(study);
         verify(batchService).createDefaultBatch();
         verify(batchService).initBatch(defaultBatch, study);
+        verify(studyDao).persist(study);
 
         verify(studyLogger).create(study);
-        verify(studyLogger).log(study, user, "Created study");
-        verify(studyLogger).logStudyDescriptionHash(study, user);
+        verify(studyLogger).log(study, signedInUser, "Created study");
+        verify(studyLogger).logStudyDescriptionHash(study, signedInUser);
     }
 
     @Test
-    public void createAndPersistStudy_usesProvidedBatches_whenAlreadyPresent() {
+    public void createAndPersistStudy_usesProvidedBatches_whenAlreadyPresent_andDoesNotCreateDefaultBatch() {
         Study study = new Study();
         study.setUuid(UUID.randomUUID().toString());
         study.setTitle("t");
-        study.setDescription(null); // no description hash logging
+        study.setDescription(null);
         study.setDirName("dir");
 
         Batch b1 = mock(Batch.class);
@@ -446,20 +450,51 @@ public class StudyServiceTest {
         study.addBatch(b1);
         study.addBatch(b2);
 
-        User user = new User("alice", "Alice", "alice@example.org");
-        when(userDao.findByUsername("alice")).thenReturn(user);
+        User signedInUser = new User("alice", "Alice", "alice@example.org");
+        Context.current().args().put(SIGNEDIN_USER, signedInUser);
 
-        studyService.createAndPersistStudy(user, study);
+        when(entityManager.merge(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(entityManager.merge(any(Study.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        verify(studyDao).create(study);
+        Study returned = studyService.createAndPersistStudy(study);
+
+        assertThat(returned).isSameAs(study);
+        assertThat(study.getUserList()).contains(signedInUser);
+        assertThat(study.getBatchList()).contains(b1, b2);
+
+        verify(batchService, never()).createDefaultBatch();
         verify(batchService).initBatch(b1, study);
         verify(batchService).initBatch(b2, study);
+        verify(studyDao).persist(study);
 
         verify(studyLogger).create(study);
-        verify(studyLogger).log(study, user, "Created study");
-
+        verify(studyLogger).log(study, signedInUser, "Created study");
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
-        verifyNoMoreInteractions(studyLogger);
+    }
+
+    @Test
+    public void createAndPersistStudy_doesNotLogDescriptionHash_whenDescriptionIsEmpty() {
+        Study study = new Study();
+        study.setUuid(UUID.randomUUID().toString());
+        study.setTitle("t");
+        study.setDescription("");
+        study.setDirName("dir");
+
+        User signedInUser = new User("alice", "Alice", "alice@example.org");
+        Context.current().args().put(SIGNEDIN_USER, signedInUser);
+
+        Batch defaultBatch = mock(Batch.class);
+        when(batchService.createDefaultBatch()).thenReturn(defaultBatch);
+
+        when(entityManager.merge(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(entityManager.merge(any(Study.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        studyService.createAndPersistStudy(study);
+
+        verify(studyDao).persist(study);
+        verify(studyLogger).create(study);
+        verify(studyLogger).log(study, signedInUser, "Created study");
+        verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
     }
 
     @Test
@@ -473,12 +508,13 @@ public class StudyServiceTest {
         updated.setDescription("new");
 
         User user = mock(User.class);
+        Context.current().args().put(SIGNEDIN_USER, user);
 
-        studyService.updateStudyWithoutDirName(existing, updated, user);
+        studyService.updateStudyWithoutDirName(existing, updated);
 
         assertThat(existing.getDirName()).isEqualTo("keepMe");
         assertThat(existing.getDescription()).isEqualTo("new");
-        verify(studyDao).update(existing);
+        verify(studyDao).merge(existing);
         verify(studyLogger).logStudyDescriptionHash(existing, user);
     }
 
@@ -487,16 +523,17 @@ public class StudyServiceTest {
         Study study = new Study();
         study.setDescription("same");
         User user = mock(User.class);
+        Context.current().args().put(SIGNEDIN_USER, user);
 
-        studyService.updateDescription(study, "same", user);
-        verify(studyDao).update(study);
+        studyService.updateDescription(study, "same");
+        verify(studyDao).merge(study);
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
 
         reset(studyDao, studyLogger);
 
         study.setDescription("old");
-        studyService.updateDescription(study, "new", user);
-        verify(studyDao).update(study);
+        studyService.updateDescription(study, "new");
+        verify(studyDao).merge(study);
         verify(studyLogger).logStudyDescriptionHash(study, user);
     }
 
@@ -534,7 +571,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void renameStudyAssetsDir_renamesInFs_updatesStudy_andPersists() throws Exception {
+    public void renameStudyAssetsDir_renamesInFs_updatesStudy_andPersists() throws IOException {
         Study study = new Study();
         study.setDirName("oldDir");
 
@@ -542,7 +579,7 @@ public class StudyServiceTest {
 
         verify(ioUtils).renameStudyAssetsDir("oldDir", "newDir");
         assertThat(study.getDirName()).isEqualTo("newDir");
-        verify(studyDao).update(study);
+        verify(studyDao).merge(study);
     }
 
     @Test
@@ -580,7 +617,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void validate_validStudy_doesNotThrow() throws Exception {
+    public void validate_validStudy_doesNotThrow() {
         Study study = new Study();
         study.setTitle("t");
         study.setDirName("dir");
@@ -591,14 +628,14 @@ public class StudyServiceTest {
     }
 
     @Test(expected = ValidationException.class)
-    public void validate_invalidStudy_throws() throws Exception {
+    public void validate_invalidStudy_throws() {
         Study study = new Study();
         // Intentionally omit title/uuid/etc. to make validation fail
         studyService.validate(study);
     }
 
     @Test
-    public void removeStudyInclAssets_removesBatches_users_study_assets_andLogs() throws Exception {
+    public void removeStudyInclAssets_removesBatches_users_study_assets_andLogs() throws IOException {
         Study study = new Study();
         study.setDirName("dir");
 
@@ -613,11 +650,12 @@ public class StudyServiceTest {
         study.addUser(u2);
 
         User signedIn = mock(User.class);
+        Context.current().args().put(SIGNEDIN_USER, signedIn);
 
-        studyService.removeStudyInclAssets(study, signedIn);
+        studyService.removeStudyInclAssets(study);
 
-        verify(batchService).remove(b1, signedIn);
-        verify(batchService).remove(b2, signedIn);
+        verify(batchService).remove(b1);
+        verify(batchService).remove(b2);
 
         verify(studyDao).remove(study);
         verify(ioUtils).removeStudyAssetsDir("dir");
@@ -627,7 +665,7 @@ public class StudyServiceTest {
     }
 
     @Test
-    public void removeStudyInclAssets_doesNotRemoveAssets_whenDirNameNull() throws Exception {
+    public void removeStudyInclAssets_doesNotRemoveAssets_whenDirNameNull() throws IOException {
         Study study = new Study();
         study.setDirName(null);
 
@@ -635,8 +673,9 @@ public class StudyServiceTest {
         study.addUser(u1);
 
         User signedIn = mock(User.class);
+        Context.current().args().put(SIGNEDIN_USER, signedIn);
 
-        studyService.removeStudyInclAssets(study, signedIn);
+        studyService.removeStudyInclAssets(study);
 
         verify(studyDao).remove(study);
         verify(ioUtils, never()).removeStudyAssetsDir(anyString());

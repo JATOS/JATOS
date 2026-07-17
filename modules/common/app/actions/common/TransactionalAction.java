@@ -43,7 +43,7 @@ import java.util.concurrent.CompletionStage;
     @Override
     public CompletionStage<Result> call(Http.Request req) {
         boolean readOnly = configuration != null && configuration.value() == Mode.READ_ONLY;
-        Context context = req.attrs().get(Context.REQUEST_ATTR);
+        Context context = req.attrs().get(Context.CONTEXT_TYPED_KEY);
 
         return jpa.withTransaction("default", readOnly, em -> {
             CompletionStage<Result> result = Context.withContext(context, () -> delegate.call(req));
