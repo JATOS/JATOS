@@ -225,7 +225,6 @@ public class ResultStreamerStreamingIntegrationTest {
         assertThat(zipEntries.get("study_result_2/comp-result_20/data.txt")).isEqualTo("data-20");
 
         verify(authorizationService).canUserAccessStudy(study, user);
-        // todo error duplicate entry during debugging but exception burried
         verify(studyLogger).log(study, user, "Exported results (files and/or data)");
     }
 
