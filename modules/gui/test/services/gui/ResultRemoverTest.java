@@ -37,7 +37,6 @@ public class ResultRemoverTest {
     private AuthorizationService authorizationService;
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
-    private WorkerDao workerDao;
     private StudyLogger studyLogger;
     private IOUtils ioUtils;
 
@@ -71,7 +70,7 @@ public class ResultRemoverTest {
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         GroupResultDao groupResultDao = mock(GroupResultDao.class);
-        workerDao = mock(WorkerDao.class);
+        WorkerDao workerDao = mock(WorkerDao.class);
         studyLogger = mock(StudyLogger.class);
         ioUtils = mock(IOUtils.class);
 
@@ -220,8 +219,8 @@ public class ResultRemoverTest {
     public void removeStudyResults_shouldRemoveAll_andLog() throws Exception {
         StudyResult sr1 = newStudyResult(300L);
         StudyResult sr2 = newStudyResult(301L);
-        ComponentResult cr1 = newComponentResult(400L, sr1);
-        ComponentResult cr2 = newComponentResult(401L, sr2);
+        newComponentResult(400L, sr1);
+        newComponentResult(401L, sr2);
 
         when(studyResultDao.findByIds(Arrays.asList(300L, 301L))).thenReturn(Arrays.asList(sr1, sr2));
         when(studyResultDao.findById(300L)).thenReturn(sr1);
@@ -273,8 +272,8 @@ public class ResultRemoverTest {
         when(studyResultDao.findById(701L)).thenReturn(sr2);
 
         // add some component results to each
-        ComponentResult cr1 = newComponentResult(800L, sr1);
-        ComponentResult cr2 = newComponentResult(801L, sr2);
+        newComponentResult(800L, sr1);
+        newComponentResult(801L, sr2);
 
         resultRemover.removeAllStudyResults(batch);
 

@@ -31,7 +31,6 @@ public class ComponentServiceTest {
 
     private static org.mockito.MockedStatic<general.common.Common> commonStatic;
 
-    private ResultRemover resultRemover;
     private StudyDao studyDao;
     private ComponentDao componentDao;
     private IOUtils ioUtils;
@@ -55,7 +54,6 @@ public class ComponentServiceTest {
 
     @Before
     public void setup() {
-        resultRemover = Mockito.mock(ResultRemover.class);
         studyDao = Mockito.mock(StudyDao.class);
         componentDao = Mockito.mock(ComponentDao.class);
         ioUtils = Mockito.mock(IOUtils.class);

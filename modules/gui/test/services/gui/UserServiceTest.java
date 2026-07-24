@@ -1,6 +1,5 @@
 package services.gui;
 
-import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
@@ -52,12 +51,11 @@ public class UserServiceTest {
         userDao = mock(UserDao.class);
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
-        ApiTokenDao apiTokenDao = mock(ApiTokenDao.class);
 
-        userService = new UserService(studyService, userDao, studyDao, workerDao, apiTokenDao);
+        userService = new UserService(studyService, userDao, studyDao, workerDao);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
-        JPAMocker.mockDaoTransactions(entityManager, userDao, studyDao, workerDao, apiTokenDao);
+        JPAMocker.mockDaoTransactions(entityManager, userDao, studyDao, workerDao);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
@@ -240,7 +238,7 @@ public class UserServiceTest {
 
         // On sole membership: removeStudyInclAssets(study, user) was called
         verify(studyService, times(1)).removeStudyInclAssets(eq(s));
-        // Finally user removed
+        // Finally, user removed
         verify(userDao, times(1)).remove(u);
     }
 

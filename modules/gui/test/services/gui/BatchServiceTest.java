@@ -38,24 +38,21 @@ import static org.mockito.Mockito.*;
  */
 public class BatchServiceTest {
 
-    private ResultRemover resultRemover;
     private BatchDao batchDao;
     private StudyDao studyDao;
     private WorkerDao workerDao;
     private GroupResultDao groupResultDao;
-    private StudyLinkDao studyLinkDao;
     private StudyLogger studyLogger;
 
     private BatchService batchService;
 
     @Before
     public void setup() {
-        resultRemover = Mockito.mock(ResultRemover.class);
         batchDao = Mockito.mock(BatchDao.class);
         studyDao = Mockito.mock(StudyDao.class);
         workerDao = Mockito.mock(WorkerDao.class);
         groupResultDao = Mockito.mock(GroupResultDao.class);
-        studyLinkDao = Mockito.mock(StudyLinkDao.class);
+        StudyLinkDao studyLinkDao = Mockito.mock(StudyLinkDao.class);
         studyLogger = Mockito.mock(StudyLogger.class);
         batchService = new BatchService(batchDao, studyDao, workerDao, studyLogger);
 

@@ -1,6 +1,5 @@
 package controllers.gui.api;
 
-import actions.common.AsyncAction;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction;

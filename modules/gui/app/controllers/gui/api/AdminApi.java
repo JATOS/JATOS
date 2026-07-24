@@ -2,21 +2,14 @@ package controllers.gui.api;
 
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
-import akka.stream.javadsl.FileIO;
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import exceptions.common.NotFoundException;
 import general.common.ApiEnvelope;
 import general.common.Common;
-import http.common.Http;
 import http.common.HttpUtils;
 import json.common.DirectoryStructureToJson;
-import play.core.utils.HttpHeaderParameterEncoding;
-import play.http.HttpEntity;
 import play.mvc.Controller;
-import play.mvc.ResponseHeader;
 import play.mvc.Result;
 import services.gui.AdminService;
 import services.gui.LogFileReader;
@@ -24,7 +17,6 @@ import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Optional;
 
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
