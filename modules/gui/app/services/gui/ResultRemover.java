@@ -3,11 +3,9 @@ package services.gui;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerDao;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import models.common.*;
-import models.common.workers.Worker;
 import play.Logger;
 import play.Logger.ALogger;
 import utils.common.IOUtils;
@@ -33,7 +31,6 @@ public class ResultRemover {
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final GroupResultDao groupResultDao;
-    private final WorkerDao workerDao;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
 
@@ -42,14 +39,12 @@ public class ResultRemover {
                   ComponentResultDao componentResultDao,
                   StudyResultDao studyResultDao,
                   GroupResultDao groupResultDao,
-                  WorkerDao workerDao,
                   StudyLogger studyLogger,
                   IOUtils ioUtils) {
         this.authorizationService = authorizationService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.groupResultDao = groupResultDao;
-        this.workerDao = workerDao;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
     }
@@ -103,25 +98,12 @@ public class ResultRemover {
     void removeAllComponentResults(Component component) {
         componentResultDao.withTransaction(em -> {
             List<ComponentResult> componentResultList = componentResultDao.findAllByComponent(component);
-            componentResultList.forEach(this::removeComponentResultFromStudyResult);
             for (ComponentResult componentResult : componentResultList) {
                 removeComponentResult(componentResult.getId());
             }
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             studyLogger.log(component.getStudy(), signedinUser, "Removed result data and files");
         });
-    }
-
-    private void removeComponentResultFromStudyResult(ComponentResult componentResult) {
-        StudyResult studyResult = componentResult.getStudyResult();
-        if (studyResult != null) {
-            studyResult.removeComponentResult(componentResult);
-            studyResultDao.merge(studyResult);
-        } else {
-            LOGGER.error(".removeComponentResult: StudyResult is null - "
-                    + "but a ComponentResult always belongs to a StudyResult "
-                    + "(ComponentResult's ID is " + componentResult.getId() + ")");
-        }
     }
 
     /**
@@ -144,19 +126,13 @@ public class ResultRemover {
     private void removeComponentResult(long componentResultId) {
         componentResultDao.withTransaction(em -> {
             ComponentResult componentResult = componentResultDao.findById(componentResultId);
-            StudyResult studyResult = componentResult.getStudyResult();
-            if (studyResult == null) {
-                LOGGER.error(".removeComponentResult: StudyResult is null - but a ComponentResult always belongs to a "
-                        + "StudyResult (ComponentResult's ID is " + componentResult.getId() + ")");
-                componentResultDao.remove(componentResult);
-                return;
-            }
-
-            studyResult.removeComponentResult(componentResult);
-            studyResultDao.merge(studyResult);
             try {
                 // Remove componentResult's upload dir
-                ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
+                StudyResult studyResult = componentResult.getStudyResult();
+                if (studyResult != null) {
+                    studyResult.removeComponentResult(componentResult);
+                    ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
+                }
             } catch (IOException e) {
                 LOGGER.error(".removeComponentResult: Couldn't remove upload dir " + componentResult.getId(), e);
             }
@@ -165,15 +141,12 @@ public class ResultRemover {
     }
 
     /**
-     * Removes all ComponentResults of the given StudyResult, removes this StudyResult from the given worker, removes
-     * this StudyResult from the GroupResult and then remove StudyResult itself. Removes result upload files.
+     * Removes all ComponentResults of the given StudyResult and then removes the StudyResult itself. ComponentResults
+     * will cascade via database constraints. Removes result upload files.
      */
     private void removeStudyResult(long studyResultId) {
         studyResultDao.withTransaction(em -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
-
-            // Remove all component results of this study result
-            studyResult.getComponentResultList().forEach(componentResultDao::remove);
 
             removeEmptyStudyResult(studyResult);
         });
@@ -181,11 +154,6 @@ public class ResultRemover {
 
     private void removeEmptyStudyResult(StudyResult studyResult) {
         studyResultDao.withTransaction(entityManager -> {
-            // Remove study result from the worker
-            Worker worker = studyResult.getWorker();
-            worker.removeStudyResult(studyResult);
-            workerDao.merge(worker);
-
             // Remove studyResult as a member from a group result
             GroupResult activeGroupResult = studyResult.getActiveGroupResult();
             if (activeGroupResult != null) {
@@ -205,7 +173,7 @@ public class ResultRemover {
                 LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
             }
 
-            // Remove studyResult
+            // Remove studyResult (Worker cleanup is handled by database cascade)
             studyResultDao.remove(studyResult);
         });
     }

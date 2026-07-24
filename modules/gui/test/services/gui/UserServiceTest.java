@@ -23,7 +23,6 @@ import testutils.gui.JPAMocker;
 import javax.persistence.EntityManager;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -33,6 +32,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static services.gui.UserService.ADMIN_USERNAME;
 
 /**
  * Unit tests for UserService.
@@ -43,7 +43,6 @@ public class UserServiceTest {
     private UserDao userDao;
     private StudyDao studyDao;
     private WorkerDao workerDao;
-    private ApiTokenDao apiTokenDao;
 
     private UserService userService;
 
@@ -53,7 +52,7 @@ public class UserServiceTest {
         userDao = mock(UserDao.class);
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
-        apiTokenDao = mock(ApiTokenDao.class);
+        ApiTokenDao apiTokenDao = mock(ApiTokenDao.class);
 
         userService = new UserService(studyService, userDao, studyDao, workerDao, apiTokenDao);
 
@@ -135,10 +134,10 @@ public class UserServiceTest {
 
     @Test(expected = ForbiddenException.class)
     public void toggleActive_admin_forbidden() {
-        User admin = new User(UserService.ADMIN_USERNAME, "Admin", "admin@ex.org");
-        when(userDao.findByUsername(UserService.ADMIN_USERNAME)).thenReturn(admin);
+        User admin = new User(ADMIN_USERNAME, "Admin", "admin@ex.org");
+        when(userDao.findByUsername(ADMIN_USERNAME)).thenReturn(admin);
         Context.current().args().put(SIGNEDIN_USER, new User("other@ex.org", "Other", "other@ex.org"));
-        userService.toggleActive(UserService.ADMIN_USERNAME, false);
+        userService.toggleActive(ADMIN_USERNAME, false);
     }
 
     @Test
@@ -190,10 +189,10 @@ public class UserServiceTest {
 
     @Test(expected = ForbiddenException.class)
     public void changeAdminRole_adminUser_forbidden() {
-        User admin = new User(UserService.ADMIN_USERNAME, "Admin", "admin@ex.org");
-        when(userDao.findByUsername(UserService.ADMIN_USERNAME)).thenReturn(admin);
+        User admin = new User(ADMIN_USERNAME, "Admin", "admin@ex.org");
+        when(userDao.findByUsername(ADMIN_USERNAME)).thenReturn(admin);
         Http.Context.current().args().put(SIGNEDIN_USER, new User("other@ex.org", "Other", "other@ex.org"));
-        userService.changeAdminRole(UserService.ADMIN_USERNAME, false);
+        userService.changeAdminRole(ADMIN_USERNAME, false);
     }
 
     @Test
@@ -218,30 +217,29 @@ public class UserServiceTest {
 
     @Test(expected = ForbiddenException.class)
     public void removeUser_admin_forbidden() {
-        // Ensure retrieveUser finds the admin user so the Forbidden check is reached
-        when(userDao.findByUsername(UserService.ADMIN_USERNAME))
-                .thenReturn(new User(UserService.ADMIN_USERNAME, "Admin", "admin@ex.org"));
-        userService.removeUser(UserService.ADMIN_USERNAME);
+        User admin = new User(ADMIN_USERNAME, "Admin", "admin@ex.org");
+        admin.setId(42L);
+        when(userDao.findByUsername(ADMIN_USERNAME)).thenReturn(admin);
+        when(userDao.findById(42L)).thenReturn(admin);
+
+        userService.removeUser(ADMIN_USERNAME);
     }
 
     @Test
     public void removeUser_removesStudiesTokensAndUser() {
         User u = new User("foo@ex.org", "Foo", "foo@ex.org");
+        u.setId(42L);
         when(userDao.findByUsername("foo@ex.org")).thenReturn(u);
+        when(userDao.findById(42L)).thenReturn(u);
 
         Study s = new Study();
         // Simulate that user is member and sole member of the study
         s.addUser(u);
 
-        // Make apiTokenDao return two tokens to be removed (we only care about calls)
-        when(apiTokenDao.findByUser(u)).thenReturn(Collections.emptyList());
-
         userService.removeUser("foo@ex.org");
 
         // On sole membership: removeStudyInclAssets(study, user) was called
         verify(studyService, times(1)).removeStudyInclAssets(eq(s));
-        // API tokens removed (find called and iteration attempted)
-        verify(apiTokenDao, times(1)).findByUser(u);
         // Finally user removed
         verify(userDao, times(1)).remove(u);
     }
@@ -249,13 +247,13 @@ public class UserServiceTest {
     @Test
     public void removeUser_multipleMembers_updatesStudy() {
         User u = new User("foo2@ex.org", "Foo2", "foo2@ex.org");
+        u.setId(42L);
         when(userDao.findByUsername("foo2@ex.org")).thenReturn(u);
+        when(userDao.findById(42L)).thenReturn(u);
 
         Study s = new Study();
         User other = new User("other@ex.org", "Other", "other@ex.org");
         s.addAllUsers(List.of(u, other));
-
-        when(apiTokenDao.findByUser(u)).thenReturn(Collections.emptyList());
 
         userService.removeUser("foo2@ex.org");
 

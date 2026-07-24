@@ -412,15 +412,14 @@ public class StudyServiceTest {
         study.setTitle("t");
         study.setDescription("desc");
         study.setDirName("dir");
+        when(studyDao.merge(study)).thenReturn(study);
 
         User signedInUser = new User("alice", "Alice", "alice@example.org");
         Context.current().args().put(SIGNEDIN_USER, signedInUser);
+        when(userDao.merge(signedInUser)).thenReturn(signedInUser);
 
         Batch defaultBatch = mock(Batch.class);
         when(batchService.createDefaultBatch()).thenReturn(defaultBatch);
-
-        when(entityManager.merge(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(entityManager.merge(any(Study.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Study returned = studyService.createAndPersistStudy(study);
 
@@ -444,6 +443,7 @@ public class StudyServiceTest {
         study.setTitle("t");
         study.setDescription(null);
         study.setDirName("dir");
+        when(studyDao.merge(study)).thenReturn(study);
 
         Batch b1 = mock(Batch.class);
         Batch b2 = mock(Batch.class);
@@ -452,9 +452,7 @@ public class StudyServiceTest {
 
         User signedInUser = new User("alice", "Alice", "alice@example.org");
         Context.current().args().put(SIGNEDIN_USER, signedInUser);
-
-        when(entityManager.merge(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(entityManager.merge(any(Study.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userDao.merge(signedInUser)).thenReturn(signedInUser);
 
         Study returned = studyService.createAndPersistStudy(study);
 
@@ -479,9 +477,11 @@ public class StudyServiceTest {
         study.setTitle("t");
         study.setDescription("");
         study.setDirName("dir");
+        when(studyDao.merge(study)).thenReturn(study);
 
         User signedInUser = new User("alice", "Alice", "alice@example.org");
         Context.current().args().put(SIGNEDIN_USER, signedInUser);
+        when(userDao.merge(signedInUser)).thenReturn(signedInUser);
 
         Batch defaultBatch = mock(Batch.class);
         when(batchService.createDefaultBatch()).thenReturn(defaultBatch);
@@ -638,6 +638,7 @@ public class StudyServiceTest {
     public void removeStudyInclAssets_removesBatches_users_study_assets_andLogs() throws IOException {
         Study study = new Study();
         study.setDirName("dir");
+        when(studyDao.merge(study)).thenReturn(study);
 
         Batch b1 = mock(Batch.class);
         Batch b2 = mock(Batch.class);
@@ -654,9 +655,6 @@ public class StudyServiceTest {
 
         studyService.removeStudyInclAssets(study);
 
-        verify(batchService).remove(b1);
-        verify(batchService).remove(b2);
-
         verify(studyDao).remove(study);
         verify(ioUtils).removeStudyAssetsDir("dir");
 
@@ -668,6 +666,7 @@ public class StudyServiceTest {
     public void removeStudyInclAssets_doesNotRemoveAssets_whenDirNameNull() throws IOException {
         Study study = new Study();
         study.setDirName(null);
+        when(studyDao.merge(study)).thenReturn(study);
 
         User u1 = mock(User.class);
         study.addUser(u1);

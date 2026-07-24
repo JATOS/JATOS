@@ -33,17 +33,14 @@ public class ComponentService {
 
     private static final ALogger LOGGER = Logger.of(ComponentService.class);
 
-    private final ResultRemover resultRemover;
     private final StudyDao studyDao;
     private final ComponentDao componentDao;
     private final IOUtils ioUtils;
 
     @Inject
-    ComponentService(ResultRemover resultRemover,
-                     StudyDao studyDao,
+    ComponentService(StudyDao studyDao,
                      ComponentDao componentDao,
                      IOUtils ioUtils) {
-        this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.componentDao = componentDao;
         this.ioUtils = ioUtils;
@@ -229,19 +226,17 @@ public class ComponentService {
     }
 
     /**
-     * Remove Component: Remove it from the given study, remove all its ComponentResults, and remove the component
-     * itself.
+     * Remove Component and its ComponentResults. ComponentResults will cascade via database constraints. Updates its
+     * study.
      */
     public void remove(Component component) {
         Study study = component.getStudy();
-
-        // Remove component's ComponentResults
-        resultRemover.removeAllComponentResults(component);
 
         // Remove component from study
         study.removeComponent(component);
         studyDao.merge(study);
 
+        // ComponentResults will be cascaded by database
         componentDao.remove(component);
     }
 

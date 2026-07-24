@@ -40,7 +40,6 @@ public class MessagesStrings {
             + "your own admin rights. Although you can ask another admin to remove them for you.";
     public static final String NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS = "It's not possible to remove 'admin's admin "
             + "rights.";
-    public static final String NOT_ALLOWED_DELETE_ADMIN = "It's not possible to remove user 'admin'.";
 
     // Export / import
     public static final String FILE_MISSING = "File missing";

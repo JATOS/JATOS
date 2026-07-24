@@ -18,5 +18,6 @@ GET      /assets-nv/*file                  controllers.Assets.at(path="/public",
 GET     /ping                              controllers.Ping.ping()
 
 # Include other route files
+->  /  api.Routes
 ->  /  gui.Routes
 ->  /  publix.Routes

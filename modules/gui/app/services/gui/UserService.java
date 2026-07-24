@@ -1,7 +1,5 @@
 package services.gui;
 
-import com.google.common.collect.Lists;
-import daos.common.ApiTokenDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
@@ -26,6 +24,7 @@ import utils.common.HashUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -48,19 +47,16 @@ public class UserService {
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
-    private final ApiTokenDao apiTokenDao;
 
     @Inject
     UserService(StudyService studyService,
                 UserDao userDao,
                 StudyDao studyDao,
-                WorkerDao workerDao,
-                ApiTokenDao apiTokenDao) {
+                WorkerDao workerDao) {
         this.studyService = studyService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
-        this.apiTokenDao = apiTokenDao;
     }
 
     /**
@@ -226,24 +222,34 @@ public class UserService {
         });
     }
 
+    /**
+     * Removes a user and any studies that have no more users after removal. Studies with no users are deleted
+     * completely (including assets and results).
+     */
     public void removeUser(String normalizedUsername) {
-        User user = retrieveUser(normalizedUsername);
-        if (user.getUsername().equals(ADMIN_USERNAME)) {
-            throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_DELETE_ADMIN);
-        }
-        removeUser(user);
+        User user = userDao.findByUsername(normalizedUsername);
+        removeUser(user.getId());
     }
 
     /**
-     * Removes the User belonging to the given username from the database. It also removes all studies where this user
-     * is the last member (which subsequently removes all components, results and the study assets too).
+     * Removes a user and any studies that have no more users after removal. Studies with no users are deleted
+     * completely (including assets and results).
      */
-    public void removeUser(User user) {
+    public void removeUser(Long id) {
         userDao.withTransaction(em -> {
-            // Remove Study (including batches, components, study results, component
-            // results, group results)
-            for (Study study : Lists.newArrayList(user.getStudyList())) {
-                // Only remove the study if no other users are member in this study
+            User user = userDao.findById(id);
+            if (user == null) {
+                throw new NotFoundException("An user with id \"" + id + "\" doesn't exist.");
+            }
+            if (user.getUsername().equals(ADMIN_USERNAME)) {
+                throw new ForbiddenException("It's not possible to remove user 'admin'.");
+            }
+
+            List<Study> studiesBeforeRemoval = new ArrayList<>(user.getStudyList());
+
+            // Remove user from all studies and delete studies with no users
+            for (Study study : studiesBeforeRemoval) {
+                // Only remove study if user is the last member
                 assert study != null;
                 if (study.getUserList().size() <= 1) {
                     studyService.removeStudyInclAssets(study);
@@ -253,10 +259,7 @@ public class UserService {
                 }
             }
 
-            // Delete all user's API tokens
-            apiTokenDao.findByUser(user).forEach(apiTokenDao::remove);
-
-            // Doesn't need to remove the user's JatosWorker: he is removed together with the default batch
+            // Remove user (cascades delete ApiTokens, LoginAttempts, JatosWorker)
             userDao.remove(user);
         });
     }

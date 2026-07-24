@@ -60,7 +60,7 @@ public class ComponentServiceTest {
         componentDao = Mockito.mock(ComponentDao.class);
         ioUtils = Mockito.mock(IOUtils.class);
 
-        componentService = new ComponentService(resultRemover, studyDao, componentDao, ioUtils);
+        componentService = new ComponentService(studyDao, componentDao, ioUtils);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
@@ -307,7 +307,6 @@ public class ComponentServiceTest {
         // Then
         assertThat(s.getComponentList().contains(c)).isFalse();
         verify(studyDao).merge(s);
-        verify(resultRemover).removeAllComponentResults(c);
         verify(componentDao).remove(c);
     }
 

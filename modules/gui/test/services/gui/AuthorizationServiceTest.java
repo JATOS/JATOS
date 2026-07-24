@@ -196,7 +196,8 @@ public class AuthorizationServiceTest {
 
     @Test(expected = NotFoundException.class)
     public void checkAdminOrSelf_throwsNotFound_whenTargetUserIsNull() {
-        authorizationService.checkAdminOrSelf(user("signedin", Role.USER), null);
+        User user = null;
+        authorizationService.checkAdminOrSelf(user("signedin", Role.USER), user);
     }
 
     @Test

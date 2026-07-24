@@ -76,7 +76,7 @@ public class ResultRemoverTest {
         ioUtils = mock(IOUtils.class);
 
         resultRemover = new ResultRemover(authorizationService, componentResultDao, studyResultDao, groupResultDao,
-                workerDao, studyLogger, ioUtils);
+                studyLogger, ioUtils);
 
         // Minimal model graph used by several tests
         user = newUser();
@@ -176,15 +176,10 @@ public class ResultRemoverTest {
         resultRemover.removeComponentResults(Arrays.asList(200L, 201L), true);
 
         // studyResult should have both removed, uploads dir removed twice, and component results removed
-        verify(studyResultDao, atLeastOnce()).merge(sr);
         verify(ioUtils, times(1)).removeResultUploadsDir(eq(sr.getId()), eq(200L));
         verify(ioUtils, times(1)).removeResultUploadsDir(eq(sr.getId()), eq(201L));
         verify(componentResultDao).remove(cr1);
         verify(componentResultDao).remove(cr2);
-
-        // since empty after removing both, removeEmptyStudyResult should remove sr
-        verify(workerDao).merge(worker);
-        verify(studyResultDao).remove(sr);
 
         // one log entry per study
         verify(studyLogger).log(eq(study), eq(user), contains("Removed result data and files"));
@@ -207,7 +202,6 @@ public class ResultRemoverTest {
 
         // Only the specified component removed, and sr not removed
         verify(componentResultDao).remove(cr1);
-        verify(studyResultDao, atLeastOnce()).merge(sr);
         verify(studyResultDao, never()).remove(sr);
         verify(ioUtils).removeResultUploadsDir(eq(sr.getId()), eq(210L));
     }
@@ -235,10 +229,6 @@ public class ResultRemoverTest {
 
         resultRemover.removeStudyResults(Arrays.asList(300L, 301L));
 
-        // all component results of each study result removed via dao.remove
-        verify(componentResultDao).remove(cr1);
-        verify(componentResultDao).remove(cr2);
-
         // uploads dir removed per study result and study result removed
         verify(ioUtils).removeResultUploadsDir(300L);
         verify(ioUtils).removeResultUploadsDir(301L);
@@ -264,8 +254,6 @@ public class ResultRemoverTest {
 
         resultRemover.removeAllComponentResults(component);
 
-        // studyResult updated (removed both component results from list)
-        verify(studyResultDao, atLeastOnce()).merge(sr);
         // both removed via dao
         verify(componentResultDao).remove(cr1);
         verify(componentResultDao).remove(cr2);
@@ -291,8 +279,6 @@ public class ResultRemoverTest {
         resultRemover.removeAllStudyResults(batch);
 
         // components removed
-        verify(componentResultDao).remove(cr1);
-        verify(componentResultDao).remove(cr2);
         // uploads for sr and studyResult removed
         verify(ioUtils).removeResultUploadsDir(700L);
         verify(ioUtils).removeResultUploadsDir(701L);

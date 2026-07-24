@@ -1,19 +1,16 @@
 package services.gui;
 
 import daos.common.BatchDao;
-import daos.common.GroupResultDao;
 import daos.common.StudyDao;
-import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import models.common.workers.WorkerType;
 import exceptions.common.NotFoundException;
-import http.common.Http.Context;
 import general.common.StudyLogger;
+import http.common.Http.Context;
 import models.common.Batch;
 import models.common.Study;
 import models.common.User;
-import models.common.workers.JatosWorker;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import models.gui.BatchProperties;
 import play.Logger;
 import play.data.validation.ValidationError;
@@ -22,6 +19,7 @@ import utils.common.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.ValidationException;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,28 +34,19 @@ public class BatchService {
 
     private static final Logger.ALogger LOGGER = Logger.of(BatchService.class);
 
-    private final ResultRemover resultRemover;
     private final BatchDao batchDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
-    private final GroupResultDao groupResultDao;
-    private final StudyLinkDao studyLinkDao;
     private final StudyLogger studyLogger;
 
     @Inject
-    BatchService(ResultRemover resultRemover,
-                 BatchDao batchDao,
+    BatchService(BatchDao batchDao,
                  StudyDao studyDao,
                  WorkerDao workerDao,
-                 GroupResultDao groupResultDao,
-                 StudyLinkDao studyLinkDao,
                  StudyLogger studyLogger) {
-        this.resultRemover = resultRemover;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
-        this.groupResultDao = groupResultDao;
-        this.studyLinkDao = studyLinkDao;
         this.studyLogger = studyLogger;
     }
 
@@ -176,24 +165,15 @@ public class BatchService {
     }
 
     /**
-     * Removes batch, all it's StudyResults, ComponentResults, GroupResults and Workers (if they don't belong to another
-     * batch) and persists the changes to the database.
+     * Removes batch, all its StudyResults, ComponentResults, GroupResults, and StudyLinks. Handles BatchWorkerMap
+     * cleanup (workers are managed application-layer since they can belong to multiple batches).
      */
     public void remove(Batch batch) {
         batchDao.withTransaction(entityManager -> {
-            // Delete all StudyResults and all ComponentResults
-            resultRemover.removeAllStudyResults(batch);
-
-            // Delete all StudyLinks that belong to this Batch
-            studyLinkDao.removeAllByBatch(batch);
-
-            // Delete all GroupResults
-            groupResultDao.findAllByBatch(batch).forEach(groupResultDao::remove);
-
             // Remove or update Workers of this batch
-            for (Worker worker : batch.getWorkerList()) {
-                removeOrUpdateJatosWorker(batch, worker);
-                removeOrUpdateNonJatosWorkers(batch, worker);
+            // (StudyResults, ComponentResults, GroupResults, and StudyLinks are cascaded by database)
+            for (Worker worker : new ArrayList<>(batch.getWorkerList())) {
+                removeOrUpdateWorkerForBatch(batch, worker);
             }
 
             // Remove this Batch from its study
@@ -209,53 +189,15 @@ public class BatchService {
     }
 
     /**
-     * Remove or update JatosWorker from batch. This isn't necessary anymore because we don't add the JatosWorker to a
-     * batch anymore. We keep it to clean up old batches that still have a JatosWorker.
+     * Remove or update worker from the batch. Workers can belong to multiple batches, so we only remove
+     * the batch from the worker's list (the BatchWorkerMap entry will be cascaded by database).
      */
-    private void removeOrUpdateJatosWorker(Batch batch, Worker worker) {
-        // We can't check type with 'instanceof JatosWorker' because sometimes Hibernate doesn't map the proper type
-        if (worker.getWorkerType() != WorkerType.JATOS) {
-            return;
-        }
-
-        // If worker is part of other batches do nothing
-        if (worker.getBatchList().size() != 1) {
-            return;
-        }
-
-        // This is a Hibernate issue: If this worker was a JatosWorker
-        // before but its user was already deleted, it's not an instance of
-        // JatosWorker anymore. But anyway, since the worker is only in this
-        // batch, now it can be removed.
-        if (!(worker instanceof JatosWorker)) {
-            workerDao.remove(worker);
-            return;
-        }
-
-        // Worker is only in this batch
-        JatosWorker jatosWorker = (JatosWorker) worker;
-        if (jatosWorker.getUser() == null) {
-            // Last one in the batch list and User gone -> remove worker
-            workerDao.remove(worker);
-        } else {
-            // If the JatosWorker's User does still exist, don't remove
-            worker.removeBatch(batch);
-            workerDao.merge(worker);
-        }
-    }
-
-    private void removeOrUpdateNonJatosWorkers(Batch batch, Worker worker) {
-        // We can't check type with 'instanceof JatosWorker' because sometimes Hibernate doesn't map the proper type
-        if (worker.getWorkerType() == WorkerType.JATOS) {
-            return;
-        }
-
+    private void removeOrUpdateWorkerForBatch(Batch batch, Worker worker) {
         if (worker.getBatchList().size() == 1) {
-            // If this worker does not belong to any other batches, remove it from the database
+            // If this worker does not belong to any other batches, remove it entirely
             workerDao.remove(worker);
         } else {
-            // If this worker belongs to other batches, it can't be removed from the database, but this batch has to be
-            // removed from the worker's batch list
+            // If this worker belongs to other batches, remove only this batch from the worker's list
             worker.removeBatch(batch);
             workerDao.merge(worker);
         }

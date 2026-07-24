@@ -57,8 +57,7 @@ public class BatchServiceTest {
         groupResultDao = Mockito.mock(GroupResultDao.class);
         studyLinkDao = Mockito.mock(StudyLinkDao.class);
         studyLogger = Mockito.mock(StudyLogger.class);
-        batchService = new BatchService(resultRemover, batchDao, studyDao, workerDao, groupResultDao, studyLinkDao,
-                studyLogger);
+        batchService = new BatchService(batchDao, studyDao, workerDao, studyLogger);
 
         JPAMocker.mockDaoTransactions(batchDao, studyDao, workerDao, groupResultDao, studyLinkDao);
 
@@ -255,10 +254,6 @@ public class BatchServiceTest {
 
         // Then: study updated and batch removed
         verify(studyDao, times(1)).merge(study);
-        // results and links removed
-        verify(resultRemover, times(1)).removeAllStudyResults(eq(batch));
-        verify(studyLinkDao, times(1)).removeAllByBatch(batch);
-        verify(groupResultDao, times(1)).findAllByBatch(batch);
         // workers removed
         verify(workerDao, atLeastOnce()).remove(any(Worker.class));
         // batch itself removed and logging

@@ -1,7 +1,6 @@
 package services.gui;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.UserDao;
@@ -228,8 +227,8 @@ public class StudyService {
     public Study createAndPersistStudy(Study study) {
         return studyDao.withTransaction(em -> {
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            User managedSignedinUser = em.merge(signedinUser);
-            Study managedStudy = em.merge(study);
+            User managedSignedinUser = userDao.merge(signedinUser);
+            Study managedStudy = studyDao.merge(study);
 
             managedStudy.addUser(managedSignedinUser);
 
@@ -386,22 +385,22 @@ public class StudyService {
     }
 
     /**
-     * Removes the given study, its components, component results, study results, group results and batches and persists
-     * the changes to the database. It also deletes the study's assets from the disk.
+     * Removes the given study, its components, component results, study results, group results, and batches and
+     * persists the changes to the database. Also deletes the study's assets from the disk.
      */
     public void removeStudyInclAssets(Study study) {
-        // Remove all study's batches and their StudyResults and GroupResults
-        for (Batch batch : Lists.newArrayList(study.getBatchList())) {
-            batchService.remove(batch);
-        }
+        studyDao.withTransaction(em -> {
+            // Remove study from all member users
+            Study managedStudy = studyDao.merge(study);
+            for (User user : new ArrayList<>(managedStudy.getUserList())) {
+                managedStudy.removeUser(user);
+            }
 
-        // Remove this study from all member users
-        for (User user : new ArrayList<>(study.getUserList())) {
-            study.removeUser(user);
-        }
-
-        // Remove study. This also removes all study's components and their ComponentResults via cascading.
-        studyDao.remove(study);
+            // Single deletion cascades everything via database constraints:
+            // Study -> Batch -> StudyResult -> ComponentResult
+            //    -> Component -> (ComponentResult via cascade) -> GroupResult
+            studyDao.remove(managedStudy);
+        });
 
         if (study.getDirName() != null) {
             unchecked(() -> ioUtils.removeStudyAssetsDir(study.getDirName()));

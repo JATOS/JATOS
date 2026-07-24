@@ -185,6 +185,13 @@ public class AuthorizationService {
         }
     }
 
+    public void checkAdminOrSelf(User signedinUser, ApiToken apiToken) {
+        if (apiToken == null) {
+            throw new NotFoundException("Token not found");
+        }
+        checkAdminOrSelf(signedinUser, apiToken.getUser());
+    }
+
     public void checkAdminOrSelf(User signedinUser, User user) {
         if (user == null) {
             throw new NotFoundException("User not found");

@@ -1,0 +1,91 @@
+# Routes
+# This file defines all routes for JATOS' API (Higher priority routes first)
+# Order is important!
+# ~~~~
+
+# API admin
+GET      /jatos/api/v1/admin/status                                         @controllers.gui.api.AdminApi.status()
+GET      /jatos/api/v1/admin/logs/list                                      @controllers.gui.api.AdminApi.listLogs()
+GET      /jatos/api/v1/admin/logs/:filename                                 @controllers.gui.api.AdminApi.logs(filename, limit: Integer ?= -1, reverse: Boolean ?= false)
+
+# API tokens
+GET      /jatos/api/v1/admin/token                                          @controllers.gui.api.ApiTokenApi.currentApiTokenMetadata()
+POST     /jatos/api/v1/users/:id/tokens                                     @controllers.gui.api.ApiTokenApi.generateApiToken(request: Request, id: Long)
+GET      /jatos/api/v1/users/:id/tokens                                     @controllers.gui.api.ApiTokenApi.allApiTokenMetadataByUser(id: Long)
+GET      /jatos/api/v1/tokens/:id                                           @controllers.gui.api.ApiTokenApi.apiTokenMetadata(id: Long)
+PATCH    /jatos/api/v1/tokens/:id                                           @controllers.gui.api.ApiTokenApi.toggleApiTokenActive(request: Request, id: Long)
+DELETE   /jatos/api/v1/tokens/:id                                           @controllers.gui.api.ApiTokenApi.deleteApiToken(id: Long)
+
+# API batches
+GET      /jatos/api/v1/studies/:id/batches                                  @controllers.gui.api.BatchApi.getBatchesByStudy(id)
+GET      /jatos/api/v1/batches/:id                                          @controllers.gui.api.BatchApi.getBatch(id)
+POST     /jatos/api/v1/studies/:id/batches                                  @controllers.gui.api.BatchApi.createBatch(request: Request, id)
+PATCH    /jatos/api/v1/batches/:id                                          @controllers.gui.api.BatchApi.updateBatch(request: Request, id)
+DELETE   /jatos/api/v1/batches/:id                                          @controllers.gui.api.BatchApi.deleteBatch(id)
+GET      /jatos/api/v1/batches/:id/session                                  @controllers.gui.api.BatchApi.getBatchSession(id, asText: Boolean ?= false)
+PATCH    /jatos/api/v1/batches/:id/session                                  @controllers.gui.api.BatchApi.updateBatchSession(request: Request, id, version: Option[java.lang.Long])
+
+# API components
+GET      /jatos/api/v1/studies/:id/components                               @controllers.gui.api.ComponentApi.getComponentsByStudy(id)
+GET      /jatos/api/v1/components/:id                                       @controllers.gui.api.ComponentApi.getComponent(id)
+POST     /jatos/api/v1/studies/:id/components                               @controllers.gui.api.ComponentApi.createComponent(request: Request, id)
+PATCH    /jatos/api/v1/components/:id                                       @controllers.gui.api.ComponentApi.updateComponent(request: Request, id)
+DELETE   /jatos/api/v1/components/:id                                       @controllers.gui.api.ComponentApi.deleteComponent(id)
+
+# API groups
+GET      /jatos/api/v1/batches/:id/groups                                   @controllers.gui.api.GroupApi.getGroupsOfBatch(id)
+GET      /jatos/api/v1/groups/:id/session                                   @controllers.gui.api.GroupApi.getGroupSession(id: Long, asText: Boolean ?= false)
+PATCH    /jatos/api/v1/groups/:id/session                                   @controllers.gui.api.GroupApi.updateGroupSession(request: Request, id: Long, version: Option[java.lang.Long])
+
+# API results
+GET      /jatos/api/v1/results                                              @controllers.gui.api.ResultApi.exportResults(request: Request, isApiCall: Boolean ?= true)
+POST     /jatos/api/v1/results                                              @controllers.gui.api.ResultApi.exportResults(request: Request, isApiCall: Boolean ?= true)
+GET      /jatos/api/v1/results/metadata                                     @controllers.gui.api.ResultApi.exportResultMetadata(request: Request, download: Boolean ?= true, isApiCall: Boolean ?= true)
+POST     /jatos/api/v1/results/metadata                                     @controllers.gui.api.ResultApi.exportResultMetadata(request: Request, download: Boolean ?= true, isApiCall: Boolean ?= true)
+GET      /jatos/api/v1/results/data                                         @controllers.gui.api.ResultApi.exportResultData(request: Request, asPlainText: Boolean ?= false, download: Boolean ?= false, isApiCall: Boolean ?= true)
+POST     /jatos/api/v1/results/data                                         @controllers.gui.api.ResultApi.exportResultData(request: Request, asPlainText: Boolean ?= false, download: Boolean ?= false, isApiCall: Boolean ?= true)
+GET      /jatos/api/v1/results/files                                        @controllers.gui.api.ResultApi.exportResultFiles(request: Request)
+POST     /jatos/api/v1/results/files                                        @controllers.gui.api.ResultApi.exportResultFiles(request: Request)
+GET      /jatos/api/v1/results/files/:filename                              @controllers.gui.api.ResultApi.exportSingleResultFile(componentResultId: Long, filename)
+POST     /jatos/api/v1/results/delete                                       @controllers.gui.api.ResultApi.removeResults(request: Request)
+PUT      /jatos/api/v1/results/delete                                       @controllers.gui.api.ResultApi.removeResults(request: Request)
+
+# API studies
+HEAD     /jatos/api/v1/studies/:id                                          @controllers.gui.api.StudyApi.checkStudyExists(id)
+GET      /jatos/api/v1/studies/properties                                   @controllers.gui.api.StudyApi.getAllStudyPropertiesOfSignedinUser(withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
+# Deprecated: use "POST /jatos/api/v1/studies" instead
+POST     /jatos/api/v1/studies/create                                       @controllers.gui.api.StudyApi.createStudy(request: Request)
+# Deprecated: use "POST /jatos/api/v1/studies" instead
+POST     /jatos/api/v1/study                                                @controllers.gui.api.StudyApi.importStudy(request: Request, keepProperties: Boolean ?= false, keepAssets: Boolean ?= false, keepCurrentAssetsName: Boolean ?= true, renameAssets: Boolean ?= true)
+POST     /jatos/api/v1/studies                                              @controllers.gui.api.StudyApi.importOrCreateStudy(request: Request, keepProperties: Boolean ?= false, keepAssets: Boolean ?= false, keepCurrentAssetsName: Boolean ?= true, renameAssets: Boolean ?= true)
+GET      /jatos/api/v1/studies/:id                                          @controllers.gui.api.StudyApi.exportStudy(id)
+DELETE   /jatos/api/v1/studies/:id                                          @controllers.gui.api.StudyApi.deleteStudy(id)
+GET      /jatos/api/v1/studies/:id/properties                               @controllers.gui.api.StudyApi.getStudyProperties(id, withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
+PATCH    /jatos/api/v1/studies/:id/properties                               @controllers.gui.api.StudyApi.updateStudyProperties(request: Request, id)
+GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.api.StudyApi.allMembersOfStudy(id)
+PUT      /jatos/api/v1/studies/:id/members/:userId                          @controllers.gui.api.StudyApi.addMemberToStudy(id, userId: Long)
+DELETE   /jatos/api/v1/studies/:id/members/:userId                          @controllers.gui.api.StudyApi.removeMemberFromStudy(id, userId: Long)
+GET      /jatos/api/v1/studies/:id/log                                      @controllers.gui.api.StudyApi.studyLog(id, entryLimit: Integer ?= -1, download: Boolean ?= true)
+
+# API study assets
+GET      /jatos/api/v1/studies/:id/assets/structure                         @controllers.gui.api.StudyAssetsApi.getStudyAssetsStructure(id, flatten: Boolean ?= false)
+POST     /jatos/api/v1/studies/:id/assets                                   @controllers.gui.api.StudyAssetsApi.uploadStudyAssetsFile(request: Request, id, filepath = null)
+POST     /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.api.StudyAssetsApi.uploadStudyAssetsFile(request: Request, id, filepath)
+GET      /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.api.StudyAssetsApi.downloadStudyAssetsFile(id, filepath)
+DELETE   /jatos/api/v1/studies/:id/assets/*filepath                         @controllers.gui.api.StudyAssetsApi.deleteStudyAssetsFile(id, filepath)
+
+# API study codes
+# Deprecated: use "POST /jatos/api/v1/studies/:id/studyCodes" instead
+GET      /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.api.StudyCodeApi.getOrGenerateStudyCodes(request: Request, id, batchId: Option[java.lang.Long], type ?= null, comment ?= null, amount: Option[java.lang.Integer])
+POST     /jatos/api/v1/studies/:id/studyCodes                               @controllers.gui.api.StudyCodeApi.getOrGenerateStudyCodes(request: Request, id, batchId: Option[java.lang.Long], type ?= null, comment ?= null, amount: Option[java.lang.Integer])
+GET      /jatos/api/v1/studyCodes/:code                                     @controllers.gui.api.StudyCodeApi.getStudyCode(code)
+PATCH    /jatos/api/v1/studyCodes/:code                                     @controllers.gui.api.StudyCodeApi.toggleStudyCodeActive(request: Request, code)
+
+# API users
+GET      /jatos/api/v1/users                                                @controllers.gui.api.UserApi.allUsers()
+POST     /jatos/api/v1/users                                                @controllers.gui.api.UserApi.createUser(request: Request)
+HEAD     /jatos/api/v1/users/:id                                            @controllers.gui.api.UserApi.checkUserExists(id: Long)
+GET      /jatos/api/v1/users/:id                                            @controllers.gui.api.UserApi.getUser(id: Long)
+PATCH    /jatos/api/v1/users/:id                                            @controllers.gui.api.UserApi.updateUser(request: Request, id: Long)
+DELETE   /jatos/api/v1/users/:id                                            @controllers.gui.api.UserApi.deleteUser(id: Long)
+PATCH    /jatos/api/v1/users/:id/roles                                      @controllers.gui.api.UserApi.changeUserRole(request: Request, id: Long)
