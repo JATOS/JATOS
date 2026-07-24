@@ -20,7 +20,7 @@ public class LoginAttempt {
     private Long id;
 
     /**
-     * username as entered in the login form
+     * username as entered in the login form; might be not corresponded to an actual username
      */
     private String username;
 
