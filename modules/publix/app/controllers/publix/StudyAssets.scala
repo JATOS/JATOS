@@ -98,7 +98,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
       if (request.headers.hasHeader(RANGE)) {
         RangeResult.ofPath(file, request.headers.get(RANGE), Option.empty)
       } else {
-        Ok.sendPath(file, inline = true).withHeaders("Cache-Control" -> "private")
+        Ok.sendPath(file, inline = true).withHeaders(CACHE_CONTROL -> "private")
       }
     } catch {
       case e: ForbiddenException =>
@@ -142,7 +142,7 @@ class StudyAssets @Inject()(components: ControllerComponents,
       val file = ioUtils.getFileInStudyAssetsDir(studyDirName, componentHtmlFilePath)
       Ok.sendPath(file)
         .as("text/html; charset=utf-8")
-        .withHeaders("Cache-Control" -> "no-cache, no-store")
+        .withHeaders(CACHE_CONTROL -> "no-cache, no-store")
     } catch {
       case _: IOException =>
         throw new NotFoundException(MessagesStrings.htmlFilePathNotExist(studyDirName, componentHtmlFilePath))
