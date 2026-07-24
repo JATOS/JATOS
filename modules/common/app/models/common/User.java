@@ -81,7 +81,7 @@ public class User {
      * Corresponding JatosWorker. This relationship is bidirectional.
      */
     @JsonIgnore
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "worker_id")
     private JatosWorker worker;
 
@@ -121,7 +121,7 @@ public class User {
     private Timestamp lastSeen;
 
     /**
-     * A user can be deactivated (by default they are active). If deactivated a user cannot sign in, but their studies
+     * A user can be deactivated (by default, they are active). If deactivated, a user cannot sign in, but their studies
      * can be still run by workers.
      */
     @JsonView({JsonForApi.class})
@@ -166,7 +166,7 @@ public class User {
     public static String normalizeUsername(String username) {
         if (username == null) return null;
         String usernameWithoutAccents = Normalizer.normalize(username, Normalizer.Form.NFD)
-                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+                .replaceAll("\\p{InCombiningDiacriticalMarks}", "");
         return Normalizer.normalize(usernameWithoutAccents, Normalizer.Form.NFKC).toLowerCase().trim();
     }
 
