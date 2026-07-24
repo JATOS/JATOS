@@ -156,9 +156,7 @@ public class StudyAssetsApi extends Controller {
         Path file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), finalFilepath);
         if (!Files.isRegularFile(file)) throw new NotFoundException("File '" + finalFilepath + "' couldn't be found.");
         String cdHeader = "attachment; " + HttpHeaderParameterEncoding.encode("filename", file.getFileName().toString());
-        Context.current().response().setHeader(CONTENT_DISPOSITION, cdHeader);
-        // todo put in .withHeader
-        return ok().sendPath(file);
+        return ok().sendPath(file).withHeaders(CONTENT_DISPOSITION, cdHeader);
     }
 
     /**
