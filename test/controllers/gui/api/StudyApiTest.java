@@ -80,6 +80,18 @@ public class StudyApiTest extends JatosTest {
     }
 
     @Test
+    public void exportStudy_returnsZipArchive() {
+        Study study = importAndGetExampleStudy();
+
+        WSResponse resp = api("/jatos/api/v1/studies/" + study.getId()).get();
+
+        assertThat(resp.getStatus()).isEqualTo(OK);
+        assertThat(resp.getSingleHeader("Content-Type").orElseThrow()).contains("application/zip");
+        assertThat(resp.asByteArray().length).isGreaterThan(0);
+        assertThat(resp.getSingleHeader("Content-Disposition").orElseThrow()).contains("attachment");
+    }
+
+    @Test
     public void deleteStudy_removesStudy() {
         Study study = importAndGetExampleStudy();
 

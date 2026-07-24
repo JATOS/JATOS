@@ -4,33 +4,22 @@ import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
-import exceptions.common.JatosException;
-import general.common.Common;
-import http.common.Http.Context;
 import general.common.MessagesStrings;
 import json.common.DefaultJson;
 import models.common.Study;
-import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
-import play.core.utils.HttpHeaderParameterEncoding;
 import play.libs.Files.TemporaryFile;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.AuthorizationService;
 import services.gui.ImportExportService;
-import services.gui.StudyService;
-import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Optional;
 
-import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static models.common.User.Role.USER;
 
 /**
@@ -42,18 +31,12 @@ public class ImportExport extends Controller {
     private static final ALogger LOGGER = Logger.of(ImportExport.class);
 
     private final ImportExportService importExportService;
-    private final StudyService studyService;
-    private final AuthorizationService authorizationService;
     private final DefaultJson defaultJson;
 
     @Inject
     ImportExport(ImportExportService importExportService,
-                 StudyService studyService,
-                 AuthorizationService authorizationService,
                  DefaultJson defaultJson) {
         this.importExportService = importExportService;
-        this.studyService = studyService;
-        this.authorizationService = authorizationService;
         this.defaultJson = defaultJson;
     }
 
@@ -126,42 +109,6 @@ public class ImportExport extends Controller {
             importExportService.cleanupAfterStudyImport();
         }
         return ok(Long.toString(importedStudyId));
-    }
-
-    /**
-     * GET request that exports a JATOS study archive. The archive is a zip compressed file that contains the study
-     * asset directory and the study properties as JSON saved in a .jas file.
-     */
-    @Async(Executor.IO)
-    @Auth(roles = USER)
-    public Result exportStudy(String id) {
-        Study study = studyService.getStudyFromIdOrUuid(id);
-        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.canUserAccessStudy(study, signedinUser);
-
-        Path zipFile;
-        try {
-            zipFile = importExportService.createStudyExportZipFile(study.getId());
-        } catch (Exception e) {
-            String errorMsg = "Export of study \"" + study.getTitle() + "\" (ID " + study.getId() + ") failed.";
-            LOGGER.error(".exportStudy: " + errorMsg, e);
-            return internalServerError(errorMsg);
-        }
-
-        String cdHeader = "attachment; "
-                + HttpHeaderParameterEncoding.encode("filename", "jatos_study_"
-                + study.getUuid() + "." + Common.getStudyArchiveSuffix());
-        try {
-            // We need the "Content-Disposition" header for API calls (not for the GUI)
-            Context.current().response().setHeader(CONTENT_DISPOSITION, cdHeader);
-            return ok().streamed(
-                            IOUtils.okFileStreamed(zipFile, IOUtils.deleteFile(zipFile)),
-                            Optional.of(Files.size(zipFile)),
-                            Optional.of("application/zip"));
-        } catch (Exception e) {
-            IOUtils.deleteFile(zipFile).run();
-            throw new JatosException(e);
-        }
     }
 
 }

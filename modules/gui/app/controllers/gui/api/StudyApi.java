@@ -10,12 +10,13 @@ import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import controllers.gui.ImportExport;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.common.BadRequestException;
+import exceptions.common.JatosException;
 import exceptions.common.NotFoundException;
 import general.common.ApiEnvelope;
+import general.common.Common;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
@@ -35,6 +36,7 @@ import services.gui.ApiService;
 import services.gui.AuthorizationService;
 import services.gui.ImportExportService;
 import services.gui.StudyService;
+import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -58,7 +60,6 @@ public class StudyApi extends Controller {
     private final ApiService apiService;
     private final StudyService studyService;
     private final ImportExportService importExportService;
-    private final ImportExport importExport;
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final DomainJsonMapper domainJsonMapper;
@@ -70,7 +71,6 @@ public class StudyApi extends Controller {
              ApiService apiService,
              StudyService studyService,
              ImportExportService importExportService,
-             ImportExport importExport,
              UserDao userDao,
              StudyDao studyDao,
              DomainJsonMapper domainJsonMapper,
@@ -80,7 +80,6 @@ public class StudyApi extends Controller {
         this.apiService = apiService;
         this.studyService = studyService;
         this.importExportService = importExportService;
-        this.importExport = importExport;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.domainJsonMapper = domainJsonMapper;
@@ -221,11 +220,35 @@ public class StudyApi extends Controller {
     /**
      * Returns the study archive (.jzip) as a file
      */
-    // todo do not use ImportExport
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
     public Result exportStudy(String id) {
-        return importExport.exportStudy(id);
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.canUserAccessStudy(study, signedinUser);
+
+        Path zipFile;
+        try {
+            zipFile = importExportService.createStudyExportZipFile(study.getId());
+        } catch (Exception e) {
+            String errorMsg = "Export of study \"" + study.getTitle() + "\" (ID " + study.getId() + ") failed.";
+            throw new JatosException(errorMsg, e);
+        }
+
+        String cdHeader = "attachment; "
+                + HttpHeaderParameterEncoding.encode("filename", "jatos_study_"
+                + study.getUuid() + "." + Common.getStudyArchiveSuffix());
+        try {
+            // We need the "Content-Disposition" header for API calls (not for the GUI)
+            Context.current().response().setHeader(CONTENT_DISPOSITION, cdHeader);
+            return ok().streamed(
+                    IOUtils.okFileStreamed(zipFile, IOUtils.deleteFile(zipFile)),
+                    Optional.of(Files.size(zipFile)),
+                    Optional.of("application/zip"));
+        } catch (Exception e) {
+            IOUtils.deleteFile(zipFile).run();
+            throw new JatosException(e);
+        }
     }
 
     @Async(Executor.IO)
