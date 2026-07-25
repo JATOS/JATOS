@@ -1,17 +1,16 @@
 package http.common;
 
 import exceptions.common.JatosException;
-import play.api.mvc.DiscardingCookie;
 import play.libs.typedmap.TypedKey;
 import play.libs.typedmap.TypedMap;
 import play.mvc.Http.*;
-import scala.Option;
 
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static http.common.Http.Context.*;
 import static http.common.Http.Context.current;
 
 /**
@@ -45,8 +44,8 @@ public class Http {
          * Retrieves the current HTTP context from the current RequestHeader.
          */
         public static Optional<Context> currentOptional(RequestHeader request) {
-            return request.attrs().containsKey(Http.Context.CONTEXT_TYPED_KEY)
-                    ? Optional.of(request.attrs().get(Http.Context.CONTEXT_TYPED_KEY))
+            return request.attrs().containsKey(CONTEXT_TYPED_KEY)
+                    ? Optional.of(request.attrs().get(CONTEXT_TYPED_KEY))
                     : Optional.empty();
         }
 
@@ -150,7 +149,7 @@ public class Http {
          * during the execution of the function and restored afterward.
          */
         public static <T, R> Function<T, R> wrap(Context context, Function<T, R> function) {
-            return value -> Context.withContext(context, () -> function.apply(value));
+            return value -> withContext(context, () -> function.apply(value));
         }
 
         /**
@@ -160,7 +159,7 @@ public class Http {
          */
         public static Executor contextAwareExecutor(Context context, Executor delegate) {
             return command -> delegate.execute(() ->
-                    Context.withContext(context, () -> {
+                    withContext(context, () -> {
                         command.run();
                         return null;
                     }));
@@ -261,48 +260,6 @@ public class Http {
          */
         public void setCookies(Collection<Cookie> cookies) {
             this.cookies.addAll(cookies);
-        }
-
-        /**
-         * Discard a cookie on the default path ("/") with no domain and that's not secure.
-         *
-         * @param name The name of the cookie to discard, must not be null
-         */
-        public void discardCookie(String name) {
-            discardCookie(name, "/", null, false);
-        }
-
-        /**
-         * Discard a cookie on the given path with no domain and not that's secure.
-         *
-         * @param name The name of the cookie to discard (ust not be null)
-         * @param path The path of the cookie te discard (may be null)
-         */
-        public void discardCookie(String name, String path) {
-            discardCookie(name, path, null, false);
-        }
-
-        /**
-         * Discard a cookie on the given path and domain that's not secure.
-         *
-         * @param name   The name of the cookie to discard (must not be null)
-         * @param path   The path of the cookie te discard (may be null)
-         * @param domain The domain of the cookie to discard (may be null)
-         */
-        public void discardCookie(String name, String path, String domain) {
-            discardCookie(name, path, domain, false);
-        }
-
-        /**
-         * Discard a cookie in this result
-         *
-         * @param name   The name of the cookie to discard (must not be null)
-         * @param path   The path of the cookie te discard (may be null)
-         * @param domain The domain of the cookie to discard (may be null)
-         * @param secure Whether the cookie to discard is secure
-         */
-        public void discardCookie(String name, String path, String domain, boolean secure) {
-            cookies.add(new DiscardingCookie(name, path, Option.apply(domain), secure).toCookie().asJava());
         }
 
         /**
