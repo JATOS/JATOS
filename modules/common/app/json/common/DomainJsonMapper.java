@@ -607,7 +607,7 @@ public class DomainJsonMapper {
      * Returns JSON of a study intended for the JATOS API
      */
     public JsonNode studyAsJsonForApi(Study study, Boolean withComponentProperties, Boolean withBatchProperties) {
-        ObjectNode studyNode = (ObjectNode) defaultJson.asJsonWithStrictViewInclusion(study);
+        ObjectNode studyNode = (ObjectNode) defaultJson.asJsonForApi(study);
 
         if (study.getStudyInput() != null) {
             JsonNode studyInputNode = defaultJson.jsonAsJsonNode(study.getStudyInput());
@@ -650,7 +650,7 @@ public class DomainJsonMapper {
      * Returns JSON of a component intended for the JATOS API
      */
     public JsonNode componentAsJsonNodeForApi(Component component) {
-        ObjectNode componentNode = (ObjectNode) defaultJson.asJsonWithStrictViewInclusion(component);
+        ObjectNode componentNode = (ObjectNode) defaultJson.asJsonForApi(component);
         if (component.getComponentInput() != null) {
             JsonNode studyInputNode = defaultJson.jsonAsJsonNode(component.getComponentInput());
             componentNode.set("componentInput", studyInputNode);
@@ -662,7 +662,7 @@ public class DomainJsonMapper {
      * Returns JSON of a batch intended for the JATOS API
      */
     public JsonNode batchAsJsonForApi(Batch batch) {
-        ObjectNode batchNode = (ObjectNode) defaultJson.asJsonWithStrictViewInclusion(batch);
+        ObjectNode batchNode = (ObjectNode) defaultJson.asJsonForApi(batch);
         if (batch.getBatchInput() != null) {
             JsonNode studyInputNode = defaultJson.jsonAsJsonNode(batch.getBatchInput());
             batchNode.set("batchInput", studyInputNode);

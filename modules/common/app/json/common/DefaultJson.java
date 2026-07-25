@@ -1,13 +1,11 @@
 package json.common;
 
-import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope;
 import play.libs.Json;
@@ -21,24 +19,42 @@ import java.util.TimeZone;
 @Singleton
 public class DefaultJson {
 
-    private final ObjectMapper mapper;
+    private final JsonMapper jsonMapper;
+
+    private final JsonMapper jsonMapperForApi;
+
+    private final ObjectWriter ioWriter;
+    private final ObjectWriter publixWriter;
+    private final ObjectWriter apiWriter;
 
     public DefaultJson() {
-        this.mapper = new ObjectMapper();
-
-        // Never include source JSON content in exception locations (prevents leaking payload snippets)
-        mapper.getFactory().disable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
-
         // Register Jackson's Hibernate module so Jackson can handle Hibernate proxies and lazy collections.
         // FORCE_LAZY_LOADING is disabled, so serialization will not trigger database loading of uninitialized
         // lazy associations. Uninitialized lazy values are serialized as null / not expanded instead of causing
         // Jackson to traverse Hibernate internals or potentially throwing LazyInitializationException.
-        Hibernate5Module h5Module = new Hibernate5Module();
-        h5Module.disable(Hibernate5Module.Feature.FORCE_LAZY_LOADING);
-        mapper.registerModule(h5Module);
+        Hibernate5JakartaModule h5Module = new Hibernate5JakartaModule();
+        h5Module.disable(Hibernate5JakartaModule.Feature.FORCE_LAZY_LOADING);
 
-        // Use the default timezone
-        mapper.setTimeZone(TimeZone.getDefault());
+        jsonMapper = JsonMapper.builder()
+                // Never include source JSON content in exception locations (prevents leaking payload snippets)
+                .disable(Feature.INCLUDE_SOURCE_IN_LOCATION)
+                .addModule(h5Module)
+                .build();
+        jsonMapper.setTimeZone(TimeZone.getDefault());
+
+        ioWriter = jsonMapper.writerWithView(JsonForIO.class);
+        publixWriter = jsonMapper.writerWithView(JsonForPublix.class);
+
+        jsonMapperForApi = JsonMapper.builder()
+                // Never include source JSON content in exception locations (prevents leaking payload snippets)
+                .disable(Feature.INCLUDE_SOURCE_IN_LOCATION)
+                // Strictly only includes fields annotated with @JsonView(JsonForApi.class)
+                .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+                .addModule(h5Module)
+                .build();
+        jsonMapper.setTimeZone(TimeZone.getDefault());
+
+        apiWriter = jsonMapperForApi.writerWithView(JsonForApi.class);
     }
 
     /**
@@ -63,12 +79,12 @@ public class DefaultJson {
     }
 
     public ObjectMapper mapper() {
-        return mapper;
+        return jsonMapper;
     }
 
     public <T> T jsonNodeAsObj(JsonNode node, Class<T> clazz) {
         try {
-            return mapper.treeToValue(node, clazz);
+            return jsonMapper.treeToValue(node, clazz);
         } catch (JsonProcessingException e) {
             throw new JatosException(e);
         }
@@ -76,7 +92,7 @@ public class DefaultJson {
 
     public JsonNode jsonAsJsonNode(String json) {
         try {
-            return mapper.readTree(json);
+            return jsonMapper.readTree(json);
         } catch (JsonProcessingException e) {
             throw new JatosException(e);
         }
@@ -84,7 +100,7 @@ public class DefaultJson {
 
     public String objAsJson(Object obj) {
         try {
-            return mapper.writeValueAsString(obj);
+            return jsonMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             throw new JatosException(e);
         }
@@ -108,14 +124,14 @@ public class DefaultJson {
      * Java Object to JsonNode
      */
     public JsonNode objAsJsonNode(Object obj) {
-        return mapper.valueToTree(obj);
+        return jsonMapper.valueToTree(obj);
     }
 
     /**
      * Java Object to ObjectNode
      */
     public ObjectNode objAsObjectNode(Object obj) {
-        JsonNode node = mapper.valueToTree(obj);
+        JsonNode node = jsonMapper.valueToTree(obj);
         if (!node.isObject()) {
             throw new JatosException("Expected JSON object, got: " + node.getNodeType(), ApiEnvelope.ErrorCode.INVALID_JSON);
         }
@@ -123,12 +139,11 @@ public class DefaultJson {
     }
 
     /**
-     * Marshalling an Object into an JSON string. It only considers fields that are annotated with 'JsonForPublix'.
+     * Serializing an Object into an JSON string. It only considers fields that are annotated with 'JsonForPublix'.
      */
     public String asJsonForPublix(Object obj) {
         try {
-            ObjectWriter objectWriter = mapper.writerWithView(JsonForPublix.class);
-            return objectWriter.writeValueAsString(obj);
+            return publixWriter.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             throw new JatosException(e);
         }
@@ -139,24 +154,19 @@ public class DefaultJson {
      */
     public JsonNode asJsonForIO(Object obj) {
         try {
-            // Unnecessary conversion into a temporary string - better solution?
-            String tmpStr = mapper.writerWithView(JsonForIO.class)
-                    .writeValueAsString(obj);
-            return mapper.readTree(tmpStr);
+            // Unnecessary conversion into a temporary string. Better solution with ObjectWriter.writeValueAsTree
+            // when available in later Jackson versions
+            return jsonMapper.readTree(ioWriter.writeValueAsString(obj));
         } catch (JsonProcessingException e) {
             throw new JatosException(e);
         }
     }
 
-    public JsonNode asJsonWithStrictViewInclusion(Object obj) {
-        // Unnecessary conversion into a temporary string. Better solution with ObjectWriter.writeValueAsTree
-        // when available in later Jackson versions
+    public JsonNode asJsonForApi(Object obj) {
         try {
-            String tmpStr = mapper
-                    .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
-                    .writerWithView(JsonForApi.class)
-                    .writeValueAsString(obj);
-            return mapper.readTree(tmpStr);
+            // Unnecessary conversion into a temporary string. Better solution with ObjectWriter.writeValueAsTree
+            // when available in later Jackson versions
+            return jsonMapperForApi.readTree(apiWriter.writeValueAsString(obj));
         } catch (JsonProcessingException e) {
             throw new JatosException(e);
         }

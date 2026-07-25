@@ -121,7 +121,6 @@ public class DefaultJsonTest {
     public void testObjAsJso_emptyMessagesSerialization() {
         Messages messages = new Messages();
         String json = defaultJson.objAsJson(messages);
-        System.out.println("[DEBUG_LOG] JSON: " + json);
         assertNotNull("JSON should not be null", json);
         assertEquals("{}", json);
     }
@@ -201,7 +200,7 @@ public class DefaultJsonTest {
 
     @Test
     public void testAsJsonWithStrictViewInclusion_onlyIncludesApiView() {
-        JsonNode node = defaultJson.asJsonWithStrictViewInclusion(new TestJsonViewsObject());
+        JsonNode node = defaultJson.asJsonForApi(new TestJsonViewsObject());
 
         assertFalse(node.has("publixField"));
         assertFalse(node.has("ioField"));
