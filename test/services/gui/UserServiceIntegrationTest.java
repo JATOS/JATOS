@@ -16,7 +16,7 @@ import play.test.Helpers;
 import testutils.JatosTest;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static org.assertj.core.api.Assertions.assertThat;

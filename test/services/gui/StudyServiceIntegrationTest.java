@@ -19,7 +19,7 @@ import testutils.JatosTest;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.UUID;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;

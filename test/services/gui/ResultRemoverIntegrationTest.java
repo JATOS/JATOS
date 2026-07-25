@@ -18,7 +18,7 @@ import services.publix.ResultCreator;
 import testutils.JatosTest;
 
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 
