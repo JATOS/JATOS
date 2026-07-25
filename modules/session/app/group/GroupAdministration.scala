@@ -8,7 +8,7 @@ import play.api.Logger
 import java.sql.Timestamp
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-import javax.persistence.EntityManager
+import jakarta.persistence.EntityManager
 import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.jdk.CollectionConverters._
 

@@ -14,7 +14,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import testutils.session.JPAMocker;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
