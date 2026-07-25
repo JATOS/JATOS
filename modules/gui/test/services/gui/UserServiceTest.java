@@ -19,7 +19,7 @@ import org.mockito.Mockito;
 import play.test.Helpers;
 import testutils.gui.JPAMocker;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.List;
@@ -166,7 +166,7 @@ public class UserServiceTest {
         User u = new User("foo@ex.org", "Foo", "foo@ex.org");
         when(userDao.findByUsername("foo@ex.org")).thenReturn(u);
 
-        Http.Context.current().args().put(SIGNEDIN_USER, new User("other@ex.org", "Other", "other@ex.org"));
+        Context.current().args().put(SIGNEDIN_USER, new User("other@ex.org", "Other", "other@ex.org"));
 
         Set<Role> afterAdd = userService.changeAdminRole("foo@ex.org", true);
         assertThat(afterAdd).containsOnly(Role.USER, Role.ADMIN);
@@ -181,7 +181,7 @@ public class UserServiceTest {
     public void changeAdminRole_selfRemoval_forbidden() {
         User self = new User("me@ex.org", "Me", "me@ex.org");
         when(userDao.findByUsername("me@ex.org")).thenReturn(self);
-        Http.Context.current().args().put(SIGNEDIN_USER, self);
+        Context.current().args().put(SIGNEDIN_USER, self);
         userService.changeAdminRole("me@ex.org", false);
     }
 
@@ -189,7 +189,7 @@ public class UserServiceTest {
     public void changeAdminRole_adminUser_forbidden() {
         User admin = new User(ADMIN_USERNAME, "Admin", "admin@ex.org");
         when(userDao.findByUsername(ADMIN_USERNAME)).thenReturn(admin);
-        Http.Context.current().args().put(SIGNEDIN_USER, new User("other@ex.org", "Other", "other@ex.org"));
+        Context.current().args().put(SIGNEDIN_USER, new User("other@ex.org", "Other", "other@ex.org"));
         userService.changeAdminRole(ADMIN_USERNAME, false);
     }
 

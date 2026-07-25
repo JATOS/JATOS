@@ -142,7 +142,7 @@ public class StudyApi extends Controller {
     @Auth(roles = USER, types = {TOKEN, SESSION})
     public Result importOrCreateStudy(play.mvc.Http.Request request, boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets) {
-        String contentType = request.getHeaders().get(play.mvc.Http.HeaderNames.CONTENT_TYPE).orElse("");
+        String contentType = request.header(CONTENT_TYPE).orElse("");
 
         if (contentType.startsWith("multipart/form-data")
                 || contentType.startsWith("application/zip")
@@ -205,8 +205,11 @@ public class StudyApi extends Controller {
         try {
             Map<String, Object> importInfo = importExportService.importStudy(file);
 
-            Study study = importExportService.importStudyConfirmed(keepProperties, keepAssets,
-                    keepCurrentAssetsName, renameAssets);
+            Study study = importExportService.importStudyConfirmed(
+                    keepProperties,
+                    keepAssets,
+                    keepCurrentAssetsName,
+                    renameAssets);
 
             JsonNode studyNode = domainJsonMapper.studyAsJsonForApi(study, false, false);
             JsonNode envelope = ApiEnvelope.wrap(studyNode).asJsonNode();

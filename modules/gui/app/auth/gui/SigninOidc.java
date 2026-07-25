@@ -335,14 +335,12 @@ public abstract class SigninOidc extends Controller {
     }
 
     protected String getUsername(UserInfo userInfo, String usernameFrom) {
-        switch (usernameFrom) {
-            case "email":
-                return userInfo.getEmailAddress();
-            case "subject":
-                return userInfo.getSubject().getValue();
-            default:
-                throw new IllegalArgumentException("Unknown value in configuration - usernameFrom: " + oidcConfig.usernameFrom);
-        }
+        return switch (usernameFrom) {
+            case "email" -> userInfo.getEmailAddress();
+            case "subject" -> userInfo.getSubject().getValue();
+            default ->
+                    throw new IllegalArgumentException("Unknown value in configuration - usernameFrom: " + oidcConfig.usernameFrom);
+        };
     }
 
     private String getNormalizedUsername(UserInfo userInfo) {

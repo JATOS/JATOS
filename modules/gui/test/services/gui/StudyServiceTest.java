@@ -21,7 +21,7 @@ import play.test.Helpers;
 import testutils.gui.JPAMocker;
 import utils.common.IOUtils;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.io.IOException;
 import java.util.*;
 

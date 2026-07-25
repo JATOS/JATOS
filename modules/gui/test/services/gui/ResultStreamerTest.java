@@ -19,7 +19,7 @@ import play.libs.Json;
 import services.gui.ResultStreamer.ResultType;
 import testutils.gui.JPAMocker;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
