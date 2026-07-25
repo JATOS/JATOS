@@ -10,7 +10,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static http.common.Http.Context.*;
 import static http.common.Http.Context.current;
 
 /**

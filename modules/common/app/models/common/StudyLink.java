@@ -106,8 +106,7 @@ public class StudyLink {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StudyLink)) return false;
-        StudyLink other = (StudyLink) o;
+        if (!(o instanceof StudyLink other)) return false;
         return Objects.equals(getStudyCode(), other.getStudyCode());
     }
 

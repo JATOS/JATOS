@@ -93,7 +93,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         Long studyId = importExampleStudy();
 
         // Add user foo but not user bar
-        jpaApi.withTransaction((EntityManager em) -> {
+        jpaApi.withTransaction((EntityManager _) -> {
             createUser("bar@bar.org");
             User userFoo = createUser("foo@foo.org");
             Study s = studyDao.findById(studyId);
@@ -101,7 +101,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         });
 
         // Check that the study's users are admin and user foo
-        jpaApi.withTransaction((em) -> {
+        jpaApi.withTransaction((_) -> {
             Study study = studyDao.findById(studyId);
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             User userFoo = userDao.findByUsername("foo@foo.org");
@@ -113,7 +113,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         });
 
         // Remove user foo again
-        jpaApi.withTransaction((em) -> {
+        jpaApi.withTransaction((_) -> {
             try {
                 Study study = studyDao.findById(studyId);
                 User userFoo = userDao.findByUsername("foo@foo.org");
@@ -124,7 +124,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         });
 
         // Check that study's user is only the admin user
-        jpaApi.withTransaction((em) -> {
+        jpaApi.withTransaction((_) -> {
             Study s = studyDao.findById(studyId);
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             User userFoo = userDao.findByUsername("foo@foo.org");
@@ -153,13 +153,13 @@ public class StudyServiceIntegrationTest extends JatosTest {
         createUser("tee@tee.org");
 
         // Add all users to members of study
-        jpaApi.withTransaction((em) -> {
+        jpaApi.withTransaction((_) -> {
             Study s = studyDao.findById(studyId);
             studyService.addAllUserMembers(s);
         });
 
         // Check that all users are members
-        jpaApi.withTransaction((em) -> {
+        jpaApi.withTransaction((_) -> {
             Study study = studyDao.findById(studyId);
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             User userFoo = userDao.findByUsername("foo@foo.org");
@@ -173,13 +173,13 @@ public class StudyServiceIntegrationTest extends JatosTest {
         });
 
         // Remove all users from members of study except logged-in user
-        jpaApi.withTransaction((em) -> {
+        jpaApi.withTransaction((_) -> {
             Study study = studyDao.findById(studyId);
             studyService.removeAllUserMembers(study);
         });
 
         // Check that only logged-in user (admin) is member
-        jpaApi.withTransaction((em) -> {
+        jpaApi.withTransaction((_) -> {
             Study study = studyDao.findById(studyId);
             User admin = userDao.findByUsername(UserService.ADMIN_USERNAME);
             User userFoo = userDao.findByUsername("foo@foo.org");
@@ -222,12 +222,12 @@ public class StudyServiceIntegrationTest extends JatosTest {
         }
 
         // Remove user foo twice: no exception should be thrown
-        jpaApi.withTransaction(em -> {
+        jpaApi.withTransaction(_ -> {
             Study s = studyDao.findById(studyId);
             User uFoo = userDao.findByUsername("foo@foo.org");
             studyService.changeUserMember(s, uFoo, false);
         });
-        jpaApi.withTransaction(em -> {
+        jpaApi.withTransaction(_ -> {
             Study s = studyDao.findById(studyId);
             User uFoo = userDao.findByUsername("foo@foo.org");
             studyService.changeUserMember(s, uFoo, false);
@@ -377,7 +377,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
         Context.current().args().put(SIGNEDIN_USER, admin);
 
-        Study originalStudy = jpaApi.withTransaction(em -> {
+        Study originalStudy = jpaApi.withTransaction(_ -> {
             Study study = studyDao.findById(studyId);
             studyService.removeStudyInclAssets(study);
             return study;
@@ -424,11 +424,11 @@ public class StudyServiceIntegrationTest extends JatosTest {
 
         // Persisted study has a default batch and contains the admin as member
         long studyId = study.getId();
-        jpaApi.withTransaction(em -> {
+        jpaApi.withTransaction(_ -> {
             Study s = studyDao.findById(studyId);
             assertThat(s.getId()).isNotNull();
             assertThat(s.getBatchList()).hasSize(1);
-            Batch defaultBatch = s.getBatchList().get(0);
+            Batch defaultBatch = s.getBatchList().getFirst();
             assertThat(defaultBatch.getId()).isNotNull();
             // admin's worker is added to the batch
             assertThat(defaultBatch.getWorkerList()).isNotEmpty();

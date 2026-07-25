@@ -168,8 +168,7 @@ public class ApiToken {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof ApiToken)) return false;
-        ApiToken other = (ApiToken) obj;
+        if (!(obj instanceof ApiToken other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 

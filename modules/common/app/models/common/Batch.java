@@ -266,10 +266,6 @@ public class Batch {
         }
     }
 
-    public void removeAllWorkers(List<Worker> workerList) {
-        workerList.forEach(this::removeWorker);
-    }
-
     public String getComments() {
         return comments;
     }
@@ -315,8 +311,7 @@ public class Batch {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Batch)) return false;
-        Batch other = (Batch) obj;
+        if (!(obj instanceof Batch other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 

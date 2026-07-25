@@ -38,7 +38,4 @@ public class JPAMocker {
         }
     }
 
-    public static void mockDaoTransactions(AbstractDao... daos) {
-        mockDaoTransactions(null, daos);
-    }
 }

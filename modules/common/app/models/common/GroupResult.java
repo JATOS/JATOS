@@ -233,8 +233,7 @@ public class GroupResult {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof GroupResult)) return false;
-        GroupResult other = (GroupResult) obj;
+        if (!(obj instanceof GroupResult other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 

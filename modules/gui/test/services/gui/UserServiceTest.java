@@ -6,8 +6,8 @@ import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
-import http.common.Http;
 import http.common.Http.Context;
+import jakarta.persistence.EntityManager;
 import models.common.Study;
 import models.common.User;
 import models.common.User.AuthMethod;
@@ -19,7 +19,6 @@ import org.mockito.Mockito;
 import play.test.Helpers;
 import testutils.gui.JPAMocker;
 
-import jakarta.persistence.EntityManager;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.List;

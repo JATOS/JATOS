@@ -91,11 +91,4 @@ public class StudyLinkDao extends AbstractDao {
         });
     }
 
-    public void removeAllByBatch(Batch batch) {
-        withTransaction((EntityManager em) ->
-                em.createQuery("DELETE FROM StudyLink sr WHERE sr.batch = :batch")
-                        .setParameter("batch", batch)
-                        .executeUpdate());
-    }
-
 }

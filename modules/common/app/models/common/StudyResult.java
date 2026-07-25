@@ -343,8 +343,7 @@ public class StudyResult {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof StudyResult)) return false;
-        StudyResult other = (StudyResult) obj;
+        if (!(obj instanceof StudyResult other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 

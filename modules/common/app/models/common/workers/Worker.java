@@ -106,10 +106,6 @@ public abstract class Worker {
         studyResultList.add(studyResult);
     }
 
-    public void removeStudyResult(StudyResult studyResult) {
-        studyResultList.remove(studyResult);
-    }
-
     public Set<Batch> getBatchList() {
         return batchList;
     }
@@ -135,8 +131,7 @@ public abstract class Worker {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Worker)) return false;
-        Worker other = (Worker) obj;
+        if (!(obj instanceof Worker other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 

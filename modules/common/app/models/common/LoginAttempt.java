@@ -87,8 +87,7 @@ public class LoginAttempt {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LoginAttempt)) return false;
-        LoginAttempt that = (LoginAttempt) o;
+        if (!(o instanceof LoginAttempt that)) return false;
         return Objects.equals(getUsername(), that.getUsername())
                 && Objects.equals(getRemoteAddress(), that.getRemoteAddress())
                 && Objects.equals(getDate(), that.getDate());

@@ -181,8 +181,7 @@ public class Component {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Component)) return false;
-        Component other = (Component) obj;
+        if (!(obj instanceof Component other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 

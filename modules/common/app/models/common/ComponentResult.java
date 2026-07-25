@@ -217,8 +217,7 @@ public class ComponentResult {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof ComponentResult)) return false;
-        ComponentResult other = (ComponentResult) obj;
+        if (!(obj instanceof ComponentResult other)) return false;
         return getId() != null && getId().equals(other.getId());
     }
 
