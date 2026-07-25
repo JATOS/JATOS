@@ -4,18 +4,17 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
-import models.common.workers.WorkerType;
-import models.common.workers.Worker;
-import models.common.workers.WorkerTypeConverter;
-import json.common.DomainJsonMapper;
+import jakarta.persistence.*;
 import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForIO;
 import json.common.DefaultJson.JsonForPublix;
+import json.common.DomainJsonMapper;
+import models.common.workers.Worker;
+import models.common.workers.WorkerType;
+import models.common.workers.WorkerTypeConverter;
 
-import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
