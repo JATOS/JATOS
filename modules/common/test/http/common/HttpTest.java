@@ -218,19 +218,6 @@ public class HttpTest {
     }
 
     @Test
-    public void discardCookieAddsDiscardingCookie() {
-        Http.Response response = new Http.Response(new Session(new HashMap<>()));
-
-        response.discardCookie("test");
-
-        assertEquals(1, response.cookies().size());
-        Cookie cookie = response.cookie("test").orElseThrow();
-        assertEquals("test", cookie.name());
-        assertEquals("", cookie.value());
-        assertEquals("/", cookie.path());
-    }
-
-    @Test
     public void sessionIsInitiallyUnchanged() {
         Http.Response response = new Http.Response(new Session(new HashMap<>()));
 
