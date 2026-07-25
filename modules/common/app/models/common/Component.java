@@ -8,9 +8,11 @@ import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForIO;
 import json.common.DefaultJson.JsonForPublix;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.UUID;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * DB entity of a component. It's used by JPA and JSON marshaling.
@@ -21,7 +23,7 @@ import java.util.UUID;
 public class Component {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     @JsonView({JsonForPublix.class, JsonForApi.class})
     private Long id;
 

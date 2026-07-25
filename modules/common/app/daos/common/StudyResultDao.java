@@ -7,9 +7,9 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import javax.persistence.Tuple;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.Tuple;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.*;
@@ -187,9 +187,9 @@ public class StudyResultDao extends AbstractDao {
     public int countByBatchExcludingWorkerType(Batch batch, WorkerType workerTypeToBeExcluded) {
         return withReadOnlyTransaction((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT COUNT(sr) FROM StudyResult sr WHERE sr.batch=:batch "
-                            + "AND sr.worker.class <> :workerType")
+                            + "AND sr.worker.workerType <> :workerType")
                     .setParameter("batch", batch)
-                    .setParameter("workerType", workerTypeToBeExcluded.value())
+                    .setParameter("workerType", workerTypeToBeExcluded)
                     .getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -236,7 +236,7 @@ public class StudyResultDao extends AbstractDao {
         return withReadOnlyTransaction((EntityManager em) -> {
             String hql = "SELECT COUNT(sr) FROM StudyResult sr "
                     + "WHERE sr.batch = :batch "
-                    + "AND sr.worker.class IN (:workerTypes)";
+                    + "AND sr.worker.workerType IN (:workerTypes)";
             Number result = (Number) em.createQuery(hql)
                     .setParameter("batch", batch)
                     .setParameter("workerTypes", workerTypes)
@@ -255,10 +255,10 @@ public class StudyResultDao extends AbstractDao {
                     .collect(Collectors.toMap(workerType -> workerType, workerType -> 0));
 
             List<Tuple> tuples = em
-                    .createQuery("SELECT sr.worker.class AS workerType, COUNT(sr) AS count "
+                    .createQuery("SELECT sr.worker.workerType AS workerType, COUNT(sr) AS count "
                             + "FROM StudyResult sr "
                             + "WHERE sr.batch = :batch "
-                            + "GROUP BY sr.worker.class", Tuple.class)
+                            + "GROUP BY sr.worker.workerType", Tuple.class)
                     .setParameter("batch", batch)
                     .getResultList();
 
@@ -317,13 +317,13 @@ public class StudyResultDao extends AbstractDao {
         return withReadOnlyTransaction((EntityManager em) -> em
                 .createQuery("SELECT sr FROM StudyResult sr " +
                                 "WHERE sr.batch = :batch " +
-                                "AND sr.worker.class <> :workerType " +
+                                "AND sr.worker.workerType <> :workerType " +
                                 "ORDER BY sr.id ASC",
                         StudyResult.class)
                 .setFirstResult(first)
                 .setMaxResults(max)
                 .setParameter("batch", batch)
-                .setParameter("workerType", workerTypeToBeExcluded.value())
+                .setParameter("workerType", workerTypeToBeExcluded)
                 .getResultList());
     }
 
@@ -342,7 +342,7 @@ public class StudyResultDao extends AbstractDao {
         return withReadOnlyTransaction((EntityManager em) -> em
                 .createQuery("SELECT sr FROM StudyResult sr " +
                                 "WHERE sr.batch = :batch " +
-                                "AND sr.worker.class IN (:workerTypes) " +
+                                "AND sr.worker.workerType IN (:workerTypes) " +
                                 "ORDER BY sr.id ASC",
                         StudyResult.class)
                 .setFirstResult(first)

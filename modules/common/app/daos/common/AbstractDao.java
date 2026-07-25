@@ -5,7 +5,7 @@ import org.hibernate.proxy.HibernateProxy;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Singleton;
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.function.Consumer;
 import java.util.function.Function;
 

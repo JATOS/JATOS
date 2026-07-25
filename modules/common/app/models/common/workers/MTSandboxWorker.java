@@ -1,9 +1,8 @@
 package models.common.workers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 import static models.common.workers.WorkerType.MT_SANDBOX;
 

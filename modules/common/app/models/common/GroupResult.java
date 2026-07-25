@@ -2,12 +2,14 @@ package models.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * DB entity of a group result. A group result defines some properties and who's member in a group of a group
@@ -28,7 +30,7 @@ import java.util.Set;
 public class GroupResult {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     /**

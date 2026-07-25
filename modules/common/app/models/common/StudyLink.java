@@ -5,7 +5,7 @@ import models.common.workers.Worker;
 import models.common.workers.WorkerTypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Objects;
 
 /**

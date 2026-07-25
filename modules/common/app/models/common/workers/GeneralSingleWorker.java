@@ -2,8 +2,8 @@ package models.common.workers;
 
 import play.data.validation.ValidationError;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import java.util.List;
 
 import static models.common.workers.WorkerType.GENERAL_SINGLE;

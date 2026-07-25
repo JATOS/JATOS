@@ -7,10 +7,10 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 /**
@@ -82,12 +82,11 @@ public class GroupResultDao extends AbstractDao {
      */
     public List<GroupResult> findAllMaxNotReached(Batch batch) {
         return withReadOnlyTransaction((EntityManager em) -> {
-            String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
-                    + "WHERE gr.batch=:batch "
-                    + "AND b.id=:batch "
-                    + "AND gr.groupState=:groupState "
-                    + "AND (b.maxActiveMembers is null OR gr.activeMemberCount < b.maxActiveMembers) "
-                    + "AND (b.maxTotalMembers is null OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "
+            String queryStr = "SELECT gr FROM GroupResult gr "
+                    + "WHERE gr.batch = :batch "
+                    + "AND gr.groupState = :groupState "
+                    + "AND (gr.batch.maxActiveMembers IS NULL OR gr.activeMemberCount < gr.batch.maxActiveMembers) "
+                    + "AND (gr.batch.maxTotalMembers IS NULL OR (gr.activeMemberCount + gr.historyMemberCount) < gr.batch.maxTotalMembers) "
                     + "ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC";
             TypedQuery<GroupResult> query = em.createQuery(queryStr, GroupResult.class);
             query.setParameter("batch", batch);

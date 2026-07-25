@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import models.common.User.Role;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Set;
+
+import static jakarta.persistence.GenerationType.*;
 
 /**
  * DB entity of an API token (Personal Access Token, PAT). Used to authenticate/authorize JATOS API.
@@ -23,7 +25,7 @@ public class ApiToken {
     public static final int TOKEN_CHECKSUM_LENGTH = 6;
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     /**

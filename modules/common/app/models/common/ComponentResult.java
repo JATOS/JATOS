@@ -6,10 +6,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import models.common.workers.WorkerType;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Date;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * DB entity of a component result. It's used by JPA and JSON marshaling.
@@ -20,7 +22,7 @@ import java.util.Date;
 public class ComponentResult {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     /**

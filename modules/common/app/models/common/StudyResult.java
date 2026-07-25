@@ -9,9 +9,11 @@ import models.common.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * DB entity of a study result. It's used for JSON marshalling and JPA persistance. A study result essentially stores
@@ -23,7 +25,7 @@ import java.util.*;
 public class StudyResult {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     private String uuid;

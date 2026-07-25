@@ -1,12 +1,14 @@
 package models.common;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Objects;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * DB entity of a failed login attempt
@@ -16,7 +18,7 @@ import java.util.Objects;
 public class LoginAttempt {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     /**

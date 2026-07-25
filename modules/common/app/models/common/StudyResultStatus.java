@@ -1,7 +1,9 @@
 package models.common;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * DB Entity and JSON model representing the status of a StudyResult. The status is used in JATOS status view and
@@ -12,7 +14,7 @@ import java.sql.Timestamp;
 public class StudyResultStatus {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     /**

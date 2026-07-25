@@ -7,8 +7,10 @@ import models.common.Batch;
 import models.common.StudyResult;
 import play.data.validation.ValidationError;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.*;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * Abstract DB entity of a worker. It's used for JSON marshaling and JPA persistence.
@@ -32,13 +34,15 @@ public abstract class Worker {
     public static final String COMMENT = "comment";
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
     /**
      * Worker type is determined by the concrete Worker subclass / JPA discriminator.
      */
-    public abstract WorkerType getWorkerType();
+    @Convert(converter = WorkerTypeConverter.class)
+    @Column(name = DISCRIMINATOR, nullable = false, insertable = false, updatable = false)
+    private WorkerType workerType;
 
     /**
      * Some comment the user can give during study link/worker creation (only for {@link PersonalSingleWorker} and
@@ -80,6 +84,10 @@ public abstract class Worker {
 
     public Long getId() {
         return this.id;
+    }
+
+    public WorkerType getWorkerType() {
+        return this.workerType;
     }
 
     public void setComment(String comment) {

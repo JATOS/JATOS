@@ -12,11 +12,13 @@ import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForIO;
 import json.common.DefaultJson.JsonForPublix;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static jakarta.persistence.GenerationType.IDENTITY;
 
 /**
  * DB entity of a batch. The corresponding UI model is BatchProperties in model Gui.
@@ -29,7 +31,7 @@ import java.util.Set;
 public class Batch {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     @JsonView({JsonForPublix.class, JsonForApi.class})
     private Long id;
 

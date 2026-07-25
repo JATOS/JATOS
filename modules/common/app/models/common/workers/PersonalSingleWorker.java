@@ -6,8 +6,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.ValidationError;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import java.util.ArrayList;
 import java.util.List;
 

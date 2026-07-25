@@ -8,11 +8,12 @@ import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForPublix;
 import utils.common.HashUtils;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
 
-import static javax.persistence.CascadeType.*;
+import static jakarta.persistence.CascadeType.*;
+import static jakarta.persistence.GenerationType.IDENTITY;
 import static json.common.DefaultJson.JsonForIO;
 import static json.common.DomainJsonMapper.asStringForDB;
 
@@ -39,7 +40,7 @@ public class Study {
     public static final String STUDY = "study";
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = IDENTITY)
     @JsonView({JsonForPublix.class, JsonForApi.class})
     private Long id;
 

@@ -1,7 +1,7 @@
 package models.common.workers;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 /**
  * Converts {@link WorkerType} to/from database column.
