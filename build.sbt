@@ -4,7 +4,7 @@ import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 name := "JATOS"
 version := "3.10.5"
 organization := "org.jatos"
-scalaVersion := "2.13.17"
+scalaVersion := "2.13.18"
 maintainer := "lange.kristian@gmail.com"
 packageName in Universal := "jatos"
 packageName in Docker := "jatos/jatos"
@@ -14,21 +14,11 @@ libraryDependencies ++= Seq(
   filters,
   "com.h2database" % "h2" % "1.4.197",
   "org.apache.commons" % "commons-lang3" % "3.18.0",
-  "ch.qos.logback" % "logback-classic" % "1.5.13",
   "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
   "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
   "com.pivovarit" % "throwing-function" % "1.6.1",
-  "org.mockito" % "mockito-inline" % "4.11.0" % Test,
-  "org.assertj" % "assertj-core" % "3.26.0" % Test
-)
-
-ThisBuild / dependencyOverrides ++= Seq(
-  "com.fasterxml.jackson.core" % "jackson-core" % "2.12.7",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.7",
-  "com.fasterxml.jackson.core" % "jackson-annotations" % "2.12.7",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.12.7",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.12.7",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.12.7"
+  "org.mockito" % "mockito-core" % "5.23.0" % Test,
+  "org.assertj" % "assertj-core" % "3.27.7" % Test
 )
 
 // Docker commands to run in Dockerfile
@@ -55,7 +45,7 @@ dockerCommands := Seq(
 
 dockerBaseImage := "eclipse-temurin:8-jre"
 
-javacOptions ++= Seq("--release", "11", "-Xlint")
+javacOptions ++= Seq("--release", "25", "-Xlint")
 
 PlayKeys.externalizeResources := false
 
@@ -82,7 +72,7 @@ lazy val jatos = (project in file("."))
       (targetDir ** "*").get.filter(_.isFile)
     }.taskValue,
 
-    Keys.fork in Test := false,
+    MockitoSettings.settings,
   )
 
 // Submodule jatos-utils: common utils for JSON, disk IO and such

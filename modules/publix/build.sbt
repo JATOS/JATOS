@@ -1,7 +1,7 @@
 name := "jatos-publix"
 version := "3.10.5"
 organization := "org.jatos"
-scalaVersion := "2.13.17"
+scalaVersion := "2.13.18"
 maintainer := "lange.kristian@gmail.com"
 
 libraryDependencies ++= Seq(
@@ -9,8 +9,8 @@ libraryDependencies ++= Seq(
   javaWs,
   javaJpa,
   "org.apache.commons" % "commons-collections4" % "4.3",
-  "org.mockito" % "mockito-inline" % "4.11.0" % Test,
-  "org.assertj" % "assertj-core" % "3.26.0" % Test
+  "org.mockito" % "mockito-core" % "5.23.0" % Test,
+  "org.assertj" % "assertj-core" % "3.27.7" % Test
 )
 
 // Routes from submodules
@@ -23,3 +23,5 @@ sources in(Compile, doc) := Seq.empty
 publishArtifact in(Compile, packageDoc) := false
 
 dockerBaseImage := "eclipse-temurin:8-jre"
+
+MockitoSettings.settings

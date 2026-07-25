@@ -1,30 +1,16 @@
-<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
-			 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			 xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
-			 version="2.1">
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="
+                 https://jakarta.ee/xml/ns/persistence
+                 https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
 
-	<persistence-unit name="mysqlPersistenceUnit" transaction-type="RESOURCE_LOCAL">
-		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-		<non-jta-data-source>DefaultDS</non-jta-data-source>
-		<properties>
-			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect" />
-			<property name="hibernate.show_sql" value="false" />
-			<property name="hibernate.id.new_generator_mappings" value="false" />
-			<property name="hibernate.enhancer.enableLazyInitialization" value="true"/>
-		</properties>
-	</persistence-unit>
-
-	<persistence-unit name="mysqlAutoUpdatePersistenceUnit" transaction-type="RESOURCE_LOCAL">
-		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-		<non-jta-data-source>DefaultDS</non-jta-data-source>
-		<properties>
-			<property name="hibernate.archive.autodetection" value="class, hbm" />
-			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect" />
-			<property name="hibernate.hbm2ddl.auto" value="update" />
-			<property name="hibernate.show_sql" value="false" />
-			<property name="hibernate.id.new_generator_mappings" value="false" />
-			<property name="hibernate.enhancer.enableLazyInitialization" value="true"/>
-		</properties>
-	</persistence-unit>
+    <persistence-unit name="relationalPersistenceUnit" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <non-jta-data-source>DefaultDS</non-jta-data-source>
+        <properties>
+            <property name="hibernate.show_sql" value="false"/>
+        </properties>
+    </persistence-unit>
 
 </persistence>
