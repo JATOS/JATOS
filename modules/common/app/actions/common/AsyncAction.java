@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
+import static actions.common.AsyncAction.*;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 /**
@@ -25,19 +26,19 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
  * (e.g., I/O or file system operations) to custom execution contexts in order to avoid blocking Play's default
  * dispatcher.
  *
- * This class facilitates the use of the {@link AsyncAction.Async} annotation, which specifies the executor context to
+ * This class facilitates the use of the {@link Async} annotation, which specifies the executor context to
  * be used during the execution of the associated route or controller method. The supported executors are defined in the
- * {@link AsyncAction.Executor} enum.
+ * {@link Executor} enum.
  *
- * To switch execution contexts for a specific route or controller method, use the {@link AsyncAction.Async} annotation
- * and specify the desired {@link AsyncAction.Executor}. If no executor is specified, the
- * {@link AsyncAction.Executor#DEFAULT} executor is used as the fallback.
+ * To switch execution contexts for a specific route or controller method, use the {@link Async} annotation
+ * and specify the desired {@link Executor}. If no executor is specified, the
+ * {@link Executor#DEFAULT} executor is used as the fallback.
  *
  * Internally, this class ensures proper management of the request context when switching execution contexts. The
  * context is set before executing the asynchronous work in the specified executor and cleared after execution to
  * prevent memory leaks.
  */
-public class AsyncAction extends Action<AsyncAction.Async> {
+public class AsyncAction extends Action<Async> {
 
     public enum Executor {
         IO, // For everything that reads/writes from/to the database or file system
