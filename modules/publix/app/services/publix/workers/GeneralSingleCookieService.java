@@ -92,7 +92,7 @@ public class GeneralSingleCookieService {
      * adds the given study (and worker). This cookie is HTTP only and has an expiry date in the far future.
      */
     public Cookie generate(Study study, Worker worker) {
-        Optional<Cookie> currentCookie = Context.current().requestHeader().getCookie(COOKIE_NAME);
+        Optional<Cookie> currentCookie = Context.current().requestHeader().cookie(COOKIE_NAME);
         String newCookieValue;
         if (currentCookie.isPresent()) {
             if (!currentCookie.get().value().contains(study.getUuid())) {

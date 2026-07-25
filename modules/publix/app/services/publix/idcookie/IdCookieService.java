@@ -9,9 +9,11 @@ import http.common.HttpUtils;
 import models.common.ComponentResult;
 import models.common.StudyResult;
 import play.Logger;
+import play.api.mvc.DiscardingCookie;
 import play.mvc.Http.Cookie;
 import play.mvc.Http.Cookies;
 import play.mvc.Http.RequestHeader;
+import scala.Option;
 import services.publix.PublixErrorMessages;
 import services.publix.idcookie.exceptions.IdCookieMalformedException;
 import services.publix.idcookie.exceptions.IdCookieNotFoundException;
@@ -27,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static filters.publix.IdCookieFilter.IDCOOKIES_TYPED_KEY;
+import static play.mvc.Http.Cookie.SameSite.NONE;
 import static play.mvc.Http.Cookie.builder;
 
 /**
@@ -274,11 +277,12 @@ public class IdCookieService {
     }
 
     private Cookie generateDiscardCookie(String cookieName, String path) {
-        return new play.api.mvc.DiscardingCookie(
+        return new DiscardingCookie(
                 cookieName,
                 path,
-                scala.Option.empty(),
-                Common.isIdCookiesSecure()
+                Option.empty(),
+                Common.isIdCookiesSecure(),
+                Option.apply(NONE.asScala())
         ).toCookie().asJava();
     }
 

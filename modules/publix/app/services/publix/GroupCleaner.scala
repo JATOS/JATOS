@@ -9,7 +9,7 @@ import play.api.inject.ApplicationLifecycle
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import javax.persistence.EntityManager
+import jakarta.persistence.EntityManager
 import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContextExecutor, Future}

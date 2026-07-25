@@ -74,26 +74,26 @@ public class IdCookieFilter extends Filter {
     }
 
     /**
-     * Initializes the {@link Http.Context#args()} with ID cookies
+     * Initializes the {@link Context#args()} with ID cookies
      */
     public void initFromRequestCookies(play.mvc.Http.Cookies cookies) {
-        Http.Context.current().args().put(INCOMING_IDCOOKIE_NAMES_TYPED_KEY, idCookieService.extractIdCookieNames(cookies));
-        Http.Context.current().args().put(IDCOOKIES_TYPED_KEY, idCookieService.extractFromCookies(cookies));
+        Context.current().args().put(INCOMING_IDCOOKIE_NAMES_TYPED_KEY, idCookieService.extractIdCookieNames(cookies));
+        Context.current().args().put(IDCOOKIES_TYPED_KEY, idCookieService.extractFromCookies(cookies));
     }
 
     /**
-     * Synchronizes the ID cookies from {@link Http.Context#args()} with ID cookies in the response. ID cookies that
-     * were removed from {@link Http.Context#args()} during request handling are added as discard cookies.
+     * Synchronizes the ID cookies from {@link Context#args()} with ID cookies in the response. ID cookies that
+     * were removed from {@link Context#args()} during request handling are added as discard cookies.
      */
     public void syncIdCookiesToResponse() {
-        Set<String> incomingCookieNames = Http.Context.current().args().get(INCOMING_IDCOOKIE_NAMES_TYPED_KEY);
+        Set<String> incomingCookieNames = Context.current().args().get(INCOMING_IDCOOKIE_NAMES_TYPED_KEY);
         Set<String> finalCookieNames = idCookieService.generatePlayCookieNames();
 
         Set<String> removedCookieNames = new HashSet<>(incomingCookieNames);
         removedCookieNames.removeAll(finalCookieNames);
 
-        Http.Context.current().response().setCookies(idCookieService.generatePlayCookies());
-        Http.Context.current().response().setCookies(idCookieService.generateDiscardCookies(removedCookieNames));
+        Context.current().response().setCookies(idCookieService.generatePlayCookies());
+        Context.current().response().setCookies(idCookieService.generateDiscardCookies(removedCookieNames));
     }
 
 }

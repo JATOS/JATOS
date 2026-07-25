@@ -32,7 +32,7 @@ import services.publix.idcookie.IdCookieService;
 import testutils.publix.JPAMocker;
 import utils.common.IOUtils;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;

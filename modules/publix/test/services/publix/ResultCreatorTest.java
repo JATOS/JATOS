@@ -13,7 +13,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import testutils.publix.JPAMocker;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import java.util.function.Function;
 

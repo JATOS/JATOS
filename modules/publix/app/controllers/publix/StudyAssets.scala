@@ -6,7 +6,7 @@ import executor.common.StudyAssetsExecutor
 import filters.publix.IdCookieFilter.IdCookies
 import general.common.{Common, MessagesStrings}
 import http.common.HttpUtils
-import play.api.Logger
+import play.api.{Environment, Logger}
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -29,8 +29,9 @@ import scala.util.matching.Regex
  * to serve bundled public assets such as jatos.js from custom controller logic.
  */
 private[publix] class Assets @Inject()(errorHandler: HttpErrorHandler,
-                                       assetsMetadata: controllers.AssetsMetadata
-                                      ) extends controllers.AssetsBuilder(errorHandler, assetsMetadata)
+                                       assetsMetadata: controllers.AssetsMetadata,
+                                       env: Environment
+                                      ) extends controllers.AssetsBuilder(errorHandler, assetsMetadata, env)
 
 /**
  * Manages web-access to files in the external study assets directories (outside of JATOS' packed Jar).
@@ -157,42 +158,42 @@ class StudyAssets @Inject()(components: ControllerComponents,
     Action.async { _ =>
       CompletableFuture.supplyAsync(() => {
 
-          if (!studyResultDao.existsByUuid(studyResultUuid)) {
-            throw new BadRequestException("A study result " + studyResultUuid + " doesn't exist.")
-          }
-          if (!studyResultDao.isStudyRunDone(studyResultUuid)) {
-            throw new BadRequestException("The study result " + studyResultUuid + " isn't finished yet.")
-          }
+        if (!studyResultDao.existsByUuid(studyResultUuid)) {
+          throw new BadRequestException("A study result " + studyResultUuid + " doesn't exist.")
+        }
+        if (!studyResultDao.isStudyRunDone(studyResultUuid)) {
+          throw new BadRequestException("The study result " + studyResultUuid + " isn't finished yet.")
+        }
 
-          // If we have an `endRedirectUrl` specified in the study properties, redirect to it
-          val endRedirectUrl = studyDao.findStudyEndRedirectUrlByStudyResultUuid(studyResultUuid)
-          if (endRedirectUrl != null && endRedirectUrl.nonEmpty) {
-            // Redirect to URL specified in study properties
-            val urlQueryParameters = studyResultDao.findUrlQueryParametersByUuid(studyResultUuid)
-            val fullUrl = enhanceQueryStringInEndRedirectUrl(urlQueryParameters, endRedirectUrl)
-            confirmationCode match {
-              case Some(cc) => Redirect(fullUrl, Map("confirmationCode" -> Seq(cc)))
-              case None => Redirect(fullUrl)
-            }
-          }
-
-          // If we have an `endPage.html` file in the study assets directory, redirect to it
-          val dirName = studyDao.findStudyDirNameByStudyResultUuid(studyResultUuid)
-          if (ioUtils.checkFileInStudyAssetsDirExists(dirName, "endPage.html")) {
-            confirmationCode match {
-              case Some(cc) =>
-                val htmlFile = ioUtils.getExistingFileInStudyAssetsDir(dirName, "endPage.html")
-                Ok.sendPath(htmlFile)
-                  .withCookies(confirmationCodeCookie(cc)).bakeCookies()
-              case None => Ok.sendPath(ioUtils.getExistingFileInStudyAssetsDir(dirName, "endPage.html"))
-            }
-          }
-
-          // Return default end page
+        // If we have an `endRedirectUrl` specified in the study properties, redirect to it
+        val endRedirectUrl = studyDao.findStudyEndRedirectUrlByStudyResultUuid(studyResultUuid)
+        if (endRedirectUrl != null && endRedirectUrl.nonEmpty) {
+          // Redirect to URL specified in study properties
+          val urlQueryParameters = studyResultDao.findUrlQueryParametersByUuid(studyResultUuid)
+          val fullUrl = enhanceQueryStringInEndRedirectUrl(urlQueryParameters, endRedirectUrl)
           confirmationCode match {
-            case Some(cc) => Ok(views.html.publix.confirmationCode.render(cc))
-            case None => Ok(views.html.publix.endPage.render())
+            case Some(cc) => Redirect(fullUrl, Map("confirmationCode" -> Seq(cc)))
+            case None => Redirect(fullUrl)
           }
+        }
+
+        // If we have an `endPage.html` file in the study assets directory, redirect to it
+        val dirName = studyDao.findStudyDirNameByStudyResultUuid(studyResultUuid)
+        if (ioUtils.checkFileInStudyAssetsDirExists(dirName, "endPage.html")) {
+          confirmationCode match {
+            case Some(cc) =>
+              val htmlFile = ioUtils.getExistingFileInStudyAssetsDir(dirName, "endPage.html")
+              Ok.sendPath(htmlFile)
+                .withCookies(confirmationCodeCookie(cc)).bakeCookies()
+            case None => Ok.sendPath(ioUtils.getExistingFileInStudyAssetsDir(dirName, "endPage.html"))
+          }
+        }
+
+        // Return default end page
+        confirmationCode match {
+          case Some(cc) => Ok(views.html.publix.confirmationCode.render(cc))
+          case None => Ok(views.html.publix.endPage.render())
+        }
       }, studyAssetsExecutor).toScala
     }
 

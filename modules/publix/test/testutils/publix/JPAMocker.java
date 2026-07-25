@@ -2,7 +2,7 @@ package testutils.publix;
 
 import daos.common.AbstractDao;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
