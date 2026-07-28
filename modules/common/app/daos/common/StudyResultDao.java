@@ -263,7 +263,7 @@ public class StudyResultDao extends AbstractDao {
                     .getResultList();
 
             tuples.forEach(t -> counts.put(
-                    WorkerType.fromWireValue((String) t.get("workerType")),
+                    (WorkerType) t.get("workerType"),
                     ((Number) t.get("count")).intValue()
             ));
 
