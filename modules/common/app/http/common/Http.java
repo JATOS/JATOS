@@ -172,6 +172,7 @@ public class Http {
 
         private final Map<String, String> headers = new TreeMap<>(String::compareToIgnoreCase);
         private final List<Cookie> cookies = new ArrayList<>();
+        private final Set<String> discardingCookieNames = new HashSet<>();
         private Session session;
         private Flash flash;
         private boolean sessionChanged;
@@ -259,6 +260,27 @@ public class Http {
          */
         public void setCookies(Collection<Cookie> cookies) {
             this.cookies.addAll(cookies);
+        }
+
+        /**
+         * Gets the names of cookies that should be discarded.
+         */
+        public Set<String> discardingCookieNames() {
+            return Collections.unmodifiableSet(discardingCookieNames);
+        }
+
+        /**
+         * Mark a cookie to be discarded in the response.
+         */
+        public void discardCookie(String name) {
+            discardingCookieNames.add(name);
+        }
+
+        /**
+         * Mark cookies to be discarded in the response.
+         */
+        public void discardCookies(String... names) {
+            Collections.addAll(discardingCookieNames, names);
         }
 
         /**
