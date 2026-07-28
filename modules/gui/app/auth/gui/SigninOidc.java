@@ -108,7 +108,7 @@ public abstract class SigninOidc extends Controller {
         /**
          * List of scopes. For OIDC, scopes can be used to request that specific sets of information be made available as Claim Values.
          */
-        private final String[] scope;
+        private final Scope scope;
 
         /**
          * Defines from which OIDC claim the username of the user stored in JATOS' database should be taken from.
@@ -133,7 +133,7 @@ public abstract class SigninOidc extends Controller {
             this.callbackUrlPath = callbackUrlPath;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
-            this.scope = scope.toArray(new String[0]);
+            this.scope = new Scope(scope.toArray(String[]::new));
             this.usernameFrom = usernameFrom;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
             this.successMsg = successMsg;
@@ -277,11 +277,11 @@ public abstract class SigninOidc extends Controller {
         URI tokenEndpoint = getProviderInfo().getTokenEndpointURI();
         TokenRequest tokenRequest;
         if (Strings.isNullOrEmpty(oidcConfig.clientSecret)) {
-            tokenRequest = new TokenRequest(tokenEndpoint, clientID, authorizationCodeGrant);
+            tokenRequest = new TokenRequest(tokenEndpoint, clientID, authorizationCodeGrant, oidcConfig.scope);
         } else {
             Secret clientSecret = new Secret(oidcConfig.clientSecret);
             ClientAuthentication clientAuth = new ClientSecretBasic(clientID, clientSecret);
-            tokenRequest = new TokenRequest(tokenEndpoint, clientAuth, authorizationCodeGrant);
+            tokenRequest = new TokenRequest(tokenEndpoint, clientAuth, authorizationCodeGrant, oidcConfig.scope);
         }
         return tokenRequest;
     }
