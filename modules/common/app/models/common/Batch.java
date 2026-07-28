@@ -254,17 +254,6 @@ public class Batch {
         workerList.forEach(this::addWorker);
     }
 
-    /**
-     * Removes a worker from this batch and the batch from the worker. Because Batch is the owning side of the relationship,
-     * both updates are handled here to have one source of truth.
-     */
-    public void removeWorker(Worker worker) {
-        if (worker == null) return;
-        if (workerList.remove(worker)) {       // true only if actually removed
-            worker.removeBatch(this);
-        }
-    }
-
     public String getComments() {
         return comments;
     }
