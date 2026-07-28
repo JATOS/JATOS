@@ -185,7 +185,7 @@ public class JatosPublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid/comp-uuid-1/start"));
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(jw), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResults();
         verify(publixUtils).setUrlQueryParameter(sr);
         verify(idCookieService).writeIdCookie(sr, JatosRun.RUN_STUDY);
     }

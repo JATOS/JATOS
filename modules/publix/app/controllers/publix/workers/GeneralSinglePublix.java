@@ -102,7 +102,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
         if (workerId == null) {
             worker = workerCreator.createAndPersistGeneralSingleWorker(batch);
             studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-            publixUtils.finishOldestStudyResult();
+            publixUtils.finishOldestStudyResults();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
             studyLogger.log(studyLink, "Started study run with " + WorkerType.GENERAL_SINGLE + " worker", worker);
         } else {
@@ -115,7 +115,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
             studyResult = publixUtils.getLastStudyResult(worker).orElseThrow(() -> new ForbiddenException(
                     "This study was run in this browser already. Although JATOS couldn't find the study result."));
             if (!idCookieService.hasIdCookie(studyResult.getId())) {
-                publixUtils.finishOldestStudyResult();
+                publixUtils.finishOldestStudyResults();
             }
         }
         idCookieService.writeIdCookie(studyResult);

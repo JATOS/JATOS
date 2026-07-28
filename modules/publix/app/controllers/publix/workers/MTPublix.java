@@ -111,7 +111,7 @@ public class MTPublix extends Publix implements IPublix {
 
         studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
-        publixUtils.finishOldestStudyResult();
+        publixUtils.finishOldestStudyResults();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(studyResult);

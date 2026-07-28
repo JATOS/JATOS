@@ -233,7 +233,7 @@ public class PublixUtils {
      * Usually there is only one ID cookie that is to be discarded, but if the jatos.idCookies.limit config value got
      * recently decreased, there will be more than one. This method should only be called during the start of a study.
      */
-    public void finishOldestStudyResult() {
+    public void finishOldestStudyResults() {
         studyResultDao.withTransaction(em -> {
             while (idCookieService.maxIdCookiesReached()) {
                 Long abandonedStudyResultId = idCookieService.getStudyResultIdOfOldestIdCookie();

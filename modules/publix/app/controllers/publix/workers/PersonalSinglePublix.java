@@ -92,11 +92,11 @@ public class PersonalSinglePublix extends Publix implements IPublix {
         Optional<StudyResult> studyResultOpt = publixUtils.getLastStudyResult(worker);
         StudyResult studyResult;
         if (studyResultOpt.isEmpty()) {
-            publixUtils.finishOldestStudyResult();
+            publixUtils.finishOldestStudyResults();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
         } else {
             if (!idCookieService.hasIdCookie(studyResultOpt.get().getId())) {
-                publixUtils.finishOldestStudyResult();
+                publixUtils.finishOldestStudyResults();
             }
             studyResult = studyResultOpt.get();
         }

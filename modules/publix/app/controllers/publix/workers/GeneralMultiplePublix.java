@@ -76,7 +76,7 @@ public class GeneralMultiplePublix extends Publix implements IPublix {
         GeneralMultipleWorker worker = workerCreator.createAndPersistGeneralMultipleWorker(batch);
         studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
-        publixUtils.finishOldestStudyResult();
+        publixUtils.finishOldestStudyResults();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(studyResult);

@@ -169,7 +169,7 @@ public class MTPublixTest {
         verify(mtWorkerDao).findByMTWorkerId("mt-worker-1", WorkerType.MT);
         verify(workerCreator, never()).createAndPersistMTWorker(anyString(), anyBoolean(), any());
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResults();
         verify(resultCreator).createStudyResult(studyLink, worker);
         verify(publixUtils).setUrlQueryParameter(studyResult);
         verify(idCookieService).writeIdCookie(studyResult);
@@ -203,7 +203,7 @@ public class MTPublixTest {
         verify(mtWorkerDao).findByMTWorkerId("mt-worker-2", WorkerType.MT);
         verify(workerCreator).createAndPersistMTWorker("mt-worker-2", false, batch);
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyResults();
         verify(resultCreator).createStudyResult(studyLink, worker);
         verify(publixUtils).setUrlQueryParameter(studyResult);
         verify(idCookieService).writeIdCookie(studyResult);

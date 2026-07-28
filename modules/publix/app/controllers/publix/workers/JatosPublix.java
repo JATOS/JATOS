@@ -101,17 +101,12 @@ public class JatosPublix extends Publix implements IPublix {
 
         String componentUuid = null;
         JatosRun jatosRun = publixUtils.fetchJatosRunFromSession();
-        switch (jatosRun) {
-            case RUN_STUDY:
-                componentUuid = publixUtils.retrieveFirstActiveComponent(study).getUuid();
-                break;
-            case RUN_COMPONENT_START:
-                componentUuid = Context.current().response().getSession("run_component_uuid").orElse("unknown");
-                break;
-            case RUN_COMPONENT_FINISHED:
-                throw new ForbiddenException("This study was never started in JATOS.");
-        }
-        publixUtils.finishOldestStudyResult();
+        componentUuid = switch (jatosRun) {
+            case RUN_STUDY -> publixUtils.retrieveFirstActiveComponent(study).getUuid();
+            case RUN_COMPONENT_START -> Context.current().response().getSession("run_component_uuid").orElse("unknown");
+            case RUN_COMPONENT_FINISHED -> throw new ForbiddenException("This study was never started in JATOS.");
+        };
+        publixUtils.finishOldestStudyResults();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(studyResult, jatosRun);
