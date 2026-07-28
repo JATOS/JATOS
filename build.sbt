@@ -84,7 +84,7 @@ lazy val jatos = (project in file("."))
     libraryDependencies ++= Seq(
       guice,
       filters,
-      "com.h2database" % "h2" % "1.4.197",
+      "com.h2database" % "h2" % "2.4.240",
       "org.apache.commons" % "commons-lang3" % "3.18.0",
       "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
       "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
