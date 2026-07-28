@@ -89,7 +89,7 @@ public class PublixUtils {
      * Start or restart a component. It either returns a newly started component or an exception but never null.
      */
     public ComponentResult startComponentRun(Component component, StudyResult studyResult, String message) {
-        return componentResultDao.withTransaction(em -> {
+        return componentResultDao.withTransaction(_ -> {
             // Deal with the last component
             Optional<ComponentResult> lastResultOpt = componentResultDao.findLastByStudyResult(studyResult);
             if (lastResultOpt.isPresent()) {
@@ -131,7 +131,7 @@ public class PublixUtils {
     }
 
     private void finishComponentResult(ComponentResult componentResult, ComponentState state, String message) {
-        componentResultDao.withTransaction(em -> {
+        componentResultDao.withTransaction(_ -> {
             componentResult.setComponentState(state);
             componentResult.setEndDate(new Timestamp(new Date().getTime()));
             componentResult.setMessage(message);
@@ -149,7 +149,7 @@ public class PublixUtils {
      * message.
      */
     public void abortStudyRun(String message, StudyResult studyResult) {
-        studyResultDao.withTransaction(em -> {
+        studyResultDao.withTransaction(_ -> {
             // Put the current ComponentResult into state ABORTED and set the end date
             Timestamp endDate = new Timestamp(new Date().getTime());
             retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
@@ -193,7 +193,7 @@ public class PublixUtils {
      * @return The confirmation code or null if it was unsuccessful
      */
     public String finishStudyRun(Boolean successful, String message, StudyResult studyResult) {
-        return studyResultDao.withTransaction(em -> {
+        return studyResultDao.withTransaction(_ -> {
             String confirmationCode;
             StudyState studyState;
             ComponentState componentState;
@@ -234,7 +234,7 @@ public class PublixUtils {
      * recently decreased, there will be more than one. This method should only be called during the start of a study.
      */
     public void finishOldestStudyResults() {
-        studyResultDao.withTransaction(em -> {
+        studyResultDao.withTransaction(_ -> {
             while (idCookieService.maxIdCookiesReached()) {
                 Long abandonedStudyResultId = idCookieService.getStudyResultIdOfOldestIdCookie();
                 StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);

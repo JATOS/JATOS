@@ -60,7 +60,7 @@ public class StudyLinkService {
      * is greater than 1. If the amount is smaller than 1, it returns a single study code.
      */
     private List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, WorkerType workerType) {
-        return studyLinkDao.withTransaction(em -> {
+        return studyLinkDao.withTransaction(_ -> {
             int i = Math.max(amount, 1);
 
             List<String> studyCodeList = new ArrayList<>();

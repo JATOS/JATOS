@@ -328,7 +328,7 @@ public abstract class SigninOidc extends Controller {
             newUserProperties.setAuthMethod(oidcConfig.authMethod);
             List<ValidationError> errors = newUserProperties.validate();
             if (errors != null && !errors.isEmpty()) {
-                throw new ValidationException(errors.get(0).message());
+                throw new ValidationException(errors.getFirst().message());
             }
             return userService.registerUser(newUserProperties);
         }

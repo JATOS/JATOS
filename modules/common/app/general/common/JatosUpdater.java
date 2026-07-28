@@ -15,7 +15,6 @@ import org.apache.commons.lang3.SystemUtils;
 import play.Environment;
 import play.Logger;
 import play.inject.ApplicationLifecycle;
-import play.libs.Json;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSResponse;
 import scala.compat.java8.FutureConverters;
@@ -386,7 +385,7 @@ public class JatosUpdater {
                         LOGGER.info("Downloaded and unzipped new JATOS " + zipFilename);
                         return unzippedDir;
                     })
-                    .whenComplete((ok, ex) -> {
+                    .whenComplete((_, ex) -> {
                         if (ex != null) {
                             state = UpdateState.SLEEPING;
                         }
@@ -424,7 +423,7 @@ public class JatosUpdater {
                 Source<ByteString, ?> responseBody = res.getBodyAsSource();
                 Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
                         bytes -> outputStream.write(bytes.toArray()));
-                return responseBody.runWith(outputWriter, materializer).thenApply(v -> file);
+                return responseBody.runWith(outputWriter, materializer).thenApply(_ -> file);
             });
         }
     }
@@ -489,7 +488,7 @@ public class JatosUpdater {
 
         LOGGER.info("Restart JATOS to finish update to version " + currentReleaseInfo.versionFull);
         // First stop Play and then, to be sure, System.exit
-        FutureConverters.toJava(actorSystem.terminate()).thenAccept((a) -> System.exit(0));
+        FutureConverters.toJava(actorSystem.terminate()).thenAccept((_) -> System.exit(0));
     }
 
     /**

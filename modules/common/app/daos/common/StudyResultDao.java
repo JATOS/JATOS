@@ -86,7 +86,7 @@ public class StudyResultDao extends AbstractDao {
                     .setParameter("uuid", uuid)
                     .setMaxResults(1)
                     .getResultList();
-            return !studyResult.isEmpty() ? Optional.of(studyResult.get(0)) : Optional.empty();
+            return !studyResult.isEmpty() ? Optional.of(studyResult.getFirst()) : Optional.empty();
         });
     }
 
@@ -109,7 +109,7 @@ public class StudyResultDao extends AbstractDao {
                     .setMaxResults(1)
                     .getResultList();
 
-            return studyResults.isEmpty() ? Optional.empty() : Optional.of(studyResults.get(0));
+            return studyResults.isEmpty() ? Optional.empty() : Optional.of(studyResults.getFirst());
         });
     }
 
@@ -129,7 +129,7 @@ public class StudyResultDao extends AbstractDao {
                     .setParameter("studyCode", studyCode)
                     .setMaxResults(1)
                     .getResultList();
-            return !studyResult.isEmpty() ? Optional.of(studyResult.get(0)) : Optional.empty();
+            return !studyResult.isEmpty() ? Optional.of(studyResult.getFirst()) : Optional.empty();
         });
     }
 
@@ -252,7 +252,7 @@ public class StudyResultDao extends AbstractDao {
         return withReadOnlyTransaction((EntityManager em) -> {
             Map<WorkerType, Integer> counts = Arrays.stream(WorkerType.values())
                     .filter(workerType -> workerType != WorkerType.NONE)
-                    .collect(Collectors.toMap(workerType -> workerType, workerType -> 0));
+                    .collect(Collectors.toMap(workerType -> workerType, _ -> 0));
 
             List<Tuple> tuples = em
                     .createQuery("SELECT sr.worker.workerType AS workerType, COUNT(sr) AS count "

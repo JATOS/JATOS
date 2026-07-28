@@ -99,7 +99,7 @@ public class JatosPublix extends Publix implements IPublix {
         JatosWorker worker = publixUtils.retrieveSignedinUser().getWorker();
         studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
-        String componentUuid = null;
+        String componentUuid;
         JatosRun jatosRun = publixUtils.fetchJatosRunFromSession();
         componentUuid = switch (jatosRun) {
             case RUN_STUDY -> publixUtils.retrieveFirstActiveComponent(study).getUuid();
