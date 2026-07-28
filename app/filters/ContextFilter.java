@@ -1,6 +1,7 @@
 package filters;
 
 import akka.stream.Materializer;
+import general.common.Common;
 import http.common.Http.Context;
 import play.mvc.Filter;
 import play.mvc.Http;
@@ -11,6 +12,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -65,8 +67,6 @@ public class ContextFilter extends Filter {
     public CompletionStage<Result> apply(Function<RequestHeader, CompletionStage<Result>> nextFilter, Http.RequestHeader requestHeader) {
         Context context = new Context(requestHeader);
         // Attach the context to the request passed down the Play pipeline.
-        // Note: context.requestHeader() still refers to the original requestHeader,
-        // not this enriched requestHeaderWithContext.
         RequestHeader requestHeaderWithContext = requestHeader.addAttr(Context.CONTEXT_TYPED_KEY, context);
 
         CompletionStage<Result> resultStage;
@@ -77,19 +77,21 @@ public class ContextFilter extends Filter {
             Context.clear();
         }
 
-        return resultStage.handle((result, throwable) ->
-                Context.withContext(context, () -> {
-                    if (throwable != null) {
-                        throw propagate(throwable);
-                    }
+        return resultStage.handle((result, throwable) -> {
+            Context finalContext = requestHeaderWithContext.attrs().get(Context.CONTEXT_TYPED_KEY);
+            return Context.withContext(finalContext, () -> {
+                if (throwable != null) {
+                    throw propagate(throwable);
+                }
 
-                    Result syncedResult = syncHeaders(result);
-                    syncedResult = syncCookies(syncedResult);
-                    syncedResult = syncSession(syncedResult);
-                    syncedResult = syncFlash(syncedResult);
+                Result syncedResult = syncHeaders(result);
+                syncedResult = syncCookies(syncedResult);
+                syncedResult = syncSession(syncedResult);
+                syncedResult = syncFlash(syncedResult);
 
-                    return syncedResult;
-                }));
+                return syncedResult;
+            });
+        });
     }
 
     private static Result syncHeaders(Result result) {
@@ -104,6 +106,13 @@ public class ContextFilter extends Filter {
         for (Http.Cookie cookie : cookies) {
             result = result.withCookies(cookie);
         }
+
+        // Handle discarding cookies
+        Set<String> discardingCookieNames = Context.current().response().discardingCookieNames();
+        for (String cookieName : discardingCookieNames) {
+            result = result.discardingCookie(cookieName, Common.getJatosUrlBasePath());
+        }
+
         return result;
     }
 

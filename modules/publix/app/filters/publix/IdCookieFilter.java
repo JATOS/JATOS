@@ -17,20 +17,18 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
- * A Play filter that extracts the ID cookies from the requests and puts them into {@link Http.Args} where they can be
- * updated by the request's logic. At the end of the request the ID cookies are written back to the response.
+ * A Play filter that extracts the ID cookies from the requests and puts them into {@link Http.Args} for using during
+ * request's logic. New/removed/updated cookies must be written to {@link Http.Response} - they won't be automatically
+ * written back to the response.
  */
 @Singleton
 public class IdCookieFilter extends Filter {
 
-    public static final TypedKey<Set<String>> INCOMING_IDCOOKIE_NAMES_TYPED_KEY = TypedKey.create("incomingIdCookieNames");
     public static final TypedKey<IdCookieCollection> IDCOOKIES_TYPED_KEY = TypedKey.create("idCookies");
 
     /**
@@ -61,39 +59,11 @@ public class IdCookieFilter extends Filter {
 
         Context context = requestHeader.attrs().get(Context.CONTEXT_TYPED_KEY);
 
-        CompletionStage<Result> resultStage = Context.withContext(context, () -> {
-            initFromRequestCookies(requestHeader.cookies());
+        return Context.withContext(context, () -> {
+            IdCookieCollection cookies = idCookieService.extractFromCookies(requestHeader.cookies());
+            Context.current().args().put(IDCOOKIES_TYPED_KEY, cookies);
             return nextFilter.apply(requestHeader);
         });
-
-        return resultStage.thenApply(result ->
-                Context.withContext(context, () -> {
-                    syncIdCookiesToResponse();
-                    return result;
-                }));
-    }
-
-    /**
-     * Initializes the {@link Context#args()} with ID cookies
-     */
-    public void initFromRequestCookies(play.mvc.Http.Cookies cookies) {
-        Context.current().args().put(INCOMING_IDCOOKIE_NAMES_TYPED_KEY, idCookieService.extractIdCookieNames(cookies));
-        Context.current().args().put(IDCOOKIES_TYPED_KEY, idCookieService.extractFromCookies(cookies));
-    }
-
-    /**
-     * Synchronizes the ID cookies from {@link Context#args()} with ID cookies in the response. ID cookies that
-     * were removed from {@link Context#args()} during request handling are added as discard cookies.
-     */
-    public void syncIdCookiesToResponse() {
-        Set<String> incomingCookieNames = Context.current().args().get(INCOMING_IDCOOKIE_NAMES_TYPED_KEY);
-        Set<String> finalCookieNames = idCookieService.generatePlayCookieNames();
-
-        Set<String> removedCookieNames = new HashSet<>(incomingCookieNames);
-        removedCookieNames.removeAll(finalCookieNames);
-
-        Context.current().response().setCookies(idCookieService.generatePlayCookies());
-        Context.current().response().setCookies(idCookieService.generateDiscardCookies(removedCookieNames));
     }
 
 }

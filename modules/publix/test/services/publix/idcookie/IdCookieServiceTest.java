@@ -322,7 +322,7 @@ public class IdCookieServiceTest {
     }
 
     @Test
-    public void generatePlayCookies_serialisesCurrentIdCookies() {
+    public void generatePlayCookie_serialisesCurrentIdCookie() {
         IdCookieSerialiser serialiser = mock(IdCookieSerialiser.class);
         IdCookieService serviceWithMockedSerialiser = new IdCookieService(serialiser);
 
@@ -331,28 +331,13 @@ public class IdCookieServiceTest {
 
         when(serialiser.asCookieValueString(idCookie)).thenReturn("serialised=value");
 
-        Http.Cookie[] cookies = serviceWithMockedSerialiser.generatePlayCookies();
+        Http.Cookie cookies = serviceWithMockedSerialiser.generatePlayCookie(idCookie);
 
-        assertThat(cookies).hasSize(1);
-        assertThat(cookies[0].name()).isEqualTo(idCookie.getName());
-        assertThat(cookies[0].value()).isEqualTo("serialised=value");
-        assertThat(cookies[0].httpOnly()).isFalse();
-        assertThat(cookies[0].path()).contains("/");
-        assertThat(cookies[0].secure()).isFalse();
-    }
-
-    @Test
-    public void generatePlayCookieNames_returnsNamesOfCurrentIdCookies() {
-        IdCookieModel first = idCookieModel(1L);
-        first.setName(IdCookieModel.ID_COOKIE_NAME + "_1");
-
-        IdCookieModel second = idCookieModel(2L);
-        second.setName(IdCookieModel.ID_COOKIE_NAME + "_2");
-
-        setCurrentContextWith(first, second);
-
-        assertThat(service.generatePlayCookieNames())
-                .containsExactlyInAnyOrder(IdCookieModel.ID_COOKIE_NAME + "_1", IdCookieModel.ID_COOKIE_NAME + "_2");
+        assertThat(cookies.name()).isEqualTo(idCookie.getName());
+        assertThat(cookies.value()).isEqualTo("serialised=value");
+        assertThat(cookies.httpOnly()).isFalse();
+        assertThat(cookies.path()).contains("/");
+        assertThat(cookies.secure()).isFalse();
     }
 
     @Test

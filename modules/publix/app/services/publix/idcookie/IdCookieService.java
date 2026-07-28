@@ -1,13 +1,14 @@
 package services.publix.idcookie;
 
 import controllers.publix.workers.JatosPublix.JatosRun;
-import models.common.workers.WorkerType;
 import exceptions.common.JatosException;
 import general.common.Common;
 import http.common.Http.Context;
+import http.common.Http.Response;
 import http.common.HttpUtils;
 import models.common.ComponentResult;
 import models.common.StudyResult;
+import models.common.workers.WorkerType;
 import play.Logger;
 import play.api.mvc.DiscardingCookie;
 import play.mvc.Http.Cookie;
@@ -26,18 +27,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static filters.publix.IdCookieFilter.IDCOOKIES_TYPED_KEY;
 import static play.mvc.Http.Cookie.SameSite.NONE;
 import static play.mvc.Http.Cookie.builder;
 
 /**
- * Service class for JATOS ID cookie handling.
+ * Service class for JATOS ID cookie handling. ID cookies are used to quickly pass on small data like IDs during the
+ * start of a study run that are necessary to start a study. Since they are cookies, they do not need an extra
+ * request-response cycle like the init data request.
  *
- * The request-scoped {@link IdCookieCollection} stored in {@link Context#args()} is the source of truth for ID
- * cookies during request processing. This service initializes that collection from incoming browser cookies, lets the
- * application code query and mutate it, and finally synchronizes the collection back into response cookies.
+ * The request-scoped {@link IdCookieCollection} stored in {@link Context#args()} is the source of truth for ID cookies
+ * during request processing. Updated/new/removed ID cookies are additionally written into the {@link Response} object
+ * and after the request logic synchronized back into Play's response cookies.
  */
 @Singleton
 public class IdCookieService {
@@ -104,41 +106,48 @@ public class IdCookieService {
     }
 
     /**
-     * Generates an ID cookie from the given parameters and sets it in the response object.
+     * Generates an ID cookie from the given parameters and stores it in the request-scoped ID cookie collection and
+     * sets it in the response object.
      */
     public void writeIdCookie(StudyResult studyResult) {
         writeIdCookie(studyResult, null, null);
     }
 
     /**
-     * Generates an ID cookie from the given parameters and sets it in the response object.
+     * Generates an ID cookie from the given parameters and stores it in the request-scoped ID cookie collection and
+     * sets it in the response object.
      */
     public void writeIdCookie(StudyResult studyResult, ComponentResult componentResult) {
         writeIdCookie(studyResult, componentResult, null);
     }
 
     /**
-     * Generates an ID cookie from the given parameters and sets it in the response object.
+     * Generates an ID cookie from the given parameters and stores it in the request-scoped ID cookie collection and
+     * sets it in the response object.
      */
     public void writeIdCookie(StudyResult studyResult, JatosRun jatosRun) {
         writeIdCookie(studyResult, null, jatosRun);
     }
 
     /**
-     * Generates an ID cookie from the given parameters and stores it in the request-scoped ID cookie collection.
+     * Generates an ID cookie from the given parameters and stores it in the request-scoped ID cookie collection and
+     * sets it in the response object.
      */
     public void writeIdCookie(StudyResult studyResult, ComponentResult componentResult, JatosRun jatosRun) {
         IdCookieModel newIdCookie = new IdCookieModel(studyResult, componentResult, jatosRun);
         idCookies().put(newIdCookie);
+        Context.current().response().setCookie(generatePlayCookie(newIdCookie));
     }
 
     /**
-     * Removes the ID cookie with the given study result ID.
+     * Removes the ID cookie with the given study result ID the request-scoped ID cookie collection and
+     * puts a {@link DiscardingCookie} in the response object.
      */
     public void discardIdCookie(Long studyResultId) {
         IdCookieModel idCookie = idCookies().findWithStudyResultId(studyResultId);
         if (idCookie != null) {
             idCookies().remove(idCookie);
+            Context.current().response().discardCookie(idCookie.getName());
         }
     }
 
@@ -240,24 +249,10 @@ public class IdCookieService {
         return idCookie;
     }
 
-    public Cookie[] generatePlayCookies() {
-        IdCookieCollection cookies = Context.current().args().get(IDCOOKIES_TYPED_KEY);
-        return cookies.getAll().stream()
-                .map(this::generatePlayCookie)
-                .toArray(Cookie[]::new);
-    }
-
-    public Set<String> generatePlayCookieNames() {
-        IdCookieCollection cookies = Context.current().args().get(IDCOOKIES_TYPED_KEY);
-        return cookies.getAll().stream()
-                .map(IdCookieModel::getName)
-                .collect(Collectors.toSet());
-    }
-
     /**
      * Generates a Play cookie from the given IdCookieModel.
      */
-    private Cookie generatePlayCookie(IdCookieModel idCookie) {
+    Cookie generatePlayCookie(IdCookieModel idCookie) {
         String cookieValue = idCookieSerialiser.asCookieValueString(idCookie);
         play.mvc.Http.CookieBuilder cookieBuilder = builder(idCookie.getName(), cookieValue)
                 .withMaxAge(Duration.of(10000, ChronoUnit.DAYS))
