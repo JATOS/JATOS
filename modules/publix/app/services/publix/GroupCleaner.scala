@@ -35,10 +35,10 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
     val task: Runnable = () => studyResultDao.withTransaction(asJavaFunction((_: EntityManager) => findAndRemoveInactiveGroupMembers()))
 
     implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
-    val scheduler = actorSystem.scheduler.schedule(
+    val scheduler = actorSystem.scheduler.scheduleWithFixedDelay(
       initialDelay = Duration(0, TimeUnit.SECONDS),
-      interval = Duration(Common.getGroupsCleaningInterval, TimeUnit.SECONDS),
-      runnable = task)
+      delay = Duration(Common.getGroupsCleaningInterval, TimeUnit.SECONDS)
+    )(task)
 
     // Stop the scheduler when the application shuts down.
     lifecycle.addStopHook(() => Future {
