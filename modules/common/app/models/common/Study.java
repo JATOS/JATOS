@@ -9,6 +9,7 @@ import json.common.DefaultJson.JsonForPublix;
 import utils.common.HashUtils;
 
 import jakarta.persistence.*;
+
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -140,9 +141,11 @@ public class Study {
      */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "StudyUserMap", joinColumns = {
-            @JoinColumn(name = "study_id", referencedColumnName = "id")}, inverseJoinColumns = {
-            @JoinColumn(name = "user_username", referencedColumnName = "username")})
+    @JoinTable(
+            name = "StudyUserMap",
+            joinColumns = @JoinColumn(name = "study_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "user_username", referencedColumnName = "username")
+    )
     @SuppressWarnings({"FieldMayBeFinal"})
     private Set<User> userList = new HashSet<>();
 
@@ -374,7 +377,7 @@ public class Study {
     @JsonIgnore
     public Optional<Component> getFirstComponent() {
         if (!componentList.isEmpty()) {
-            return Optional.of(componentList.get(0));
+            return Optional.of(componentList.getFirst());
         } else {
             return Optional.empty();
         }
@@ -383,7 +386,7 @@ public class Study {
     @JsonIgnore
     public Optional<Component> getLastComponent() {
         if (!componentList.isEmpty()) {
-            return Optional.of(componentList.get(componentList.size() - 1));
+            return Optional.of(componentList.getLast());
         } else {
             return Optional.empty();
         }
@@ -430,7 +433,7 @@ public class Study {
 
     @JsonIgnore
     public Batch getDefaultBatch() {
-        return this.batchList.get(0);
+        return this.batchList.getFirst();
     }
 
     @Override

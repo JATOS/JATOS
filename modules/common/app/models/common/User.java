@@ -74,6 +74,7 @@ public class User {
     @JsonProperty("roles")
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
+    @Column(name = "roleList")
     @SuppressWarnings("FieldMayBeFinal")
     private Set<Role> roleList = EnumSet.of(Role.NONE);
 

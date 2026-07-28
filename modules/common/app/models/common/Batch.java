@@ -22,8 +22,8 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 /**
  * DB entity of a batch. The corresponding UI model is BatchProperties in model Gui.
  *
- * Defines the constraints regarding workers for a batch of a study, e.g. which
- * worker types are allowed, how many workers, which Workers etc.
+ * Defines the constraints regarding workers for a batch of a study, e.g. which worker types are allowed, how many
+ * workers, which Workers etc.
  */
 @Entity
 @Table(name = "Batch")
@@ -91,9 +91,11 @@ public class Batch {
      */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "BatchWorkerMap", joinColumns = {
-            @JoinColumn(name = "batch_id", referencedColumnName = "id")}, inverseJoinColumns = {
-            @JoinColumn(name = "worker_id", referencedColumnName = "id")})
+    @JoinTable(
+            name = "BatchWorkerMap",
+            joinColumns = @JoinColumn(name = "batch_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "worker_id", referencedColumnName = "id")
+    )
     @SuppressWarnings({"FieldMayBeFinal"})
     private Set<Worker> workerList = new HashSet<>();
 
@@ -104,6 +106,11 @@ public class Batch {
     @JsonView({JsonForPublix.class, JsonForIO.class, JsonForApi.class})
     @JsonProperty("allowedWorkerTypes")
     @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "Batch_allowedWorkerTypes",
+            joinColumns = @JoinColumn(name = "batch_id")
+    )
+    @Column(name = "allowedWorkerTypes")
     @Convert(converter = WorkerTypeConverter.class)
     private Set<WorkerType> allowedWorkerTypes = new HashSet<>();
 
