@@ -100,16 +100,13 @@ public class Users extends Controller {
         String usernameOfUserToChange = requestData.get("username");
         if (usernameOfUserToChange == null) return badRequest("Missing username");
         String normalizedUsernameOfUserToChange = User.normalizeUsername(usernameOfUserToChange);
-        switch (Role.valueOf(role)) {
-            case SUPERUSER:
-                return ok(defaultJson.objAsJsonNode(
-                        userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
-            case ADMIN:
-                return ok(defaultJson.objAsJsonNode(
-                        userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
-            default:
-                return badRequest("Unknown role");
-        }
+        return switch (Role.valueOf(role)) {
+            case SUPERUSER -> ok(defaultJson.objAsJsonNode(
+                    userService.changeSuperuserRole(normalizedUsernameOfUserToChange, value)));
+            case ADMIN -> ok(defaultJson.objAsJsonNode(
+                    userService.changeAdminRole(normalizedUsernameOfUserToChange, value)));
+            default -> badRequest("Unknown role");
+        };
     }
 
     /**

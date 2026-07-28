@@ -68,14 +68,11 @@ public class AuthService {
     public boolean authenticate(User user, String password) {
         if (user == null || password == null) return false;
 
-        switch (user.getAuthMethod()) {
-            case LDAP:
-                return signinLdap.authenticate(user.getUsername(), password);
-            case DB:
-                return authenticateViaDb(user.getUsername(), password);
-            default:
-                throw new AuthException("Unsupported auth method " + user.getAuthMethod().name());
-        }
+        return switch (user.getAuthMethod()) {
+            case LDAP -> signinLdap.authenticate(user.getUsername(), password);
+            case DB -> authenticateViaDb(user.getUsername(), password);
+            default -> throw new AuthException("Unsupported auth method " + user.getAuthMethod().name());
+        };
     }
 
     private boolean authenticateViaDb(String normalizedUsername, String password) {

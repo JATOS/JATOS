@@ -37,20 +37,16 @@ public class StudyDeserializer {
         JsonNode node = mapper.jsonAsJsonNode(jsonStr);
 
         int version = node.findValue("version").asInt();
-        Study study;
-        switch (version) {
-            case 0:
-            case 1:
-            case 2:
-                // Version 2
-                throw new JatosException("Support for this version of the study model has been removed.", ErrorCode.IMPORT_EXPORT_ERROR);
-            case 3:
-                // Current version
-                study = mapper.jsonNodeAsObj(node.findValue("data"), Study.class);
-                break;
-            default:
-                throw new JatosException("This study is from an unsupported version of JATOS.", ErrorCode.IMPORT_EXPORT_ERROR);
-        }
+        Study study = switch (version) {
+            case 0, 1, 2 ->
+                    // Version 2
+                    throw new JatosException("Support for this version of the study model has been removed.", ErrorCode.IMPORT_EXPORT_ERROR);
+            case 3 ->
+                    // Current version
+                    mapper.jsonNodeAsObj(node.findValue("data"), Study.class);
+            default ->
+                    throw new JatosException("This study is from an unsupported version of JATOS.", ErrorCode.IMPORT_EXPORT_ERROR);
+        };
         return study;
     }
 

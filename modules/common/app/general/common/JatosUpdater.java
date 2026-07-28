@@ -398,14 +398,11 @@ public class JatosUpdater {
     }
 
     private static String busyStateMessage(UpdateState state) {
-        switch (state) {
-            case DOWNLOADING:
-                return "A JATOS update is already downloading.";
-            case DOWNLOADED:
-                return "A JATOS update was already downloaded.";
-            default:
-                return "Wrong update state";
-        }
+        return switch (state) {
+            case DOWNLOADING -> "A JATOS update is already downloading.";
+            case DOWNLOADED -> "A JATOS update was already downloaded.";
+            default -> "Wrong update state";
+        };
     }
 
     private static <T> CompletionStage<T> failedStage(Throwable t) {

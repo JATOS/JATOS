@@ -43,19 +43,16 @@ public class StudyLinkService {
     public List<String> getStudyCodes(Batch batch, StudyCodeProperties props) {
         if (props.getType() == null) throw new BadRequestException("Unknown type");
 
-        switch (props.getType()) {
-            case PERSONAL_SINGLE:
-            case PERSONAL_MULTIPLE:
-                return createAndPersistStudyLinks(props.getComment(), props.getAmount(), batch, props.getType());
-            case GENERAL_SINGLE:
-            case GENERAL_MULTIPLE:
-            case MT:
+        return switch (props.getType()) {
+            case PERSONAL_SINGLE, PERSONAL_MULTIPLE ->
+                    createAndPersistStudyLinks(props.getComment(), props.getAmount(), batch, props.getType());
+            case GENERAL_SINGLE, GENERAL_MULTIPLE, MT -> {
                 StudyLink studyLink = studyLinkDao.findFirstByBatchAndWorkerType(batch, props.getType())
                         .orElseGet(() -> studyLinkDao.persist(new StudyLink(batch, props.getType())));
-                return Collections.singletonList(studyLink.getStudyCode());
-            default:
-                throw new BadRequestException("Unknown type");
-        }
+                yield Collections.singletonList(studyLink.getStudyCode());
+            }
+            default -> throw new BadRequestException("Unknown type");
+        };
     }
 
     /**
@@ -68,17 +65,11 @@ public class StudyLinkService {
 
             List<String> studyCodeList = new ArrayList<>();
             while (i > 0) {
-                Worker worker;
-                switch (workerType) {
-                    case PERSONAL_SINGLE:
-                        worker = new PersonalSingleWorker(comment);
-                        break;
-                    case PERSONAL_MULTIPLE:
-                        worker = new PersonalMultipleWorker(comment);
-                        break;
-                    default:
-                        throw new BadRequestException("Unknown worker type");
-                }
+                Worker worker = switch (workerType) {
+                    case PERSONAL_SINGLE -> new PersonalSingleWorker(comment);
+                    case PERSONAL_MULTIPLE -> new PersonalMultipleWorker(comment);
+                    default -> throw new BadRequestException("Unknown worker type");
+                };
                 workerService.validateWorker(worker);
                 workerDao.persist(worker);
                 batchDao.addWorkerToBatch(batch.getId(), worker.getId());
