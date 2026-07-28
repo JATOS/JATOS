@@ -1,29 +1,15 @@
 import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
+import Common._
 
 name := "JATOS"
-version := "3.10.5"
-organization := "org.jatos"
-scalaVersion := "2.13.18"
-maintainer := "lange.kristian@gmail.com"
-packageName in Universal := "jatos"
-packageName in Docker := "jatos/jatos"
-
-libraryDependencies ++= Seq(
-  guice,
-  filters,
-  "com.h2database" % "h2" % "1.4.197",
-  "org.apache.commons" % "commons-lang3" % "3.18.0",
-  "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
-  "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
-  "com.pivovarit" % "throwing-function" % "1.6.1",
-  "org.mockito" % "mockito-core" % "5.23.0" % Test,
-  "org.assertj" % "assertj-core" % "3.27.7" % Test
-)
+maintainer := "support@jatos.org"
+Universal / packageName := "jatos"
+Docker / packageName := "jatos/jatos"
 
 // Docker commands to run in Dockerfile
 dockerCommands := Seq(
-  Cmd("FROM", "eclipse-temurin:11-jre-jammy"),
+  Cmd("FROM", "eclipse-temurin:25-jre-jammy"),
   Cmd("LABEL", "maintainer=lange.kristian@gmail.com"),
   Cmd("ENV", "JATOS_HOME=/opt/jatos"),
   Cmd("ENV", "JATOS_DATA=/opt/jatos_data"),
@@ -43,20 +29,67 @@ dockerCommands := Seq(
   ExecCmd("ENTRYPOINT", "./loader.sh", "start")
 )
 
-dockerBaseImage := "eclipse-temurin:8-jre"
-
 javacOptions ++= Seq("--release", "25", "-Xlint")
 
 PlayKeys.externalizeResources := false
 
+// Submodule jatos-common: common utils for JSON, disk IO and such
+lazy val common = (project in file("modules/common"))
+  .enablePlugins(PlayJava, PlayScala, BuildInfoPlugin)
+  .settings(commonSettings)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "general.common"
+  )
+
+// Submodule jatos-gui: responsible for GUI
+lazy val gui = (project in file("modules/gui"))
+  .enablePlugins(PlayJava, PlayScala, SbtWeb)
+  .dependsOn(common)
+  .settings(commonSettings)
+  .settings(
+    routesGenerator := InjectedRoutesGenerator
+  )
+
+// Submodule jatos-publix: responsible for running studies
+lazy val publix = (project in file("modules/publix"))
+  .enablePlugins(PlayJava, PlayScala)
+  .dependsOn(common, session)
+  .settings(commonSettings)
+  .settings(
+    routesGenerator := InjectedRoutesGenerator
+  )
+
+
+// Submodule jatos-session: does group and batch session
+lazy val session = (project in file("modules/session"))
+  .enablePlugins(PlayJava, PlayScala)
+  .dependsOn(common)
+  .settings(commonSettings)
+  .settings(
+    routesGenerator := InjectedRoutesGenerator
+  )
+
 // JATOS root project with GUI. Container for all the submodules
 lazy val jatos = (project in file("."))
   .enablePlugins(PlayScala, SbtWeb)
-  .aggregate(publix, common, gui)
-  .dependsOn(publix, common, gui)
+  .aggregate(publix, session, common, gui)
+  .dependsOn(publix, session, common, gui)
+  .settings(commonSettings)
   .settings(
-    aggregateReverseRoutes := Seq(publix, common, gui),
-    pipelineStages in Assets += digest,
+    aggregateReverseRoutes := Seq(publix, session, common, gui),
+    Assets / pipelineStages += digest,
+    routesGenerator := InjectedRoutesGenerator,
+
+    libraryDependencies ++= Seq(
+      guice,
+      filters,
+      "com.h2database" % "h2" % "1.4.197",
+      "org.apache.commons" % "commons-lang3" % "3.18.0",
+      "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
+      "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
+      "com.pivovarit" % "throwing-function" % "1.6.1"
+    ) ++ testDependencies,
 
     // StudyAssets serves publix module assets under the dependency-style asset path
     // used by the running application: /public/lib/jatos-publix/...
@@ -72,70 +105,20 @@ lazy val jatos = (project in file("."))
       (targetDir ** "*").get.filter(_.isFile)
     }.taskValue,
 
-    MockitoSettings.settings,
+    // Add files to distribution
+    Universal / mappings ++= Seq(
+      file(baseDirectory.value + "/loader.sh") -> "loader.sh",
+      file(baseDirectory.value + "/loader.bat") -> "loader.bat",
+      file(baseDirectory.value + "/VERSION") -> "VERSION",
+      file(baseDirectory.value + "/conf/jatos.conf") -> "conf/jatos.conf"
+    ),
+
+    // Filter out unwanted files from distribution
+    Universal / mappings := (Universal / mappings).value.filterNot {
+      case (_, path) =>
+        path.endsWith("development.conf") ||
+          path.endsWith("testing.conf") ||
+          path.endsWith("jatos.bat") ||
+          path.contains("share/doc")
+    }
   )
-
-// Submodule jatos-utils: common utils for JSON, disk IO and such
-lazy val common = (project in file("modules/common"))
-  .enablePlugins(PlayJava, PlayScala, BuildInfoPlugin)
-  .settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "general.common"
-  )
-
-// Submodule jatos-session: does group and batch session
-lazy val session = (project in file("modules/session"))
-  .enablePlugins(PlayJava, PlayScala)
-  .dependsOn(common)
-
-// Submodule jatos-publix: responsible for running studies
-lazy val publix = (project in file("modules/publix"))
-  .enablePlugins(PlayJava, PlayScala)
-  .dependsOn(common, session)
-
-// Submodule jatos-gui: responsible for running studies
-lazy val gui = (project in file("modules/gui"))
-  .enablePlugins(PlayJava, PlayScala, SbtWeb)
-  .dependsOn(common)
-
-// Routes from submodules
-routesGenerator := InjectedRoutesGenerator
-
-// No source docs in distribution 
-sources in(Compile, doc) := Seq.empty
-
-// No source docs in distribution 
-publishArtifact in(Compile, packageDoc) := false
-
-// Add loader.sh to distribution
-mappings in Universal += file(baseDirectory.value + "/loader.sh") -> "loader.sh"
-
-// Add loader.bat to distribution
-mappings in Universal in packageBin += file(baseDirectory.value + "/loader.bat") -> "loader.bat"
-
-// Add VERSION to distribution
-mappings in Universal += file(baseDirectory.value + "/VERSION") -> "VERSION"
-
-// Add conf/jatos.conf to distribution
-mappings in Universal += file(baseDirectory.value + "/conf/jatos.conf") -> "conf/jatos.conf"
-
-// Don't include dev config to distribution
-mappings in Universal := (mappings in Universal).value filter {
-  case (file, path) => !path.endsWith("development.conf")
-}
-
-// Don't include test config to distribution
-mappings in Universal := (mappings in Universal).value filter {
-  case (file, path) => !path.endsWith("testing.conf")
-}
-
-// Don't include jatos.bat to distribution
-mappings in Universal := (mappings in Universal).value filter {
-  case (file, path) => !path.endsWith("jatos.bat")
-}
-
-// Don't include docs to distribution
-mappings in Universal := (mappings in Universal).value filter {
-  case (file, path) => !path.contains("share/doc")
-}
-
