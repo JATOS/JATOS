@@ -10,7 +10,7 @@ Docker / packageName := "jatos/jatos"
 // Docker commands to run in Dockerfile
 dockerCommands := Seq(
   Cmd("FROM", "eclipse-temurin:25-jre-jammy"),
-  Cmd("LABEL", "maintainer=lange.kristian@gmail.com"),
+  Cmd("LABEL", "maintainer=support@jatos.org"),
   Cmd("ENV", "JATOS_HOME=/opt/jatos"),
   Cmd("ENV", "JATOS_DATA=/opt/jatos_data"),
   Cmd("WORKDIR", "${JATOS_HOME}"),
@@ -85,9 +85,7 @@ lazy val jatos = (project in file("."))
       guice,
       filters,
       "com.h2database" % "h2" % "2.4.240",
-      "org.apache.commons" % "commons-lang3" % "3.18.0",
-      "com.nimbusds" % "oauth2-oidc-sdk" % "11.23.1",
-      "com.nimbusds" % "nimbus-jose-jwt" % "10.2",
+      "org.apache.commons" % "commons-lang3" % "3.20.0",
       "com.pivovarit" % "throwing-function" % "1.6.1"
     ) ++ testDependencies,
 

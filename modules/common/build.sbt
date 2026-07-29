@@ -10,9 +10,9 @@ libraryDependencies ++= Seq(
   jdbc,
   "org.hibernate.orm" % "hibernate-core" % "6.6.54.Final",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate5-jakarta" % "2.14.3",
-  "mysql" % "mysql-connector-java" % "8.0.33",
-  "org.jsoup" % "jsoup" % "1.18.1",
-  "commons-io" % "commons-io" % "2.15.1",
+  "com.mysql" % "mysql-connector-j" % "8.4.0",
+  "org.jsoup" % "jsoup" % "1.22.2",
+  "commons-io" % "commons-io" % "2.22.0",
   "com.diffplug.durian" % "durian" % "3.4.0",
-  "org.apache.commons" % "commons-lang3" % "3.18.0"
+  "org.apache.commons" % "commons-lang3" % "3.20.0"
 ) ++ testDependencies

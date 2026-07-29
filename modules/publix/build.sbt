@@ -6,5 +6,5 @@ libraryDependencies ++= Seq(
   guice,
   javaWs,
   javaJpa,
-  "org.apache.commons" % "commons-collections4" % "4.3"
+  "org.apache.commons" % "commons-collections4" % "4.5.0"
 ) ++ testDependencies
