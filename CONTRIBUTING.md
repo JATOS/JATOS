@@ -25,3 +25,5 @@
 JATOS is a volunteer effort. We encourage you to participate!
 
 Thanks! :heart: :heart: :heart:
+
+_Copyright is retained by the respective authors of their contributions._
