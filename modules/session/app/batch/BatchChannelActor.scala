@@ -1,13 +1,13 @@
 package batch
 
-import akka.actor.{Actor, ActorRef}
+import org.apache.pekko.actor.{Actor, ActorRef}
 import batch.BatchDispatcher._
 import play.api.libs.json.{JsObject, Json}
 
 import javax.inject.Inject
 
 /**
- * BatchChannelActor is an Akka Actor that represents the batch channel's WebSocket. A batch channel is a WebSocket
+ * BatchChannelActor is a Pekko Actor that represents the batch channel's WebSocket. A batch channel is a WebSocket
  * connecting a client who's running a study with the JATOS server.
  *
  * A BatchChannelActor is always opened during initialization of jatos.js (where a GroupChannelActor is opened only

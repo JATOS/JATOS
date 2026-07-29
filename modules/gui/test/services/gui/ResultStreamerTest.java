@@ -375,16 +375,7 @@ public class ResultStreamerTest {
         }
     }
 
-    private static class ZipEntryAndContent {
-
-        private final String name;
-        private final String content;
-
-        private ZipEntryAndContent(String name, String content) {
-            this.name = name;
-            this.content = content;
-        }
-
+    private record ZipEntryAndContent(String name, String content) {
     }
 
 }

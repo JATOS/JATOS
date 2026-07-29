@@ -1,6 +1,6 @@
 package general
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import daos.common.LoginAttemptDao
 import general.common.{Common, JatosUpdater}
 import migrations.common.{ComponentResultMigration, MySQLCharsetFix, StudyLinkMigration}
@@ -127,10 +127,10 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
     val task: Runnable = () => loginAttemptDao.removeOldAttempts()
 
     implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
-    val scheduler = actorSystem.scheduler.schedule(
+    val scheduler = actorSystem.scheduler.scheduleWithFixedDelay(
       initialDelay = Duration(0, TimeUnit.SECONDS),
-      interval = Duration(1, TimeUnit.HOURS),
-      runnable = task)
+      delay = Duration(1, TimeUnit.HOURS)
+    )(task)
 
     lifecycle.addStopHook(() => Future {
       scheduler.cancel()

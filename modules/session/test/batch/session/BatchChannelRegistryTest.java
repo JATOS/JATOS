@@ -1,9 +1,11 @@
 package batch.session;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Props;
 import batch.BatchChannelRegistry;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -25,13 +27,13 @@ public class BatchChannelRegistryTest {
     public static class DummyActor extends AbstractActor {
         @Override
         public Receive createReceive() {
-            return receiveBuilder().matchAny(msg -> { /* no-op */ }).build();
+            return receiveBuilder().matchAny(_ -> { /* no-op */ }).build();
         }
     }
 
     @BeforeClass
     public static void setupClass() {
-        com.typesafe.config.Config cfg = com.typesafe.config.ConfigFactory.parseString("akka.loglevel=WARNING\nakka.log-dead-letters=off");
+        Config cfg = ConfigFactory.parseString("org.apache.pekko.loglevel=WARNING\norg.apache.pekko.log-dead-letters=off");
         system = ActorSystem.create("test-system", cfg);
     }
 

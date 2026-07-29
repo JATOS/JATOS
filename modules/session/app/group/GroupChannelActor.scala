@@ -1,13 +1,13 @@
 package group
 
-import akka.actor.{Actor, ActorRef}
+import org.apache.pekko.actor.{Actor, ActorRef}
 import group.GroupDispatcher._
 import play.api.libs.json.{JsObject, Json}
 
 import javax.inject.Inject
 
 /**
- * GroupChannelActor is an Akka Actor that represents the group channel's WebSocket. A group channel is a WebSocket
+ * GroupChannelActor is a Pekko Actor that represents the group channel's WebSocket. A group channel is a WebSocket
  * connecting a client who's running a study with the JATOS server.
  *
  * A GroupChannelActor is only opened after a study run (identified by a StudyResult) joined a group, which is done in

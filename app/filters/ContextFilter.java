@@ -1,6 +1,6 @@
 package filters;
 
-import akka.stream.Materializer;
+import org.apache.pekko.stream.Materializer;
 import general.common.Common;
 import http.common.Http.Context;
 import play.mvc.Filter;

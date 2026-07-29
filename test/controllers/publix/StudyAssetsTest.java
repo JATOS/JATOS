@@ -1,6 +1,6 @@
 package controllers.publix;
 
-import akka.stream.Materializer;
+import org.apache.pekko.stream.Materializer;
 import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import general.common.Common;
@@ -147,17 +147,7 @@ public class StudyAssetsTest extends JatosTest {
                 .build();
     }
 
-    private static class StudyRunInfo {
-
-        private final String studyDirName;
-        private final String studyResultUuid;
-        private final String componentUuid;
-
-        private StudyRunInfo(String studyDirName, String studyResultUuid, String componentUuid) {
-            this.studyDirName = studyDirName;
-            this.studyResultUuid = studyResultUuid;
-            this.componentUuid = componentUuid;
-        }
+    private record StudyRunInfo(String studyDirName, String studyResultUuid, String componentUuid) {
 
     }
 

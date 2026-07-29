@@ -1,11 +1,11 @@
 package general.common;
 
-import akka.Done;
-import akka.actor.ActorSystem;
-import akka.stream.Materializer;
-import akka.stream.javadsl.Sink;
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
+import org.apache.pekko.Done;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.Sink;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -17,7 +17,7 @@ import play.Logger;
 import play.inject.ApplicationLifecycle;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSResponse;
-import scala.compat.java8.FutureConverters;
+import scala.jdk.javaapi.FutureConverters;
 import scala.concurrent.ExecutionContext;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
@@ -488,7 +488,9 @@ public class JatosUpdater {
 
         LOGGER.info("Restart JATOS to finish update to version " + currentReleaseInfo.versionFull);
         // First stop Play and then, to be sure, System.exit
-        FutureConverters.toJava(actorSystem.terminate()).thenAccept((_) -> System.exit(0));
+        FutureConverters
+                .asJava(actorSystem.terminate())
+                .thenAccept((_) -> System.exit(0));
     }
 
     /**

@@ -1,6 +1,6 @@
 package filters;
 
-import akka.stream.Materializer;
+import org.apache.pekko.stream.Materializer;
 import exceptions.common.JatosException;
 import http.common.Http.Context;
 import org.junit.After;
@@ -55,7 +55,7 @@ public class ContextFilterTest {
         RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
         CompletableFuture<Result> pendingResult = new CompletableFuture<>();
 
-        CompletionStage<Result> resultStage = filter.apply(requestHeader -> pendingResult, request);
+        CompletionStage<Result> resultStage = filter.apply(_ -> pendingResult, request);
 
         try {
             Context.current();
@@ -73,7 +73,7 @@ public class ContextFilterTest {
         ContextFilter filter = new ContextFilter(mock(Materializer.class));
         RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
 
-        Result result = filter.apply(requestHeader -> {
+        Result result = filter.apply(_ -> {
                     Context context = Context.current();
                     context.response().setHeader("X-Test", "header-value");
                     context.response().setCookie(Cookie.builder("test-cookie", "cookie-value").build());
@@ -98,7 +98,7 @@ public class ContextFilterTest {
                 .flash("existing-flash-key", "existing-flash-value")
                 .build();
 
-        Result result = filter.apply(requestHeader ->
+        Result result = filter.apply(_ ->
                                 CompletableFuture.completedFuture(Results.ok("done")),
                         request)
                 .toCompletableFuture()
@@ -146,7 +146,7 @@ public class ContextFilterTest {
         RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
         CompletableFuture<Result> pendingResult = new CompletableFuture<>();
 
-        CompletionStage<Result> resultStage = filter.apply(requestHeader -> pendingResult, request);
+        CompletionStage<Result> resultStage = filter.apply(_ -> pendingResult, request);
 
         Context.setCurrent(previousContext);
         pendingResult.complete(Results.ok("done"));
@@ -161,7 +161,7 @@ public class ContextFilterTest {
         RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
         RuntimeException exception = new IllegalStateException("boom");
 
-        CompletionStage<Result> resultStage = filter.apply(requestHeader -> {
+        CompletionStage<Result> resultStage = filter.apply(_ -> {
             CompletableFuture<Result> failed = new CompletableFuture<>();
             failed.completeExceptionally(exception);
             return failed;
@@ -181,7 +181,7 @@ public class ContextFilterTest {
         RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
         Exception exception = new Exception("checked boom");
 
-        CompletionStage<Result> resultStage = filter.apply(requestHeader -> {
+        CompletionStage<Result> resultStage = filter.apply(_ -> {
             CompletableFuture<Result> failed = new CompletableFuture<>();
             failed.completeExceptionally(exception);
             return failed;

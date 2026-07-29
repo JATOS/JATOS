@@ -1,6 +1,6 @@
 package batch
 
-import akka.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import batch.BatchDispatcher.TellWhom.TellWhom
 import batch.BatchDispatcher._
 import com.google.inject.assistedinject.Assisted

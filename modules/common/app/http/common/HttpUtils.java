@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class HttpUtils {
 
     public static boolean isHtmlRequest(Http.RequestHeader request) {
-        return request.getHeaders().get("Accept")
+        return request.headers().get("Accept")
                 .map(accept -> Arrays.stream(accept.split(","))
                         .map(String::trim)
                         .map(part -> part.split(";", 2)[0].trim().toLowerCase(Locale.ROOT))
@@ -69,7 +69,7 @@ public class HttpUtils {
      */
     public static boolean isSessionCookieRequest() {
         Http.RequestHeader request = Context.current().requestHeader();
-        return request.getCookie("PLAY_SESSION").isPresent() && !Strings.isNullOrEmpty(request.getCookie("PLAY_SESSION").get().value());
+        return request.cookie("PLAY_SESSION").isPresent() && !Strings.isNullOrEmpty(request.cookie("PLAY_SESSION").get().value());
     }
 
     /**

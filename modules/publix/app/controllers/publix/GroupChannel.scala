@@ -1,8 +1,8 @@
 package controllers.publix
 
-import akka.actor.{ActorSystem, Props}
-import akka.stream.Materializer
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.actor.{ActorSystem, Props}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Flow
 import exceptions.common.ForbiddenException
 import group.{GroupAdministration, GroupChannelActor, GroupDispatcherRegistry}
 import models.common.workers._
@@ -70,7 +70,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   }
 
   /**
-   * Opens a group channel and returns an Akka stream Flow that will be turned into WebSocket. In
+   * Opens a group channel and returns a Pekko stream Flow that will be turned into WebSocket. In
    * case of an error/ problem, a PublixException is thrown.
    */
   def open(studyResult: StudyResult): Flow[Any, Nothing, _] = {

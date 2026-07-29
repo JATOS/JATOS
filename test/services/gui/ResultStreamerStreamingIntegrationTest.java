@@ -1,8 +1,8 @@
 package services.gui;
 
-import akka.stream.Materializer;
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentResultDao;
@@ -42,7 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Integration-style tests for ResultStreamer's actual Akka Source output.
+ * Integration-style tests for ResultStreamer's actual Pekko Source output.
  */
 public class ResultStreamerStreamingIntegrationTest {
 

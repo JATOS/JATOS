@@ -1,6 +1,6 @@
 package group
 
-import akka.actor.ActorRef
+import org.apache.pekko.actor.ActorRef
 import org.apache.commons.collections4.bidimap.DualHashBidiMap
 
 import scala.collection.mutable

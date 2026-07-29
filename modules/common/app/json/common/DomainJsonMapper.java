@@ -622,7 +622,10 @@ public class DomainJsonMapper {
             studyNode.putArray("components").addAll(componentArray);
         } else {
             ArrayNode components = studyNode.putArray("components");
-            study.getComponentList().forEach(c -> components.addObject().put("id", c.getId()).put("uuid", c.getUuid()));
+            study.getComponentList().forEach(c ->
+                    components.addObject()
+                            .put("id", c.getId())
+                            .put("uuid", c.getUuid()));
         }
 
         if (withBatchProperties) {
@@ -633,7 +636,10 @@ public class DomainJsonMapper {
             studyNode.putArray("batches").addAll(batchArray);
         } else {
             ArrayNode batches = studyNode.putArray("batches");
-            study.getBatchList().forEach(b -> batches.addObject().put("id", b.getId()).put("uuid", b.getUuid()));
+            study.getBatchList().forEach(b ->
+                    batches.addObject()
+                            .put("id", b.getId())
+                            .put("uuid", b.getUuid()));
         }
 
         ArrayNode members = studyNode.putArray("members");

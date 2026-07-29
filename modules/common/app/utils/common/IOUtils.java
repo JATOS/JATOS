@@ -1,9 +1,9 @@
 package utils.common;
 
-import akka.stream.IOResult;
-import akka.stream.javadsl.FileIO;
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
+import org.apache.pekko.stream.IOResult;
+import org.apache.pekko.stream.javadsl.FileIO;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import com.google.common.base.Strings;
 import general.common.Common;
 import general.common.MessagesStrings;
@@ -682,7 +682,7 @@ public class IOUtils {
     public static Source<ByteString, CompletionStage<IOResult>> okFileStreamed(final Path file, final Runnable handler) {
         return FileIO.fromPath(file)
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
-                .mapMaterializedValue(action -> action.whenCompleteAsync((ioResult, exception) -> handler.run()));
+                .mapMaterializedValue(action -> action.whenCompleteAsync((_, _) -> handler.run()));
     }
 
     /**

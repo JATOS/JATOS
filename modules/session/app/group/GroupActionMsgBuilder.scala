@@ -9,8 +9,8 @@ import play.api.Logger
 import play.api.libs.json._
 
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.jdk.CollectionConverters._
+import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 
 
 /**

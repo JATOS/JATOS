@@ -1,8 +1,8 @@
 package services.gui;
 
-import akka.stream.javadsl.Source;
-import akka.stream.javadsl.StreamConverters;
-import akka.util.ByteString;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.stream.javadsl.StreamConverters;
+import org.apache.pekko.util.ByteString;
 import com.diffplug.common.base.Errors;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
@@ -19,13 +19,13 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Class responsible for reading JATOS log files. It's not part of utils.common.IOUtils because it uses Akka Streams.
+ * Class responsible for reading JATOS log files. It's not part of utils.common.IOUtils because it uses Pekko Streams.
  */
 @Singleton
 public class LogFileReader {
 
     /**
-     * Reads from the logs folder the given log file in reverse order and returns it as an Akka Stream source. It
+     * Reads from the logs folder the given log file in reverse order and returns it as an Pekko Stream source. It
      * maximally reads until the line specified in lineLimit.
      */
     public Source<ByteString, ?> read(String filename, int lineLimit) {

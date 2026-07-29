@@ -1,6 +1,6 @@
 package group.session;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import group.GroupChannelActor;
 import group.GroupChannelRegistry;
 import org.junit.Before;

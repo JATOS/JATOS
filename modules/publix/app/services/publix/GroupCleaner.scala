@@ -1,6 +1,6 @@
 package services.publix
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import daos.common.StudyResultDao
 import general.common.{Common, StudyLogger}
 import group.{GroupAdministration, GroupDispatcherRegistry}
@@ -10,7 +10,7 @@ import play.api.inject.ApplicationLifecycle
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import jakarta.persistence.EntityManager
-import scala.compat.java8.FunctionConverters.asJavaFunction
+import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 

@@ -1,6 +1,7 @@
 package group
 
 import daos.common.{GroupResultDao, StudyResultDao}
+import jakarta.persistence.EntityManager
 import models.common.GroupResult.GroupState
 import models.common.{Batch, GroupResult, StudyResult}
 import play.api.Logger
@@ -8,9 +9,8 @@ import play.api.Logger
 import java.sql.Timestamp
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-import jakarta.persistence.EntityManager
-import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.jdk.CollectionConverters._
+import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 
 /**
  * This class handles the joining, leaving, and reassigning of group members. A group's state is stored in a

@@ -11,7 +11,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaFunction
+import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 import scala.concurrent.Future
 
 /**
@@ -44,7 +44,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    *
    * Endpoint that opens a WebSocket for the batch channel that is used to exchange data (batch
    * session data) between study runs of a batch. All batch session data are stored in a Batch
-   * model, and the batch channels will be handled by a BatchDispatcher which uses Akka.
+   * model, and the batch channels will be handled by a BatchDispatcher which uses Pekko.
    *
    * @param studyResultUuid Study result's UUID
    * @return WebSocket that transports JSON strings.
@@ -90,7 +90,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * Let the worker (actually it's StudyResult) join a group (actually a GroupResult) and open a
    * WebSocket (group channel). Only works if this study is a group study. All group data are
    * stored in a GroupResult, and the group channels will be handled by a GroupDispatcher which
-   * uses Akka.
+   * uses Pekko.
    *
    * @param studyResultUuid Study result's UUID
    * @return WebSocket that transfers JSON

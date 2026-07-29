@@ -1,8 +1,9 @@
 package batch.session
 
-import akka.actor.{AbstractActor, ActorSystem, Props}
+import org.apache.pekko.actor.{AbstractActor, ActorSystem, Props}
 import batch.BatchDispatcher.{BatchAction, BatchMsg, TellWhom}
 import batch.{BatchActionHandler, BatchActionMsgBuilder, BatchDispatcher, BatchDispatcherRegistry}
+import com.typesafe.config.ConfigFactory
 import org.junit.Assert._
 import org.junit._
 import play.api.libs.json.Json
@@ -17,7 +18,7 @@ class BatchDispatcherTestScala {
 
   @Before
   def setup(): Unit = {
-    val cfg = com.typesafe.config.ConfigFactory.parseString("akka.loglevel=WARNING\nakka.log-dead-letters=off")
+    val cfg = ConfigFactory.parseString("org.apache.pekko.loglevel=WARNING\norg.apache.pekko.log-dead-letters=off")
     system = ActorSystem.create("bd-test", cfg)
   }
 

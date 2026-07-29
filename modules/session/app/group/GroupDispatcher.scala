@@ -1,6 +1,6 @@
 package group
 
-import akka.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import com.google.inject.assistedinject.Assisted
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._

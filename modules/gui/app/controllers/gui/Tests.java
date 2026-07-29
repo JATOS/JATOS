@@ -2,7 +2,7 @@ package controllers.gui;
 
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
-import akka.stream.javadsl.Flow;
+import org.apache.pekko.stream.javadsl.Flow;
 import daos.common.UserDao;
 import general.common.Common;
 import play.mvc.Controller;
@@ -77,7 +77,7 @@ public class Tests extends Controller {
     @Async(Executor.IO)
     @Auth(roles = ADMIN)
     public WebSocket testWebSocket() {
-        return WebSocket.Text.accept(request -> {
+        return WebSocket.Text.accept(_ -> {
             // send response back to a client
             return Flow.<String>create().map(msg -> msg);
         });

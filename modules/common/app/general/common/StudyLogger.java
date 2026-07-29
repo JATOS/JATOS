@@ -1,8 +1,8 @@
 package general.common;
 
-import akka.stream.javadsl.Source;
-import akka.stream.javadsl.StreamConverters;
-import akka.util.ByteString;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.stream.javadsl.StreamConverters;
+import org.apache.pekko.util.ByteString;
 import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.common.*;

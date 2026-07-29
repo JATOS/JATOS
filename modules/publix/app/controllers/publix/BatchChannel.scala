@@ -1,9 +1,9 @@
 package controllers.publix
 
-import akka.actor.{ActorSystem, Props}
-import akka.stream.Materializer
-import akka.stream.scaladsl.Flow
-import akka.util.Timeout
+import org.apache.pekko.actor.{ActorSystem, Props}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.Timeout
 import batch.{BatchChannelActor, BatchDispatcherRegistry}
 import models.common.StudyResult
 import models.common.workers._
@@ -37,15 +37,15 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
   var idCookieService: IdCookieService = _
 
   @Inject
-  var batchDispatcherRegistry: BatchDispatcherRegistry = _
+  private var batchDispatcherRegistry: BatchDispatcherRegistry = _
 
   /**
-   * Time to wait for an answer after asking an Akka actor
+   * Time to wait for an answer after asking a Pekko actor
    */
   implicit val timeout: Timeout = 30.seconds
 
   /**
-   * HTTP endpoint that opens a batch channel and returns an Akka stream Flow that will be turned
+   * HTTP endpoint that opens a batch channel and returns a Pekko stream Flow that will be turned
    * into WebSocket. In case of an error/ problem, a PublixException is thrown.
    */
   def open(studyResult: StudyResult): Flow[Any, Nothing, _] = {

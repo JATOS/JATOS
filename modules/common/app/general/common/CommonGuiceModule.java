@@ -8,7 +8,7 @@ import play.db.jpa.DefaultJPAApi;
 import play.db.DBApi;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
-import play.libs.akka.AkkaGuiceSupport;
+import play.libs.pekko.PekkoGuiceSupport;
 import json.common.DefaultJson;
 
 import javax.inject.Singleton;
@@ -18,7 +18,7 @@ import static java.util.concurrent.CompletableFuture.*;
 /**
  * Configuration of Guice dependency injection for Publix module
  */
-public class CommonGuiceModule extends AbstractModule implements AkkaGuiceSupport {
+public class CommonGuiceModule extends AbstractModule implements PekkoGuiceSupport {
 
     @Override
     protected void configure() {

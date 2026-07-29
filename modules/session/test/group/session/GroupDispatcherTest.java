@@ -1,9 +1,9 @@
 package group.session;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Props;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import group.*;
@@ -49,7 +49,7 @@ public class GroupDispatcherTest {
 
     @BeforeClass
     public static void setupClass() {
-        Config cfg = ConfigFactory.parseString("akka.loglevel=WARNING\nakka.log-dead-letters=off");
+        Config cfg = ConfigFactory.parseString("org.apache.pekko.loglevel=WARNING\norg.apache.pekko.log-dead-letters=off");
         system = ActorSystem.create("gd-test-system", cfg);
     }
 

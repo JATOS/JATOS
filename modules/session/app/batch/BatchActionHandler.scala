@@ -12,7 +12,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, JsValue, Json}
 
 import javax.inject.{Inject, Singleton}
-import scala.compat.java8.FunctionConverters.asJavaFunction
+import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 import scala.util.Try
 
 /**
