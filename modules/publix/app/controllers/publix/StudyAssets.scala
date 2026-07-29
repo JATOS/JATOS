@@ -6,10 +6,10 @@ import executor.common.StudyAssetsExecutor
 import filters.publix.IdCookieFilter.IdCookies
 import general.common.{Common, MessagesStrings}
 import http.common.HttpUtils
-import play.api.{Environment, Logger}
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
 import play.api.mvc._
+import play.api.{Environment, Logger}
 import services.publix.PublixErrorMessages
 import services.publix.idcookie.IdCookieService
 import utils.common.IOUtils
@@ -17,11 +17,10 @@ import utils.common.IOUtils
 import java.io.{File, IOException}
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.CompletableFuture
 import javax.inject.{Inject, Singleton}
 import scala.annotation.unused
-import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 /**
@@ -51,6 +50,8 @@ class StudyAssets @Inject()(components: ControllerComponents,
 
   private val jatosPublixPattern: Regex = "(.*)(jatos-publix)(.*)".r
 
+  private val studyAssetsExecutionContext: ExecutionContext = ExecutionContext.fromExecutor(studyAssetsExecutor)
+
   /**
    * Returns the study asset file that belongs to the study with the given study result UUID
    * and has the given relative path within the study assets folder. In difference to
@@ -60,18 +61,30 @@ class StudyAssets @Inject()(components: ControllerComponents,
    * The parameter componentUuid is never used but can't be removed.
    */
   @IdCookies
-  def viaStudyPath(studyResultUuid: String, @unused componentUuid: String, urlPath: String): Action[AnyContent] =
+  def viaStudyPath(studyResultUuid: String,
+                   @unused componentUuid: String,
+                   urlPath: String
+                  ): Action[AnyContent] =
     Action.async { implicit request =>
       urlPath match {
-        case "jatos.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")(request)
-        case "jatos.min.js" => assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.min.js")(request)
-        case jatosPublixPattern(_, _, file) => assets.at(path = "/public/lib/jatos-publix", file)(request)
-        case _ => CompletableFuture.supplyAsync(() => {
-          val studyDirName = studyDao.findStudyDirNameByStudyResultUuid(studyResultUuid)
-          if (studyDirName.isEmpty) throw new BadRequestException("A study result " + studyResultUuid + " doesn't exist.")
-          val urlDecodedPath = URLDecoder.decode(studyDirName + URL_PATH_SEPARATOR + urlPath, StandardCharsets.UTF_8.name())
-          sendAssetFile(request, urlDecodedPath)
-        }, studyAssetsExecutor).toScala
+        case "jatos.js" =>
+          assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.js")(request)
+
+        case "jatos.min.js" =>
+          assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.min.js")(request)
+
+        case jatosPublixPattern(_, _, file) =>
+          assets.at(path = "/public/lib/jatos-publix", file = file)(request)
+
+        case _ =>
+          Future {
+            val studyDirName = studyDao.findStudyDirNameByStudyResultUuid(studyResultUuid)
+            if (studyDirName.isEmpty) {
+              throw new BadRequestException(s"A study result $studyResultUuid doesn't exist.")
+            }
+            val urlDecodedPath = URLDecoder.decode(studyDirName + URL_PATH_SEPARATOR + urlPath, StandardCharsets.UTF_8)
+            sendAssetFile(request, urlDecodedPath)
+          }(studyAssetsExecutionContext)
       }
     }
 
@@ -82,10 +95,10 @@ class StudyAssets @Inject()(components: ControllerComponents,
   @IdCookies
   def viaAssetsPath(urlPath: String): Action[AnyContent] =
     Action.async { implicit request =>
-      CompletableFuture.supplyAsync(() => {
-        val urlDecodedPath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8.name())
+      Future {
+        val urlDecodedPath = URLDecoder.decode(urlPath, StandardCharsets.UTF_8)
         sendAssetFile(request, urlDecodedPath)
-      }, studyAssetsExecutor).toScala
+      }(studyAssetsExecutionContext)
     }
 
   /**
@@ -154,47 +167,58 @@ class StudyAssets @Inject()(components: ControllerComponents,
    * Redirects to or shows the end page (either from study assets or default end page) after a study run finished.
    * Passes on the confirmationCode in case it's defined (either cookie or URL query parameter).
    */
-  def endPage(studyResultUuid: String, confirmationCode: Option[String] = None): Action[AnyContent] =
+  def endPage(studyResultUuid: String,
+              confirmationCode: Option[String] = None
+             ): Action[AnyContent] =
     Action.async { _ =>
-      CompletableFuture.supplyAsync(() => {
-
+      Future {
         if (!studyResultDao.existsByUuid(studyResultUuid)) {
-          throw new BadRequestException("A study result " + studyResultUuid + " doesn't exist.")
+          throw new BadRequestException(s"A study result $studyResultUuid doesn't exist.")
         }
         if (!studyResultDao.isStudyRunDone(studyResultUuid)) {
-          throw new BadRequestException("The study result " + studyResultUuid + " isn't finished yet.")
+          throw new BadRequestException(s"The study result $studyResultUuid isn't finished yet.")
         }
 
-        // If we have an `endRedirectUrl` specified in the study properties, redirect to it
         val endRedirectUrl = studyDao.findStudyEndRedirectUrlByStudyResultUuid(studyResultUuid)
         if (endRedirectUrl != null && endRedirectUrl.nonEmpty) {
           // Redirect to URL specified in study properties
           val urlQueryParameters = studyResultDao.findUrlQueryParametersByUuid(studyResultUuid)
           val fullUrl = enhanceQueryStringInEndRedirectUrl(urlQueryParameters, endRedirectUrl)
+
           confirmationCode match {
-            case Some(cc) => Redirect(fullUrl, Map("confirmationCode" -> Seq(cc)))
-            case None => Redirect(fullUrl)
+            case Some(code) =>
+              Redirect(fullUrl, Map("confirmationCode" -> Seq(code)))
+
+            case None =>
+              Redirect(fullUrl)
+          }
+        } else {
+          // If we have an `endPage.html` file in the study assets directory, redirect to it
+          val dirName = studyDao.findStudyDirNameByStudyResultUuid(studyResultUuid)
+          if (ioUtils.checkFileInStudyAssetsDirExists(dirName, "endPage.html")) {
+            val htmlFile = ioUtils.getExistingFileInStudyAssetsDir(dirName, "endPage.html")
+
+            confirmationCode match {
+              case Some(code) =>
+                Ok.sendPath(htmlFile)
+                  .withCookies(confirmationCodeCookie(code))
+                  .bakeCookies()
+
+              case None =>
+                Ok.sendPath(htmlFile)
+            }
+          } else {
+            // Return default end page
+            confirmationCode match {
+              case Some(code) =>
+                Ok(views.html.publix.confirmationCode.render(code))
+
+              case None =>
+                Ok(views.html.publix.endPage.render())
+            }
           }
         }
-
-        // If we have an `endPage.html` file in the study assets directory, redirect to it
-        val dirName = studyDao.findStudyDirNameByStudyResultUuid(studyResultUuid)
-        if (ioUtils.checkFileInStudyAssetsDirExists(dirName, "endPage.html")) {
-          confirmationCode match {
-            case Some(cc) =>
-              val htmlFile = ioUtils.getExistingFileInStudyAssetsDir(dirName, "endPage.html")
-              Ok.sendPath(htmlFile)
-                .withCookies(confirmationCodeCookie(cc)).bakeCookies()
-            case None => Ok.sendPath(ioUtils.getExistingFileInStudyAssetsDir(dirName, "endPage.html"))
-          }
-        }
-
-        // Return default end page
-        confirmationCode match {
-          case Some(cc) => Ok(views.html.publix.confirmationCode.render(cc))
-          case None => Ok(views.html.publix.endPage.render())
-        }
-      }, studyAssetsExecutor).toScala
+      }(studyAssetsExecutionContext)
     }
 
   /**
