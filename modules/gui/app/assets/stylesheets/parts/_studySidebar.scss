@@ -11,8 +11,8 @@
 }
 
 #studySidebar .list-group-item.active {
-    background-color: $study-color;
-    border-color: $study-color;
+    background-color: #{$study-color};
+    border-color: #{$study-color};
 }
 
 #studySidebar .list-group-item:hover {

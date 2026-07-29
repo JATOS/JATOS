@@ -1,6 +1,6 @@
 #apiTokensModal .pagination .page-item.active .page-link {
-    --bs-pagination-active-bg: $admin-color;
-    --bs-pagination-active-border-color: $admin-color;
+    --bs-pagination-active-bg: #{$admin-color};
+    --bs-pagination-active-border-color: #{$admin-color};
 }
 
 // Gray out expired API token rows

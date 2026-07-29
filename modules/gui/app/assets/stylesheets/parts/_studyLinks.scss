@@ -8,8 +8,8 @@
 
 // Change color of pagination button
 #groupsTable_wrapper .pagination .page-item.active .page-link {
-    --bs-pagination-active-bg: $batch-color;
-    --bs-pagination-active-border-color: $batch-color;
+    --bs-pagination-active-bg: #{$batch-color};
+    --bs-pagination-active-border-color: #{$batch-color};
 }
 
 // Gray-out rows of used PersonalSingle links
@@ -23,8 +23,8 @@
 
 // Change color of pagination button
 #studyLinksManagerTable_wrapper .pagination .page-item.active .page-link {
-    --bs-pagination-active-bg: $batch-color;
-    --bs-pagination-active-border-color: $batch-color;
+    --bs-pagination-active-bg: #{$batch-color};
+    --bs-pagination-active-border-color: #{$batch-color};
 }
 
 // Used by the study links toggle to hide study links

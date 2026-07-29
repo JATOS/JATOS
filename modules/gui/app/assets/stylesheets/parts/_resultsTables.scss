@@ -53,31 +53,31 @@
 #resultsTable tr.info .title {
     color: var(--bs-white);
     font-weight: 600;
-    background: $component-color;
+    background: #{$component-color};
     transform: rotate(180deg);
     writing-mode: vertical-rl;
 }
 
 #resultsTable tr.info {
-    background: $component-color;
+    background: #{$component-color};
 }
 
 // Additional info row (e.g. component results)
 #resultsTable tr.info td table thead {
-    border-top: 0.35rem solid $component-color;
-    border-right: 0.35rem solid $component-color;
+    border-top: 0.35rem solid #{$component-color};
+    border-right: 0.35rem solid #{$component-color};
 }
 
 // Additional info row (e.g. component results)
 #resultsTable tr.info td table tbody {
-    border-top: 0.7rem solid $component-color;
-    border-right: 0.35rem solid $component-color;
+    border-top: 0.7rem solid #{$component-color};
+    border-right: 0.35rem solid #{$component-color};
 }
 
 // Additional info row (e.g. component results)
 #resultsTable tr.info td table tbody:last-child {
-    border-bottom: 0.35rem solid $component-color;
-    border-right: 0.35rem solid $component-color;
+    border-bottom: 0.35rem solid #{$component-color};
+    border-right: 0.35rem solid #{$component-color};
 }
 
 // Honor line-breaks (\n) and tabs (\t) in result data code blocks
@@ -88,12 +88,12 @@
 
 // Change color of pagination button in study results
 #resultsTable_wrapper .study-results .pagination .page-item.active .page-link {
-    --bs-pagination-active-bg: $study-color;
-    --bs-pagination-active-border-color: $study-color;
+    --bs-pagination-active-bg: #{$study-color};
+    --bs-pagination-active-border-color: #{$study-color};
 }
 
 // Change color of pagination button in component results
 #resultsTable_wrapper .component-results .pagination .page-item.active .page-link {
-    --bs-pagination-active-bg: $component-color;
-    --bs-pagination-active-border-color: $component-color;
+    --bs-pagination-active-bg: #{$component-color};
+    --bs-pagination-active-border-color: #{$component-color};
 }
