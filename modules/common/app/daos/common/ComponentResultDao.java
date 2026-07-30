@@ -44,6 +44,7 @@ public class ComponentResultDao extends AbstractDao {
      */
     public void replaceData(Long id, String data) {
         withTransaction(em -> {
+            //noinspection SqlResolve
             em.createNativeQuery("""
                             UPDATE ComponentResult cr
                             SET cr.data = :data,
@@ -58,6 +59,7 @@ public class ComponentResultDao extends AbstractDao {
 
     public void purgeData(Long id) {
         withTransaction(em -> {
+            //noinspection SqlResolve
             em.createNativeQuery("""
                             UPDATE ComponentResult cr
                             SET cr.data = NULL, cr.dataShort = NULL, cr.dataSize = 0
@@ -68,38 +70,21 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     /**
-     * Append data to 'data' field and replace data in 'dataShort' and 'dataSize'
+     * Append data to the 'data' field and replace data in 'dataShort' and 'dataSize'
      */
     public void appendData(Long id, String data) {
         withTransaction(em -> {
-            if (Common.usesMysql()) {
-                em.createNativeQuery("""
-                                UPDATE ComponentResult cr
-                                SET cr.data = CONCAT(COALESCE(cr.data, ''), :data),
-                                cr.dataShort = SUBSTR(cr.data, 1, 1000),
-                                cr.dataSize = LENGTH(cr.data)
-                                WHERE cr.id = :id""")
-                        .setParameter("id", id)
-                        .setParameter("data", data)
-                        .executeUpdate();
-            } else {
-                // H2 can't handle cr.data (it contains the old value) - fetch existing data first
-                Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
-                        .setParameter("id", id)
-                        .getSingleResult();
-
-                String oldData = readDataColumnAsString(result);
-                String newData = oldData != null ? oldData + data : data;
-                em.createNativeQuery("""
-                                UPDATE ComponentResult cr
-                                SET cr.data = :newData,
-                                cr.dataShort = SUBSTR(:newData, 1, 1000),
-                                cr.dataSize = LENGTH(:newData)
-                                WHERE cr.id = :id""")
-                        .setParameter("id", id)
-                        .setParameter("newData", newData)
-                        .executeUpdate();
-            }
+            //noinspection SqlResolve
+            em.createNativeQuery("""
+                        UPDATE ComponentResult cr
+                        SET cr.dataShort = SUBSTR(CONCAT(COALESCE(cr.data, ''), :data), 1, 1000),
+                            cr.dataSize = OCTET_LENGTH(CONCAT(COALESCE(cr.data, ''), :data)),
+                            cr.data = CONCAT(COALESCE(cr.data, ''), :data)
+                        WHERE cr.id = :id
+                        """)
+                    .setParameter("id", id)
+                    .setParameter("data", data)
+                    .executeUpdate();
         });
     }
 
@@ -140,12 +125,14 @@ public class ComponentResultDao extends AbstractDao {
      */
     public void setDataSizeAndDataShort(Long id) {
         withTransaction(em -> {
+            //noinspection SqlResolve
             Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                     .setParameter("id", id)
                     .getSingleResult();
 
             String data = readDataColumnAsString(result);
             if (data != null) {
+                //noinspection SqlResolve
                 em.createNativeQuery("""
                                 UPDATE ComponentResult cr
                                 SET cr.dataShort = SUBSTR(:data, 1, 1000), cr.dataSize = LENGTH(:data)
@@ -170,6 +157,7 @@ public class ComponentResultDao extends AbstractDao {
      */
     public String getData(Long id) {
         return withReadOnlyTransaction((EntityManager em) -> {
+            //noinspection SqlResolve
             Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                     .setParameter("id", id)
                     .getSingleResult();
@@ -394,32 +382,45 @@ public class ComponentResultDao extends AbstractDao {
      * component result IDs of sr1, then all of sr2, and last all of sr3.
      */
     public List<Long> findOrderedIdsByOrderedStudyResultIds(List<Long> orderedSrids) {
-        if (orderedSrids.isEmpty()) return Collections.emptyList();
-        List<Object[]> unorderedDbResults = withReadOnlyTransaction((EntityManager em) ->
-                em.createQuery("SELECT cr.studyResult.id, cr.id FROM ComponentResult cr "
-                                + "WHERE cr.studyResult.id IN :ids", Object[].class)
+        if (orderedSrids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Object[]> dbResults = withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("""
+                                SELECT cr.studyResult.id, cr.id
+                                FROM ComponentResult cr
+                                WHERE cr.studyResult.id IN :ids
+                                ORDER BY cr.studyResult.id, cr.id
+                                """, Object[].class)
                         .setParameter("ids", orderedSrids)
-                        .getResultList());
+                        .getResultList()
+        );
+
         // We have to ensure that the order of the srids of the crids that will be returned is the same as the order of
-        // the given srids.
-        // todo revisit
-        // This is an inefficient hack. We could use MySQL's "ORDER BY FIELD" (https://stackoverflow.com/questions/3799935)
-        // - but it's not supported by H2.
-        List<Long> orderedComponentResultIds = new ArrayList<>();
-        for (Long orderedSrid : orderedSrids) {
-            for (Object[] dbResult : unorderedDbResults) {
-                long srid = ((Number) dbResult[0]).longValue();
-                long crid = ((Number) dbResult[1]).longValue();
-                if (srid == orderedSrid) {
-                    orderedComponentResultIds.add(crid);
-                }
+        // the given srids. There is no easy way to do this with a single query, so we have to do it manually.
+        Map<Long, List<Long>> componentResultIdsByStudyResultId = new HashMap<>();
+        for (Object[] dbResult : dbResults) {
+            long studyResultId = ((Number) dbResult[0]).longValue();
+            long componentResultId = ((Number) dbResult[1]).longValue();
+            componentResultIdsByStudyResultId
+                    .computeIfAbsent(studyResultId, ignored -> new ArrayList<>())
+                    .add(componentResultId);
+        }
+
+        List<Long> orderedComponentResultIds = new ArrayList<>(dbResults.size());
+        for (Long studyResultId : orderedSrids) {
+            List<Long> componentResultIds = componentResultIdsByStudyResultId.get(studyResultId);
+            if (componentResultIds != null) {
+                orderedComponentResultIds.addAll(componentResultIds);
             }
         }
+
         return orderedComponentResultIds;
     }
 
     /**
-     * Takes a list component result IDs and checks if they exist in the database. Returns only the existing ones.
+     * Takes a list of component result IDs and checks if they exist in the database. Returns only the existing ones.
      */
     public List<Long> findIdsByComponentResultIds(List<Long> crids) {
         if (crids.isEmpty()) return Collections.emptyList();
