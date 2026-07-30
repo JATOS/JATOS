@@ -106,6 +106,7 @@ public class BatchDao extends AbstractDao {
      */
     public int countWorkers(Batch batch) {
         return withReadOnlyTransaction((EntityManager em) -> {
+            //noinspection SqlResolve
             Number result = (Number) em
                     .createNativeQuery("SELECT COUNT(*) FROM BatchWorkerMap WHERE batch_id = :batchId")
                     .setParameter("batchId", batch.getId())
@@ -127,6 +128,7 @@ public class BatchDao extends AbstractDao {
     // todo in the past we had an exception with the "select 1 from BatchWorkerMap ..."
     public void addWorkerToBatch(Long batchId, Long workerId) {
         withTransaction(em -> {
+            //noinspection SqlResolve
             em.createNativeQuery("""
                             INSERT INTO BatchWorkerMap (batch_id, worker_id)
                             SELECT :batchId, :workerId
@@ -142,6 +144,7 @@ public class BatchDao extends AbstractDao {
 
     public void removeWorkerFromBatch(Long batchId, Long workerId) {
         withTransaction((EntityManager em) -> {
+            //noinspection SqlResolve
             em.createNativeQuery("DELETE FROM BatchWorkerMap WHERE batch_id = :batchId AND worker_id = :workerId")
                     .setParameter("batchId", batchId)
                     .setParameter("workerId", workerId)
