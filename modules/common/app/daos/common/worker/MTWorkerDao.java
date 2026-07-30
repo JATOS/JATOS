@@ -1,5 +1,6 @@
 package daos.common.worker;
 
+import jakarta.persistence.EntityManager;
 import models.common.workers.MTWorker;
 import models.common.workers.Worker;
 import models.common.workers.WorkerType;
@@ -7,10 +8,6 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import jakarta.persistence.EntityManager;
-
-import java.util.List;
 import java.util.Optional;
 
 /**

@@ -108,24 +108,30 @@ public class ComponentResultDao extends AbstractDao {
      * the result is null or conversion fails.
      */
     private String readDataColumnAsString(Object result) {
-        if (result == null) return null;
-
-        // Performance-wise it would be better to pass on the stream, but MySQL only returns String. H2 returns Clob.
-        if (result instanceof String) {
-            return (String) result;
-        } else if (result instanceof Clob) {
-            Clob clob = (Clob) result;
-            try {
-                // From https://stackoverflow.com/a/63777729/1278769
-                return clob.getSubString(1, (int) clob.length());
-            } catch (SQLException e) {
-                LOGGER.error(".readDataColumnAsString: Couldn't read CLOB", e);
+        switch (result) {
+            case null -> {
                 return null;
             }
-        } else {
-            LOGGER.warn(".readDataColumnAsString: Unexpected type " + result.getClass().getName());
-            return null;
+
+            // Performance-wise it would be better to pass on the stream, but MySQL only returns String. H2 returns Clob.
+            case String s -> {
+                return s;
+            }
+            case Clob clob -> {
+                try {
+                    // From https://stackoverflow.com/a/63777729/1278769
+                    return clob.getSubString(1, (int) clob.length());
+                } catch (SQLException e) {
+                    LOGGER.error(".readDataColumnAsString: Couldn't read CLOB", e);
+                    return null;
+                }
+            }
+            default -> {
+                LOGGER.warn(".readDataColumnAsString: Unexpected type " + result.getClass().getName());
+                return null;
+            }
         }
+
     }
 
     /**

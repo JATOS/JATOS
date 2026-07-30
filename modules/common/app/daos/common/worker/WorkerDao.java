@@ -1,16 +1,13 @@
 package daos.common.worker;
 
 import daos.common.AbstractDao;
+import jakarta.persistence.EntityManager;
 import models.common.StudyResult;
 import models.common.workers.Worker;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
-
 import java.util.List;
 import java.util.Optional;
 
