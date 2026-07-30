@@ -186,16 +186,18 @@ public class AdminService {
     }
 
     public List<Map<String, Object>> getLatestStudyRuns(int limit) {
-        return studyResultDao.findLastSeen(limit).stream()
-                .map(srs -> ImmutableMap.of(
-                        "studyTitle", srs.getStudy().getTitle(),
-                        "time", srs.getLastSeenDate(),
-                        "members", srs.getStudy().getUserList().stream().map(u -> ImmutableMap.of(
-                                "username", u.getUsername(),
-                                "name", u.getName(),
-                                "authMethod", u.getAuthMethod().name()
-                        )).collect(Collectors.toList())))
-                .collect(Collectors.toList());
+        return studyResultDao.withReadOnlyTransaction(em -> {
+            return studyResultDao.findLastSeen(limit).stream()
+                    .map(srs -> ImmutableMap.of(
+                            "studyTitle", srs.getStudy().getTitle(),
+                            "time", srs.getLastSeenDate(),
+                            "members", srs.getStudy().getUserList().stream().map(u -> ImmutableMap.of(
+                                    "username", u.getUsername(),
+                                    "name", u.getName(),
+                                    "authMethod", u.getAuthMethod().name()
+                            )).collect(Collectors.toList())))
+                    .collect(Collectors.toList());
+        });
     }
 
     public JsonNode getAdminStatus() {
