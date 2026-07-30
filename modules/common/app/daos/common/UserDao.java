@@ -6,7 +6,9 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import jakarta.persistence.EntityManager;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,9 +45,9 @@ public class UserDao extends AbstractDao {
         if (normalizedUsername == null || passwordHash == null) return false;
 
         return withReadOnlyTransaction(em -> {
-            Long count = em.createQuery(
-                            "SELECT COUNT(u) FROM User u " +
-                                    "WHERE u.username = :username AND u.passwordHash = :passwordHash",
+            Long count = em.createQuery("""
+                                    SELECT COUNT(u) FROM User u
+                                    WHERE u.username = :username AND u.passwordHash = :passwordHash""",
                             Long.class)
                     .setParameter("username", normalizedUsername)
                     .setParameter("passwordHash", passwordHash)
@@ -62,28 +64,27 @@ public class UserDao extends AbstractDao {
      * Finds a user by username and eagerly fetches their studyList.
      */
     public User findByUsernameWithStudies(String normalizedUsername) {
-        return withReadOnlyTransaction(em -> {
-            List<User> result = em.createQuery(
-                            "SELECT DISTINCT u FROM User u " +
-                                    "LEFT JOIN FETCH u.studyList " +
-                                    "WHERE u.username = :username",
-                            User.class)
-                    .setParameter("username", normalizedUsername)
-                    .setMaxResults(1)
-                    .getResultList();
-            return result.isEmpty() ? null : result.get(0);
-        });
+        return withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("""
+                                SELECT DISTINCT u FROM User u
+                                        LEFT JOIN FETCH u.studyList
+                                        WHERE u.username = :username
+                                """, User.class)
+                        .setParameter("username", normalizedUsername)
+                        .getResultStream()
+                        .findFirst()
+                        .orElse(null)
+        );
     }
 
     public User findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> {
-            List<User> result = em.createQuery(
-                            "SELECT u FROM User u WHERE u.id = :id", User.class)
-                    .setParameter("id", id)
-                    .setMaxResults(1)
-                    .getResultList();
-            return result.isEmpty() ? null : result.get(0);
-        });
+        return withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("SELECT u FROM User u WHERE u.id = :id", User.class)
+                        .setParameter("id", id)
+                        .setMaxResults(1)
+                        .getResultStream()
+                        .findFirst()
+                        .orElse(null));
     }
 
     public List<User> findAll() {
@@ -116,7 +117,7 @@ public class UserDao extends AbstractDao {
             for (Object[] mapping : userStudyMappings) {
                 String username = (String) mapping[0];
                 Long studyId = ((Number) mapping[1]).longValue();
-                studyIdsByUsername.computeIfAbsent(username, k -> new ArrayList<>()).add(studyId);
+                studyIdsByUsername.computeIfAbsent(username, _ -> new ArrayList<>()).add(studyId);
             }
             return studyIdsByUsername;
         });

@@ -57,9 +57,10 @@ public class StudyLinkDao extends AbstractDao {
 
     public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, WorkerType workerType) {
         return withReadOnlyTransaction((EntityManager em) -> {
-            String queryStr = "SELECT sl FROM StudyLink sl " +
-                    "LEFT JOIN FETCH sl.worker w " +
-                    "WHERE sl.batch = :batch AND sl.workerType = :workerType";
+            String queryStr = """
+                    SELECT sl FROM StudyLink sl
+                    LEFT JOIN FETCH sl.worker w
+                    WHERE sl.batch = :batch AND sl.workerType = :workerType""";
             return em.createQuery(queryStr, StudyLink.class)
                     .setParameter("batch", batch)
                     .setParameter("workerType", workerType)
@@ -70,24 +71,24 @@ public class StudyLinkDao extends AbstractDao {
     public Optional<StudyLink> findFirstByBatchAndWorkerType(Batch batch, WorkerType workerType) {
         return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.workerType = :workerType";
-            List<StudyLink> studyLink = em.createQuery(queryStr, StudyLink.class)
+            return em.createQuery(queryStr, StudyLink.class)
                     .setParameter("batch", batch)
                     .setParameter("workerType", workerType)
                     .setMaxResults(1)
-                    .getResultList();
-            return !studyLink.isEmpty() ? Optional.of(studyLink.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst();
         });
     }
 
     public Optional<StudyLink> findByBatchAndWorker(Batch batch, Worker worker) {
         return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.worker = :worker";
-            List<StudyLink> studyLink = em.createQuery(queryStr, StudyLink.class)
+            return em.createQuery(queryStr, StudyLink.class)
                     .setParameter("batch", batch)
                     .setParameter("worker", worker)
                     .setMaxResults(1)
-                    .getResultList();
-            return !studyLink.isEmpty() ? Optional.of(studyLink.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst();
         });
     }
 

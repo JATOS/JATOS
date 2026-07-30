@@ -1,13 +1,12 @@
 package daos.common;
 
+import jakarta.persistence.EntityManager;
 import models.common.Batch;
 import models.common.Study;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import jakarta.persistence.EntityManager;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -40,11 +39,11 @@ public class BatchDao extends AbstractDao {
     public Optional<Batch> findByUuid(String uuid) {
         return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT s FROM Batch s WHERE " + "s.uuid=:uuid";
-            List<Batch> batchList = em.createQuery(queryStr, Batch.class)
+            return em.createQuery(queryStr, Batch.class)
                     .setParameter("uuid", uuid)
                     .setMaxResults(1)
-                    .getResultList();
-            return !batchList.isEmpty() ? Optional.of(batchList.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst();
         });
     }
 
@@ -65,15 +64,15 @@ public class BatchDao extends AbstractDao {
      * database.
      */
     public Batch findDefaultBatchByStudy(Study study) {
-        Optional<Batch> batch = withReadOnlyTransaction((EntityManager em) -> {
+        return withReadOnlyTransaction((EntityManager em) -> {
             String hql = "SELECT b FROM Study s JOIN s.batchList b WHERE s = :study ORDER BY INDEX(b)";
             return em.createQuery(hql, Batch.class)
                     .setParameter("study", study)
                     .setMaxResults(1)
-                    .getResultList()
-                    .stream().findFirst();
+                    .getResultStream()
+                    .findFirst()
+                    .orElse(null);
         });
-        return batch.orElse(null);
     }
 
     /**
@@ -85,12 +84,12 @@ public class BatchDao extends AbstractDao {
      */
     public Long updateBatchSession(Long batchId, Long expectedVersion, String sessionData) {
         return withTransaction(em -> {
-            String query =
-                    "UPDATE Batch b " +
-                            "SET b.batchSessionData = :sessionData, " +
-                            "    b.batchSessionVersion = b.batchSessionVersion + 1 " +
-                            "WHERE b.id = :id " +
-                            "  AND b.batchSessionVersion = :expectedVersion";
+            String query = """
+                    UPDATE Batch b
+                    SET b.batchSessionData = :sessionData,
+                        b.batchSessionVersion = b.batchSessionVersion + 1
+                    WHERE b.id = :id
+                      AND b.batchSessionVersion = :expectedVersion""";
 
             int updated = em.createQuery(query)
                     .setParameter("sessionData", sessionData)
@@ -128,12 +127,13 @@ public class BatchDao extends AbstractDao {
     // todo in the past we had an exception with the "select 1 from BatchWorkerMap ..."
     public void addWorkerToBatch(Long batchId, Long workerId) {
         withTransaction(em -> {
-            em.createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) " +
-                            "SELECT :batchId, :workerId " +
-                            "WHERE NOT EXISTS (" +
-                            "SELECT 1 FROM BatchWorkerMap " +
-                            "WHERE batch_id = :batchId AND worker_id = :workerId" +
-                            ")")
+            em.createNativeQuery("""
+                            INSERT INTO BatchWorkerMap (batch_id, worker_id)
+                            SELECT :batchId, :workerId
+                            WHERE NOT EXISTS (
+                            SELECT 1 FROM BatchWorkerMap
+                            WHERE batch_id = :batchId AND worker_id = :workerId
+                            )""")
                     .setParameter("batchId", batchId)
                     .setParameter("workerId", workerId)
                     .executeUpdate();

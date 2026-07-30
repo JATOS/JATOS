@@ -39,14 +39,15 @@ public class ApiTokenDao extends AbstractDao {
 
     public Optional<ApiToken> findByHash(String tokenHash) {
         return withReadOnlyTransaction(em -> {
-            String queryStr = "SELECT t FROM ApiToken t " +
-                    "LEFT JOIN FETCH t.user u " +
-                    "LEFT JOIN FETCH u.studyList " +
-                    "WHERE t.tokenHash = :tokenHash";
-            List<ApiToken> apiToken = em.createQuery(queryStr, ApiToken.class)
+            String queryStr = """
+                    SELECT t FROM ApiToken t
+                    LEFT JOIN FETCH t.user u
+                    LEFT JOIN FETCH u.studyList
+                    WHERE t.tokenHash = :tokenHash""";
+            return em.createQuery(queryStr, ApiToken.class)
                     .setParameter("tokenHash", tokenHash)
-                    .getResultList();
-            return !apiToken.isEmpty() ? Optional.of(apiToken.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst();
         });
     }
 

@@ -64,10 +64,11 @@ public class LoginAttemptDao extends AbstractDao {
         return withReadOnlyTransaction((EntityManager em) -> {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MINUTE, -1);
-            Number result = (Number) em.createQuery("SELECT COUNT(la) FROM LoginAttempt la " +
-                            "WHERE username = :username " +
-                            "AND remoteAddress = :remoteAddress " +
-                            "AND date > :date")
+            Number result = (Number) em.createQuery("""
+                            SELECT COUNT(la) FROM LoginAttempt la
+                            WHERE username = :username
+                            AND remoteAddress = :remoteAddress
+                            AND date > :date""")
                     .setParameter("username", username)
                     .setParameter("remoteAddress", remoteAddress)
                     .setParameter("date", cal.getTime())

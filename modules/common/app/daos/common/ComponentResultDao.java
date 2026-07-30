@@ -7,10 +7,12 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
+
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
@@ -42,11 +44,12 @@ public class ComponentResultDao extends AbstractDao {
      */
     public void replaceData(Long id, String data) {
         withTransaction(em -> {
-            em.createNativeQuery("UPDATE ComponentResult cr " +
-                            "SET cr.data = :data, " +
-                            "cr.dataShort = SUBSTR(:data, 1, 1000), " +
-                            "cr.dataSize = LENGTH(:data) " +
-                            "WHERE cr.id = :id")
+            em.createNativeQuery("""
+                            UPDATE ComponentResult cr
+                            SET cr.data = :data,
+                            cr.dataShort = SUBSTR(:data, 1, 1000),
+                            cr.dataSize = LENGTH(:data)
+                            WHERE cr.id = :id""")
                     .setParameter("id", id)
                     .setParameter("data", data)
                     .executeUpdate();
@@ -55,9 +58,10 @@ public class ComponentResultDao extends AbstractDao {
 
     public void purgeData(Long id) {
         withTransaction(em -> {
-            em.createNativeQuery("UPDATE ComponentResult cr " +
-                            "SET cr.data = NULL, cr.dataShort = NULL, cr.dataSize = 0 " +
-                            "WHERE cr.id = :id")
+            em.createNativeQuery("""
+                            UPDATE ComponentResult cr
+                            SET cr.data = NULL, cr.dataShort = NULL, cr.dataSize = 0
+                            WHERE cr.id = :id""")
                     .setParameter("id", id)
                     .executeUpdate();
         });
@@ -69,11 +73,12 @@ public class ComponentResultDao extends AbstractDao {
     public void appendData(Long id, String data) {
         withTransaction(em -> {
             if (Common.usesMysql()) {
-                em.createNativeQuery("UPDATE ComponentResult cr " +
-                                "SET cr.data = CONCAT(COALESCE(cr.data, ''), :data), " +
-                                "cr.dataShort = SUBSTR(cr.data, 1, 1000), " +
-                                "cr.dataSize = LENGTH(cr.data) " +
-                                "WHERE cr.id = :id")
+                em.createNativeQuery("""
+                                UPDATE ComponentResult cr
+                                SET cr.data = CONCAT(COALESCE(cr.data, ''), :data),
+                                cr.dataShort = SUBSTR(cr.data, 1, 1000),
+                                cr.dataSize = LENGTH(cr.data)
+                                WHERE cr.id = :id""")
                         .setParameter("id", id)
                         .setParameter("data", data)
                         .executeUpdate();
@@ -85,11 +90,12 @@ public class ComponentResultDao extends AbstractDao {
 
                 String oldData = readDataColumnAsString(result);
                 String newData = oldData != null ? oldData + data : data;
-                em.createNativeQuery("UPDATE ComponentResult cr " +
-                                "SET cr.data = :newData, " +
-                                "cr.dataShort = SUBSTR(:newData, 1, 1000), " +
-                                "cr.dataSize = LENGTH(:newData) " +
-                                "WHERE cr.id = :id")
+                em.createNativeQuery("""
+                                UPDATE ComponentResult cr
+                                SET cr.data = :newData,
+                                cr.dataShort = SUBSTR(:newData, 1, 1000),
+                                cr.dataSize = LENGTH(:newData)
+                                WHERE cr.id = :id""")
                         .setParameter("id", id)
                         .setParameter("newData", newData)
                         .executeUpdate();
@@ -134,16 +140,18 @@ public class ComponentResultDao extends AbstractDao {
 
             String data = readDataColumnAsString(result);
             if (data != null) {
-                em.createNativeQuery("UPDATE ComponentResult cr " +
-                                "SET cr.dataShort = SUBSTR(:data, 1, 1000), cr.dataSize = LENGTH(:data) " +
-                                "WHERE cr.id = :id")
+                em.createNativeQuery("""
+                                UPDATE ComponentResult cr
+                                SET cr.dataShort = SUBSTR(:data, 1, 1000), cr.dataSize = LENGTH(:data)
+                                WHERE cr.id = :id""")
                         .setParameter("id", id)
                         .setParameter("data", data)
                         .executeUpdate();
             } else {
-                em.createQuery("UPDATE ComponentResult cr " +
-                                "SET cr.dataShort = NULL, cr.dataSize = 0 " +
-                                "WHERE cr.id = :id")
+                em.createQuery("""
+                                UPDATE ComponentResult cr
+                                SET cr.dataShort = NULL, cr.dataSize = 0
+                                WHERE cr.id = :id""")
                         .setParameter("id", id)
                         .executeUpdate();
             }
@@ -222,11 +230,11 @@ public class ComponentResultDao extends AbstractDao {
     public Map<Long, Integer> countByStudyComponents(Study study) {
         if (study == null) return Collections.emptyMap();
         return withReadOnlyTransaction(em -> {
-            List<Tuple> tuples = em.createQuery(
-                            "SELECT cr.component.id AS componentId, COUNT(cr) AS count " +
-                                    "FROM ComponentResult cr " +
-                                    "WHERE cr.component.study = :study " +
-                                    "GROUP BY cr.component.id",
+            List<Tuple> tuples = em.createQuery("""
+                                    SELECT cr.component.id AS componentId, COUNT(cr) AS count
+                                    FROM ComponentResult cr
+                                    WHERE cr.component.study = :study
+                                    GROUP BY cr.component.id""",
                             Tuple.class)
                     .setParameter("study", study)
                     .getResultList();
@@ -263,11 +271,12 @@ public class ComponentResultDao extends AbstractDao {
     public List<ComponentResult> findAllByComponent(Component component, int first, int max) {
         // Added 'LEFT JOIN FETCH' for performance (loads LAZY-linked StudyResults and their Workers)
         return withReadOnlyTransaction((EntityManager em) ->
-                em.createQuery("SELECT cr FROM ComponentResult cr " +
-                                        "LEFT JOIN FETCH cr.studyResult sr " +
-                                        "LEFT JOIN FETCH sr.worker " +
-                                        "WHERE cr.component=:component " +
-                                        "ORDER BY cr.id ASC",
+                em.createQuery("""
+                                        SELECT cr FROM ComponentResult cr
+                                        LEFT JOIN FETCH cr.studyResult sr
+                                        LEFT JOIN FETCH sr.worker
+                                        WHERE cr.component=:component
+                                        ORDER BY cr.id ASC""",
                                 ComponentResult.class)
                         .setFirstResult(first)
                         .setMaxResults(max)
@@ -305,8 +314,9 @@ public class ComponentResultDao extends AbstractDao {
     public List<Long> findIdsByComponentUuids(List<String> componentUuids) {
         if (componentUuids.isEmpty()) return Collections.emptyList();
         return withReadOnlyTransaction((EntityManager em) ->
-                em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN " +
-                                "(SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)", Long.class)
+                em.createQuery("""
+                                SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN
+                                (SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)""", Long.class)
                         .setParameter("componentUuids", componentUuids)
                         .getResultList().stream().distinct().collect(Collectors.toList()));
     }
@@ -314,8 +324,9 @@ public class ComponentResultDao extends AbstractDao {
     public List<Long> findIdsByStudyIds(List<Long> studyIds) {
         if (studyIds.isEmpty()) return Collections.emptyList();
         return withReadOnlyTransaction((EntityManager em) ->
-                em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN " +
-                                "(SELECT c.id FROM Component c WHERE c.study.id IN :studyIds)", Long.class)
+                em.createQuery("""
+                                SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN
+                                (SELECT c.id FROM Component c WHERE c.study.id IN :studyIds)""", Long.class)
                         .setParameter("studyIds", studyIds)
                         .getResultList().stream().distinct().collect(Collectors.toList()));
     }
@@ -323,9 +334,10 @@ public class ComponentResultDao extends AbstractDao {
     public List<Long> findIdsByStudyUuids(List<String> studyUuids) {
         if (studyUuids.isEmpty()) return Collections.emptyList();
         return withReadOnlyTransaction((EntityManager em) ->
-                em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN " +
-                                "(SELECT c.id FROM Component c WHERE c.study.id IN " +
-                                "(SELECT s.id FROM Study s WHERE s.uuid IN :studyUuids))", Long.class)
+                em.createQuery("""
+                                SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN
+                                (SELECT c.id FROM Component c WHERE c.study.id IN
+                                (SELECT s.id FROM Study s WHERE s.uuid IN :studyUuids))""", Long.class)
                         .setParameter("studyUuids", studyUuids)
                         .getResultList().stream().distinct().collect(Collectors.toList()));
     }
@@ -343,11 +355,11 @@ public class ComponentResultDao extends AbstractDao {
     public Optional<ComponentResult> findLastByStudyResult(StudyResult studyResult) {
         return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.studyResult = :studyResult ORDER BY cr.id DESC";
-            TypedQuery<ComponentResult> query = em.createQuery(queryStr, ComponentResult.class);
-            query.setParameter("studyResult", studyResult);
-            query.setMaxResults(1);
-            List<ComponentResult> results = query.getResultList();
-            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+            return em.createQuery(queryStr, ComponentResult.class)
+                    .setParameter("studyResult", studyResult)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst();
         });
     }
 
@@ -384,7 +396,8 @@ public class ComponentResultDao extends AbstractDao {
                         .getResultList());
         // We have to ensure that the order of the srids of the crids that will be returned is the same as the order of
         // the given srids.
-        // This is a inefficient hack. We could use MySQL's "ORDER BY FIELD" (https://stackoverflow.com/questions/3799935)
+        // todo revisit
+        // This is an inefficient hack. We could use MySQL's "ORDER BY FIELD" (https://stackoverflow.com/questions/3799935)
         // - but it's not supported by H2.
         List<Long> orderedComponentResultIds = new ArrayList<>();
         for (Long orderedSrid : orderedSrids) {

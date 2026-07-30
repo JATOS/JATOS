@@ -57,11 +57,11 @@ public class ComponentDao extends AbstractDao {
     public Optional<Component> findByUuid(String uuid) {
         return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.uuid=:uuid";
-            List<Component> componentList = em.createQuery(queryStr, Component.class)
+            return em.createQuery(queryStr, Component.class)
                     .setParameter("uuid", uuid)
                     .setMaxResults(1)
-                    .getResultList();
-            return !componentList.isEmpty() ? Optional.of(componentList.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst();
         });
     }
 
@@ -72,12 +72,12 @@ public class ComponentDao extends AbstractDao {
     public Optional<Component> findByUuid(String uuid, Study study) {
         return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.study=:study AND c.uuid=:uuid";
-            List<Component> componentList = em.createQuery(queryStr, Component.class)
+            return em.createQuery(queryStr, Component.class)
                     .setParameter("study", study)
                     .setParameter("uuid", uuid)
                     .setMaxResults(1)
-                    .getResultList();
-            return !componentList.isEmpty() ? Optional.of(componentList.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst();
         });
     }
 
@@ -102,17 +102,15 @@ public class ComponentDao extends AbstractDao {
                 .collect(Collectors.toList());
         if (componentUuids.isEmpty()) return Optional.empty();
 
-        return withReadOnlyTransaction((EntityManager em) -> {
-            List<String> uuidList = em.createQuery(
-                            "SELECT c.uuid FROM Component c " +
-                                    "WHERE c.uuid IN :componentUuids AND c.study.uuid <> :studyUuid",
-                            String.class)
-                    .setParameter("componentUuids", componentUuids)
-                    .setParameter("studyUuid", study.getUuid())
-                    .setMaxResults(1)
-                    .getResultList();
-            return uuidList.isEmpty() ? Optional.empty() : Optional.of(uuidList.get(0));
-        });
+        return withReadOnlyTransaction((EntityManager em) -> em.createQuery("""
+                        SELECT c.uuid FROM Component c
+                        WHERE c.uuid IN :componentUuids AND c.study.uuid <> :studyUuid""",
+                        String.class)
+                .setParameter("componentUuids", componentUuids)
+                .setParameter("studyUuid", study.getUuid())
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst());
     }
 
 }

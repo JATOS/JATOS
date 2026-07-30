@@ -82,12 +82,13 @@ public class GroupResultDao extends AbstractDao {
      */
     public List<GroupResult> findAllMaxNotReached(Batch batch) {
         return withReadOnlyTransaction((EntityManager em) -> {
-            String queryStr = "SELECT gr FROM GroupResult gr "
-                    + "WHERE gr.batch = :batch "
-                    + "AND gr.groupState = :groupState "
-                    + "AND (gr.batch.maxActiveMembers IS NULL OR gr.activeMemberCount < gr.batch.maxActiveMembers) "
-                    + "AND (gr.batch.maxTotalMembers IS NULL OR (gr.activeMemberCount + gr.historyMemberCount) < gr.batch.maxTotalMembers) "
-                    + "ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC";
+            String queryStr = """
+                    SELECT gr FROM GroupResult gr
+                    WHERE gr.batch = :batch
+                    AND gr.groupState = :groupState
+                    AND (gr.batch.maxActiveMembers IS NULL OR gr.activeMemberCount < gr.batch.maxActiveMembers)
+                    AND (gr.batch.maxTotalMembers IS NULL OR (gr.activeMemberCount + gr.historyMemberCount) < gr.batch.maxTotalMembers)
+                    ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC""";
             TypedQuery<GroupResult> query = em.createQuery(queryStr, GroupResult.class);
             query.setParameter("batch", batch);
             query.setParameter("groupState", GroupState.STARTED);
@@ -129,12 +130,12 @@ public class GroupResultDao extends AbstractDao {
      */
     public Long updateGroupSession(Long groupResultId, Long expectedVersion, String sessionData) {
         return withTransaction(em -> {
-            String query =
-                    "UPDATE GroupResult gr " +
-                            "SET gr.groupSessionData = :sessionData, " +
-                            "    gr.groupSessionVersion = gr.groupSessionVersion + 1 " +
-                            "WHERE gr.id = :id " +
-                            "  AND gr.groupSessionVersion = :expectedVersion";
+            String query = """
+                    UPDATE GroupResult gr
+                    SET gr.groupSessionData = :sessionData,
+                        gr.groupSessionVersion = gr.groupSessionVersion + 1
+                    WHERE gr.id = :id
+                      AND gr.groupSessionVersion = :expectedVersion""";
 
             int updated = em.createQuery(query)
                     .setParameter("sessionData", sessionData)

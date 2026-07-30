@@ -68,10 +68,11 @@ public class StudyDao extends AbstractDao {
 
     public Study findByIdWithComponentsAndBatches(Long id) {
         return withReadOnlyTransaction((EntityManager em) ->
-                em.createQuery("SELECT DISTINCT s FROM Study s " +
-                                        "LEFT JOIN FETCH s.componentList " +
-                                        "LEFT JOIN FETCH s.batchList " +
-                                        "WHERE s.id = :id",
+                em.createQuery("""
+                                SELECT DISTINCT s FROM Study s
+                                LEFT JOIN FETCH s.componentList
+                                LEFT JOIN FETCH s.batchList
+                                WHERE s.id = :id""",
                                 Study.class)
                         .setParameter("id", id)
                         .getSingleResult());
@@ -94,10 +95,11 @@ public class StudyDao extends AbstractDao {
      */
     public Study findByIdWithUsersAndBatches(Long id) {
         return withReadOnlyTransaction((EntityManager em) -> {
-            String queryStr = "SELECT DISTINCT s FROM Study s " +
-                    "LEFT JOIN FETCH s.userList " +
-                    "LEFT JOIN FETCH s.batchList " +
-                    "WHERE s.id = :id";
+            String queryStr = """
+                    SELECT DISTINCT s FROM Study s
+                    LEFT JOIN FETCH s.userList
+                    LEFT JOIN FETCH s.batchList
+                    WHERE s.id = :id""";
             return em.createQuery(queryStr, Study.class)
                     .setParameter("id", id)
                     .getSingleResult();
@@ -109,10 +111,11 @@ public class StudyDao extends AbstractDao {
      */
     public Study findByIdWithUsersAndComponents(Long id) {
         return withReadOnlyTransaction((EntityManager em) -> {
-            String queryStr = "SELECT DISTINCT s FROM Study s " +
-                    "LEFT JOIN FETCH s.userList " +
-                    "LEFT JOIN FETCH s.componentList " +
-                    "WHERE s.id = :id";
+            String queryStr = """
+                    SELECT DISTINCT s FROM Study s
+                    LEFT JOIN FETCH s.userList
+                    LEFT JOIN FETCH s.componentList
+                    WHERE s.id = :id""";
             return em.createQuery(queryStr, Study.class)
                     .setParameter("id", id)
                     .getSingleResult();
@@ -122,11 +125,11 @@ public class StudyDao extends AbstractDao {
     public Optional<Study> findByUuid(String uuid) {
         return withReadOnlyTransaction((EntityManager em) -> {
             String queryStr = "SELECT s FROM Study s WHERE s.uuid=:uuid";
-            List<Study> studyList = em.createQuery(queryStr, Study.class)
+            return em.createQuery(queryStr, Study.class)
                     .setParameter("uuid", uuid)
                     .setMaxResults(1)
-                    .getResultList();
-            return !studyList.isEmpty() ? Optional.of(studyList.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst();
         });
     }
 
@@ -286,22 +289,23 @@ public class StudyDao extends AbstractDao {
         return withReadOnlyTransaction(em -> {
             boolean filterByUsername = username != null && !username.trim().isEmpty();
 
-            String studyQueryStr =
-                    "SELECT s.id AS id, " +
-                            "s.uuid AS uuid, " +
-                            "s.title AS title, " +
-                            "s.active AS active, " +
-                            "s.dirName AS dirName, " +
-                            "(SELECT COUNT(sr.id) FROM StudyResult sr WHERE sr.study = s) AS studyResultCount, " +
-                            "(SELECT MAX(srs.startDate) " +
-                            "FROM StudyResultStatus srs " +
-                            "WHERE srs.study = s AND srs.startDate IS NOT NULL) AS lastStarted " +
-                            "FROM Study s " +
+            String studyQueryStr = """
+                    SELECT s.id AS id,
+                    s.uuid AS uuid,
+                    s.title AS title,
+                    s.active AS active,
+                    s.dirName AS dirName,
+                    (SELECT COUNT(sr.id) FROM StudyResult sr WHERE sr.study = s) AS studyResultCount,
+                    (SELECT MAX(srs.startDate)
+                    FROM StudyResultStatus srs
+                    WHERE srs.study = s AND srs.startDate IS NOT NULL) AS lastStarted
+                    FROM Study s\s""" +
                             (filterByUsername
-                                    ? "WHERE EXISTS (" +
-                                      "SELECT 1 FROM Study s2 JOIN s2.userList filterUser " +
-                                      "WHERE s2 = s AND filterUser.username = :username" +
-                                      ") "
+                                    ? """
+                                      WHERE EXISTS (
+                                      SELECT 1 FROM Study s2 JOIN s2.userList filterUser
+                                      WHERE s2 = s AND filterUser.username = :username
+                                      )\s"""
                                     : "") +
                             "ORDER BY s.id";
 
@@ -317,11 +321,11 @@ public class StudyDao extends AbstractDao {
                     .collect(Collectors.toList());
 
             Map<Long, Long> resultDataSizeByStudyId = includeResultDataSize && !studyIds.isEmpty()
-                    ? em.createQuery(
-                            "SELECT cr.studyResult.study.id AS studyId, COALESCE(SUM(cr.dataSize), 0) AS size " +
-                            "FROM ComponentResult cr " +
-                            "WHERE cr.studyResult.study.id IN :studyIds " +
-                            "GROUP BY cr.studyResult.study.id",
+                    ? em.createQuery("""
+                            SELECT cr.studyResult.study.id AS studyId, COALESCE(SUM(cr.dataSize), 0) AS size
+                            FROM ComponentResult cr
+                            WHERE cr.studyResult.study.id IN :studyIds
+                            GROUP BY cr.studyResult.study.id""",
                             Tuple.class)
                     .setParameter("studyIds", studyIds)
                     .getResultList()
@@ -333,15 +337,15 @@ public class StudyDao extends AbstractDao {
 
             Map<Long, List<AdminStudyMemberData>> membersByStudyId = studyIds.isEmpty()
                     ? Collections.emptyMap()
-                    : em.createQuery(
-                            "SELECT s.id AS studyId, " +
-                            "u.username AS username, " +
-                            "u.name AS name, " +
-                            "u.authMethod AS authMethod " +
-                            "FROM Study s " +
-                            "JOIN s.userList u " +
-                            "WHERE s.id IN :studyIds " +
-                            "ORDER BY s.id, u.username",
+                    : em.createQuery("""
+                            SELECT s.id AS studyId,
+                            u.username AS username,
+                            u.name AS name,
+                            u.authMethod AS authMethod
+                            FROM Study s
+                            JOIN s.userList u
+                            WHERE s.id IN :studyIds
+                            ORDER BY s.id, u.username""",
                             Tuple.class)
                     .setParameter("studyIds", studyIds)
                     .getResultList()

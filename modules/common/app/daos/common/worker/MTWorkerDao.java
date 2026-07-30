@@ -7,7 +7,9 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import jakarta.persistence.EntityManager;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -28,18 +30,19 @@ public class MTWorkerDao extends WorkerDao {
      */
     public Optional<MTWorker> findByMTWorkerId(String mtWorkerId, WorkerType workerType) {
         return withReadOnlyTransaction((EntityManager em) -> {
-            String queryStr =
-                    "SELECT w " +
-                            "FROM Worker w " +
-                            "WHERE UPPER(w.mtWorkerId) = :mtWorkerId " +
-                            "  AND w.workerType <> :workerType " +
-                            "ORDER BY w.id ASC";
-            List<Worker> workerList = em.createQuery(queryStr, Worker.class)
+            String queryStr = """
+                    SELECT w
+                    FROM Worker w
+                    WHERE UPPER(w.mtWorkerId) = :mtWorkerId
+                      AND w.workerType <> :workerType
+                    ORDER BY w.id ASC""";
+            return em.createQuery(queryStr, Worker.class)
                     .setParameter("mtWorkerId", mtWorkerId.toUpperCase())
                     .setParameter("workerType", workerType)
                     .setMaxResults(1)
-                    .getResultList();
-            return !workerList.isEmpty() ? Optional.of((MTWorker) workerList.get(0)) : Optional.empty();
+                    .getResultStream()
+                    .findFirst()
+                    .map(w -> (MTWorker) w);
         });
     }
 

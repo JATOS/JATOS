@@ -7,8 +7,10 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -81,38 +83,26 @@ public class WorkerDao extends AbstractDao {
      * Returns the first StudyResult of the given Worker.
      */
     public Optional<StudyResult> findFirstStudyResult(Worker worker) {
-        return withReadOnlyTransaction((EntityManager em) -> {
-            try {
-                StudyResult result = em.createQuery(
-                                "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id ASC",
-                                StudyResult.class)
-                        .setParameter("worker", worker)
-                        .setMaxResults(1)
-                        .getSingleResult();
-                return Optional.ofNullable(result);
-            } catch (NoResultException e) {
-                return Optional.empty();
-            }
-        });
+        return withReadOnlyTransaction((EntityManager em) -> em.createQuery(
+                        "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id ASC",
+                        StudyResult.class)
+                .setParameter("worker", worker)
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst());
     }
 
     /**
      * Returns the last StudyResult of the given Worker.
      */
     public Optional<StudyResult> findLastStudyResult(Worker worker) {
-        return withReadOnlyTransaction((EntityManager em) -> {
-            try {
-                StudyResult result = em.createQuery(
-                                "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id DESC",
-                                StudyResult.class)
-                        .setParameter("worker", worker)
-                        .setMaxResults(1)
-                        .getSingleResult();
-                return Optional.ofNullable(result);
-            } catch (NoResultException e) {
-                return Optional.empty();
-            }
-        });
+        return withReadOnlyTransaction((EntityManager em) -> em.createQuery(
+                        "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id DESC",
+                        StudyResult.class)
+                .setParameter("worker", worker)
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst());
     }
 
 }
