@@ -1,18 +1,18 @@
 package daos.common;
 
-import general.common.Common;
-import models.common.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
+import models.common.Component;
+import models.common.ComponentResult;
+import models.common.Study;
+import models.common.StudyResult;
 import play.Logger;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
-import jakarta.persistence.Tuple;
-import jakarta.persistence.TypedQuery;
-
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
