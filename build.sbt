@@ -29,8 +29,6 @@ dockerCommands := Seq(
   ExecCmd("ENTRYPOINT", "./loader.sh", "start")
 )
 
-javacOptions ++= Seq("--release", "25", "-Xlint")
-
 PlayKeys.externalizeResources := false
 
 // Submodule jatos-common: common utils for JSON, disk IO and such

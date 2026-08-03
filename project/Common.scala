@@ -1,10 +1,12 @@
-import com.typesafe.sbt.packager.Keys.{dockerBaseImage, maintainer}
+import com.typesafe.sbt.packager.Keys.maintainer
 import sbt.*
 import sbt.Keys.*
 
 object Common {
+  val jatosMaintainer = "support@jatos.org"
   val jatosVersion = "3.10.5"
   val jatosOrganization = "org.jatos"
+  val jatosJavaRelease = "21"
   val jatosScalaVersion = "2.13.18"
 
   // Dependency versions
@@ -34,9 +36,11 @@ object Common {
 
   // Common settings for all modules
   val commonSettings: Seq[Def.Setting[?]] = Seq(
+    maintainer := jatosMaintainer,
     version := jatosVersion,
     organization := jatosOrganization,
     scalaVersion := jatosScalaVersion,
+    javacOptions ++= Seq("--release", jatosJavaRelease, "-Xlint"),
     Compile / doc / sources := Seq.empty,
     Compile / packageDoc / publishArtifact := false,
   ) ++ mockitoSettings
