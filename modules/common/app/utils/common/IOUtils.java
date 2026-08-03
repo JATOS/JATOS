@@ -682,7 +682,7 @@ public class IOUtils {
     public static Source<ByteString, CompletionStage<IOResult>> okFileStreamed(final Path file, final Runnable handler) {
         return FileIO.fromPath(file)
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
-                .mapMaterializedValue(action -> action.whenCompleteAsync((_, _) -> handler.run()));
+                .mapMaterializedValue(action -> action.whenCompleteAsync((ok, ex) -> handler.run()));
     }
 
     /**

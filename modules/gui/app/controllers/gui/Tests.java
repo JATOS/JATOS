@@ -77,7 +77,7 @@ public class Tests extends Controller {
     @Async(Executor.IO)
     @Auth(roles = ADMIN)
     public WebSocket testWebSocket() {
-        return WebSocket.Text.accept(_ -> {
+        return WebSocket.Text.accept(header -> {
             // send response back to a client
             return Flow.<String>create().map(msg -> msg);
         });

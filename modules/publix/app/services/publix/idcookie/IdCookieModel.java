@@ -224,6 +224,13 @@ public class IdCookieModel {
         this.creationTime = creationTime;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, index, creationTime, studyAssets, urlBasePath, jatosRun,
+                workerId, workerType, batchId, studyId, studyResultId, studyResultUuid,
+                componentId, componentResultId, componentPosition);
+    }
+
     public boolean equals(Object other) {
         if (other == this) {
             return true;

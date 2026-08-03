@@ -2,12 +2,17 @@ package exceptions.common;
 
 import general.common.ApiEnvelope.ErrorCode;
 
+import java.io.Serial;
+
 import static play.mvc.Http.Status.NOT_FOUND;
 
 /**
  * Runtime Exception that causes the request to return with HTTP status 404 (Not Found).
  */
 public class NotFoundException extends HttpException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public NotFoundException(String message) {
         super(NOT_FOUND, message, ErrorCode.NOT_FOUND);

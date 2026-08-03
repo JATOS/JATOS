@@ -268,7 +268,7 @@ public class StudyResultDao extends AbstractDao {
         return withReadOnlyTransaction((EntityManager em) -> {
             Map<WorkerType, Integer> counts = Arrays.stream(WorkerType.values())
                     .filter(workerType -> workerType != WorkerType.NONE)
-                    .collect(Collectors.toMap(workerType -> workerType, _ -> 0));
+                    .collect(Collectors.toMap(workerType -> workerType, workerType -> 0));
 
             List<Tuple> tuples = em
                     .createQuery("""

@@ -2,10 +2,15 @@ package exceptions.common;
 
 import general.common.ApiEnvelope.ErrorCode;
 
+import java.io.Serial;
+
 /**
  * Runtime Exception that causes a request to return with an HTTP return status.
  */
 public class HttpException extends JatosException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     protected int httpStatusCode;
 

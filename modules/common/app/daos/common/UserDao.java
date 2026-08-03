@@ -117,7 +117,7 @@ public class UserDao extends AbstractDao {
             for (Object[] mapping : userStudyMappings) {
                 String username = (String) mapping[0];
                 Long studyId = ((Number) mapping[1]).longValue();
-                studyIdsByUsername.computeIfAbsent(username, _ -> new ArrayList<>()).add(studyId);
+                studyIdsByUsername.computeIfAbsent(username, k -> new ArrayList<>()).add(studyId);
             }
             return studyIdsByUsername;
         });

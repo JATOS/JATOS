@@ -2,6 +2,8 @@ package exceptions.common;
 
 import general.common.ApiEnvelope.ErrorCode;
 
+import java.io.Serial;
+
 import static play.mvc.Http.Status.INTERNAL_SERVER_ERROR;
 
 /**
@@ -10,6 +12,9 @@ import static play.mvc.Http.Status.INTERNAL_SERVER_ERROR;
  * Server Error).
  */
 public class InternalServerErrorException extends HttpException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public InternalServerErrorException(String message) {
         super(INTERNAL_SERVER_ERROR, message, ErrorCode.UNEXPECTED_ERROR);

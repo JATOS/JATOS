@@ -96,14 +96,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByStudyPaginated(Writer writer, Study study) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(_ -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
             return studyResultDao.countByStudy(study);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (first + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByStudy(study, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -146,14 +146,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByBatchPaginated(Writer writer, Batch batch) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(_ -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
             return studyResultDao.countByBatchExcludingWorkerType(batch, WorkerType.JATOS);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (first + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByBatch(batch, WorkerType.JATOS, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -162,14 +162,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByBatchAndWorkerTypePaginated(Writer writer, Batch batch, WorkerType workerType) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(_ -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
             return studyResultDao.countByBatchAndWorkerType(batch, workerType);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByBatchAndWorkerType(batch, workerType, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -197,14 +197,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByGroupPaginated(Writer writer, GroupResult group) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(_ -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
             return studyResultDao.countByGroup(group);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByGroup(group, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -233,14 +233,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByWorkerPaginated(Writer writer, Worker worker, User user) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(_ -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
             return studyResultDao.countByWorker(worker, user);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByWorker(worker, user, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -268,14 +268,14 @@ public class ResultStreamer {
 
     private void fetchComponentResultsPaginated(Writer writer, Component component) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(_ -> {
+        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
             return componentResultDao.countByComponent(component);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 List<ComponentResult> resultList = componentResultDao.findAllByComponent(component, first, maxDbQuerySize);
                 writeComponentResults(writer, isLastPage, resultList);
             });
@@ -320,7 +320,7 @@ public class ResultStreamer {
     void writeComponentResultDataByIds(Writer writer, List<Long> componentResultIdList, User user) {
         Set<Study> studies = new HashSet<>();
         for (Long componentResultId : componentResultIdList) {
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);
                 if (componentResult != null) {
                     authorizationService.canUserAccessComponentResult(componentResult, user, false);
@@ -409,7 +409,7 @@ public class ResultStreamer {
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (ZipOutputStream zipOut = new ZipOutputStream(outputStream, UTF_8)) {
-                        studyResultDao.withReadOnlyTransaction(_ -> {
+                        studyResultDao.withReadOnlyTransaction(em -> {
                             writeResults(componentResultIds, signedinUser, zipOut, resultsType, wrapObject);
                         });
                         zipOut.flush();
@@ -427,7 +427,7 @@ public class ResultStreamer {
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
         Collections.sort(crids);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        return studyResultDao.withReadOnlyTransaction(_ -> {
+        return studyResultDao.withReadOnlyTransaction(em -> {
             return writeResults(crids, signedinUser, null, ResultType.METADATA_ONLY, wrapObject);
         });
     }
@@ -530,7 +530,7 @@ public class ResultStreamer {
         ArrayNode componentResultArrayNode = Json.mapper().createArrayNode();
         for (Long componentResultId : componentResultList) {
             // We have to do it one by one to save memory in case of large result data
-            studyResultDao.withReadOnlyTransaction(_ -> {
+            studyResultDao.withReadOnlyTransaction(em -> {
                 switch (resultsType) {
                     case METADATA_ONLY: {
                         ComponentResult componentResult = componentResultDao.findById(componentResultId);

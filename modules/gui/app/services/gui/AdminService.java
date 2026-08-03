@@ -186,7 +186,7 @@ public class AdminService {
     }
 
     public List<Map<String, Object>> getLatestStudyRuns(int limit) {
-        return studyResultDao.withReadOnlyTransaction(_ -> {
+        return studyResultDao.withReadOnlyTransaction(em -> {
             return studyResultDao.findLastSeen(limit).stream()
                     .map(srs -> ImmutableMap.of(
                             "studyTitle", srs.getStudy().getTitle(),

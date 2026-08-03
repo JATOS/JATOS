@@ -2,6 +2,8 @@ package exceptions.common;
 
 import general.common.ApiEnvelope.ErrorCode;
 
+import java.io.Serial;
+
 import static general.common.ApiEnvelope.ErrorCode.UNSPECIFIED;
 
 /**
@@ -9,6 +11,9 @@ import static general.common.ApiEnvelope.ErrorCode.UNSPECIFIED;
  * Throwable. It is handled globally by the ErrorHandler.
  */
 public class JatosException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final ErrorCode errorCode;
 
