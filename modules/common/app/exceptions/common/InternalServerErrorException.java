@@ -20,8 +20,4 @@ public class InternalServerErrorException extends HttpException {
         super(INTERNAL_SERVER_ERROR, message, ErrorCode.UNEXPECTED_ERROR);
     }
 
-    public InternalServerErrorException(String message, ErrorCode errorCode) {
-        super(INTERNAL_SERVER_ERROR, message, errorCode);
-    }
-
 }
