@@ -67,7 +67,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
 
   lifecycle.addStopHook(() => Future {
     logger.info("JATOS shutdown")
-    if (environment.isProd) println("JATOS stopped")
+    if (environment.isProd) println("stopped.")
   })
 
   /**
