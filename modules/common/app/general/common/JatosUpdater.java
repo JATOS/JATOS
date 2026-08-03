@@ -1,24 +1,24 @@
 package general.common;
 
-import org.apache.pekko.Done;
-import org.apache.pekko.actor.ActorSystem;
-import org.apache.pekko.stream.Materializer;
-import org.apache.pekko.stream.javadsl.Sink;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.pekko.Done;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.Sink;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import play.Environment;
 import play.Logger;
 import play.inject.ApplicationLifecycle;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSResponse;
-import scala.jdk.javaapi.FutureConverters;
 import scala.concurrent.ExecutionContext;
+import scala.jdk.javaapi.FutureConverters;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
 
@@ -27,15 +27,11 @@ import javax.inject.Singleton;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
@@ -43,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+// @formatter:off
 /**
  * This class handles JATOS updates
  *
@@ -70,11 +67,13 @@ import java.util.stream.Stream;
  * 9. The loader script starts JATOS again
  * 10. JATOS shows a success msg (or a failure msg)
  */
+// @formatter:on
 @Singleton
 public class JatosUpdater {
 
     private static final Logger.ALogger LOGGER = Logger.of(JatosUpdater.class);
     private static final String BACKUP_DIR_PREFIX = "backup_";
+    private static final int UPDATE_RESTART_EXIT_CODE = 46;
 
     enum UpdateState {
         SLEEPING, // most of the time
@@ -385,7 +384,7 @@ public class JatosUpdater {
                         LOGGER.info("Downloaded and unzipped new JATOS " + zipFilename);
                         return unzippedDir;
                     })
-                    .whenComplete((_, ex) -> {
+                    .whenComplete((ok, ex) -> {
                         if (ex != null) {
                             state = UpdateState.SLEEPING;
                         }
@@ -423,7 +422,7 @@ public class JatosUpdater {
                 Source<ByteString, ?> responseBody = res.getBodyAsSource();
                 Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
                         bytes -> outputStream.write(bytes.toArray()));
-                return responseBody.runWith(outputWriter, materializer).thenApply(_ -> file);
+                return responseBody.runWith(outputWriter, materializer).thenApply(v -> file);
             });
         }
     }
@@ -470,27 +469,15 @@ public class JatosUpdater {
             backupCurrentJatosFiles(backupAll);
             updateFiles();
 
-            try {
-                state = UpdateState.RESTARTING;
-                // Inherit the current process stdin / stdout / stderr (in Java called
-                // System.in / System.out / System.err) to the newly started Process
-                // Used https://stackoverflow.com/questions/4159802
-                String[] cmd = getJatosCmdLine();
-                LOGGER.info(String.join(" ", cmd));
-                ProcessBuilder pb = new ProcessBuilder(cmd);
-                pb.inheritIO().start();
-            } catch (IOException e) {
-                LOGGER.error("Couldn't restart JATOS", e);
-            }
-
+            state = UpdateState.RESTARTING;
             return CompletableFuture.completedFuture(null);
         });
 
         LOGGER.info("Restart JATOS to finish update to version " + currentReleaseInfo.versionFull);
-        // First stop Play and then, to be sure, System.exit
+        // First stop Play and then System.exit
         FutureConverters
                 .asJava(actorSystem.terminate())
-                .thenAccept((_) -> System.exit(0));
+                .thenAccept((t) -> System.exit(UPDATE_RESTART_EXIT_CODE));
     }
 
     /**
@@ -564,36 +551,6 @@ public class JatosUpdater {
      */
     private static boolean isOsUx() {
         return SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_UNIX;
-    }
-
-    /**
-     * Uses "/proc/self/cmdline" to get the command JATOS was started with (including all parameters). Works only on
-     * Linux or Unix systems.
-     */
-    private static String[] getJatosCmdLine() {
-        List<String> cmd = new ArrayList<>();
-
-        // Get loader script with path and 'update' argument
-        String loaderName = isOsUx() ? "loader.sh" : "loader.bat";
-        String loader = Path.of(Common.getBasepath(), loaderName).toString();
-        cmd.add(loader);
-        cmd.add("update");
-
-        // Get command line arguments, like -Dhttp.address
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        List<String> args = runtimeMxBean.getInputArguments();
-        cmd.addAll(args);
-        // Remove arguments that are set anew with each start
-        cmd.removeIf(a -> a.startsWith("-agentlib"));
-        cmd.removeIf(a -> a.startsWith("-Dplay.crypto.secret")); // old secret config key
-        cmd.removeIf(a -> a.startsWith("-Dplay.http.secret.key")); // new secret config key
-        cmd.removeIf(a -> a.startsWith("-Duser.dir"));
-        cmd.removeIf(a -> a.startsWith("-Dconfig.file")); // JATOS config file (will be added again by loader script)
-        cmd.removeIf(a -> a.startsWith("-DJATOS_UPDATE_MSG")); // Msgs from a prior update
-        cmd.removeIf(a -> a.contains("--add-opens"));
-        cmd.replaceAll(a -> a.startsWith("-X") ? "-J" + a : a); // Add '-J' to all -X args (e.g. -Xmx2g -> -J-Xmx2g)
-
-        return cmd.toArray(new String[0]);
     }
 
 }
