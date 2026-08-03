@@ -1,7 +1,5 @@
 <configuration>
 
-    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
-
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${jatos.logs.path}/${jatos.logs.filename}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -17,7 +15,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %coloredLevel - %logger{5} - %message%n%xException</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) - %logger{5} - %message%n%xException</pattern>
         </encoder>
     </appender>
 

@@ -1,6 +1,6 @@
 <configuration>
 
-    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${jatos.logs.path:-./logs}/${jatos.logs.filename:-application}.log</file>
@@ -17,7 +17,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %coloredLevel - %logger{5} - %message%n%xException</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) - %logger{5} - %message%n%xException</pattern>
         </encoder>
     </appender>
 
