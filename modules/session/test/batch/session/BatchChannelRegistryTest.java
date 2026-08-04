@@ -27,7 +27,7 @@ public class BatchChannelRegistryTest {
     public static class DummyActor extends AbstractActor {
         @Override
         public Receive createReceive() {
-            return receiveBuilder().matchAny(_ -> { /* no-op */ }).build();
+            return receiveBuilder().matchAny(msg -> { /* no-op */ }).build();
         }
     }
 

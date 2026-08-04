@@ -110,13 +110,13 @@ public class UserServiceIntegrationTest extends JatosTest {
     public void checkUpdatePassword() {
         User user = createUser("foo@foo.org");
 
-        jpaApi.withTransaction(_ -> {
+        jpaApi.withTransaction(em -> {
             userService.updatePassword(user, "newPassword");
         });
 
         User userWithUpdatedPassword = userDao.findByUsername("foo@foo.org");
 
-        jpaApi.withTransaction((EntityManager _) -> authService.authenticate(userWithUpdatedPassword, "newPassword"));
+        jpaApi.withTransaction((EntityManager em) -> authService.authenticate(userWithUpdatedPassword, "newPassword"));
     }
 
     @Test
@@ -232,7 +232,7 @@ public class UserServiceIntegrationTest extends JatosTest {
         Long studyId = importExampleStudy();
 
         // Make the new user the only member of the study
-        jpaApi.withTransaction(_ -> {
+        jpaApi.withTransaction(em -> {
             Study study = studyDao.findById(studyId);
             studyService.changeUserMember(study, user, true);
             studyService.changeUserMember(study, admin, false);
@@ -242,7 +242,7 @@ public class UserServiceIntegrationTest extends JatosTest {
         Http.Context.current().args().put(SIGNEDIN_USER, admin);
 
         // Remove user
-        jpaApi.withTransaction((EntityManager _) -> userService.removeUser("foo@foo.org"));
+        jpaApi.withTransaction((EntityManager em) -> userService.removeUser("foo@foo.org"));
 
         // User is removed from the database
         assertThat(userDao.findByUsername("foo@foo.org")).isNull();

@@ -44,7 +44,7 @@ public class SigninLdapTest {
         try (MockedStatic<Common> commonMocked = Mockito.mockStatic(Common.class);
              MockedConstruction<InitialDirContext> contexts = Mockito.mockConstruction(InitialDirContext.class,
                      (mock, context) -> capturedProps.add(
-                             (Hashtable<String, String>) context.arguments().get(0)))) {
+                             (Hashtable<String, String>) context.arguments().getFirst()))) {
             commonMocked.when(Common::getLdapBaseDn).thenReturn(List.of("ou=users,dc=example,dc=org"));
             commonMocked.when(Common::getLdapAdminDn).thenReturn("");
             commonMocked.when(Common::getLdapUserAttribute).thenReturn("uid");
@@ -56,7 +56,7 @@ public class SigninLdapTest {
             assertThat(result).isTrue();
             assertThat(contexts.constructed()).hasSize(1);
 
-            Hashtable<String, String> props = capturedProps.get(0);
+            Hashtable<String, String> props = capturedProps.getFirst();
             assertThat(props.get(Context.PROVIDER_URL)).isEqualTo("ldap://ldap.example.org");
             assertThat(props.get(Context.SECURITY_PRINCIPAL)).isEqualTo("uid=bob,ou=users,dc=example,dc=org");
             assertThat(props.get(Context.SECURITY_CREDENTIALS)).isEqualTo("pw");
@@ -64,7 +64,7 @@ public class SigninLdapTest {
             assertThat(props.get("com.sun.jndi.ldap.read.timeout")).isEqualTo("1234");
             assertThat(props.get("com.sun.jndi.ldap.connect.timeout")).isEqualTo("1234");
 
-            verify(contexts.constructed().get(0)).close();
+            verify(contexts.constructed().getFirst()).close();
         }
     }
 
@@ -82,7 +82,7 @@ public class SigninLdapTest {
         try (MockedStatic<Common> commonMocked = Mockito.mockStatic(Common.class);
              MockedConstruction<InitialDirContext> contexts = Mockito.mockConstruction(InitialDirContext.class,
                      (mock, context) -> {
-                         capturedProps.add((Hashtable<String, String>) context.arguments().get(0));
+                         capturedProps.add((Hashtable<String, String>) context.arguments().getFirst());
                          if (context.getCount() == 1) {
                              when(mock.search(eq("ou=users,dc=example,dc=org"), eq("(uid=bob)"),
                                      any(SearchControls.class))).thenReturn(results);
@@ -99,7 +99,7 @@ public class SigninLdapTest {
             assertThat(result).isTrue();
             assertThat(contexts.constructed()).hasSize(2);
 
-            Hashtable<String, String> adminProps = capturedProps.get(0);
+            Hashtable<String, String> adminProps = capturedProps.getFirst();
             assertThat(adminProps.get(Context.SECURITY_PRINCIPAL)).isEqualTo("cn=admin,dc=example,dc=org");
             assertThat(adminProps.get(Context.SECURITY_CREDENTIALS)).isEqualTo("admin-pw");
 
@@ -133,13 +133,13 @@ public class SigninLdapTest {
 
             assertThat(result).isFalse();
             assertThat(contexts.constructed()).hasSize(1);
-            verify(contexts.constructed().get(0)).close();
+            verify(contexts.constructed().getFirst()).close();
         }
     }
 
     @Test
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void authenticate_wrapsNamingExceptionInJatosException() throws NamingException {
+    public void authenticate_wrapsNamingExceptionInJatosException() {
         try (MockedStatic<Common> commonMocked = Mockito.mockStatic(Common.class);
              MockedConstruction<InitialDirContext> ignored = Mockito.mockConstruction(InitialDirContext.class,
                      (mock, context) -> when(mock.search(eq("ou=users,dc=example,dc=org"), eq("(uid=bob)"),

@@ -15,6 +15,7 @@ import org.junit.*;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import play.test.Helpers;
+import testutils.gui.JPAMocker;
 import utils.common.IOUtils;
 
 import java.sql.Timestamp;
@@ -67,6 +68,8 @@ public class AdminServiceTest {
         DefaultJson defaultJson = new DefaultJson();
         adminService = new AdminService(userDao, studyDao, workerDao, studyResultDao, componentResultDao, ioUtils, defaultJson);
 
+        JPAMocker.mockDaoTransactions(userDao, studyDao, workerDao, studyResultDao, componentResultDao);
+
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
@@ -103,7 +106,7 @@ public class AdminServiceTest {
         List<Map<String, Object>> studiesData = adminService.getAllStudiesData(true, true, true);
 
         assertThat(studiesData).hasSize(1);
-        Map<String, Object> study = studiesData.get(0);
+        Map<String, Object> study = studiesData.getFirst();
         assertThat(study.get("id")).isEqualTo(1L);
         assertThat(study.get("uuid")).isEqualTo("study-uuid");
         assertThat(study.get("title")).isEqualTo("Study Title");
@@ -113,9 +116,9 @@ public class AdminServiceTest {
 
         @SuppressWarnings("unchecked") List<Map<String, Object>> members = (List<Map<String, Object>>) study.get("members");
         assertThat(members).hasSize(1);
-        assertThat(members.get(0).get("username")).isEqualTo("alice");
-        assertThat(members.get(0).get("name")).isEqualTo("Alice");
-        assertThat(members.get(0).get("authMethod")).isEqualTo(AuthMethod.DB.name());
+        assertThat(members.getFirst().get("username")).isEqualTo("alice");
+        assertThat(members.getFirst().get("name")).isEqualTo("Alice");
+        assertThat(members.getFirst().get("authMethod")).isEqualTo(AuthMethod.DB.name());
 
         @SuppressWarnings("unchecked") Map<String, Object> studyAssetsSize = (Map<String, Object>) study.get("studyAssetsSize");
         assertThat(studyAssetsSize.get("size")).isEqualTo(100L);
@@ -155,7 +158,7 @@ public class AdminServiceTest {
         List<Map<String, Object>> studiesData = adminService.getStudiesDataByUser("bob", false, false, false);
 
         assertThat(studiesData).hasSize(1);
-        Map<String, Object> study = studiesData.get(0);
+        Map<String, Object> study = studiesData.getFirst();
         assertThat(study.get("id")).isEqualTo(2L);
         assertThat(study.get("uuid")).isEqualTo("user-study-uuid");
         assertThat(study.get("title")).isEqualTo("User Study");
@@ -165,9 +168,9 @@ public class AdminServiceTest {
 
         @SuppressWarnings("unchecked") List<Map<String, Object>> members = (List<Map<String, Object>>) study.get("members");
         assertThat(members).hasSize(1);
-        assertThat(members.get(0).get("username")).isEqualTo("bob");
-        assertThat(members.get(0).get("name")).isEqualTo("Bob");
-        assertThat(members.get(0).get("authMethod")).isEqualTo(User.AuthMethod.LDAP.name());
+        assertThat(members.getFirst().get("username")).isEqualTo("bob");
+        assertThat(members.getFirst().get("name")).isEqualTo("Bob");
+        assertThat(members.getFirst().get("authMethod")).isEqualTo(User.AuthMethod.LDAP.name());
 
         assertDisabledSize(study.get("studyAssetsSize"));
         assertDisabledSize(study.get("resultDataSize"));
@@ -207,7 +210,7 @@ public class AdminServiceTest {
         List<Map<String, String>> latest = adminService.getLatestUsers(10);
 
         assertThat(latest).hasSize(1);
-        Map<String, String> u = latest.get(0);
+        Map<String, String> u = latest.getFirst();
         assertThat(u.get("username")).isEqualTo("bob");
         assertThat(u.get("name")).isEqualTo("Bob");
         assertThat(u.get("authMethod")).isEqualTo(AuthMethod.DB.name());
@@ -232,13 +235,13 @@ public class AdminServiceTest {
 
         List<Map<String, Object>> res = adminService.getLatestStudyRuns(5);
         assertThat(res).hasSize(1);
-        Map<String, Object> m = res.get(0);
+        Map<String, Object> m = res.getFirst();
         assertThat(m.get("studyTitle")).isEqualTo("X Study");
         assertThat(m.get("time")).isEqualTo(ts);
         @SuppressWarnings("unchecked") List<Map<String, Object>> members = (List<Map<String, Object>>) m.get("members");
         assertThat(members).hasSize(1);
-        assertThat(members.get(0).get("username")).isEqualTo("dave");
-        assertThat(members.get(0).get("authMethod")).isEqualTo(AuthMethod.DB.name());
+        assertThat(members.getFirst().get("username")).isEqualTo("dave");
+        assertThat(members.getFirst().get("authMethod")).isEqualTo(AuthMethod.DB.name());
     }
 
     @Test

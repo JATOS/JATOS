@@ -116,7 +116,7 @@ public class ResultRemoverIntegrationTest extends JatosTest {
         Context.current().args().put(SIGNEDIN_USER, admin);
 
         // Remove the StudyResults
-        jpaApi.withTransaction((EntityManager _) -> resultRemover.removeStudyResults(studyResultIds));
+        jpaApi.withTransaction((EntityManager em) -> resultRemover.removeStudyResults(studyResultIds));
 
         // Verify they are gone, and no ComponentResults remain for them
         for (Long srid : studyResultIds) {
@@ -136,7 +136,7 @@ public class ResultRemoverIntegrationTest extends JatosTest {
 
         try {
             resultRemover.removeStudyResults(studyResultIds);
-            jpaApi.withTransaction((EntityManager _) -> resultRemover.removeStudyResults(studyResultIds));
+            jpaApi.withTransaction((EntityManager em) -> resultRemover.removeStudyResults(studyResultIds));
             Fail.fail();
         } catch (ForbiddenException e) {
             // expected
@@ -144,7 +144,7 @@ public class ResultRemoverIntegrationTest extends JatosTest {
     }
 
     public List<Long> createTwoComponentResults(long studyId) {
-        return jpaApi.withTransaction((EntityManager _) -> {
+        return jpaApi.withTransaction((EntityManager em) -> {
             Study study = studyDao.findById(studyId);
             Worker adminWorker = workerDao.findById(admin.getWorker().getId());
             List<Long> crids = new ArrayList<>();
@@ -161,7 +161,7 @@ public class ResultRemoverIntegrationTest extends JatosTest {
     }
 
     public List<Long> createTwoStudyResults(long studyId) {
-        return jpaApi.withTransaction((EntityManager _) -> {
+        return jpaApi.withTransaction((EntityManager em) -> {
             Study study = studyDao.findById(studyId);
             Worker adminWorker = workerDao.findById(admin.getWorker().getId());
             List<Long> idList = new ArrayList<>();
