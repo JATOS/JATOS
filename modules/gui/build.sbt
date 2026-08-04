@@ -1,4 +1,4 @@
-import Common._
+import SharedSettings._
 
 name := "jatos-gui"
 

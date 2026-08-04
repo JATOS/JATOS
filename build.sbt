@@ -1,40 +1,17 @@
-import com.typesafe.sbt.packager.docker._
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
-import Common._
+import SharedSettings._
 
 name := "JATOS"
 maintainer := "support@jatos.org"
 Universal / packageName := "jatos"
 Docker / packageName := "jatos/jatos"
 
-// Docker commands to run in Dockerfile
-dockerCommands := Seq(
-  Cmd("FROM", "eclipse-temurin:25-jre-jammy"),
-  Cmd("LABEL", "maintainer=support@jatos.org"),
-  Cmd("ENV", "JATOS_HOME=/opt/jatos"),
-  Cmd("ENV", "JATOS_DATA=/opt/jatos_data"),
-  Cmd("WORKDIR", "${JATOS_HOME}"),
-  Cmd("COPY", "opt/docker ${JATOS_HOME}"),
-  Cmd("RUN", "groupadd --gid 1000 jatos " +
-    "&& useradd --uid 1000 --gid 1000 jatos " +
-    "&& mkdir -p ${JATOS_HOME}/logs ${JATOS_DATA} " +
-    "&& chown -R jatos:jatos ${JATOS_HOME} ${JATOS_DATA}"),
-  Cmd("USER", "jatos"),
-  Cmd("EXPOSE", "9000"),
-  Cmd("ENV", "JATOS_DB_URL=jdbc:h2:/opt/jatos_data/database/jatos;MODE=MYSQL;DATABASE_TO_UPPER=FALSE;IGNORECASE=TRUE;DEFAULT_LOCK_TIMEOUT=10000;SELECT_FOR_UPDATE_MVCC=FALSE"),
-  Cmd("ENV", "JATOS_STUDY_ASSETS_ROOT_PATH=/opt/jatos_data/study_assets_root"),
-  Cmd("ENV", "JATOS_RESULT_UPLOADS_PATH=/opt/jatos_data/result_uploads"),
-  Cmd("ENV", "JATOS_STUDY_LOGS_PATH=/opt/jatos_data/study_logs"),
-  Cmd("ENV", "JATOS_TMP_PATH=/opt/jatos_data/tmp"),
-  ExecCmd("ENTRYPOINT", "./loader.sh", "start")
-)
-
 PlayKeys.externalizeResources := false
 
 // Submodule jatos-common: common utils for JSON, disk IO and such
 lazy val common = (project in file("modules/common"))
   .enablePlugins(PlayJava, PlayScala, BuildInfoPlugin)
-  .settings(commonSettings)
+  .settings(sharedSettings)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "general.common"
@@ -44,7 +21,7 @@ lazy val common = (project in file("modules/common"))
 lazy val gui = (project in file("modules/gui"))
   .enablePlugins(PlayJava, PlayScala, SbtWeb)
   .dependsOn(common)
-  .settings(commonSettings)
+  .settings(sharedSettings)
   .settings(
     routesGenerator := InjectedRoutesGenerator
   )
@@ -53,7 +30,7 @@ lazy val gui = (project in file("modules/gui"))
 lazy val publix = (project in file("modules/publix"))
   .enablePlugins(PlayJava, PlayScala)
   .dependsOn(common, session)
-  .settings(commonSettings)
+  .settings(sharedSettings)
   .settings(
     routesGenerator := InjectedRoutesGenerator
   )
@@ -63,7 +40,7 @@ lazy val publix = (project in file("modules/publix"))
 lazy val session = (project in file("modules/session"))
   .enablePlugins(PlayJava, PlayScala)
   .dependsOn(common)
-  .settings(commonSettings)
+  .settings(sharedSettings)
   .settings(
     routesGenerator := InjectedRoutesGenerator
   )
@@ -73,7 +50,7 @@ lazy val jatos = (project in file("."))
   .enablePlugins(PlayScala, SbtWeb)
   .aggregate(publix, session, common, gui)
   .dependsOn(publix, session, common, gui)
-  .settings(commonSettings)
+  .settings(sharedSettings)
   .settings(
     aggregateReverseRoutes := Seq(publix, session, common, gui),
     Assets / pipelineStages += digest,
