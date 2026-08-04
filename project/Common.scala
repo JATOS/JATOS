@@ -30,7 +30,10 @@ object Common {
         .find(_.getName.startsWith("mockito-core-"))
         .getOrElse(sys.error("mockito-core JAR not found on test classpath"))
 
-      Seq(s"-javaagent:${mockitoJar.getAbsolutePath}")
+      Seq(
+        s"-javaagent:${mockitoJar.getAbsolutePath}",
+        "-Dconfig.resource=testing.conf"
+      )
     }
   )
 
