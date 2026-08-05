@@ -60,8 +60,11 @@ Options:
 Example:
   $0
 
-  $0 --skip-tests \
-     --push-docker \
+  $0 -h
+
+  $0 \\
+     --skip-tests \\
+     --push-docker \\
      --github-release
 EOF
 }
@@ -168,9 +171,6 @@ read_version() {
 
     git diff --exit-code -- VERSION >/dev/null ||
         die "VERSION has uncommitted changes. Commit it before releasing."
-
-    git tag --points-at HEAD | grep -Fxq "v$VERSION" ||
-        die "Current commit is not tagged v$VERSION."
 }
 
 adoptium_url() {
@@ -266,6 +266,9 @@ prepare_bundle() {
     local bundle_dir="$WORK_DIR/$name"
     local bundle_root="$bundle_dir/jatos"
 
+    [[ -n "${BASE_DIR:-}" && -d "$BASE_DIR" ]] ||
+        die "BASE_DIR is missing."
+
     rm -rf "$bundle_dir"
     mkdir -p "$bundle_root"
 
@@ -298,6 +301,7 @@ create_zip() {
     local bundle_root="$1"
     local filename="$2"
 
+    mkdir -p "$OUTPUT_DIR"
     rm -f "$OUTPUT_DIR/$filename"
 
     (
@@ -350,6 +354,9 @@ build_jatos() {
     log "Running: sbt ${SBT_TASKS[*]}"
 
     sbt "${SBT_TASKS[@]}"
+
+    rm -rf "$WORK_DIR"
+    mkdir -p "$WORK_DIR"
 
     local distributions=(target/universal/*.zip)
 
@@ -477,15 +484,13 @@ main() {
 
     read_version
 
-    mkdir -p "$OUTPUT_DIR" "$JRE_CACHE"
-    rm -rf "$WORK_DIR"
-    mkdir -p "$WORK_DIR"
-
     build_jatos
 
     create_plain_release
 
     if [[ "$CREATE_JAVA_BUNDLES" == true ]]; then
+        mkdir -p "$JRE_CACHE"
+
         create_java_release \
             linux-x64 \
             linux \
