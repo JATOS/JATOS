@@ -171,7 +171,7 @@ public class User {
         return Normalizer.normalize(usernameWithoutAccents, Normalizer.Form.NFKC).toLowerCase().trim();
     }
 
-    public final void setUsername(String username) {
+    public void setUsername(String username) {
         this.username = normalizeUsername(username);
     }
 
@@ -199,7 +199,7 @@ public class User {
         return roleList;
     }
 
-    public final void updateRoles(Role role) {
+    public void updateRoles(Role role) {
         if (role == null) return;
         switch (role) {
             case NONE:
