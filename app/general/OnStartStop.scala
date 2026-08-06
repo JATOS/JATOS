@@ -47,9 +47,9 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   scheduleLoginAttemptCleaning()
   groupCleaner.start()
 
-  if (isPortInUse && environment.isProd) {
-    // If port is already in use log with Logger or STDOUT
-    val msg = s"Error - Could     not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}"
+  if (isPortInUse && environment.isProd && !isUpdateRestart) {
+    // If port is already in use, log with Logger or STDOUT
+    val msg = s"Error - Could not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}"
     if (Common.isLogsAppenderStdOut) println(msg) else logger.error(msg)
   } else if (!environment.isProd) {
     // During development use Logger only
@@ -91,7 +91,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
    * Logs eventual update messages from the loader script and notify JatosUpdater
    */
   private def checkUpdate(): Unit = {
-    if (Common.getJatosUpdateMsg != null) Common.getJatosUpdateMsg match {
+    if (isUpdateRestart) Common.getJatosUpdateMsg match {
       case "success" =>
         jatosUpdater.setUpdateStateSuccess()
         logger.info("JATOS was successfully updated")
@@ -105,6 +105,10 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
         jatosUpdater.setUpdateStateFailed()
         logger.error(msg)
     }
+  }
+
+  private def isUpdateRestart = {
+    Common.getJatosUpdateMsg != null
   }
 
   private def createDirIfNotExist(path: String): Unit = {
