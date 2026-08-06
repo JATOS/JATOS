@@ -32,10 +32,10 @@ public class Updates extends Controller {
     }
 
     /**
-     * Checks whether there is an JATOS update available and if yes returns ReleaseInfo as JSON
-     * Example URL to enforce update to a certain version: example.com/jatos?version=v3.5.1
+     * Checks whether there is an JATOS update available, and if yes, returns ReleaseInfo as JSON
+     * Example URL to enforce the update to a certain version: example.com/jatos?version=v3.5.1
      *
-     * @param version          Can be used to enforce a certain version. If not set the latest version is used.
+     * @param version          Can be used to enforce a certain version. If not set, the latest version is used.
      * @param allowPreReleases If true, allows requesting of pre-releases too
      */
     @Async(Executor.IO)
@@ -71,7 +71,7 @@ public class Updates extends Controller {
                 LOGGER.error("A problem occurred while downloading a new JATOS release.", error);
                 return badRequest("A problem occurred while downloading a new JATOS release.");
             } else {
-                return ok(" "); // jQuery can't deal with empty POST response
+                return ok();
             }
         });
     }
@@ -91,7 +91,7 @@ public class Updates extends Controller {
             LOGGER.error("An error occurred while updating to the new JATOS release.", e);
             return badRequest("An error occurred while updating to the new JATOS release.");
         }
-        return ok(" "); // jQuery can't deal with empty POST response
+        return ok();
     }
 
 }
