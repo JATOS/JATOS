@@ -16,6 +16,7 @@ updateLog="$dir/logs/update.log"
 pidfile="$dir/RUNNING_PID"
 jatos_pid=""
 update_msg=""
+java_major=""
 
 # Exit code of JATOS when it wants to update and restart
 UPDATE_RESTART_EXIT_CODE=46
@@ -55,6 +56,11 @@ function start() {
     if [[ -n "$update_msg" ]]; then
         start_args+=("-DJATOS_UPDATE_MSG=$update_msg")
         update_msg=""
+    fi
+
+    # Hide Guice warnings
+    if (( java_major >= 24 && java_major <= 25 )); then
+        start_args+=("-J--sun-misc-unsafe-memory-access=allow")
     fi
 
     # Add config file, either jatos.conf or production.conf (jatos.conf has precedence)
@@ -212,7 +218,7 @@ die() {
 
 function checkJava() {
     local os arch jre_path="" java_cmd
-    local java_version_output java_version java_major
+    local java_version_output java_version
     local min_java_version=21
 
     os="$(uname -s)"
@@ -299,6 +305,8 @@ terminate() {
     exit "$exit_code"
 }
 
+# Start JATOS and keep control of the process so the loader can finish
+# an update when JATOS exits with the update-restart exit code.
 function supervise() {
     local exit_code
 
@@ -349,6 +357,13 @@ function stop() {
 
 case "$1" in
     start)
+        supervise
+        exit $?
+        ;;
+    update)
+        # Backward compatibility with older JATOS versions:
+        # old JATOS starts the new loader directly with "loader.sh update".
+        update
         supervise
         exit $?
         ;;
