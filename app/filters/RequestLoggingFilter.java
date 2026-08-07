@@ -1,5 +1,6 @@
 package filters;
 
+import general.common.Common;
 import org.apache.pekko.stream.Materializer;
 import http.common.Http.Context;
 import models.common.User;
@@ -7,6 +8,7 @@ import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Filter;
 import play.mvc.Http;
+import play.mvc.Http.RequestHeader;
 import play.mvc.Result;
 import utils.common.StringUtils;
 
@@ -30,14 +32,18 @@ public class RequestLoggingFilter extends Filter {
     }
 
     @Override
-    public CompletionStage<Result> apply(Function<Http.RequestHeader, CompletionStage<Result>> nextFilter,
-                                         Http.RequestHeader requestHeader) {
+    public CompletionStage<Result> apply(Function<RequestHeader, CompletionStage<Result>> nextFilter,
+                                         RequestHeader requestHeader) {
         long startTime = System.currentTimeMillis();
         Context context = requestHeader.attrs().get(Context.CONTEXT_TYPED_KEY);
 
         return nextFilter.apply(requestHeader)
                 .thenApply(result -> Context.withContext(context, () -> {
-                    ALogger logger = getLogger(requestHeader);
+                    Optional<ALogger> loggerOptional = getLogger(requestHeader);
+                    if (loggerOptional.isEmpty()) {
+                        return result;
+                    }
+
                     long endTime = System.currentTimeMillis();
                     long requestTime = endTime - startTime;
                     Optional<User> signedinUser = Context.current().args().getOptional(SIGNEDIN_USER);
@@ -45,14 +51,14 @@ public class RequestLoggingFilter extends Filter {
                     if (signedinUser.isPresent()) {
                         String username = signedinUser.map(User::getUsername).orElse("UNKNOWN");
                         String anonymizedUsername = StringUtils.anonymizeUsername(username);
-                        logger.info("{} {} by {} took {}ms and returned {}",
+                        loggerOptional.get().info("{} {} by {} took {}ms and returned {}",
                                 requestHeader.method(),
                                 requestHeader.uri(),
                                 anonymizedUsername,
                                 requestTime,
                                 result.status());
                     } else {
-                        logger.info(
+                        loggerOptional.get().info(
                                 "{} {} took {}ms and returned {}",
                                 requestHeader.method(),
                                 requestHeader.uri(),
@@ -64,23 +70,35 @@ public class RequestLoggingFilter extends Filter {
                 }));
     }
 
-    private ALogger getLogger(Http.RequestHeader requestHeader) {
-        if (isApiRequest(requestHeader)) return Logger.of("api");
-        if (isGuiRequest(requestHeader)) return Logger.of("gui");
-        if (isPublixRequest(requestHeader)) return Logger.of("publix");
-        return Logger.of("http");
+    private Optional<ALogger> getLogger(RequestHeader requestHeader) {
+        if (isApiRequest(requestHeader) && shouldLog("api")) return Optional.of(Logger.of("api"));
+        if (isGuiRequest(requestHeader) && shouldLog("gui")) return Optional.of(Logger.of("gui"));
+        if (isPublixRequest(requestHeader) && shouldLog("publix")) return Optional.of(Logger.of("publix"));
+        if (isAssetsRequest(requestHeader) && shouldLog("assets")) return Optional.of(Logger.of("assets"));
+        if (shouldLog("all")) return Optional.of(Logger.of("http"));
+        return Optional.empty();
     }
 
-    private boolean isApiRequest(Http.RequestHeader requestHeader) {
-        return requestHeader.path().contains("/jatos/api/");
+    private boolean isApiRequest(RequestHeader requestHeader) {
+        return requestHeader.path().startsWith(Common.getJatosUrlBasePath() + "jatos/api/");
     }
 
-    private boolean isGuiRequest(Http.RequestHeader requestHeader) {
-        return requestHeader.path().contains("/jatos/");
+    private boolean isGuiRequest(RequestHeader requestHeader) {
+        return requestHeader.path().startsWith(Common.getJatosUrlBasePath() + "jatos/");
     }
 
-    private boolean isPublixRequest(Http.RequestHeader requestHeader) {
-        return requestHeader.path().contains("/publix/");
+    private boolean isPublixRequest(RequestHeader requestHeader) {
+        return requestHeader.path().startsWith(Common.getJatosUrlBasePath() + "publix/");
+    }
+
+    private boolean isAssetsRequest(RequestHeader requestHeader) {
+        return requestHeader.path().startsWith(Common.getJatosUrlBasePath() + "assets/")
+                || requestHeader.path().startsWith(Common.getJatosUrlBasePath() + "assets-nv/");
+    }
+
+    private boolean shouldLog(String category) {
+        return Common.getLogsRequestCategories().contains("all")
+                || Common.getLogsRequestCategories().contains(category);
     }
 
 }
