@@ -101,6 +101,9 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
       case "more_than_one_update_folder" =>
         jatosUpdater.setUpdateStateFailed()
         logger.error("JATOS update stopped: there is more than one update folder")
+      case "downgrade_not_allowed" =>
+        jatosUpdater.setUpdateStateFailed()
+        logger.error("JATOS update stopped: downgrade not allowed")
       case msg =>
         jatosUpdater.setUpdateStateFailed()
         logger.error(msg)
