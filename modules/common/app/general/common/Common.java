@@ -116,6 +116,7 @@ public class Common {
     private static String logsPath;
     private static String logsFilename;
     private static String logsAppender;
+    private static List<String> logsRequestCategories;
     private static String tmpPath;
     private static boolean multiNode;
     private static String threadPoolSize;
@@ -243,6 +244,7 @@ public class Common {
         LOGGER.info("Path to logs directory is " + logsPath);
         logsFilename = config.getString("jatos.logs.filename");
         logsAppender = config.getString("jatos.logs.appender");
+        logsRequestCategories = config.getStringList("jatos.logs.requestCategories");
         multiNode = config.getBoolean("jatos.multiNode");
         tmpPath = config.getIsNull("jatos.tmpPath")
                 ? Path.of(System.getProperty("java.io.tmpdir"), "jatos").toString()
@@ -328,29 +330,29 @@ public class Common {
     }
 
     /**
-     * JATOS version (full version e.g. v3.5.5-alpha)
+     * JATOS version (full version e.g. v3.11.1-alpha)
      */
     public static String getJatosVersion() {
         return jatosVersion;
     }
 
     /**
-     * JATOS API version (different from JATOS version)
+     * JATOS API version (different from the JATOS version)
      */
     public static String getJatosApiVersion() {
         return jatosApiVersion;
     }
 
     /**
-     * JATOS' absolute base path without trailing '/.'
+     * JATOS' absolute base path in the file system without trailing '/.'
      */
     public static String getBasepath() {
         return basepath;
     }
 
     /**
-     * Path in the file system to the study assets root directory. If the property is defined in the configuration file
-     * then use it as the base path. If property isn't defined, try in default study path instead.
+     * Path in the file system to the study assets root directory. If the property is defined in the configuration file,
+     * then use it as the base path. If property isn't defined, try in the default study path instead.
      */
     public static String getStudyAssetsRootPath() {
         return studyAssetsRootPath;
@@ -444,7 +446,7 @@ public class Common {
     }
 
     /**
-     * Does JATOS use an MySQL database?
+     * Does JATOS use a MySQL database?
      */
     public static boolean usesMysql() {
         return getDbUrl().toLowerCase().contains("jdbc:mysql");
@@ -493,7 +495,7 @@ public class Common {
     }
 
     /**
-     * If in update happened during last startup a message might be stored here
+     * If in update happened during the last startup, a message might be stored here
      */
     public static String getJatosUpdateMsg() {
         return jatosUpdateMsg;
@@ -620,14 +622,14 @@ public class Common {
     }
 
     /**
-     * Text of OIDC button in sign-in page
+     * Text of the OIDC button in the sign-in page
      */
     public static String getOidcSigninButtonText() {
         return oidcSigninButtonText;
     }
 
     /**
-     * Logo URL of OIDC button in sign-in page
+     * Logo URL of the OIDC button in the sign-in page
      */
     public static String getOidcSigninButtonLogoUrl() {
         return oidcSigninButtonLogoUrl;
@@ -687,14 +689,14 @@ public class Common {
     }
 
     /**
-     * Text of ORCID button on the sign-in page
+     * Text of the ORCID button on the sign-in page
      */
     public static String getOrcidSigninButtonText() {
         return orcidSigninButtonText;
     }
 
     /**
-     * Logo URL of ORCID button on the sign-in page
+     * Logo URL of the ORCID button on the sign-in page
      */
     public static String getOrcidSigninButtonLogoUrl() {
         return orcidSigninButtonLogoUrl;
@@ -757,7 +759,7 @@ public class Common {
     }
 
     /**
-     * Text of SRAM button on the sign-in page
+     * Text of the SRAM button on the sign-in page
      */
     public static String getSramSigninButtonText() {
         return sramSigninButtonText;
@@ -851,7 +853,7 @@ public class Common {
 
 
     /**
-     * Should the GUI show a donations button
+     * Should the GUI show a donation button
      */
     public static boolean isDonationAllowed() {
         return donationAllowed;
@@ -920,7 +922,7 @@ public class Common {
     }
 
     /**
-     * If false, the result data size won't be calculated for the study manager page. Sometime the database is too slow
+     * If false, the result data size won't be calculated for the study manager page. Sometimes the database is too slow
      * to allow this.
      */
     public static boolean showResultDataSizeInStudyManager() {
@@ -972,7 +974,7 @@ public class Common {
     }
 
     /**
-     * Base name of JATOS log files without the suffix ('.log' or '.gz'). Default is 'application'.
+     * Base name of JATOS log files without the suffix ('.log' or '.gz'). The default is 'application'.
      */
     public static String getLogsFilename() {
         return logsFilename + ".log";
@@ -991,6 +993,13 @@ public class Common {
      */
     public static boolean isLogsAppenderStdOut() {
         return "ASYNCSTDOUT".equals(logsAppender) || "STDOUT".equals(logsAppender);
+    }
+
+    /**
+     * Request categories logged by RequestLoggingFilter.
+     */
+    public static List<String> getLogsRequestCategories() {
+        return logsRequestCategories;
     }
 
     /**
@@ -1022,7 +1031,7 @@ public class Common {
     }
 
     /**
-     * File extension of results archive files
+     * File extension of result archive files
      */
     public static String getResultsArchiveSuffix() {
         return resultsArchiveSuffix;
