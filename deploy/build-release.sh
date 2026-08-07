@@ -201,7 +201,7 @@ download_jre() {
     if [[ ! -s "$archive" ]]; then
         log "Downloading Temurin JRE for $name"
 
-        rm -f "$temporary"
+        rm -f -- "$temporary"
 
         if ! curl \
             --fail \
@@ -210,11 +210,11 @@ download_jre() {
             --output "$temporary" \
             "$url"
         then
-            rm -f "$temporary"
+            rm -f -- "$temporary"
             die "Could not download Temurin JRE from: $url"
         fi
 
-        mv "$temporary" "$archive"
+        mv -- "$temporary" "$archive"
     fi
 
     printf '%s\n' "$archive"
@@ -269,11 +269,11 @@ prepare_bundle() {
     [[ -n "${BASE_DIR:-}" && -d "$BASE_DIR" ]] ||
         die "BASE_DIR is missing."
 
-    rm -rf "$bundle_dir"
+    rm -rf -- "$bundle_dir"
     mkdir -p "$bundle_root"
 
-    cp -a "$BASE_DIR/." "$bundle_root/"
-    rm -rf "$bundle_root/jre"
+    cp -a -- "$BASE_DIR/." "$bundle_root/"
+    rm -rf -- "$bundle_root/jre"
 
     echo "$bundle_root"
 }
@@ -288,13 +288,13 @@ add_jre() {
     local extraction_dir="$WORK_DIR/extracted-$name"
     local source_root
 
-    rm -rf "$extraction_dir"
+    rm -rf -- "$extraction_dir"
     extract_jre "$archive" "$extraction_dir"
 
     source_root="$(find_jre_root "$extraction_dir" "$java_path")"
 
     mkdir -p "$bundle_root/jre/$jre_dir"
-    cp -a "$source_root/." "$bundle_root/jre/$jre_dir/"
+    cp -a -- "$source_root/." "$bundle_root/jre/$jre_dir/"
 }
 
 create_zip() {
@@ -302,7 +302,7 @@ create_zip() {
     local filename="$2"
 
     mkdir -p "$OUTPUT_DIR"
-    rm -f "$OUTPUT_DIR/$filename"
+    rm -f -- "$OUTPUT_DIR/$filename"
 
     (
         cd "$(dirname "$bundle_root")"
@@ -355,7 +355,7 @@ build_jatos() {
 
     sbt "${SBT_TASKS[@]}"
 
-    rm -rf "$WORK_DIR"
+    rm -rf -- "$WORK_DIR"
     mkdir -p "$WORK_DIR"
 
     local distributions=(target/universal/*.zip)
@@ -385,10 +385,10 @@ generate_checksums() {
 
     if [[ "$CREATE_JAVA_BUNDLES" == true ]]; then
         files+=(
-            jatos_linux_java.zip
-            jatos_mac_aarch64_java.zip
-            jatos_mac_x64_java.zip
-            jatos_win_java.zip
+            "jatos_linux_java${JAVA_MAJOR}.zip"
+            "jatos_mac_aarch64_java${JAVA_MAJOR}.zip"
+            "jatos_mac_x64_java${JAVA_MAJOR}.zip"
+            "jatos_win_java${JAVA_MAJOR}.zip"
         )
     fi
 
@@ -463,10 +463,10 @@ create_github_release() {
 
     if [[ "$CREATE_JAVA_BUNDLES" == true ]]; then
         arguments+=(
-            "$OUTPUT_DIR/jatos_linux_java.zip"
-            "$OUTPUT_DIR/jatos_mac_aarch64_java.zip"
-            "$OUTPUT_DIR/jatos_mac_x64_java.zip"
-            "$OUTPUT_DIR/jatos_win_java.zip"
+            "$OUTPUT_DIR/jatos_linux_java${JAVA_MAJOR}.zip"
+            "$OUTPUT_DIR/jatos_mac_aarch64_java${JAVA_MAJOR}.zip"
+            "$OUTPUT_DIR/jatos_mac_x64_java${JAVA_MAJOR}.zip"
+            "$OUTPUT_DIR/jatos_win_java${JAVA_MAJOR}.zip"
         )
     fi
 
@@ -486,6 +486,9 @@ main() {
 
     build_jatos
 
+    rm -rf -- "$OUTPUT_DIR"
+    mkdir -p "$OUTPUT_DIR"
+
     create_plain_release
 
     if [[ "$CREATE_JAVA_BUNDLES" == true ]]; then
@@ -498,7 +501,7 @@ main() {
             tar.gz \
             "$LINUX_JRE_DIR" \
             bin/java \
-            jatos_linux_java.zip
+            "jatos_linux_java${JAVA_MAJOR}.zip"
 
         create_java_release \
             windows-x64 \
@@ -507,7 +510,7 @@ main() {
             zip \
             "$WINDOWS_JRE_DIR" \
             bin/java.exe \
-            jatos_win_java.zip
+            "jatos_win_java${JAVA_MAJOR}.zip"
 
         create_java_release \
             mac-x64 \
@@ -516,7 +519,7 @@ main() {
             tar.gz \
             "$MAC_X64_JRE_DIR" \
             Contents/Home/bin/java \
-            jatos_mac_x64_java.zip
+            "jatos_mac_x64_java${JAVA_MAJOR}.zip"
 
         create_java_release \
             mac-aarch64 \
@@ -525,7 +528,7 @@ main() {
             tar.gz \
             "$MAC_ARM64_JRE_DIR" \
             Contents/Home/bin/java \
-            jatos_mac_aarch64_java.zip
+            "jatos_mac_aarch64_java${JAVA_MAJOR}.zip"
     else
         log "Skipping Java-bundled releases"
     fi
@@ -534,10 +537,11 @@ main() {
     publish_docker
     create_github_release
 
-    rm -rf "$WORK_DIR"
+    rm -rf -- "$WORK_DIR"
 
     log "Release $VERSION completed"
 
+    printf "\nContent of %s:\n" $OUTPUT_DIR
     ls -lh "$OUTPUT_DIR"
 }
 
