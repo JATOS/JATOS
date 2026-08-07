@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
@@ -41,18 +42,19 @@ import java.util.stream.Stream;
 
 // @formatter:off
 /**
- * This class handles JATOS updates
+ * This class handles JATOS updates. The update process is split between this JatosUpdater and loader.sh. JatosUpdater
+ * prepares the update while the old JATOS process is still running. loader.sh performs the final file replacement after
+ * JATOS has stopped. So far the updater only supports Linux OS.
  *
  * Some hints:
  * - JATOS releases are currently stored at GitHub
  * - The data requested from GitHub are stored in ReleaseInfo
- * - If there is an 'n' in the release's version, an update is forbidden. This is a safety feature in case a future
- * update is not compatible with this update process.
- * - The new release might need a new Java version. The release's Java version is determined by the asset's filename
+ * - If there is 'nau' (no auto update) anywhere in the release's version, an update is forbidden. This is a safety
+ * feature in case a future update is not compatible with this update process. In JATOS < 3.11.x it was just an 'n'.
+ * - The new release might need a new Java version. The asset's filename determines the release's Java version
  * (see newJavaVersion).
  * - The current state of the update process (UpdateState) is stored in 'state'.
- * - The update process is finished in the loader script
- * - In the GUI the update is handled in the home view
+ * - In the GUI the update is handled in the administration view
  *
  * Update process:
  * 1. Check GitHub for new releases and put release data into ReleaseInfo
@@ -61,7 +63,7 @@ import java.util.stream.Stream;
  * 4. Ask the user (GUI home view)
  * 5. Move the new release into a separate folder within the current JATOS installation folder
  * 6. Exchange loader scripts and config folder
- * 7. Restart JATOS: finish the process with a stop hook that runs the new loader script with an 'update' parameter
+ * 7. Restart JATOS: finish the process with exit code 46. That tells the loader.sh that an update has to be continued.
  * 8. The loader script moves everything in the new release folder into the JATOS installation folder (eventually
  * overwriting existing files)
  * 9. The loader script starts JATOS again
@@ -98,14 +100,14 @@ public class JatosUpdater {
     ReleaseInfo currentReleaseInfo;
 
     /**
-     * Contains all info about an JATOS update. It's also send as JSON to the GUI. Fields have to be public for JSON
+     * Contains all info about an JATOS update. It's also sent as JSON to the GUI. Fields have to be public for JSON
      * serialization.
      */
     @SuppressWarnings("WeakerAccess")
     static class ReleaseInfo {
 
         /**
-         * Version of the currently installed JATOS like in GitHub, e.g. v3.5.5-alpha
+         * Version of the currently installed JATOS like in GitHub, e.g., v3.5.5-alpha
          */
         public final String currentVersionFull;
 
@@ -125,12 +127,12 @@ public class JatosUpdater {
         public final String version;
 
         /**
-         * Is it a pre-release
+         * Is it a pre-release?
          */
         public final boolean isPrerelease;
 
         /**
-         * Is it the latest version
+         * Is it the latest version?
          */
         public final boolean isLatest;
 
@@ -152,14 +154,14 @@ public class JatosUpdater {
         public final String releaseNotes;
 
         /**
-         * Is the version of this release a newer one than the currently installed
+         * Is the version of this release newer than the currently installed?
          */
         public final boolean isNewerVersion;
 
         /**
          * Versions with an 'n' in the name are not allowed to be updated automatically. This is a safety switch if an
-         * future update isn't compatible with this way of update. Additionally JATOS on Windows doesn't allow automatic
-         * updates.
+         * future update isn't compatible with this way of update. Additionally, JATOS on Windows doesn't allow
+         * automatic updates.
          */
         public boolean isUpdateAllowed;
 
@@ -170,7 +172,7 @@ public class JatosUpdater {
         public String newJavaVersion;
 
         /**
-         * If newJavaVersion is a different from the currently installed one, it's automatically a newer Java version.
+         * If a newJavaVersion is different from the currently installed one, it's automatically a newer Java version.
          */
         public boolean isDifferentJava;
 
@@ -183,13 +185,13 @@ public class JatosUpdater {
             isPrerelease = jsonNode.get("prerelease").asBoolean();
             releaseNotes = jsonNode.get("body").asText();
             isNewerVersion = compareVersions(version, currentVersion) == 1;
-            isUpdateAllowed = !versionFull.contains("n") && isOsUx();
+            isUpdateAllowed = isOsUx() && !versionFull.toLowerCase(Locale.ROOT).contains("nau");
             jsonNode.get("assets").forEach(this::getFieldsFromAsset);
         }
 
         /**
          * Compare two JATOS versions (major.minor.patch)
-         * <p>
+         *
          * Returns -1 if version1 is older than version2 Returns 0 if version1 is equal to version2 Returns 1 if
          * version1 is newer than version2
          */
@@ -215,10 +217,12 @@ public class JatosUpdater {
          */
         private void getFieldsFromAsset(JsonNode asset) {
             String filename = asset.get("name").asText();
-            if (!filename.contains(".zip")) return;
+            if (!filename.endsWith(".zip")) return;
 
-            if ((SystemUtils.IS_OS_LINUX && filename.contains("linux")) || (SystemUtils.IS_OS_MAC && filename.contains(
-                    "mac")) || (SystemUtils.IS_OS_WINDOWS && filename.contains("win"))) {
+            if ((SystemUtils.IS_OS_LINUX && filename.contains("linux"))
+                    || (isMacAarch64() && filename.contains("mac_aarch64"))
+                    || (isMacX64() && filename.contains("mac_x64"))
+                    || (SystemUtils.IS_OS_WINDOWS && filename.contains("win"))) {
                 zipJavaUrl = asset.get("browser_download_url").asText();
                 zipJavaSize = asset.get("size").asInt();
                 newJavaVersion = getAssetsJavaVersion(filename);
@@ -353,6 +357,11 @@ public class JatosUpdater {
     }
 
     public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
+        if (currentReleaseInfo == null) {
+            return failedStage(new IllegalStateException(
+                    "No JATOS release information is available. Check for updates before downloading."));
+        }
+
         if (!currentReleaseInfo.isUpdateAllowed) {
             return failedStage(new IllegalStateException("Can't update to version "
                     + currentReleaseInfo.versionFull
@@ -411,24 +420,38 @@ public class JatosUpdater {
 
     private CompletionStage<Path> downloadAsync(String url, String filename) throws IOException {
         Path file = IOUtils.tmpDir().resolve(filename);
-        try (OutputStream outputStream = Files.newOutputStream(file)) {
-            LOGGER.info("Download " + url);
+        OutputStream outputStream = Files.newOutputStream(file);
+        LOGGER.info("Download " + url);
 
-            CompletionStage<WSResponse> futureResponse = ws.url(url)
-                    .setMethod("GET")
-                    .setRequestTimeout(Duration.ofHours(1))
-                    .stream();
-            return futureResponse.thenCompose(res -> {
-                Source<ByteString, ?> responseBody = res.getBodyAsSource();
-                Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
-                        bytes -> outputStream.write(bytes.toArray()));
-                return responseBody.runWith(outputWriter, materializer).thenApply(v -> file);
-            });
-        }
+        CompletionStage<WSResponse> futureResponse = ws.url(url)
+                .setMethod("GET")
+                .setRequestTimeout(Duration.ofHours(1))
+                .stream();
+
+        return futureResponse.thenCompose(res -> {
+            Source<ByteString, ?> responseBody = res.getBodyAsSource();
+            Sink<ByteString, CompletionStage<Done>> outputWriter = Sink.foreach(
+                    bytes -> outputStream.write(bytes.toArray()));
+            return responseBody.runWith(outputWriter, materializer).thenApply(v -> file);
+        }).whenComplete((path, throwable) -> {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                LOGGER.warn("Could not close downloaded file output stream for " + file, e);
+            }
+
+            if (throwable != null) {
+                try {
+                    Files.deleteIfExists(file);
+                } catch (IOException e) {
+                    LOGGER.warn("Could not delete incomplete download file " + file, e);
+                }
+            }
+        });
     }
 
     /**
-     * One update once initialized (left state SLEEPING) can last max 1 hour. Then state is reset back to SLEEPING.
+     * One update once initialized (left state SLEEPING) can last max 1 hour. Then the state is reset back to SLEEPING.
      */
     private void scheduleStateReset() {
         actorSystem.scheduler().scheduleOnce(Duration.ofHours(1), this::cancelUpdate, this.executionContext);
@@ -457,13 +480,14 @@ public class JatosUpdater {
         }
 
         if (!environment.isProd()) {
+            LOGGER.warn("JATOS is not in production mode. Update will be canceled.");
             cancelUpdate();
             return;
         }
 
         // Execute backup, update and restart in a shutdown hook. This ensures that all resources have been closed
-        // beforehand (e.g. database closed and no more changing of study assets). It's especially important that the
-        // H2 doesn't write into it's files anymore, otherwise they might get corrupted.
+        // beforehand (e.g. a database closed and no more changing of study assets). It's especially important that the
+        // H2 doesn't write into its files anymore; otherwise they might get corrupted.
         applicationLifecycle.addStopHook(() -> {
             state = UpdateState.MOVING;
             backupCurrentJatosFiles(backupAll);
@@ -547,10 +571,28 @@ public class JatosUpdater {
     }
 
     /**
-     * Returns true if the OS JATOS is running on is either Linux, or Unix (MacOS) - and false otherwise.
+     * Returns true if the OS JATOS is running on is either Linux or Unix (macOS) - and false otherwise.
      */
     private static boolean isOsUx() {
         return SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_LINUX || SystemUtils.IS_OS_UNIX;
+    }
+
+    private static boolean isMacAarch64() {
+        return SystemUtils.IS_OS_MAC && isAarch64();
+    }
+
+    private static boolean isMacX64() {
+        return SystemUtils.IS_OS_MAC && isX64();
+    }
+
+    private static boolean isAarch64() {
+        String arch = System.getProperty("os.arch", "").toLowerCase();
+        return arch.equals("aarch64") || arch.equals("arm64");
+    }
+
+    private static boolean isX64() {
+        String arch = System.getProperty("os.arch", "").toLowerCase();
+        return arch.equals("x86_64") || arch.equals("amd64");
     }
 
 }
