@@ -93,8 +93,13 @@ public class BatchDao extends AbstractDao {
     }
 
     public void addWorkerToBatch(Long batchId, Long workerId) {
-        jpa.em().createNativeQuery("INSERT INTO BatchWorkerMap (batch_id, worker_id) "
-                        + "VALUES (:batchId, :workerId)")
+        jpa.em().createNativeQuery(
+                        "INSERT INTO BatchWorkerMap (batch_id, worker_id) "
+                                + "SELECT :batchId, :workerId "
+                                + "WHERE NOT EXISTS ( "
+                                + "  SELECT 1 FROM BatchWorkerMap "
+                                + "  WHERE batch_id = :batchId AND worker_id = :workerId"
+                                + ")")
                 .setParameter("batchId", batchId)
                 .setParameter("workerId", workerId)
                 .executeUpdate();
