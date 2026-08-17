@@ -1,6 +1,7 @@
 package daos.common;
 
 import models.common.Study;
+import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import play.db.jpa.JPAApi;
 
@@ -109,6 +110,21 @@ public class StudyDao extends AbstractDao {
     public int countTotal() {
         Number result = (Number) jpa.em().createQuery("SELECT max(id) FROM Study").getSingleResult();
         return result != null ? result.intValue() : 0;
+    }
+
+    public GroupSessionWriteScope findGroupSessionWriteScope(Long groupResultId) {
+        String queryStr = "SELECT s.groupSessionWriteScope " +
+                "FROM GroupResult gr " +
+                "JOIN gr.batch b " +
+                "JOIN b.study s " +
+                "WHERE gr.id = :groupResultId";
+
+        List<GroupSessionWriteScope> result = jpa.em().createQuery(queryStr, GroupSessionWriteScope.class)
+                .setParameter("groupResultId", groupResultId)
+                .setMaxResults(1)
+                .getResultList();
+
+        return result.isEmpty() ? null : result.get(0);
     }
 
 }

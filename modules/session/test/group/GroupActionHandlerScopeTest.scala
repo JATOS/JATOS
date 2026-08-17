@@ -11,10 +11,12 @@ import play.api.libs.json.Json
  */
 class GroupActionHandlerScopeTest {
 
+  private val groupActionHandler = new GroupActionHandler(null, null, null)
+
   private val memberId = 123L
 
   private def within(patchJson: String): Boolean =
-    GroupActionHandler.isPatchWithinMemberScope(Json.parse(patchJson), memberId)
+    groupActionHandler.isPatchWithinMemberScope(Json.parse(patchJson), memberId)
 
   @Test
   def add_toOwnMemberRoot_isAllowed(): Unit = {
@@ -30,6 +32,18 @@ class GroupActionHandlerScopeTest {
   }
 
   @Test
+  def add_toSharedRoot_isAllowed(): Unit = {
+    assertTrue(within("""[{"op":"add","path":"/shared","value":{"global":true}}]"""))
+  }
+
+  @Test
+  def write_toSharedSubtree_isAllowed(): Unit = {
+    assertTrue(within("""[{"op":"add","path":"/shared/score","value":5}]"""))
+    assertTrue(within("""[{"op":"replace","path":"/shared/nested/deep","value":true}]"""))
+    assertTrue(within("""[{"op":"remove","path":"/shared/score"}]"""))
+  }
+
+  @Test
   def write_toAnotherMember_isRejected(): Unit = {
     assertFalse(within("""[{"op":"add","path":"/999","value":{"forged":true}}]"""))
     assertFalse(within("""[{"op":"replace","path":"/999","value":{"forged":true}}]"""))
@@ -40,6 +54,8 @@ class GroupActionHandlerScopeTest {
   def prefixConfusion_isRejected(): Unit = {
     // "/1234" must NOT count as inside member 123's subtree.
     assertFalse(within("""[{"op":"replace","path":"/1234","value":1}]"""))
+    // "/shared123" must NOT count as inside the shared subtree.
+    assertFalse(within("""[{"op":"replace","path":"/shared123","value":1}]"""))
   }
 
   @Test
@@ -57,15 +73,21 @@ class GroupActionHandlerScopeTest {
   @Test
   def move_requiresBothPathAndFromInScope(): Unit = {
     assertTrue(within("""[{"op":"move","from":"/123/a","path":"/123/b"}]"""))
+    assertTrue(within("""[{"op":"move","from":"/shared/a","path":"/shared/b"}]"""))
+    assertTrue(within("""[{"op":"move","from":"/123/a","path":"/shared/b"}]"""))
+    assertTrue(within("""[{"op":"move","from":"/shared/a","path":"/123/b"}]"""))
     // Moving another member's data out (deletes their "/999/a") is a write to their subtree.
     assertFalse(within("""[{"op":"move","from":"/999/a","path":"/123/b"}]"""))
     assertFalse(within("""[{"op":"move","from":"/123/a","path":"/999/b"}]"""))
+    assertFalse(within("""[{"op":"move","from":"/999/a","path":"/shared/b"}]"""))
+    assertFalse(within("""[{"op":"move","from":"/shared/a","path":"/999/b"}]"""))
   }
 
   @Test
   def copy_sourceMayBeAnywhere_targetMustBeInScope(): Unit = {
     // copy only reads 'from', so reading another member's data into your own subtree is allowed.
     assertTrue(within("""[{"op":"copy","from":"/999/a","path":"/123/a"}]"""))
+    assertTrue(within("""[{"op":"copy","from":"/999/a","path":"/shared/a"}]"""))
     assertFalse(within("""[{"op":"copy","from":"/123/a","path":"/999/a"}]"""))
   }
 

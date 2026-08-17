@@ -1,5 +1,7 @@
 package group;
 
+import daos.common.StudyDao;
+import models.common.Study.GroupSessionWriteScope;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -17,7 +19,9 @@ public class GroupDispatcherRegistryTest {
     @Before
     public void setUp() {
         factory = mock(GroupDispatcher.Factory.class);
-        registry = new GroupDispatcherRegistry(factory);
+        StudyDao studyDao = mock(StudyDao.class);
+        when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
+        registry = new GroupDispatcherRegistry(factory, studyDao);
     }
 
     @Test
@@ -31,8 +35,8 @@ public class GroupDispatcherRegistryTest {
         GroupDispatcher d1 = mock(GroupDispatcher.class);
         GroupDispatcher d2 = mock(GroupDispatcher.class);
 
-        when(factory.create(eq(10L))).thenReturn(d1);
-        when(factory.create(eq(11L))).thenReturn(d2);
+        when(factory.create(eq(10L), eq(GroupSessionWriteScope.SHARED))).thenReturn(d1);
+        when(factory.create(eq(11L), eq(GroupSessionWriteScope.SHARED))).thenReturn(d2);
 
         // First time for 10L -> create
         GroupDispatcher r1a = registry.getOrRegister(10L);
@@ -47,8 +51,8 @@ public class GroupDispatcherRegistryTest {
 
         // Verify factory interactions
         InOrder inOrder = inOrder(factory);
-        inOrder.verify(factory).create(10L);
-        inOrder.verify(factory).create(11L);
+        inOrder.verify(factory).create(10L, GroupSessionWriteScope.SHARED);
+        inOrder.verify(factory).create(11L, GroupSessionWriteScope.SHARED);
         verifyNoMoreInteractions(factory);
 
         // get should now return Some for both ids
@@ -60,8 +64,8 @@ public class GroupDispatcherRegistryTest {
     public void hasChannel_delegatesToRegisteredDispatchers() {
         GroupDispatcher d1 = mock(GroupDispatcher.class);
         GroupDispatcher d2 = mock(GroupDispatcher.class);
-        when(factory.create(eq(1L))).thenReturn(d1);
-        when(factory.create(eq(2L))).thenReturn(d2);
+        when(factory.create(eq(1L), eq(GroupSessionWriteScope.SHARED))).thenReturn(d1);
+        when(factory.create(eq(2L), eq(GroupSessionWriteScope.SHARED))).thenReturn(d2);
 
         registry.getOrRegister(1L);
         registry.getOrRegister(2L);
@@ -82,7 +86,7 @@ public class GroupDispatcherRegistryTest {
     @Test
     public void unregister_removesDispatcher_andIsIdempotent() {
         GroupDispatcher d1 = mock(GroupDispatcher.class);
-        when(factory.create(eq(5L))).thenReturn(d1);
+        when(factory.create(eq(5L), eq(GroupSessionWriteScope.SHARED))).thenReturn(d1);
 
         registry.getOrRegister(5L);
         assertTrue(registry.get(5L).isDefined());

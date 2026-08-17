@@ -41,6 +41,16 @@ public class Study {
     public static final String USERS = "users";
     public static final String STUDY = "study";
 
+    /**
+     * Possible group session write scopes for a study. SHARED means that every member of a group can modify any field
+     * of the group session. MEMBER means that each group member has their own scope within the group session that only
+     * they can write to.
+     */
+    public enum GroupSessionWriteScope {
+        SHARED,
+        MEMBER
+    }
+
     @Id
     @GeneratedValue
     @JsonView({JsonForPublix.class, JsonForApi.class})
@@ -87,6 +97,13 @@ public class Study {
     private boolean groupStudy = false;
 
     /**
+     * Group session write scope for this study.
+     */
+    @Enumerated(EnumType.STRING)
+    @JsonView({JsonForIO.class, JsonForApi.class})
+    private GroupSessionWriteScope groupSessionWriteScope = GroupSessionWriteScope.SHARED;
+
+    /**
      * A study with a linear study flow allows the component position to only increase or stay the same
      * (no going back to earlier components).
      */
@@ -94,8 +111,8 @@ public class Study {
     private boolean linearStudy = false;
 
     /**
-     * If true a preview of a study run of this study is allowed: the study link can be used many times as long as
-     * it does not go further than the first component. As soon as the second component is reached the usual
+     * If true, a preview of a study run of this study is allowed: the study link can be used many times as long as
+     * it does not go further than the first component. As soon as the second component is reached, the usual
      * restrictions of the worker apply. 'Single' workers only (PersonalSingleWorker or MultipleSingleWorker).
      */
     @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
@@ -257,6 +274,14 @@ public class Study {
 
     public void setGroupStudy(boolean groupStudy) {
         this.groupStudy = groupStudy;
+    }
+
+    public GroupSessionWriteScope getGroupSessionWriteScope() {
+        return groupSessionWriteScope;
+    }
+
+    public void setGroupSessionWriteScope(GroupSessionWriteScope groupSessionWriteScope) {
+        this.groupSessionWriteScope = groupSessionWriteScope;
     }
 
     public boolean isLinearStudy() {

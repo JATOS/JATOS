@@ -72,6 +72,19 @@
                             <input type="hidden" name="groupStudy" value="false" />
                         </div>
                     </div>
+                    <div class="row" id="studyPropertiesFormGroupSessionWriteScopeRow">
+                        <label class="col-sm-3 col-form-label" for="studyPropertiesFormGroupSessionWriteScope" data-bs-tooltip="Check this box to limit group session write access to member's own scope or uncheck to allow all members to write everywhere in the group session.">
+                            Group session write scope
+                        </label>
+                        <div class="form-check col-sm-9 ps-3 pt-2">
+                            <label class="switch no-info-icon">
+                                <input type="checkbox" class="form-check-input checkbox-study" id="studyPropertiesFormGroupSessionWriteScope" name="groupSessionWriteScope" value="MEMBER">
+                                <span class="slider slider-study round"></span>
+                            </label>
+                            @* We need a hidden input field. http://stackoverflow.com/questions/8204708/how-do-i-bind-a-checkbox-to-a-boolean-in-play-framework *@
+                            <input type="hidden" name="groupSessionWriteScope" value="SHARED" />
+                        </div>
+                    </div>
                     <div class="row">
                         <label class="col-sm-3 col-form-label" for="studyPropertiesFormLinearStudy" data-bs-tooltip="Should the study flow be linear only? This still allows reloading of components. Check this box to allow only to move to subsequent components.">
                             Linear study flow
@@ -141,6 +154,8 @@
         $('#studyEntryMsg').val(properties.studyEntryMsg ? properties.studyEntryMsg: "");
         Editor.setup("json", properties.studyInput, "#studyPropertiesJsonEditor");
         $('#studyPropertiesFormGroupStudy').prop('checked', properties.groupStudy);
+        $('#studyPropertiesFormGroupSessionWriteScope').prop('checked', properties.groupSessionWriteScope === 'MEMBER');
+        $('#studyPropertiesFormGroupSessionWriteScopeRow').toggleClass('show', properties.groupStudy);
         $('#studyPropertiesFormLinearStudy').prop('checked', properties.linearStudy);
         $('#studyPropertiesFormAllowPreview').prop('checked', properties.allowPreview);
 
@@ -150,6 +165,10 @@
             alerts.warning("Study is locked. It is not possible to edit the properties.");
         }
     }
+
+    $('#studyPropertiesFormGroupStudy').on('change', function() {
+        $('#studyPropertiesFormGroupSessionWriteScopeRow').toggleClass('show', this.checked);
+    });
 
     $("#studyPropertiesConfirmed").click(function() {
         const studyId = $('#studyPropertiesModal').data().studyId;

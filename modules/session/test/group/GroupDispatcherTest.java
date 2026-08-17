@@ -6,6 +6,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import models.common.Study.GroupSessionWriteScope;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -20,6 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static scala.jdk.javaapi.CollectionConverters.asScala;
 
 /**
  * Unit tests for GroupDispatcher.
@@ -61,7 +63,8 @@ public class GroupDispatcherTest {
         registry = mock(GroupDispatcherRegistry.class);
         actionHandler = mock(GroupActionHandler.class);
         msgBuilder = mock(GroupActionMsgBuilder.class);
-        dispatcher = new GroupDispatcher(system, registry, actionHandler, msgBuilder, groupResultId);
+        dispatcher = new GroupDispatcher(system, registry, actionHandler, msgBuilder, groupResultId,
+                GroupSessionWriteScope.SHARED);
     }
 
     private JsObject js(String s) { return (JsObject) Json$.MODULE$.parse(s); }
@@ -198,7 +201,8 @@ public class GroupDispatcherTest {
 
     @Test
     public void reassignChannel_movesChannelAndTriggersJoinedLeft() {
-        GroupDispatcher different = spy(new GroupDispatcher(system, registry, actionHandler, msgBuilder, groupResultId + 1));
+        GroupDispatcher different = spy(new GroupDispatcher(system, registry, actionHandler, msgBuilder,
+                groupResultId + 1, GroupSessionWriteScope.SHARED));
         GroupDispatcher spyDispatcher = spy(dispatcher);
 
         GroupChannelActor ch = mock(GroupChannelActor.class);
@@ -260,8 +264,12 @@ public class GroupDispatcherTest {
         // Action handler returns two messages: one to sender only, one broadcast to all
         GroupDispatcher.GroupMsg toSender = actionMsgToSender(js("{\"a\":1}"));
         GroupDispatcher.GroupMsg toAllButSender = actionMsgToAllButSender(js("{\"a\":2}"));
-        when(actionHandler.handleActionMsg(any(GroupDispatcher.GroupMsg.class), eq(groupResultId), eq(1L)))
-                .thenReturn(scala.jdk.javaapi.CollectionConverters.asScala(Arrays.asList(toSender, toAllButSender)).toList());
+        when(actionHandler.handleActionMsg(
+                any(GroupDispatcher.GroupMsg.class),
+                eq(groupResultId),
+                eq(1L),
+                eq(GroupSessionWriteScope.SHARED)))
+                .thenReturn(asScala(Arrays.asList(toSender, toAllButSender)).toList());
 
         JsObject input = js("{\"action\":\"SESSION\"}");
         dispatcher.handleGroupMsg(new GroupDispatcher.GroupMsg(input, TW_Unknown()), 1L, ch1.self());

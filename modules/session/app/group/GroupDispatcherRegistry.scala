@@ -1,5 +1,6 @@
 package group
 
+import daos.common.StudyDao
 import play.api.Logger
 
 import javax.inject.{Inject, Singleton}
@@ -12,7 +13,8 @@ import scala.language.postfixOps
  * @author Kristian Lange
  */
 @Singleton
-class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.Factory) {
+class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.Factory,
+                                        studyDao: StudyDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -35,12 +37,17 @@ class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.
    * Get or register a GroupDispatcher for a particular group result ID.
    */
   def getOrRegister(groupResultId: Long): GroupDispatcher = synchronized {
-    if (!dispatcherMap.contains(groupResultId)) {
-      val dispatcher = groupDispatcherFactory.create(groupResultId)
-      dispatcherMap += (groupResultId -> dispatcher)
-      logger.debug(s".getOrRegister: registered dispatcher for group result ID $groupResultId")
+    dispatcherMap.get(groupResultId) match {
+      case Some(dispatcher) =>
+        dispatcher
+
+      case None =>
+        val groupSessionWriteScope = studyDao.findGroupSessionWriteScope(groupResultId)
+        val dispatcher = groupDispatcherFactory.create(groupResultId, groupSessionWriteScope)
+        dispatcherMap += (groupResultId -> dispatcher)
+        logger.debug(s".getOrRegister: registered dispatcher for group result ID $groupResultId")
+        dispatcher
     }
-    dispatcherMap(groupResultId)
   }
 
   /*

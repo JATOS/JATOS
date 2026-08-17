@@ -38,7 +38,6 @@ public class Common {
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
     private static String studyLogsPath;
-    private static boolean groupSessionMemberScopedWrites;
     private static boolean resultUploadsEnabled;
     private static String resultUploadsPath;
     private static long resultUploadsMaxFileSize;
@@ -155,7 +154,6 @@ public class Common {
         LOGGER.info("Path to study assets directory is " + studyAssetsRootPath);
         studyLogsEnabled = config.getBoolean("jatos.studyLogs.enabled");
         studyLogsPath = obtainPath(config, "jatos.studyLogs.path");
-        groupSessionMemberScopedWrites = config.getBoolean("jatos.groupSession.memberScopedWrites");
         LOGGER.info("Path to study logs directory is " + studyLogsPath);
         resultUploadsEnabled = config.getBoolean("jatos.resultUploads.enabled");
         resultUploadsPath = obtainPath(config, "jatos.resultUploads.path");
@@ -365,16 +363,6 @@ public class Common {
      */
     public static boolean isStudyLogsEnabled() {
         return studyLogsEnabled;
-    }
-
-    /**
-     * If true, a group member's group session patch may only modify its own member subtree
-     * (JSON path "/&lt;study result ID&gt;" or below). This prevents one participant from
-     * overwriting another participant's group session data. Off by default, which keeps the
-     * group session a free-form shared object that any member may write at any path.
-     */
-    public static boolean isGroupSessionMemberScopedWrites() {
-        return groupSessionMemberScopedWrites;
     }
 
     /**

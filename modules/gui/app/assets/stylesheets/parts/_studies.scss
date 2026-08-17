@@ -21,3 +21,14 @@
 #componentsTable .dropdown-menu-component {
     z-index: 1021;
 }
+
+#studyPropertiesFormGroupSessionWriteScopeRow {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-in-out, opacity 0.25s ease-in-out;
+}
+#studyPropertiesFormGroupSessionWriteScopeRow.show {
+    max-height: 80px;
+    opacity: 1;
+}

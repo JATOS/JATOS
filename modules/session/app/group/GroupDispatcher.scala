@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import com.google.inject.assistedinject.Assisted
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
+import models.common.Study.GroupSessionWriteScope
 import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Json}
@@ -39,7 +40,7 @@ import javax.inject.Inject
 object GroupDispatcher {
 
   trait Factory {
-    def create(groupResultId: Long): GroupDispatcher
+    def create(groupResultId: Long, groupSessionWriteScope: GroupSessionWriteScope): GroupDispatcher
   }
 
   object TellWhom extends Enumeration {
@@ -107,7 +108,8 @@ class GroupDispatcher @Inject()(actorSystem: ActorSystem,
                                 dispatcherRegistry: GroupDispatcherRegistry,
                                 actionHandler: GroupActionHandler,
                                 actionMsgBuilder: GroupActionMsgBuilder,
-                                @Assisted groupResultId: Long) {
+                                @Assisted groupResultId: Long,
+                                @Assisted groupSessionWriteScope: GroupSessionWriteScope) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -124,7 +126,7 @@ class GroupDispatcher @Inject()(actorSystem: ActorSystem,
 
     if (msg.json.keys.contains(GroupActionJsonKey.Action.toString)) {
       // We have a group action message
-      val msgList = actionHandler.handleActionMsg(msg, groupResultId, studyResultId)
+      val msgList = actionHandler.handleActionMsg(msg, groupResultId, studyResultId, groupSessionWriteScope)
       tellActionMsg(msgList, sender)
 
     } else if (msg.json.keys.contains(GroupActionJsonKey.Recipient.toString)) {

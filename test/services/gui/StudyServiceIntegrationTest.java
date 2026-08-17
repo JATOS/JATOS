@@ -13,6 +13,7 @@ import general.common.RequestScope;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
+import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import models.gui.StudyProperties;
 import org.fest.assertions.Fail;
@@ -349,6 +350,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         updatedProps.setAllowPreview(false);
         updatedProps.setLinearStudy(false);
         updatedProps.setGroupStudy(false);
+        updatedProps.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
         updatedProps.setUuid("UUID cannot be changed");
 
         studyService.bindToStudy(study, updatedProps);
@@ -364,6 +366,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         assertThat(study.isAllowPreview()).isEqualTo(updatedProps.isAllowPreview());
         assertThat(study.isLinearStudy()).isEqualTo(updatedProps.isLinearStudy());
         assertThat(study.isGroupStudy()).isEqualTo(updatedProps.isGroupStudy());
+        assertThat(study.getGroupSessionWriteScope()).isEqualTo(updatedProps.getGroupSessionWriteScope());
 
         // ID, UUID, and dirName shouldn't be changed
         assertThat(study.getId()).isEqualTo(studyId);
@@ -494,6 +497,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
             s.setAllowPreview(true);
             s.setLinearStudy(true);
             s.setGroupStudy(false);
+            s.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
             return studyService.createAndPersistStudy(admin, s);
         });
 
@@ -508,6 +512,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         updated.setAllowPreview(false);
         updated.setLinearStudy(false);
         updated.setGroupStudy(false);
+        updated.setGroupSessionWriteScope(GroupSessionWriteScope.SHARED);
         updated.setUuid("UUID cannot be changed");
         updated.setDirName("changed_dirname");
         jpaApi.withTransaction((em) -> {
@@ -526,6 +531,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         assertThat(verifyUpdated.isAllowPreview()).isEqualTo(false);
         assertThat(verifyUpdated.isLinearStudy()).isEqualTo(false);
         assertThat(verifyUpdated.isGroupStudy()).isEqualTo(false);
+        assertThat(verifyUpdated.getGroupSessionWriteScope()).isEqualTo(GroupSessionWriteScope.SHARED);
         assertThat(verifyUpdated.getUuid()).isEqualTo(study.getUuid()); // not changed
         assertThat(verifyUpdated.getDirName()).isEqualTo("changed_dirname");
     }

@@ -4,10 +4,10 @@ import com.google.common.base.Strings
 import daos.common.GroupResultDao
 import diffson.jsonpatch._
 import diffson.playJson.DiffsonProtocol._
-import general.common.Common
 import group.GroupDispatcher.{GroupAction, GroupActionJsonKey, GroupMsg, TellWhom}
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
+import models.common.Study.GroupSessionWriteScope
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.db.jpa.JPAApi
@@ -15,44 +15,6 @@ import play.db.jpa.JPAApi
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.util.Try
-
-object GroupActionHandler {
-
-  /**
-   * Authorization check for a group session write. Returns true iff every write operation in the
-   * given RFC 6902 JSON Patch targets only the sender's own member subtree - JSON path
-   * "/&lt;studyResultId&gt;" or anything below it. The sender's member ID (its study result ID) is
-   * authenticated by the group channel, so scoping writes to "/&lt;studyResultId&gt;" stops one
-   * member from overwriting another's group session data.
-   *
-   * Read-only 'test' operations and the 'from' (source) of a 'copy' are unrestricted; 'move' also
-   * deletes its 'from' path, so that must be in scope too. A patch that is not a JSON array, or that
-   * contains an unknown or missing 'op', is rejected (fail closed).
-   *
-   * Only consulted when jatos.groupSession.memberScopedWrites is enabled.
-   */
-  def isPatchWithinMemberScope(patches: JsValue, studyResultId: Long): Boolean = {
-    val memberPrefix = "/" + studyResultId
-    // The trailing "/" guards against prefix confusion, e.g. member 12 must not match "/123".
-    def inScope(path: String): Boolean =
-      path == memberPrefix || path.startsWith(memberPrefix + "/")
-    patches match {
-      case JsArray(ops) =>
-        ops.forall { op =>
-          val path = (op \ "path").asOpt[String]
-          (op \ "op").asOpt[String] match {
-            case Some("add") | Some("replace") | Some("remove") | Some("copy") => path.exists(inScope)
-            case Some("move") =>
-              val from = (op \ "from").asOpt[String]
-              path.exists(inScope) && from.exists(inScope)
-            case Some("test") => true
-            case _ => false
-          }
-        }
-      case _ => false
-    }
-  }
-}
 
 /**
  * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
@@ -74,13 +36,16 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
    * session, or 2) the msg to fix the group. The function returns GroupMsges that will be sent
    * out to the group members.
    */
-  def handleActionMsg(msg: GroupMsg, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
+  def handleActionMsg(msg: GroupMsg,
+                      groupResultId: Long,
+                      studyResultId: Long,
+                      scope: GroupSessionWriteScope): List[GroupMsg] = {
     logger.debug(s".handleActionMsg: groupResultId $groupResultId, studyResultId $studyResultId, " +
       s"jsonNode ${Json.stringify(msg.json)}")
     val actionValue = (msg.json \ GroupActionJsonKey.Action.toString).as[String]
     val action = GroupAction.withName(actionValue)
     action match {
-      case GroupAction.Session => handlePatch(msg.json, groupResultId, studyResultId)
+      case GroupAction.Session => handlePatch(msg.json, groupResultId, studyResultId, scope)
       case GroupAction.Fixed => handleActionFix(groupResultId);
       case _ =>
         List(msgBuilder.buildError(groupResultId, s"Unknown action $action", TellWhom.SenderOnly))
@@ -90,7 +55,10 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
   /**
    * Applies the patch to the group session
    */
-  private def handlePatch(json: JsObject, groupResultId: Long, studyResultId: Long): List[GroupMsg] = {
+  private def handlePatch(json: JsObject,
+                          groupResultId: Long,
+                          studyResultId: Long,
+                          scope: GroupSessionWriteScope): List[GroupMsg] = {
     jpa.withTransaction(asJavaSupplier(() => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult == null) {
@@ -105,11 +73,9 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
         val patches = (json \ GroupActionJsonKey.SessionPatches.toString).get
         // Authorization: when enabled, a member may patch only its own subtree of the group
         // session ("/<studyResultId>" or below), so it cannot overwrite another member's data.
-        if (Common.isGroupSessionMemberScopedWrites &&
-          !GroupActionHandler.isPatchWithinMemberScope(patches, studyResultId)) {
+        if (scope == GroupSessionWriteScope.MEMBER && !isPatchWithinMemberScope(patches, studyResultId)) {
           logger.warn(s".handlePatch: rejected out-of-scope group session patch from studyResultId " +
-            s"$studyResultId in groupResultId $groupResultId " +
-            s"(jatos.groupSession.memberScopedWrites is on), groupSessionPatch ${Json.stringify(patches)}")
+            s"$studyResultId in groupResultId $groupResultId")
           return List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail,
             Some(sessionActionId), TellWhom.SenderOnly))
         }
@@ -135,7 +101,45 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
     }))
   }
 
-  private def patchSessionData(patches: JsValue, groupResult: GroupResult): JsValue = {
+  /**
+   * Authorization check for a group session writes in member scope. A patch is accepted
+   * only if all modifying operations target paths that the sender is allowed to write:
+   * the sender's own member subtree - "/<studyResultId>" or below - or the shared
+   * subtree "/shared" or below.
+   *
+   * Read-only 'test' operations and the 'from' (source) of a 'copy' are unrestricted; 'move' also
+   * deletes its 'from' path, so that must be in scope too.
+   */
+  def isPatchWithinMemberScope(patches: JsValue, studyResultId: Long): Boolean = {
+    val memberPrefix = "/" + studyResultId
+    val sharedPrefix = "/shared"
+
+    // The trailing "/" guards against prefix confusion, e.g., member 12 must not match "/123".
+    def inSubtree(path: String, prefix: String): Boolean =
+      path == prefix || path.startsWith(prefix + "/")
+
+    def inScope(path: String): Boolean =
+      inSubtree(path, memberPrefix) || inSubtree(path, sharedPrefix)
+
+    patches match {
+      case JsArray(ops) =>
+        ops.forall { op =>
+          val path = (op \ "path").asOpt[String]
+          (op \ "op").asOpt[String] match {
+            case Some("add") | Some("replace") | Some("remove") | Some("copy") => path.exists(inScope)
+            case Some("move") =>
+              val from = (op \ "from").asOpt[String]
+              path.exists(inScope) && from.exists(inScope)
+            case Some("test") => true
+            case _ => false
+          }
+        }
+      case _ => false
+    }
+  }
+
+  private def patchSessionData(patches: JsValue,
+                               groupResult: GroupResult): JsValue = {
     val currentSessionData =
       if (!Strings.isNullOrEmpty(groupResult.getGroupSessionData))
         Json.parse(groupResult.getGroupSessionData)
@@ -156,7 +160,8 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
    * stored version is equal to the received one or versioning is turned off. Returns true if this was successful -
    * otherwise false.
    */
-  private def checkVersionAndPersistSessionData(sessionData: JsValue, groupResult: GroupResult,
+  private def checkVersionAndPersistSessionData(sessionData: JsValue,
+                                                groupResult: GroupResult,
                                                 version: Long,
                                                 versioning: Boolean): Boolean = {
     if (groupResult != null && sessionData != null && (!versioning || groupResult.getGroupSessionVersion == version)) {

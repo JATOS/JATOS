@@ -79,6 +79,7 @@ public class StudyService {
         clone.setStudyInput(study.getStudyInput());
         clone.setLocked(false);
         clone.setGroupStudy(study.isGroupStudy());
+        clone.setGroupSessionWriteScope(study.getGroupSessionWriteScope());
         clone.setLinearStudy(study.isLinearStudy());
         clone.setAllowPreview(study.isAllowPreview());
 
@@ -275,6 +276,7 @@ public class StudyService {
         study.setLinearStudy(updatedStudy.isLinearStudy());
         study.setAllowPreview(updatedStudy.isAllowPreview());
         study.setGroupStudy(updatedStudy.isGroupStudy());
+        study.setGroupSessionWriteScope(updatedStudy.getGroupSessionWriteScope());
     }
 
     /**
@@ -320,6 +322,7 @@ public class StudyService {
         study.setLocked(studyProperties.isLocked());
         study.setActive(studyProperties.isActive());
         study.setGroupStudy(studyProperties.isGroupStudy());
+        study.setGroupSessionWriteScope(studyProperties.getGroupSessionWriteScope());
         study.setLinearStudy(studyProperties.isLinearStudy());
         study.setAllowPreview(studyProperties.isAllowPreview());
     }
@@ -345,6 +348,7 @@ public class StudyService {
         studyProperties.setDate(study.getDate());
         studyProperties.setLocked(study.isLocked());
         studyProperties.setGroupStudy(study.isGroupStudy());
+        studyProperties.setGroupSessionWriteScope(study.getGroupSessionWriteScope());
         studyProperties.setLinearStudy(study.isLinearStudy());
         studyProperties.setAllowPreview(study.isAllowPreview());
         studyProperties.setDirName(study.getDirName());
