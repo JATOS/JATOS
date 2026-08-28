@@ -21,8 +21,8 @@ public abstract class AbstractDao {
 		jpa.em().persist(entity);
 	}
 
-	protected void merge(Object entity) {
-		jpa.em().merge(entity);
+	protected <T> T merge(T entity) {
+		return jpa.em().merge(entity);
 	}
 
 	protected void remove(Object entity) {
