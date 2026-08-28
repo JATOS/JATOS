@@ -230,13 +230,11 @@ class GroupDispatcher @Inject()(actorSystem: ActorSystem,
   def left(studyResultId: Long): Unit = {
     logger.debug(s".left: groupResultId $groupResultId, studyResultId $studyResultId")
     val channel = channelRegistry.getChannelActor(studyResultId)
-    if (channel.isDefined) {
-      val msg = actionMsgBuilder.build(groupResultId, studyResultId, channelRegistry, includeSessionData = false,
-        GroupAction.Left, TellWhom.AllButSender)
-      tellAllButSender(msg, channel.get)
-    } else {
-      logger.debug(s".left: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
-    }
+    val tellWhom = if (channel.isDefined) TellWhom.AllButSender else TellWhom.All
+    val senderRef = channel.getOrElse(ActorRef.noSender)
+    val msg = actionMsgBuilder.build(groupResultId, studyResultId, channelRegistry, includeSessionData = false,
+      GroupAction.Left, tellWhom)
+    tellActionMsg(List(msg), senderRef)
   }
 
   /**
