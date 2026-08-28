@@ -1,11 +1,10 @@
 package batch
 
 import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
-import cats.implicits._
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.flipkart.zjsonpatch.JsonPatch
 import com.google.common.base.Strings
 import daos.common.BatchDao
-import diffson.jsonpatch._
-import diffson.playJson.DiffsonProtocol._
 import models.common.Batch
 import play.api.Logger
 import play.api.libs.json.Reads._
@@ -14,7 +13,6 @@ import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
-import scala.util.Try
 
 /**
  * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
@@ -28,6 +26,8 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
 
   private val logger: Logger = Logger(this.getClass)
 
+  private val objectMapper = new ObjectMapper()
+
   /**
    * Handles batch action messages originating from a client: Gets a BatchMsg that contains a field
    * 'action' in their JSON. The only action handled here is the patch for the batch session.
@@ -35,11 +35,11 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
    */
   def handleActionMsg(actionMsg: BatchMsg, batchId: Long): List[BatchMsg] = {
     val actionValue = (actionMsg.json \ BatchActionJsonKey.Action.toString).as[String]
-    val action = BatchAction.withName(actionValue)
-    action match {
-      case BatchAction.Session => handlePatch(actionMsg.json, batchId)
+    val actionOpt = BatchAction.values.find(_.toString == actionValue)
+    actionOpt match {
+      case Some(BatchAction.Session) => handlePatch(actionMsg.json, batchId)
       case _ =>
-        List(msgBuilder.buildError(s"Unknown action $action", TellWhom.SenderOnly))
+        List(msgBuilder.buildError(s"Unknown action $actionValue", TellWhom.SenderOnly))
     }
   }
 
@@ -67,17 +67,19 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
         val success = checkVersionAndPersistSessionData(patchedSessionData, batch, clientsVersion, versioning)
         if (success) {
           val msg1 = msgBuilder.buildSessionPatch(batch, patches, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, sessionActionId, TellWhom.SenderOnly)
+          val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, sessionActionId, None, TellWhom.SenderOnly)
           List(msg1, msg2)
         } else {
-          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, TellWhom.SenderOnly))
+          val errorMsg = s"Version mismatch or concurrent update conflict (client version: $clientsVersion, current: ${batch.getBatchSessionVersion})."
+          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
         }
 
       } catch {
         case e: Exception =>
           logger.debug(s".handlePatch: batchId $batchId, json ${Json.stringify(json)}, " +
             s"${e.getClass.getName}: ${e.getMessage}")
-          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, TellWhom.SenderOnly))
+          val errorMsg = s"Failed to apply patch: ${e.getMessage}"
+          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
       }
     }))
   }
@@ -86,16 +88,15 @@ class BatchActionHandler @Inject()(jpa: JPAApi,
     val currentSessionData =
       if (!Strings.isNullOrEmpty(batch.getBatchSessionData))
         Json.parse(batch.getBatchSessionData)
-      else Json.obj()
+      else
+        Json.obj()
 
-    // Fix for gnieh.diffson JsonPatch for "remove" and "/" - clear all session data
-    // Assumes the 'remove' operation is in the first JSON patch
-    if ((patches \ 0 \ "op").as[String] == "remove" && (patches \ 0 \ "path").as[String] == "/") {
-      return Json.obj()
-    }
+    val sourceNode: JsonNode = objectMapper.readTree(Json.stringify(currentSessionData))
+    val patchNode: JsonNode = objectMapper.readTree(Json.stringify(patches))
 
-    val patch = Json.parse(patches.toString()).as[JsonPatch[JsValue]]
-    patch[Try](currentSessionData).get
+    val resultNode = JsonPatch.apply(patchNode, sourceNode)
+
+    Json.parse(resultNode.toString)
   }
 
   /**

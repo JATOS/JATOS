@@ -1,9 +1,9 @@
 package group
 
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.flipkart.zjsonpatch.JsonPatch
 import com.google.common.base.Strings
 import daos.common.GroupResultDao
-import diffson.jsonpatch._
-import diffson.playJson.DiffsonProtocol._
 import group.GroupDispatcher.{GroupAction, GroupActionJsonKey, GroupMsg, TellWhom}
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
@@ -14,7 +14,6 @@ import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
-import scala.util.Try
 
 /**
  * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
@@ -30,6 +29,8 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
 
   private val logger: Logger = Logger(this.getClass)
 
+  private val objectMapper = new ObjectMapper()
+
   /**
    * Handles group actions originating from a client: Gets a GroupMsg that contains a field
    * 'action' in their JSON. The only action handled here is 1) the patch for the group
@@ -43,12 +44,11 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
     logger.debug(s".handleActionMsg: groupResultId $groupResultId, studyResultId $studyResultId, " +
       s"jsonNode ${Json.stringify(msg.json)}")
     val actionValue = (msg.json \ GroupActionJsonKey.Action.toString).as[String]
-    val action = GroupAction.withName(actionValue)
-    action match {
-      case GroupAction.Session => handlePatch(msg.json, groupResultId, studyResultId, scope)
-      case GroupAction.Fixed => handleActionFix(groupResultId);
-      case _ =>
-        List(msgBuilder.buildError(groupResultId, s"Unknown action $action", TellWhom.SenderOnly))
+    val actionOpt = GroupAction.values.find(_.toString == actionValue)
+    actionOpt match {
+      case Some(GroupAction.Session) => handlePatch(msg.json, groupResultId, studyResultId, scope)
+      case Some(GroupAction.Fixed) => handleActionFix(groupResultId)
+      case _ => List(msgBuilder.buildError(groupResultId, s"Unknown action $actionValue", TellWhom.SenderOnly))
     }
   }
 
@@ -71,14 +71,15 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
       val versioning = (json \ GroupActionJsonKey.SessionVersioning.toString).as[Boolean]
       try {
         val patches = (json \ GroupActionJsonKey.SessionPatches.toString).get
-        // Authorization: when enabled, a member may patch only its own subtree of the group
-        // session ("/<studyResultId>" or below), so it cannot overwrite another member's data.
+
         if (scope == GroupSessionWriteScope.MEMBER && !isPatchWithinMemberScope(patches, studyResultId)) {
           logger.warn(s".handlePatch: rejected out-of-scope group session patch from studyResultId " +
             s"$studyResultId in groupResultId $groupResultId")
+          val errorMsg = s"Patch rejected: member $studyResultId is only allowed to modify '/$studyResultId' or '/shared'."
           return List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail,
-            Some(sessionActionId), TellWhom.SenderOnly))
+            Some(sessionActionId), Some(errorMsg),TellWhom.SenderOnly))
         }
+
         val patchedSessionData = patchSessionData(patches, groupResult)
         logger.debug(s".handlePatch: groupResultId $groupResultId, " +
           s"clientsVersion $clientsVersion, versioning $versioning, groupSessionPatch ${Json.stringify(patches)}, " +
@@ -87,16 +88,18 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
         val success = checkVersionAndPersistSessionData(patchedSessionData, groupResult, clientsVersion, versioning)
         if (success) {
           val msg1 = msgBuilder.buildSessionPatch(groupResult, studyResultId, patches, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, Some(sessionActionId), TellWhom.SenderOnly)
+          val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, Some(sessionActionId), None, TellWhom.SenderOnly)
           List(msg1, msg2)
         } else {
-          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), TellWhom.SenderOnly))
+          val errorMsg = s"Version mismatch or concurrent update conflict (client version: $clientsVersion, current: ${groupResult.getGroupSessionVersion})."
+          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
         }
       } catch {
         case e: Exception =>
           logger.debug(s".handlePatch: groupResultId $groupResultId, json ${Json.stringify(json)}," +
             s" ${e.getClass.getName}: ${e.getMessage}")
-          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), TellWhom.SenderOnly))
+          val errorMsg = s"Failed to apply patch: ${e.getMessage}"
+          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
       }
     }))
   }
@@ -138,21 +141,19 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
     }
   }
 
-  private def patchSessionData(patches: JsValue,
-                               groupResult: GroupResult): JsValue = {
+  private def patchSessionData(patches: JsValue, groupResult: GroupResult): JsValue = {
     val currentSessionData =
       if (!Strings.isNullOrEmpty(groupResult.getGroupSessionData))
         Json.parse(groupResult.getGroupSessionData)
-      else Json.obj()
+      else
+        Json.obj()
 
-    // Fix for gnieh.diffson JsonPatch for "remove" and "/" - clear session data
-    // Assumes the 'remove' operation is in the first JSON patch
-    if ((patches \ 0 \ "op").as[String] == "remove" && (patches \ 0 \ "path").as[String] == "/") {
-      return Json.obj()
-    }
+    val sourceNode: JsonNode = objectMapper.readTree(Json.stringify(currentSessionData))
+    val patchNode: JsonNode = objectMapper.readTree(Json.stringify(patches))
 
-    val patch = Json.parse(patches.toString()).as[JsonPatch[JsValue]]
-    patch[Try](currentSessionData).get
+    val resultNode = JsonPatch.apply(patchNode, sourceNode)
+
+    Json.parse(resultNode.toString)
   }
 
   /**
@@ -183,7 +184,7 @@ class GroupActionHandler @Inject()(jpa: JPAApi,
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)
         groupResultDao.update(groupResult)
-        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, TellWhom.SenderOnly))
+        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, None, TellWhom.SenderOnly))
       } else {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
         List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))

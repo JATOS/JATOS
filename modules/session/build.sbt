@@ -7,7 +7,7 @@ maintainer := "lange.kristian@gmail.com"
 libraryDependencies ++= Seq(
   guice,
   "org.apache.commons" % "commons-collections4" % "4.3",
-  "org.gnieh" %% f"diffson-play-json" % "4.1.1",
+  "com.flipkart.zjsonpatch" % "zjsonpatch" % "0.4.16",
   "org.mockito" % "mockito-inline" % "4.11.0" % Test
 )
 
