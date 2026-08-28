@@ -100,7 +100,7 @@ public class Study {
      * Group session write scope for this study.
      */
     @Enumerated(EnumType.STRING)
-    @JsonView({JsonForIO.class, JsonForApi.class})
+    @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private GroupSessionWriteScope groupSessionWriteScope = GroupSessionWriteScope.SHARED;
 
     /**
