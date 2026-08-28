@@ -370,14 +370,18 @@ public class StudyResult {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(getUuid() != null ? getUuid() : getId());
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
+        if (obj == null) return false;
         if (!(obj instanceof StudyResult)) return false;
         StudyResult other = (StudyResult) obj;
+        if (getUuid() != null && other.getUuid() != null) {
+            return getUuid().equals(other.getUuid());
+        }
         return getId() != null && getId().equals(other.getId());
     }
 
