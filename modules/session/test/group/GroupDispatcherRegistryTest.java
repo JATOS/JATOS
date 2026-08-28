@@ -5,6 +5,7 @@ import models.common.Study.GroupSessionWriteScope;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+import play.db.jpa.JPAApi;
 import scala.Option;
 
 import static org.junit.Assert.*;
@@ -19,9 +20,10 @@ public class GroupDispatcherRegistryTest {
     @Before
     public void setUp() {
         factory = mock(GroupDispatcher.Factory.class);
+        JPAApi jpaApi = mock(JPAApi.class);
         StudyDao studyDao = mock(StudyDao.class);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
-        registry = new GroupDispatcherRegistry(factory, studyDao);
+        registry = new GroupDispatcherRegistry(factory, studyDao, jpaApi);
     }
 
     @Test
