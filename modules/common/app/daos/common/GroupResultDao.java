@@ -11,6 +11,7 @@ import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * DAO for GroupResult
@@ -61,34 +62,68 @@ public class GroupResultDao extends AbstractDao {
     }
 
     /**
-     * Searches the database for GroupResults that fit the criteria: 1) are in the given batch, 2) are in state STARTED,
-     * 3) where the activeMemberCount < Batch's maxActiveMembers, 3) activeMemberCount + historyMemberCount < Batch's
-     * maxTotalMembers. Additionally the results are ordered by the activeMemberCount (highest first) and as a secondary
-     * sorting criteria it orders by historyMemberCount (highest first).
+     * Searches the database for a GroupResult in the given batch that fits the criteria: 1) is in state STARTED, 3)
+     * activeMemberCount < Batch's maxActiveMembers, 4) activeMemberCount + historyMemberCount < Batch's
+     * maxTotalMembers. The possible results are ordered by the activeMemberCount (highest first), and as a secondary
+     * sorting criteria it orders by historyMemberCount (highest first), and only the first result is returned.
      *
-     * We use a PESSIMISTIC_WRITE lock to let GroupResults always have the current activeMemberCount and
-     * historyMemberCount.
+     * We use a PESSIMISTIC_WRITE lock to prevent concurrent joins/reassignments from choosing and updating the same
+     * not-yet-full group.
      */
-    public List<GroupResult> findAllMaxNotReached(Batch batch) {
-        String queryStr = "SELECT gr FROM GroupResult gr, Batch b "
-                + "WHERE gr.batch=:batch "
-                + "AND b.id=:batch "
-                + "AND gr.groupState=:groupState "
-                + "AND (b.maxActiveMembers is null OR gr.activeMemberCount < b.maxActiveMembers) "
-                + "AND (b.maxTotalMembers is null OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "
+    public Optional<GroupResult> findFirstMaxNotReachedForUpdate(Batch batch) {
+        String queryStr = "SELECT gr FROM GroupResult gr "
+                + "JOIN gr.batch b "
+                + "WHERE b = :batch "
+                + "AND gr.groupState = :groupState "
+                + "AND (b.maxActiveMembers IS NULL OR gr.activeMemberCount < b.maxActiveMembers) "
+                + "AND (b.maxTotalMembers IS NULL OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "
                 + "ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC";
-        TypedQuery<GroupResult> query = jpa.em().createQuery(queryStr, GroupResult.class);
-        query.setParameter("batch", batch);
-        query.setParameter("groupState", GroupState.STARTED);
-        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        return query.getResultList();
+
+        List<GroupResult> groupResults = jpa.em().createQuery(queryStr, GroupResult.class)
+                .setParameter("batch", batch)
+                .setParameter("groupState", GroupState.STARTED)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setMaxResults(1)
+                .getResultList();
+
+        return groupResults.isEmpty() ? Optional.empty() : Optional.of(groupResults.get(0));
+    }
+
+    /**
+     * Searches the database for a GroupResult in the given batch that fits the criteria: 1) is in state STARTED, 2) is
+     * not the excluded GroupResult, 3) activeMemberCount < Batch's maxActiveMembers, 4) activeMemberCount +
+     * historyMemberCount < Batch's maxTotalMembers.
+     *
+     * We use a PESSIMISTIC_WRITE lock to prevent concurrent joins/reassignments from choosing and updating the same
+     * not-yet-full group.
+     */
+    public Optional<GroupResult> findFirstDifferentMaxNotReachedForUpdate(Batch batch, GroupResult excludedGroupResult) {
+        String queryStr = "SELECT gr FROM GroupResult gr "
+                + "JOIN gr.batch b "
+                + "WHERE b = :batch "
+                + "AND gr <> :excludedGroupResult "
+                + "AND gr.groupState = :groupState "
+                + "AND (b.maxActiveMembers IS NULL OR gr.activeMemberCount < b.maxActiveMembers) "
+                + "AND (b.maxTotalMembers IS NULL OR (gr.activeMemberCount + gr.historyMemberCount) < b.maxTotalMembers) "
+                + "ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC";
+
+        List<GroupResult> groupResults = jpa.em().createQuery(queryStr, GroupResult.class)
+                .setParameter("batch", batch)
+                .setParameter("excludedGroupResult", excludedGroupResult)
+                .setParameter("groupState", GroupState.STARTED)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .setMaxResults(1)
+                .getResultList();
+
+        return groupResults.isEmpty() ? Optional.empty() : Optional.of(groupResults.get(0));
     }
 
     /**
      * Atomically updates groupSessionData and increments groupSessionVersion, but only if the current version matches
      * the expectedVersion (compare-and-set).
      *
-     * @return The new groupSessionVersion if the update succeeded (exactly one row updated), null if the version mismatched
+     * @return The new groupSessionVersion if the update succeeded (exactly one row updated), null if the version
+     * mismatched
      */
     public Long updateGroupSession(Long groupResultId, Long expectedVersion, String sessionData) {
         String query =

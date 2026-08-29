@@ -14,6 +14,7 @@ import models.common.ComponentResult.ComponentState;
 import models.common.StudyResult.StudyState;
 import models.common.workers.Worker;
 import play.Logger;
+import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
@@ -28,8 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Service class with functions that are common for all classes that extend
- * Publix and don't belong in a controller.
+ * Service class with functions that are common for all classes that extend Publix and don't belong in a controller.
  *
  * @author Kristian Lange
  */
@@ -47,14 +47,15 @@ public class PublixUtils {
     private final UserDao userDao;
     private final StudyLogger studyLogger;
     private final IOUtils ioUtils;
+    private final JPAApi jpa;
 
     @Inject
     public PublixUtils(ResultCreator resultCreator,
-            IdCookieService idCookieService,
-            GroupAdministration groupAdministration,
-            StudyResultDao studyResultDao, ComponentDao componentDao,
-            ComponentResultDao componentResultDao, WorkerDao workerDao,
-            UserDao userDao, StudyLogger studyLogger, IOUtils ioUtils) {
+                       IdCookieService idCookieService,
+                       GroupAdministration groupAdministration,
+                       StudyResultDao studyResultDao, ComponentDao componentDao,
+                       ComponentResultDao componentResultDao, WorkerDao workerDao,
+                       UserDao userDao, StudyLogger studyLogger, IOUtils ioUtils, JPAApi jpa) {
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
         this.groupAdministration = groupAdministration;
@@ -65,6 +66,7 @@ public class PublixUtils {
         this.userDao = userDao;
         this.studyLogger = studyLogger;
         this.ioUtils = ioUtils;
+        this.jpa = jpa;
     }
 
     /**
@@ -80,8 +82,7 @@ public class PublixUtils {
     }
 
     /**
-     * Start or restart a component. It either returns a newly started component
-     * or an exception but never null.
+     * Start or restart a component. It either returns a newly started component or an exception but never null.
      */
     public ComponentResult startComponent(Component component, StudyResult studyResult, String message)
             throws ForbiddenReloadException, ForbiddenNonLinearFlowException, NotFoundPublixException {
@@ -133,9 +134,8 @@ public class PublixUtils {
     }
 
     /**
-     * Does everything to abort a study: ends the current component with state
-     * ABORTED, finishes all other Components that might still be open, deletes
-     * all result data and ends the study with state ABORTED and sets the given
+     * Does everything to abort a study: ends the current component with state ABORTED, finishes all other Components
+     * that might still be open, deletes all result data and ends the study with state ABORTED and sets the given
      * message.
      */
     public void abortStudy(String message, StudyResult studyResult) {
@@ -171,13 +171,11 @@ public class PublixUtils {
     }
 
     /**
-     * Finishes a StudyResult (includes ComponentResults) and returns a confirmation code if it
-     * was successful.
+     * Finishes a StudyResult (includes ComponentResults) and returns a confirmation code if it was successful.
      *
-     * @param successful  If true finishes all ComponentResults, generates a
-     *                    confirmation code and set the StudyResult's and current ComponentResult's
-     *                    state to FINISHED. If false it sets both states to FAIL and doesn't
-     *                    generate a confirmation code.
+     * @param successful  If true, finishes all ComponentResults, generates a confirmation code and set the StudyResult's
+     *                    and current ComponentResult's state to FINISHED. If false it sets both states to FAIL and
+     *                    doesn't generate a confirmation code.
      * @param message     Will be set in the StudyResult. Can be null.
      * @param studyResult A StudyResult
      * @return The confirmation code or null if it was unsuccessful
@@ -217,9 +215,9 @@ public class PublixUtils {
     }
 
     /**
-     * Checks if the max number of JATOS ID cookies is reached and if yes finishes the oldest one(s) with a
-     * state FAIL. Usually there is only one ID cookie that is to be discarded, but if the jatos.idCookies.limit config
-     * value got recently decreased there will be more than one. This method should only be called during start of a study.
+     * Checks if the max number of JATOS ID cookies is reached and if yes, finishes the oldest ones with a state FAIL.
+     * Usually there is only one ID cookie that is to be discarded, but if the jatos.idCookies.limit config value got
+     * recently decreased, there will be more than one. This method should only be called during the start of a study.
      */
     public void finishOldestStudyResult() throws PublixException {
         while (idCookieService.maxIdCookiesReached()) {
@@ -227,19 +225,24 @@ public class PublixUtils {
             StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);
             // If the abandoned study result isn't done, finish it.
             if (abandonedStudyResult != null && !PublixHelpers.studyDone(abandonedStudyResult)) {
-                groupAdministration.leave(abandonedStudyResult);
-                finishStudyResult(false, PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
-                        abandonedStudyResult);
-                studyLogger.log(abandonedStudyResult.getStudy(), "Finish abandoned study",
-                        abandonedStudyResult.getWorker());
+                // We need separate transactions for leaving the group and finishing the study result.
+                jpa.withTransaction((em -> {
+                    StudyResult managedStudyResult = studyResultDao.findById(abandonedStudyResultId);
+                    groupAdministration.leave(managedStudyResult);
+                }));
+                jpa.withTransaction((em -> {
+                    StudyResult managedStudyResult = studyResultDao.findById(abandonedStudyResultId);
+                    finishStudyResult(false, PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE, managedStudyResult);
+                    studyLogger.log(managedStudyResult.getStudy(), "Finish abandoned study",
+                            managedStudyResult.getWorker());
+                }));
             }
             idCookieService.discardIdCookie(abandonedStudyResultId);
         }
     }
 
     /**
-     * Returns an Optional of the last ComponentResult of this studyResult but only if it's not
-     * 'done'.
+     * Returns an Optional of the last ComponentResult of this studyResult but only if it's not 'done'.
      */
     public Optional<ComponentResult> retrieveCurrentComponentResult(StudyResult studyResult) {
         Optional<ComponentResult> last = studyResult.getLastComponentResult();
@@ -251,9 +254,8 @@ public class PublixUtils {
     }
 
     /**
-     * Gets the current ComponentResult from the storage or if it doesn't exist
-     * yet starts one for the given component. The current ComponentResult
-     * doesn't have to be of the given Component.
+     * Gets the current ComponentResult from the storage or if it doesn't exist yet starts one for the given component.
+     * The current ComponentResult doesn't have to be of the given Component.
      */
     public ComponentResult retrieveStartedComponentResult(Component component, StudyResult studyResult)
             throws ForbiddenReloadException, ForbiddenNonLinearFlowException, NotFoundPublixException {
@@ -263,8 +265,8 @@ public class PublixUtils {
     }
 
     /**
-     * Returns the first component in the given study that is active. If there
-     * is no such component it throws a NotFoundPublixException.
+     * Returns the first component in the given study that is active. If there is no such component it throws a
+     * NotFoundPublixException.
      */
     public Component retrieveFirstActiveComponent(Study study) throws NotFoundPublixException {
         Optional<Component> component = study.getFirstComponent();
@@ -280,8 +282,7 @@ public class PublixUtils {
     }
 
     /**
-     * Returns the component with the given component ID that belongs to the
-     * given study.
+     * Returns the component with the given component ID that belongs to the given study.
      *
      * @param study       A Study
      * @param componentId The component's ID
@@ -309,8 +310,7 @@ public class PublixUtils {
     }
 
     /**
-     * Checks if this component belongs to this study and throws an
-     * BadRequestPublixException if it doesn't.
+     * Checks if this component belongs to this study and throws an BadRequestPublixException if it doesn't.
      */
     public void checkComponentBelongsToStudy(Study study, Component component)
             throws BadRequestPublixException {
@@ -331,8 +331,8 @@ public class PublixUtils {
     }
 
     /**
-     * Sets the StudyResult's StudyState to STARTED if the study is currently in
-     * state PRE and the study result moved away from the first active component
+     * Sets the StudyResult's StudyState to STARTED if the study is currently in state PRE and the study result moved
+     * away from the first active component
      */
     public void setPreStudyState(ComponentResult componentResult) throws NotFoundPublixException {
         StudyResult studyResult = componentResult.getStudyResult();
@@ -358,8 +358,8 @@ public class PublixUtils {
     }
 
     /**
-     * Get query string parameters from the calling URL and put them into the field
-     * urlQueryParameters in StudyResult as a JSON string.
+     * Get query string parameters from the calling URL and put them into the field urlQueryParameters in StudyResult as
+     * a JSON string.
      */
     public void setUrlQueryParameter(Http.Request request, StudyResult studyResult) {
         Map<String, String> queryMap = new HashMap<>();
@@ -375,7 +375,7 @@ public class PublixUtils {
      * component results of this study result for a file with this filename and returns the one that was uploaded last.
      */
     public Optional<Path> retrieveLastUploadedResultFile(StudyResult studyResult, Component component,
-            String filename) {
+                                                         String filename) {
         List<ComponentResult> componentResultList;
         if (component != null) {
             componentResultList = studyResult.getComponentResultList().stream()
@@ -391,7 +391,8 @@ public class PublixUtils {
                 Path file = ioUtils.getResultUploadFileSecurely(studyResult.getId(), cr.getId(), filename);
                 if (Files.exists(file)) return Optional.of(file);
             }
-        } catch (IOException ignore) {}
+        } catch (IOException ignore) {
+        }
         return Optional.empty();
     }
 

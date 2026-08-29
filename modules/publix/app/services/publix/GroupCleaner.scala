@@ -35,7 +35,7 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
     if (!Common.isGroupsCleaningAllowed) return
 
     logger.info("Starting group cleaning")
-    val task: Runnable = () => jpa.withTransaction(asJavaSupplier(() => findAndRemoveInactiveGroupMembers()))
+    val task: Runnable = () => findAndRemoveInactiveGroupMembers()
 
     implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
     val scheduler = actorSystem.scheduler.schedule(
@@ -54,14 +54,25 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
    * study result gets finished with a state FAIL.
    */
   private def findAndRemoveInactiveGroupMembers(): Unit = {
-    studyResultDao.findIdleGroupMembers(Common.getGroupsCleaningMemberIdleAfter).forEach(studyResult => {
-      if (!groupDispatcherRegistry.hasChannel(studyResult.getId)) {
-        val groupResult = studyResult.getActiveGroupResult
-        logger.info(s"Force inactive group member with study result ID ${studyResult.getId} to leave its group ${groupResult.getId}.")
-        groupAdministration.leave(studyResult)
+    val idleStudyResults = jpa.withTransaction(asJavaSupplier(() => {
+      studyResultDao.findIdleGroupMembers(Common.getGroupsCleaningMemberIdleAfter)
+    }))
 
-        publixUtils.finishStudyResult(false, "Inactive group member was forced to leave its group.", studyResult)
-        studyLogger.log(studyResult.getStudy, "Finished study run", studyResult.getWorker)
+    idleStudyResults.forEach(studyResult => {
+      if (!groupDispatcherRegistry.hasChannel(studyResult.getId)) {
+        // We need separate transactions to leave the group and finish the study result
+        jpa.withTransaction(asJavaSupplier(() => {
+          val managedStudyResult = studyResultDao.findById(studyResult.getId)
+          val groupResult = studyResult.getActiveGroupResult
+          logger.info(s"Force inactive group member with study result ID ${studyResult.getId} to leave its group ${groupResult.getId}.")
+          groupAdministration.leave(managedStudyResult)
+        }))
+
+        jpa.withTransaction(asJavaSupplier(() => {
+          val  managedStudyResult = studyResultDao.findById(studyResult.getId)
+          publixUtils.finishStudyResult(false, "Inactive group member was forced to leave its group.", managedStudyResult)
+          studyLogger.log(managedStudyResult.getStudy, "Finished study run", managedStudyResult.getWorker)
+        }))
       }
     })
   }

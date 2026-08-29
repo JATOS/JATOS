@@ -10,7 +10,6 @@ import java.sql.Timestamp
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 import scala.compat.java8.FunctionConverters.asJavaSupplier
-import scala.jdk.CollectionConverters._
 
 /**
  * This class handles the joining, leaving, and reassigning of group members. A group's state is stored in a
@@ -46,10 +45,8 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    */
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
     jpa.withTransaction(asJavaSupplier(() => {
-      val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch)
-      val groupMaxNotReached =
-        if (allGroupMaxNotReached.isEmpty) groupResultDao.create(new GroupResult(batch))
-        else allGroupMaxNotReached.get(0)
+      val groupMaxNotReached = groupResultDao.findFirstMaxNotReachedForUpdate(batch)
+        .orElseGet(() => groupResultDao.create(new GroupResult(batch)))
 
       groupMaxNotReached.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(groupMaxNotReached)
@@ -64,18 +61,21 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
 
   /**
    * Leaves the group that this study result is a member of. Moves the study result in its group result into history.
-   * Closes the group channel. Finishes a group if necessary. We don't need a JPA transaction here because the transaction is already started by the
-   * calling methods.
+   * Closes the group channel. Finishes a group if necessary.
    */
   def leave(studyResult: StudyResult): Unit = {
     val groupResult = studyResult.getActiveGroupResult
-    if (groupResult == null || !studyResult.getStudy.isGroupStudy) return
+    if (groupResult == null) return
 
-    moveActiveMemberToHistory(studyResult)
-    checkAndFinishGroup(groupResult)
+    jpa.withTransaction(asJavaSupplier(() => {
+      moveActiveMemberToHistory(studyResult.getId)
+      checkAndFinishGroup(groupResult.getId)
+    }))
+    // Commit and flush the membership changes immediately so subsequent operations outside this transaction see the updated group state.
+    jpa.em().flush()
 
+    sendLeftMsg(studyResult, groupResult.getId)
     closeGroupChannel(studyResult.getId, groupResult.getId)
-    sendLeftMsg(studyResult, groupResult)
   }
 
   /**
@@ -121,17 +121,14 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
         return None
       }
 
-      val allGroupMaxNotReached = groupResultDao.findAllMaxNotReached(batch).asScala
-      // Don't reassign to the same group again
-      allGroupMaxNotReached -= currentGroupResult
-      if (allGroupMaxNotReached.isEmpty) {
-        // No other possible group result found
+      val differentGroupResultOption = groupResultDao.findFirstDifferentMaxNotReachedForUpdate(batch, currentGroupResult)
+      if (!differentGroupResultOption.isPresent) {
         logger.info(s"reassignGroupResult: Couldn't reassign the study result with ID ${studyResult.getId} to any other group.")
         return None
       }
 
       // Found a possible group: put into active members of a new group - do not put into history members of the old group
-      val differentGroupResult = allGroupMaxNotReached.head
+      val differentGroupResult = differentGroupResultOption.get
       currentGroupResult.removeActiveMember(studyResult)
       differentGroupResult.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(differentGroupResult)
@@ -140,7 +137,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
       groupResultDao.update(differentGroupResult)
       studyResultDao.update(studyResult)
 
-      checkAndFinishGroup(currentGroupResult)
+      checkAndFinishGroup(currentGroupResult.getId)
 
       Option(differentGroupResult)
     }))
@@ -162,11 +159,10 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * Sends a message to each member of the GroupResult that this member (specified by StudyResult)
    * has left the GroupResult.
    */
-  private def sendLeftMsg(studyResult: StudyResult, groupResult: GroupResult): Unit = {
-    if (groupResult != null) {
-      val groupDispatcherOption = groupDispatcherRegistry.get(groupResult.getId)
-      if (groupDispatcherOption.isDefined)
-        groupDispatcherOption.get.left(studyResult.getId)
+  private def sendLeftMsg(studyResult: StudyResult, groupResultId: Long): Unit = {
+    val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
+    if (groupDispatcherOption.isDefined) {
+      groupDispatcherOption.get.left(studyResult.getId)
     }
   }
 
@@ -187,7 +183,8 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * Moves the given StudyResult in its group to the history member list. This should happen when a study run is done
    * (StudyResult's state is in FINISHED, FAILED, ABORTED).
    */
-  private def moveActiveMemberToHistory(studyResult: StudyResult): Unit = {
+  private def moveActiveMemberToHistory(studyResultId: Long): Unit = {
+    val studyResult = studyResultDao.findById(studyResultId)
     val groupResult = studyResult.getActiveGroupResult
     groupResult.removeActiveMember(studyResult)
     groupResult.addHistoryMember(studyResult)
@@ -201,7 +198,8 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * Checks if a GroupResult should be put in state FINISHED and does it. A group is finished if it has no
    * more active members and the max number of members is reached.
    */
-  private def checkAndFinishGroup(groupResult: GroupResult): Unit = {
+  private def checkAndFinishGroup(groupResultId: Long): Unit = {
+    val groupResult = groupResultDao.findById(groupResultId)
     if (groupResult.getActiveMemberCount > 0) return
 
     val batch = groupResult.getBatch
