@@ -59,7 +59,7 @@ class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.
   def unregister(groupResultId: Long): Unit = synchronized {
     if (dispatcherMap.contains(groupResultId)) {
       dispatcherMap -= groupResultId
-      logger.debug(s".unregister: registered dispatcher for group result ID $groupResultId")
+      logger.debug(s".unregister: unregistered dispatcher for group result ID $groupResultId")
     } else {
       logger.debug(s".unregister: dispatcher for group result ID $groupResultId not found")
     }
