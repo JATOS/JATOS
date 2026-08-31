@@ -8,6 +8,8 @@ import org.mockito.InOrder;
 import play.db.jpa.JPAApi;
 import scala.Option;
 
+import java.util.function.Supplier;
+
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -21,6 +23,10 @@ public class GroupDispatcherRegistryTest {
     public void setUp() {
         factory = mock(GroupDispatcher.Factory.class);
         JPAApi jpaApi = mock(JPAApi.class);
+        when(jpaApi.withTransaction(any(Supplier.class))).thenAnswer(inv -> {
+            Supplier<?> supplier = inv.getArgument(0);
+            return supplier.get();
+        });
         StudyDao studyDao = mock(StudyDao.class);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
         registry = new GroupDispatcherRegistry(factory, studyDao, jpaApi);

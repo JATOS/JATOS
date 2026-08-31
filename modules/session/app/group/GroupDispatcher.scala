@@ -225,7 +225,8 @@ class GroupDispatcher @Inject()(actorSystem: ActorSystem,
   }
 
   /**
-   * Send the 'Left' group action message to all group members.
+   * Send the 'Left' group action message to all group members. It sends the message to all group members except the
+   * sender, and even if the study result is not handled by the GroupDispatcher (or never was).
    */
   def left(studyResultId: Long): Unit = {
     logger.debug(s".left: groupResultId $groupResultId, studyResultId $studyResultId")

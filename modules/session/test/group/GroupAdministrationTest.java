@@ -10,9 +10,8 @@ import org.junit.Before;
 import org.junit.Test;
 import play.db.jpa.JPAApi;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import javax.persistence.EntityManager;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.*;
@@ -41,6 +40,8 @@ public class GroupAdministrationTest {
         groupResultDao = mock(GroupResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         JPAApi jpa = mock(JPAApi.class);
+        EntityManager em = mock(EntityManager.class);
+        when(jpa.em()).thenReturn(em);
 
         // Let withTransaction execute immediately
         when(jpa.withTransaction(any(Supplier.class))).thenAnswer(inv -> {
@@ -78,7 +79,7 @@ public class GroupAdministrationTest {
         Study study = groupStudy();
         StudyResult sr = newStudyResult(1L, study, batch);
 
-        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(Collections.emptyList());
+        when(groupResultDao.findFirstMaxNotReachedForUpdate(batch)).thenReturn(Optional.empty());
         // Return argument back for create
         when(groupResultDao.create(any(GroupResult.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -107,7 +108,7 @@ public class GroupAdministrationTest {
         GroupResult existing = new GroupResult(batch);
         existing.setId(99L);
 
-        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(Collections.singletonList(existing));
+        when(groupResultDao.findFirstMaxNotReachedForUpdate(batch)).thenReturn(Optional.of(existing));
         when(registry.get(existing.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
 
         GroupResult returned = admin.join(sr, batch);
@@ -148,6 +149,8 @@ public class GroupAdministrationTest {
         gr.addActiveMember(sr);
         sr.setActiveGroupResult(gr);
 
+        when(studyResultDao.findById(sr.getId())).thenReturn(sr);
+        when(groupResultDao.findById(gr.getId())).thenReturn(gr);
         when(registry.get(gr.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
 
         admin.leave(sr);
@@ -190,9 +193,11 @@ public class GroupAdministrationTest {
         GroupResult different = new GroupResult(batch);
         different.setId(201L);
 
-        // findAllMaxNotReached returns both; logic will remove current and take head -> different
-        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(new ArrayList<>(Arrays.asList(current, different)));
+        // findFirstDifferentMaxNotReachedForUpdate returns group "different"
+        when(groupResultDao.findFirstDifferentMaxNotReachedForUpdate(batch, current)).thenReturn(Optional.of(different));
         when(registry.get(current.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
+        when(studyResultDao.findById(sr.getId())).thenReturn(sr);
+        when(groupResultDao.findById(current.getId())).thenReturn(current);
         when(registry.getOrRegister(different.getId())).thenReturn(dispatcherDifferent);
 
         boolean reassigned = admin.reassign(sr, batch);
@@ -220,8 +225,8 @@ public class GroupAdministrationTest {
         current.addActiveMember(sr);
         sr.setActiveGroupResult(current);
 
-        // Only current available -> after removal list empty
-        when(groupResultDao.findAllMaxNotReached(batch)).thenReturn(new ArrayList<>(Collections.singletonList(current)));
+        // Only current available -> empty Optional
+        when(groupResultDao.findFirstDifferentMaxNotReachedForUpdate(batch, current)).thenReturn(Optional.empty());
 
         boolean reassigned = admin.reassign(sr, batch);
         assertFalse(reassigned);
@@ -243,6 +248,8 @@ public class GroupAdministrationTest {
 
         // After leaving, active=0 and history=1 which equals maxTotal -> finish
         when(registry.get(gr.getId())).thenReturn(scala.Option.empty());
+        when(studyResultDao.findById(sr.getId())).thenReturn(sr);
+        when(groupResultDao.findById(gr.getId())).thenReturn(gr);
         admin.leave(sr);
 
         assertEquals(GroupResult.GroupState.FINISHED, gr.getGroupState());

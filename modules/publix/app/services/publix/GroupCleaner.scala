@@ -2,8 +2,8 @@ package services.publix
 
 import akka.actor.ActorSystem
 import daos.common.StudyResultDao
-import general.common.{Common, StudyLogger}
-import group.{GroupAdministration, GroupDispatcherRegistry}
+import general.common.Common
+import group.GroupDispatcherRegistry
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.db.jpa.JPAApi
@@ -22,11 +22,9 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 @Singleton
 class GroupCleaner @Inject()(actorSystem: ActorSystem,
                              lifecycle: ApplicationLifecycle,
-                             groupAdministration: GroupAdministration,
                              groupDispatcherRegistry: GroupDispatcherRegistry,
                              studyResultDao: StudyResultDao,
                              publixUtils: PublixUtils,
-                             studyLogger: StudyLogger,
                              jpa: JPAApi) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -60,19 +58,12 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
 
     idleStudyResults.forEach(studyResult => {
       if (!groupDispatcherRegistry.hasChannel(studyResult.getId)) {
-        // We need separate transactions to leave the group and finish the study result
-        jpa.withTransaction(asJavaSupplier(() => {
-          val managedStudyResult = studyResultDao.findById(studyResult.getId)
-          val groupResult = studyResult.getActiveGroupResult
-          logger.info(s"Force inactive group member with study result ID ${studyResult.getId} to leave its group ${groupResult.getId}.")
-          groupAdministration.leave(managedStudyResult)
-        }))
-
-        jpa.withTransaction(asJavaSupplier(() => {
-          val  managedStudyResult = studyResultDao.findById(studyResult.getId)
-          publixUtils.finishStudyResult(false, "Inactive group member was forced to leave its group.", managedStudyResult)
-          studyLogger.log(managedStudyResult.getStudy, "Finished study run", managedStudyResult.getWorker)
-        }))
+        logger.info(s"Force inactive group member with study result ID ${studyResult.getId} to leave its group.")
+        publixUtils.finishStudyRun(
+          studyResult.getId,
+          false,
+          "Inactive group member was forced to leave its group.",
+          "Inactive group member was forced to leave its group. Finished study run.")
       }
     })
   }

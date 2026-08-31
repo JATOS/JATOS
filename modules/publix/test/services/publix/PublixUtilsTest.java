@@ -20,6 +20,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import services.publix.idcookie.IdCookieService;
 import utils.common.IOUtils;
@@ -66,6 +67,7 @@ public class PublixUtilsTest {
     private ComponentResultDao componentResultDao;
     private UserDao userDao;
     private IOUtils ioUtils;
+    private JPAApi jpaApi;
 
     private PublixUtils publixUtils;
 
@@ -81,9 +83,10 @@ public class PublixUtilsTest {
         componentResultDao = mock(ComponentResultDao.class);
         userDao = mock(UserDao.class);
         ioUtils = mock(IOUtils.class);
+        jpaApi = mock(JPAApi.class);
 
         publixUtils = new PublixUtils(resultCreator, idCookieService, groupAdministration,
-                studyResultDao, componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils);
+                studyResultDao, componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils, jpaApi);
     }
 
     private static Study newStudyWithComponents(boolean linear, Component... components) {
@@ -337,7 +340,7 @@ public class PublixUtilsTest {
         ComponentResult cr1 = newComponentResult(sr, c, ComponentState.STARTED);
         ComponentResult cr2 = newComponentResult(sr, c, ComponentState.STARTED);
 
-        publixUtils.abortStudy("bye", sr);
+        publixUtils.abortStudyResult("bye", sr);
 
         assertEquals(StudyState.ABORTED, sr.getStudyState());
         assertEquals("bye", sr.getMessage());

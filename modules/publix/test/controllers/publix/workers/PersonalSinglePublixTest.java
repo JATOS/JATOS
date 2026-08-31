@@ -133,7 +133,7 @@ public class PersonalSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-1/comp-uuid-1/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyRun();
         verify(resultCreator).createStudyResult(sl, worker);
         verify(idCookieService).writeIdCookie(sr);
         verify(publixUtils).setUrlQueryParameter(request, sr);
@@ -160,7 +160,7 @@ public class PersonalSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-2/comp-uuid-2/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishOldestStudyResult();
+        verify(publixUtils, never()).finishOldestStudyRun();
         verify(idCookieService).writeIdCookie(existing);
         verify(publixUtils).setUrlQueryParameter(request, existing);
         verifyNoInteractions(resultCreator);
@@ -185,7 +185,7 @@ public class PersonalSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-3/comp-uuid-3/start"));
 
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyRun();
         verify(idCookieService).writeIdCookie(existing);
         verifyNoInteractions(resultCreator);
     }

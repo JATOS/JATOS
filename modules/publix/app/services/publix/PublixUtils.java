@@ -138,7 +138,7 @@ public class PublixUtils {
      * that might still be open, deletes all result data and ends the study with state ABORTED and sets the given
      * message.
      */
-    public void abortStudy(String message, StudyResult studyResult) {
+    void abortStudyResult(String message, StudyResult studyResult) {
         // Put current ComponentResult into state ABORTED and set end date
         Timestamp endDate = new Timestamp(new Date().getTime());
         retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
@@ -180,7 +180,7 @@ public class PublixUtils {
      * @param studyResult A StudyResult
      * @return The confirmation code or null if it was unsuccessful
      */
-    public String finishStudyResult(Boolean successful, String message, StudyResult studyResult) {
+    String finishStudyResult(Boolean successful, String message, StudyResult studyResult) {
         String confirmationCode;
         StudyState studyState;
         ComponentState componentState;
@@ -219,26 +219,47 @@ public class PublixUtils {
      * Usually there is only one ID cookie that is to be discarded, but if the jatos.idCookies.limit config value got
      * recently decreased, there will be more than one. This method should only be called during the start of a study.
      */
-    public void finishOldestStudyResult() throws PublixException {
+    public void finishOldestStudyRun() throws PublixException {
         while (idCookieService.maxIdCookiesReached()) {
             Long abandonedStudyResultId = idCookieService.getStudyResultIdFromOldestIdCookie();
             StudyResult abandonedStudyResult = studyResultDao.findById(abandonedStudyResultId);
             // If the abandoned study result isn't done, finish it.
             if (abandonedStudyResult != null && !PublixHelpers.studyDone(abandonedStudyResult)) {
-                // We need separate transactions for leaving the group and finishing the study result.
-                jpa.withTransaction((em -> {
-                    StudyResult managedStudyResult = studyResultDao.findById(abandonedStudyResultId);
-                    groupAdministration.leave(managedStudyResult);
-                }));
-                jpa.withTransaction((em -> {
-                    StudyResult managedStudyResult = studyResultDao.findById(abandonedStudyResultId);
-                    finishStudyResult(false, PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE, managedStudyResult);
-                    studyLogger.log(managedStudyResult.getStudy(), "Finish abandoned study",
-                            managedStudyResult.getWorker());
-                }));
+                finishStudyRun(abandonedStudyResultId,
+                        false,
+                        PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE,
+                        "Finish abandoned study");
             }
             idCookieService.discardIdCookie(abandonedStudyResultId);
         }
+    }
+
+    public String finishStudyRun(Long studyResultId, boolean successful, String studyResultMsg, String studyLoggerMsg) {
+        // We need separate transactions for leaving the group and finishing the study result.
+        leaveGroup(studyResultId);
+        return jpa.withTransaction((em -> {
+            StudyResult managedStudyResult = studyResultDao.findById(studyResultId);
+            String confirmationCode = finishStudyResult(successful, studyResultMsg, managedStudyResult);
+            studyLogger.log(managedStudyResult.getStudy(), studyLoggerMsg, managedStudyResult.getWorker());
+            return confirmationCode;
+        }));
+    }
+
+    public void abortStudyRun(Long studyResultId, String studyResultMsg, String studyLoggerMsg) {
+        // We need separate transactions for leaving the group and finishing the study result.
+        leaveGroup(studyResultId);
+        jpa.withTransaction((em -> {
+            StudyResult managedStudyResult = studyResultDao.findById(studyResultId);
+            abortStudyResult(studyResultMsg, managedStudyResult);
+            studyLogger.log(managedStudyResult.getStudy(), studyLoggerMsg, managedStudyResult.getWorker());
+        }));
+    }
+
+    private void leaveGroup(Long studyResultId) {
+        jpa.withTransaction((em -> {
+            StudyResult managedStudyResult = studyResultDao.findById(studyResultId);
+            groupAdministration.leave(managedStudyResult);
+        }));
     }
 
     /**

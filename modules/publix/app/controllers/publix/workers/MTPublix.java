@@ -102,7 +102,7 @@ public class MTPublix extends Publix implements IPublix {
 
         studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
-        publixUtils.finishOldestStudyResult();
+        publixUtils.finishOldestStudyRun();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(request, studyResult);
         idCookieService.writeIdCookie(studyResult);
@@ -128,13 +128,11 @@ public class MTPublix extends Publix implements IPublix {
 
         String confirmationCode;
         if (!PublixHelpers.studyDone(studyResult)) {
-            confirmationCode = publixUtils.finishStudyResult(successful, message, studyResult);
-            groupAdministration.leaveGroup(studyResult);
+            confirmationCode = publixUtils.finishStudyRun(studyResult.getId(), successful, message, "Finished study run");
         } else {
             confirmationCode = studyResult.getConfirmationCode();
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Finished study run", worker);
 
         if (Helpers.isAjax()) {
             return ok(confirmationCode);

@@ -84,7 +84,12 @@ class BatchActionHandlerTest {
     when(batchDao.findById(batchId)).thenReturn(batch)
 
     val failMsg = BatchMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(batch, BatchAction.SessionFail, 10L, None, TellWhom.SenderOnly))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(batch),
+      ArgumentMatchers.eq(BatchAction.SessionFail),
+      ArgumentMatchers.eq(10L),
+      any(),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
     // Send patch with client version 1 (mismatch) and versioning = true
@@ -109,7 +114,7 @@ class BatchActionHandlerTest {
     val ackMsg = BatchMsg(Json.obj("action" -> "SESSION_ACK"))
     val patchBroadcast = BatchMsg(Json.obj("action" -> "SESSION"))
     when(msgBuilder.buildSimple(batch, BatchAction.SessionAck, 10L, None, TellWhom.SenderOnly)).thenReturn(ackMsg)
-    when(msgBuilder.buildSessionPatch(any[Batch](), any[JsValue](), ArgumentMatchers.same(TellWhom.All))).thenReturn(patchBroadcast)
+    when(msgBuilder.buildSessionPatch(any[Batch](), any[JsValue](), same(TellWhom.All))).thenReturn(patchBroadcast)
 
     // Versioning turned off
     val patches = Json.arr(Json.obj("op" -> "add", "path" -> "/b", "value" -> 2))
@@ -257,7 +262,12 @@ class BatchActionHandlerTest {
     when(batchDao.findById(batchId)).thenReturn(batch)
 
     val failMsg = BatchMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(batch, BatchAction.SessionFail, 10L, None, TellWhom.SenderOnly))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(batch),
+      ArgumentMatchers.eq(BatchAction.SessionFail),
+      ArgumentMatchers.eq(10L),
+      any(),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
     // Index 5 is out of bounds for array of length 2

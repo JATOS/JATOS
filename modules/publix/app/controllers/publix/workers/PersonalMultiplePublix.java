@@ -68,7 +68,7 @@ public class PersonalMultiplePublix extends Publix implements IPublix {
         PersonalMultipleWorker worker = (PersonalMultipleWorker) studyLink.getWorker();
         studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
 
-        publixUtils.finishOldestStudyResult();
+        publixUtils.finishOldestStudyRun();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(request, studyResult);
         idCookieService.writeIdCookie(studyResult);

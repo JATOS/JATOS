@@ -274,11 +274,9 @@ public abstract class Publix extends Controller implements IPublix {
         studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         if (!PublixHelpers.studyDone(studyResult)) {
-            publixUtils.abortStudy(message, studyResult);
-            groupAdministration.leaveGroup(studyResult);
+            publixUtils.abortStudyRun(studyResult.getId(), message, "Aborted study run");
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Aborted study run", worker);
 
         if (Helpers.isAjax()) {
             return ok();
@@ -296,11 +294,9 @@ public abstract class Publix extends Controller implements IPublix {
         studyAuthorisation.checkWorkerAllowedToDoStudy(request.session(), worker, study, batch);
 
         if (!PublixHelpers.studyDone(studyResult)) {
-            publixUtils.finishStudyResult(successful, message, studyResult);
-            groupAdministration.leaveGroup(studyResult);
+            publixUtils.finishStudyRun(studyResult.getId(), successful, message, "Finished study run");
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Finished study run", worker);
 
         if (Helpers.isAjax()) {
             return ok();

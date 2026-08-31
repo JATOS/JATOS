@@ -174,7 +174,7 @@ public class JatosPublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid/comp-uuid-1/start"));
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(jw), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyRun();
         verify(publixUtils).setUrlQueryParameter(request, sr);
         verify(idCookieService).writeIdCookie(sr, JatosPublix.JatosRun.RUN_STUDY);
     }
@@ -334,10 +334,8 @@ public class JatosPublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.contains("/jatos/1"));
         verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(jw), eq(study), eq(batch));
-        verify(publixUtils).abortStudy(any(), eq(sr));
-        verify(groupAdministration).leaveGroup(sr);
+        verify(publixUtils).abortStudyRun(eq(sr.getId()), any(), any());
         verify(idCookieService).discardIdCookie(sr.getId());
-        verify(studyLogger).log(eq(study), any(), eq(jw));
     }
 
     @Test
@@ -370,10 +368,8 @@ public class JatosPublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.contains("/jatos/1"));
         verify(studyAuthorisation).checkWorkerAllowedToDoStudy(any(), eq(jw), eq(study), eq(batch));
-        verify(publixUtils).finishStudyResult(any(), any(), eq(sr));
-        verify(groupAdministration).leaveGroup(sr);
+        verify(publixUtils).finishStudyRun(eq(sr.getId()), anyBoolean(), any(), any());
         verify(idCookieService).discardIdCookie(sr.getId());
-        verify(studyLogger).log(eq(study), any(), eq(jw));
     }
 
     @Test

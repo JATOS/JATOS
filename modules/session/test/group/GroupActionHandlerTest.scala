@@ -108,7 +108,12 @@ class GroupActionHandlerTest {
     when(groupResultDao.findById(groupResultId)).thenReturn(groupResult)
 
     val failMsg = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(10L), None, TellWhom.SenderOnly))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(groupResult),
+      ArgumentMatchers.eq(GroupAction.SessionFail),
+      ArgumentMatchers.eq(Some(10L)),
+      any(),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
     // Send patch with client version 1 (mismatch) and versioning = true
@@ -297,7 +302,12 @@ class GroupActionHandlerTest {
     when(groupResultDao.findById(groupResultId)).thenReturn(groupResult)
 
     val failMsg = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(10L), None, TellWhom.SenderOnly))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(groupResult),
+      ArgumentMatchers.eq(GroupAction.SessionFail),
+      ArgumentMatchers.eq(Some(10L)),
+      any(),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
     // Index 5 is out of bounds for array of length 2

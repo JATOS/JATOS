@@ -1,6 +1,5 @@
 package controllers.publix.workers;
 
-import controllers.publix.GeneralSingleGroupChannel;
 import controllers.publix.StudyAssets;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
@@ -142,7 +141,7 @@ public class GeneralSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-1/comp-uuid-1/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyRun();
         verify(resultCreator).createStudyResult(sl, worker);
         verify(generalSingleCookieService).set(study, worker);
         verify(idCookieService).writeIdCookie(sr);
@@ -178,7 +177,7 @@ public class GeneralSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-2/comp-uuid-2/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishOldestStudyResult();
+        verify(publixUtils, never()).finishOldestStudyRun();
         verify(generalSingleCookieService, never()).set(any(), any());
         verify(idCookieService).writeIdCookie(existing);
         verify(publixUtils).setUrlQueryParameter(request, existing);
@@ -208,7 +207,7 @@ public class GeneralSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-3/comp-uuid-3/start"));
 
-        verify(publixUtils).finishOldestStudyResult();
+        verify(publixUtils).finishOldestStudyRun();
         verify(generalSingleCookieService).set(study, worker);
         verify(idCookieService).writeIdCookie(existing);
         verifyNoInteractions(resultCreator);
