@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import general.common.MessagesStrings;
+import models.common.Study.GroupSessionWriteScope;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
@@ -72,6 +73,11 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
      * Is this study a group study, e.g. worker scripts can send messages between each other.
      */
     private boolean groupStudy = false;
+
+    /**
+     * Group session write scope for this study.
+     */
+    private GroupSessionWriteScope groupSessionWriteScope = GroupSessionWriteScope.SHARED;
 
     /**
      * A study with a linear study flow allows the component position to only increase (no going back to earlier
@@ -189,6 +195,14 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
 
     public void setGroupStudy(boolean groupStudy) {
         this.groupStudy = groupStudy;
+    }
+
+    public GroupSessionWriteScope getGroupSessionWriteScope() {
+        return groupSessionWriteScope;
+    }
+
+    public void setGroupSessionWriteScope(GroupSessionWriteScope groupSessionWriteScope) {
+        this.groupSessionWriteScope = groupSessionWriteScope;
     }
 
     public boolean isLinearStudy() {

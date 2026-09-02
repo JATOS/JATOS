@@ -26,6 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.test.Helpers;
 import services.publix.idcookie.IdCookieService;
@@ -94,8 +95,8 @@ public class PublixUtilsTest {
         ioUtils = mock(IOUtils.class);
         DefaultJson defaultJson = new DefaultJson();
 
-        publixUtils = new PublixUtils(resultCreator, idCookieService, groupAdministration, studyResultDao,
-                componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils, defaultJson);
+        publixUtils = new PublixUtils(resultCreator, idCookieService, groupAdministration,
+                studyResultDao, componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils, defaultJson);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
         JPAMocker.mockDaoTransactions(entityManager, studyResultDao, componentDao, componentResultDao, workerDao, userDao);
@@ -375,7 +376,7 @@ public class PublixUtilsTest {
         ComponentResult cr1 = newComponentResult(sr, c, ComponentState.STARTED);
         ComponentResult cr2 = newComponentResult(sr, c, ComponentState.STARTED);
 
-        publixUtils.abortStudyRun("bye", sr);
+        publixUtils.abortStudyResult("bye", sr);
 
         assertEquals(StudyState.ABORTED, sr.getStudyState());
         assertEquals("bye", sr.getMessage());

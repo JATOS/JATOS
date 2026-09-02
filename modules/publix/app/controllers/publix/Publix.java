@@ -263,11 +263,9 @@ public abstract class Publix implements IPublix {
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         if (!PublixHelpers.studyResultDone(studyResult)) {
-            publixUtils.abortStudyRun(message, studyResult);
-            groupAdministration.leave(studyResult);
+            publixUtils.abortStudyRun(studyResult.getId(), message, "Aborted study run");
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Aborted study run", worker);
 
         if (HttpUtils.isHtmlRequest()) {
             return ok(views.html.publix.abort.render());
@@ -284,11 +282,9 @@ public abstract class Publix implements IPublix {
         studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch);
 
         if (!PublixHelpers.studyResultDone(studyResult)) {
-            publixUtils.finishStudyRun(successful, message, studyResult);
-            groupAdministration.leave(studyResult);
+            publixUtils.finishStudyRun(studyResult.getId(), successful, message, "Finished study run");
         }
         idCookieService.discardIdCookie(studyResult.getId());
-        studyLogger.log(study, "Finished study run", worker);
 
         if (HttpUtils.isHtmlRequest()) {
             if (!successful) {

@@ -7,7 +7,8 @@ import com.google.common.base.Strings
 import daos.common.BatchDao
 import models.common.Batch
 import play.api.Logger
-import play.api.libs.json.{JsNumber, JsValue, Json}
+import play.api.libs.json.{JsNumber, JsString, JsValue, Json}
+import play.db.jpa.JPAApi
 
 import java.io.IOException
 import javax.inject.{Inject, Singleton}
@@ -34,12 +35,19 @@ class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
   /**
    * Builds a simple BatchMsg with the action and the session version
    */
-  def buildSimple(batch: Batch, action: BatchAction, sessionActionId: Long, tellWhom: TellWhom): BatchMsg = {
+  def buildSimple(batch: Batch,
+                  action: BatchAction,
+                  sessionActionId: Long,
+                  errorMsg: Option[String] = None,
+                  tellWhom: TellWhom): BatchMsg = {
     logger.debug(s".buildSimple: batchId ${batch.getId}")
-    val json = Json.obj(
+    var json = Json.obj(
       BatchActionJsonKey.Action.toString -> action.toString,
       BatchActionJsonKey.SessionActionId.toString -> JsNumber(BigDecimal(sessionActionId)),
       BatchActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(batch.getBatchSessionVersion)))
+    if (errorMsg.isDefined) {
+      json = json + (BatchActionJsonKey.ErrorMsg.toString -> JsString(errorMsg.get))
+    }
     BatchMsg(json, tellWhom)
   }
 

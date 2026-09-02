@@ -1,7 +1,10 @@
-# --- Migration to add ON DELETE CASCADE and rename keys with FK_ to something meaningful
-# --- NOTE: Workers can belong to multiple batches. In BatchWorkerMap we delete cascade on Batch but not on Worker.
+# Add groupSessionWriteScope column to Study table.
+# Migration to add ON DELETE CASCADE and rename keys with FK_ to something meaningful.
+# NOTE: Workers can belong to multiple batches. In BatchWorkerMap we delete cascade on Batch but not on Worker.
 
 # --- !Ups
+
+ALTER TABLE `Study` ADD COLUMN `groupSessionWriteScope` varchar(255) DEFAULT 'SHARED';
 
 ALTER TABLE `ComponentResult`
     DROP FOREIGN KEY `FK_qxb7hfq7d4vaf9r5vjvnxpuwm`;

@@ -10,16 +10,11 @@
  *
  * Uses Starcounter-Jack/JSON-Patch:
  * https://github.com/Starcounter-Jack/JSON-Patch
- * Copyright (c) 2013, 2014 Joachim Wester
- * Licensed under the MIT license.
- *
- * Uses jsonpointer.js:
- * https://github.com/alexeykuzmin/jsonpointer.js
- * Copyright (c) 2013 Alexey Kuzmin
+ * Copyright (c) 2017-2022 Joachim Wester
  * Licensed under the MIT license.
  */
 
-/* global jsonpatch, jsonpointer */
+/* global jsonpatch */
 
 var jatos = {};
 window.jatos = jatos; // Make jatos available in the window object for backward compatibility
@@ -111,6 +106,10 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * groupChannel variable.
      */
     jatos.groupChannels = [];
+    /**
+     * Group state: can be STARTED, FINISHED, or FIXED
+     */
+    let groupState = null;
     /**
      * Group session data: shared in between members of the group
      */
@@ -312,9 +311,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             // Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
             jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
             // Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
-            jatos.jQuery.getScript("jatos-publix/javascripts/json-patch-duplex.min.js"),
-            // Load JSON Pointer library https://github.com/alexeykuzmin/jsonpointer.js
-            jatos.jQuery.getScript("jatos-publix/javascripts/jsonpointer.min.js")
+            jatos.jQuery.getScript("jatos-publix/javascripts/fast-json-patch.min.js")
         )
             .then(function () {
                 // Get studyResultUuid from URL path
@@ -721,13 +718,9 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             return;
         }
         if (typeof batchMsg.patches != 'undefined') {
-            // Add to JSON-Patch for "remove" and "/" - clear all session data
-            // Assumes the 'remove' operation is in the first JSON patch
-            if (batchMsg.patches[0].op === "remove" &&
-                batchMsg.patches[0].path === "/") {
-                batchSessionData = {};
-            } else {
-                jsonpatch.apply(batchSessionData, batchMsg.patches);
+            const patchResults = jsonpatch.applyPatch(batchSessionData, batchMsg.patches);
+            if (patchResults && patchResults.newDocument !== undefined) {
+                batchSessionData = patchResults.newDocument;
             }
         }
         if (typeof batchMsg.data != 'undefined') {
@@ -771,7 +764,8 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
                 break;
             case "SESSION_FAIL":
                 if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-                    batchSessionTimeouts[batchMsg.id].trigger("Batch session update failed");
+                    const errorMsg = batchMsg.errorMsg || "Batch session update failed";
+                    batchSessionTimeouts[batchMsg.id].trigger(errorMsg);
                 } else {
                     console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
                 }
@@ -805,7 +799,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {object}
      */
     jatos.batchSession.get = function (name) {
-        const obj = jsonpointer.get(batchSessionData, "/" + name);
+        const obj = jsonpatch.getValueByPointer(batchSessionData, "/" + name);
         return cloneJsonObj(obj);
     };
 
@@ -830,7 +824,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {object}
      */
     jatos.batchSession.find = function (path) {
-        const obj = jsonpointer.get(batchSessionData, path);
+        const obj = jsonpatch.getValueByPointer(batchSessionData, path);
         return cloneJsonObj(obj);
     };
 
@@ -844,7 +838,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {boolean}
      */
     jatos.batchSession.test = function (path, value) {
-        const obj = jsonpointer.get(batchSessionData, path);
+        const obj = jsonpatch.getValueByPointer(batchSessionData, path);
         return obj === value;
     };
 
@@ -915,7 +909,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {Promise}
      */
     jatos.batchSession.clear = function (onSuccess, onFail) {
-        const patch = generatePatch("remove", "/", null, null);
+        const patch = generatePatch("replace", "", {}, null);
         return sendBatchSessionPatch(patch, onSuccess, onFail);
     };
 
@@ -1701,6 +1695,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         jatos.groupChannels = [];
         groupSessionData = {};
         groupSessionVersion = null;
+        groupState = null;
         clearGroupChannelHeartbeatTimeoutTimers();
         clearInterval(groupChannelHeartbeatTimer);
         // Don't clear groupChannelClosedCheckTimer here
@@ -1739,6 +1734,9 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * Update the group variables that usually come with an group action
      */
     function updateGroupVars(groupMsg) {
+        if (typeof groupMsg.groupState != 'undefined') {
+            groupState = groupMsg.groupState;
+        }
         if (typeof groupMsg.groupResultId != 'undefined') {
             jatos.groupResultId = groupMsg.groupResultId.toString();
             showIdOverlay();
@@ -1752,13 +1750,9 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             jatos.groupChannels = groupMsg.channels;
         }
         if (typeof groupMsg.sessionPatches != 'undefined') {
-            // Add to JSON-Patch for "remove" and "/" - clear all session data
-            // Assumes the 'remove' operation is in the first JSON patch
-            if (groupMsg.sessionPatches[0].op === "remove" &&
-                groupMsg.sessionPatches[0].path === "/") {
-                groupSessionData = {};
-            } else {
-                jsonpatch.apply(groupSessionData, groupMsg.sessionPatches);
+            const patchResults = jsonpatch.applyPatch(groupSessionData, groupMsg.sessionPatches);
+            if (patchResults && patchResults.newDocument !== undefined) {
+                groupSessionData = patchResults.newDocument;
             }
         }
         if (typeof groupMsg.sessionData != 'undefined') {
@@ -1850,7 +1844,8 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
                 break;
             case "SESSION_FAIL":
                 if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-                    groupSessionTimeouts[groupMsg.sessionActionId].trigger("Group session update failed");
+                    const errorMsg = groupMsg.errorMsg || "Group session update failed";
+                    groupSessionTimeouts[groupMsg.sessionActionId].trigger(errorMsg);
                 } else {
                     console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
                 }
@@ -1860,6 +1855,14 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
                 break;
         }
     }
+
+    jatos.getGroupState = function () {
+        return groupState;
+    };
+
+    jatos.isGroupFixed = function () {
+        return groupState === "FIXED";
+    };
 
     /**
      * Object contains all group session functions
@@ -1877,7 +1880,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {object}
      */
     jatos.groupSession.get = function (name) {
-        const obj = jsonpointer.get(groupSessionData, "/" + name);
+        const obj = jsonpatch.getValueByPointer(groupSessionData, "/" + name);
         return cloneJsonObj(obj);
     };
 
@@ -1900,7 +1903,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {object}
      */
     jatos.groupSession.find = function (path) {
-        const obj = jsonpointer.get(groupSessionData, path);
+        const obj = jsonpatch.getValueByPointer(groupSessionData, path);
         return cloneJsonObj(obj);
     };
 
@@ -1914,7 +1917,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {boolean}
      */
     jatos.groupSession.test = function (path, value) {
-        const obj = jsonpointer.get(groupSessionData, path);
+        const obj = jsonpatch.getValueByPointer(groupSessionData, path);
         return obj === value;
     };
 
@@ -1984,7 +1987,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * @return {Promise}
      */
     jatos.groupSession.clear = function (onSuccess, onFail) {
-        const patch = generatePatch("remove", "/", null, null);
+        const patch = generatePatch("replace", "", {}, null);
         return sendGroupSessionPatch(patch, onSuccess, onFail);
     };
 

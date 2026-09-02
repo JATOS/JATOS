@@ -10,6 +10,7 @@ import http.common.Http.Context;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
+import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import org.assertj.core.api.Fail;
 import org.junit.Test;
@@ -380,6 +381,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
             study.setStudyEntryMsg("Another study entry msg");
             study.setActive(false);
             study.setGroupStudy(true);
+            study.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
             study.setLinearStudy(true);
             study.setAllowPreview(true);
             study.getComponentList().remove(0);

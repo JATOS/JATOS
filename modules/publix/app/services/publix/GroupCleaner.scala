@@ -6,6 +6,7 @@ import general.common.{Common, StudyLogger}
 import group.{GroupAdministration, GroupDispatcherRegistry}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
+import play.db.jpa.JPAApi
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
@@ -24,7 +25,8 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
                              groupDispatcherRegistry: GroupDispatcherRegistry,
                              studyResultDao: StudyResultDao,
                              publixUtils: PublixUtils,
-                             studyLogger: StudyLogger) {
+                             studyLogger: StudyLogger,
+                             jpa: JPAApi) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -32,7 +34,7 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
     if (!Common.isGroupsCleaningAllowed) return
 
     logger.info("Starting group cleaning")
-    val task: Runnable = () => studyResultDao.withTransaction(asJavaFunction((_: EntityManager) => findAndRemoveInactiveGroupMembers()))
+    val task: Runnable = () => findAndRemoveInactiveGroupMembers()
 
     implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
     val scheduler = actorSystem.scheduler.scheduleWithFixedDelay(
@@ -51,14 +53,18 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
    * study result gets finished with a state FAIL.
    */
   private def findAndRemoveInactiveGroupMembers(): Unit = {
-    studyResultDao.findIdleGroupMembers(Common.getGroupsCleaningMemberIdleAfter).forEach(studyResult => {
-      if (!groupDispatcherRegistry.hasChannel(studyResult.getId)) {
-        val groupResult = studyResult.getActiveGroupResult
-        logger.info(s"Force inactive group member with study result ID ${studyResult.getId} to leave its group ${groupResult.getId}.")
-        groupAdministration.leave(studyResult)
+    val idleStudyResults = jpa.withTransaction(asJavaSupplier(() => {
+      studyResultDao.findIdleGroupMembers(Common.getGroupsCleaningMemberIdleAfter)
+    }))
 
-        publixUtils.finishStudyRun(false, "Inactive group member was forced to leave its group.", studyResult)
-        studyLogger.log(studyResult.getStudy, "Finished study run", studyResult.getWorker)
+    idleStudyResults.forEach(studyResult => {
+      if (!groupDispatcherRegistry.hasChannel(studyResult.getId)) {
+        logger.info(s"Force inactive group member with study result ID ${studyResult.getId} to leave its group.")
+        publixUtils.finishStudyRun(
+          studyResult.getId,
+          false,
+          "Inactive group member was forced to leave its group.",
+          "Inactive group member was forced to leave its group. Finished study run.")
       }
     })
   }

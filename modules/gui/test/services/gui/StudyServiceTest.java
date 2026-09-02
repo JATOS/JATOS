@@ -11,6 +11,7 @@ import http.common.Http.Context;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
+import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import models.common.workers.JatosWorker;
 import models.gui.StudyProperties;
@@ -207,6 +208,7 @@ public class StudyServiceTest {
         original.setStudyInput("{\"k\":1}");
         original.setLocked(true);
         original.setGroupStudy(true);
+        original.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
         original.setLinearStudy(true);
         original.setAllowPreview(true);
 
@@ -240,6 +242,7 @@ public class StudyServiceTest {
         assertThat(clone.isLocked()).isFalse();
 
         assertThat(clone.isGroupStudy()).isTrue();
+        assertThat(clone.getGroupSessionWriteScope()).isEqualTo(GroupSessionWriteScope.MEMBER);
         assertThat(clone.isLinearStudy()).isTrue();
         assertThat(clone.isAllowPreview()).isTrue();
 
@@ -551,6 +554,7 @@ public class StudyServiceTest {
         props.setLocked(true);
         props.setActive(true);
         props.setGroupStudy(true);
+        props.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
         props.setLinearStudy(true);
         props.setAllowPreview(true);
 
@@ -566,6 +570,7 @@ public class StudyServiceTest {
         assertThat(study.isLocked()).isTrue();
         assertThat(study.isActive()).isTrue();
         assertThat(study.isGroupStudy()).isTrue();
+        assertThat(study.getGroupSessionWriteScope()).isEqualTo(GroupSessionWriteScope.MEMBER);
         assertThat(study.isLinearStudy()).isTrue();
         assertThat(study.isAllowPreview()).isTrue();
     }
@@ -591,6 +596,7 @@ public class StudyServiceTest {
         study.setDescription("d");
         study.setLocked(true);
         study.setGroupStudy(true);
+        study.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
         study.setLinearStudy(false);
         study.setAllowPreview(true);
         study.setDirName("dir");
@@ -607,6 +613,7 @@ public class StudyServiceTest {
         assertThat(props.getDescription()).isEqualTo("d");
         assertThat(props.isLocked()).isTrue();
         assertThat(props.isGroupStudy()).isTrue();
+        assertThat(props.getGroupSessionWriteScope()).isEqualTo(GroupSessionWriteScope.MEMBER);
         assertThat(props.isLinearStudy()).isFalse();
         assertThat(props.isAllowPreview()).isTrue();
         assertThat(props.getDirName()).isEqualTo("dir");

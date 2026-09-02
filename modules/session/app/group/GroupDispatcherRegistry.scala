@@ -1,16 +1,21 @@
 package group
 
+import daos.common.StudyDao
 import play.api.Logger
+import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
+import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.language.postfixOps
 
 /**
  * The GroupDispatcherRegistry keeps track of all GroupDispatchers.
  */
 @Singleton
-class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.Factory) {
+class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.Factory,
+                                        studyDao: StudyDao,
+                                        jpa: JPAApi) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -33,12 +38,17 @@ class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.
    * Get or register a GroupDispatcher for a particular group result ID.
    */
   def getOrRegister(groupResultId: Long): GroupDispatcher = synchronized {
-    if (!dispatcherMap.contains(groupResultId)) {
-      val dispatcher = groupDispatcherFactory.create(groupResultId)
-      dispatcherMap += (groupResultId -> dispatcher)
-      logger.debug(s".getOrRegister: registered dispatcher for group result ID $groupResultId")
+    dispatcherMap.get(groupResultId) match {
+      case Some(dispatcher) =>
+        dispatcher
+
+      case None =>
+        val groupSessionWriteScope = jpa.withTransaction(asJavaSupplier(() => { studyDao.findGroupSessionWriteScope(groupResultId) }))
+        val dispatcher = groupDispatcherFactory.create(groupResultId, groupSessionWriteScope)
+        dispatcherMap += (groupResultId -> dispatcher)
+        logger.debug(s".getOrRegister: registered dispatcher for group result ID $groupResultId")
+        dispatcher
     }
-    dispatcherMap(groupResultId)
   }
 
   /*
@@ -47,7 +57,7 @@ class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.
   def unregister(groupResultId: Long): Unit = synchronized {
     if (dispatcherMap.contains(groupResultId)) {
       dispatcherMap -= groupResultId
-      logger.debug(s".unregister: registered dispatcher for group result ID $groupResultId")
+      logger.debug(s".unregister: unregistered dispatcher for group result ID $groupResultId")
     } else {
       logger.debug(s".unregister: dispatcher for group result ID $groupResultId not found")
     }

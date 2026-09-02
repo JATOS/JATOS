@@ -35,7 +35,11 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
   /**
    * Builds a simple GroupMsg with the action, group result ID, and the session version
    */
-  def buildSimple(groupResult: GroupResult, action: GroupAction, sessionActionId: Option[Long], tellWhom: TellWhom): GroupMsg = {
+  def buildSimple(groupResult: GroupResult,
+                  action: GroupAction,
+                  sessionActionId: Option[Long],
+                  errorMsg: Option[String] = None,
+                  tellWhom: TellWhom): GroupMsg = {
     logger.debug(s".buildSimple: groupResult ${groupResult.getId}")
     var json = Json.obj(
       GroupActionJsonKey.Action.toString -> action.toString,
@@ -44,6 +48,9 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
       GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult.getGroupSessionVersion)))
     if (sessionActionId.isDefined) {
       json = json + (GroupActionJsonKey.SessionActionId.toString -> JsNumber(BigDecimal(sessionActionId.get)))
+    }
+    if (errorMsg.isDefined) {
+      json = json + (GroupActionJsonKey.ErrorMsg.toString -> JsString(errorMsg.get))
     }
     GroupMsg(json, tellWhom)
   }

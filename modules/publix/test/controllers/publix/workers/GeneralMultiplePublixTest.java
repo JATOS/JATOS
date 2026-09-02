@@ -141,8 +141,8 @@ public class GeneralMultiplePublixTest {
 
         // Verify interactions specific to GeneralMultiplePublix
         verify(workerCreator).createAndPersistGeneralMultipleWorker(batch);
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResults();
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
+        verify(publixUtils).finishOldestStudyRun();
         verify(resultCreator).createStudyResult(sl, worker);
         verify(publixUtils).setUrlQueryParameter(sr);
         verify(idCookieService).writeIdCookie(sr);

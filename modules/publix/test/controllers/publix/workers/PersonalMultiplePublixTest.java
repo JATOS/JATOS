@@ -138,7 +138,7 @@ public class PersonalMultiplePublixTest {
 
         // Verify interactions specific to PersonalMultiplePublix
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResults();
+        verify(publixUtils).finishOldestStudyRun();
         verify(resultCreator).createStudyResult(sl, worker);
         verify(publixUtils).setUrlQueryParameter(sr);
         verify(idCookieService).writeIdCookie(sr);

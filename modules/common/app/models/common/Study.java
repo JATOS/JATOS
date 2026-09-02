@@ -40,6 +40,16 @@ public class Study {
 
     public static final String STUDY = "study";
 
+    /**
+     * Possible group session write scopes for a study. SHARED means that every member of a group can modify any field
+     * of the group session. MEMBER means that each group member has their own scope within the group session that only
+     * they can write to.
+     */
+    public enum GroupSessionWriteScope {
+        SHARED,
+        MEMBER
+    }
+
     @Id
     @GeneratedValue(strategy = IDENTITY)
     @JsonView({JsonForPublix.class, JsonForApi.class})
@@ -84,6 +94,13 @@ public class Study {
      */
     @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
     private boolean groupStudy = false;
+
+    /**
+     * Group session write scope for this study.
+     */
+    @Enumerated(EnumType.STRING)
+    @JsonView({JsonForIO.class, JsonForPublix.class, JsonForApi.class})
+    private GroupSessionWriteScope groupSessionWriteScope = GroupSessionWriteScope.SHARED;
 
     /**
      * A study with a linear study flow allows the component position to only increase or stay the same (no going back
@@ -257,6 +274,14 @@ public class Study {
 
     public void setGroupStudy(boolean groupStudy) {
         this.groupStudy = groupStudy;
+    }
+
+    public GroupSessionWriteScope getGroupSessionWriteScope() {
+        return groupSessionWriteScope;
+    }
+
+    public void setGroupSessionWriteScope(GroupSessionWriteScope groupSessionWriteScope) {
+        this.groupSessionWriteScope = groupSessionWriteScope;
     }
 
     public boolean isLinearStudy() {

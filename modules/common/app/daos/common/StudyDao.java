@@ -3,6 +3,7 @@ package daos.common;
 import models.common.AdminStudyData;
 import models.common.AdminStudyMemberData;
 import models.common.Study;
+import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import play.db.jpa.JPAApi;
 
@@ -375,6 +376,21 @@ public class StudyDao extends AbstractDao {
                     .map(toAdminStudyData)
                     .collect(Collectors.toList());
         });
+    }
+
+    public GroupSessionWriteScope findGroupSessionWriteScope(Long groupResultId) {
+        String queryStr = "SELECT s.groupSessionWriteScope " +
+                "FROM GroupResult gr " +
+                "JOIN gr.batch b " +
+                "JOIN b.study s " +
+                "WHERE gr.id = :groupResultId";
+
+        List<GroupSessionWriteScope> result = jpa.em().createQuery(queryStr, GroupSessionWriteScope.class)
+                .setParameter("groupResultId", groupResultId)
+                .setMaxResults(1)
+                .getResultList();
+
+        return result.isEmpty() ? null : result.get(0);
     }
 
 }
