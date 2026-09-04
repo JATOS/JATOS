@@ -446,10 +446,10 @@ public class Common {
     }
 
     /**
-     * Does JATOS use an MySQL database?
+     * Does JATOS use a MySQL or MariaDB database?
      */
     public static boolean usesMysql() {
-        return getDbUrl().toLowerCase().contains("jdbc:mysql");
+        return getDbUrl().toLowerCase().contains("jdbc:mysql") || getDbUrl().toLowerCase().contains("jdbc:mariadb");
     }
 
     /**
