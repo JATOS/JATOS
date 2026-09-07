@@ -101,7 +101,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
         Worker worker;
         if (workerId == null) {
             worker = workerCreator.createAndPersistGeneralSingleWorker(batch);
-            studyAuthorisation.checkWorkerAllowedToStartStudy(request.session(), worker, study, batch);
+            studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
             publixUtils.finishOldestStudyRun();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
             studyLogger.log(studyLink, "Started study run with " + WorkerType.GENERAL_SINGLE + " worker", worker);
