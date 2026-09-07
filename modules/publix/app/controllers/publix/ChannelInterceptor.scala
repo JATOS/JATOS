@@ -4,6 +4,7 @@ import daos.common.StudyResultDao
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
 import executor.common.IOExecutor
 import http.common.Http.Context
+import jakarta.persistence.EntityManager
 import models.common.StudyResult
 import models.common.workers.WorkerType
 import play.api.Logger
@@ -52,7 +53,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
   def openBatch(studyResultUuid: String): WebSocket =
     WebSocket.acceptOrResult[JsValue, JsValue] { request =>
       inIOContext(request) {
-        studyResultDao.withReadOnlyTransaction(asJavaFunction(_ => {
+        studyResultDao.withReadOnlyTransaction((_: EntityManager) => {
           try {
             val studyResult = fetchStudyResult(studyResultUuid)
             studyResult.getWorkerType match {
@@ -80,7 +81,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
               logger.error(".open: Exception during opening of batch channel", e)
               Left(Results.InternalServerError)
           }
-        }))
+        })
       }
     }
 

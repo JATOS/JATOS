@@ -4,6 +4,7 @@ import daos.common.GroupResultDao
 import group.GroupDispatcher.GroupAction.GroupAction
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
+import jakarta.persistence.EntityManager
 import models.common.GroupResult
 import play.api.Logger
 import play.api.libs.json._
@@ -62,7 +63,7 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
-    groupResultDao.withReadOnlyTransaction(asJavaFunction(_ => {
+    groupResultDao.withReadOnlyTransaction((_: EntityManager) => {
       logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
         s"$action , tellWhom ${tellWhom.toString}")
       val groupResult = groupResultDao.findById(groupResultId)
@@ -70,7 +71,7 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
         buildAction(groupResult, studyResultId, registry, includeSessionData, action, tellWhom)
       else
         buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", TellWhom.SenderOnly)
-    }))
+    })
   }
 
   /**

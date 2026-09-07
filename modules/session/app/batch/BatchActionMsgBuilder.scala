@@ -5,6 +5,7 @@ import batch.BatchDispatcher.TellWhom.TellWhom
 import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
 import com.google.common.base.Strings
 import daos.common.BatchDao
+import jakarta.persistence.EntityManager
 import models.common.Batch
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsString, JsValue, Json}
@@ -67,7 +68,7 @@ class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
    * Builds a BatchMsg with the current batch session data and version
    */
   def buildSessionData(batchId: Long, action: BatchAction, tellWhom: TellWhom): BatchMsg = {
-    batchDao.withReadOnlyTransaction(asJavaFunction(_ => {
+    batchDao.withReadOnlyTransaction((_: EntityManager) => {
       logger.debug(s".buildSessionData: batchId $batchId, action $action, tellWhom ${
         tellWhom
           .toString
@@ -75,7 +76,7 @@ class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
       val batch = batchDao.findById(batchId)
       if (batch != null) buildSessionAction(batch, action, tellWhom)
       else buildError(s"Couldn't find batch with ID $batchId in database.", TellWhom.SenderOnly)
-    }))
+    })
   }
 
   private def buildSessionAction(batch: Batch, action: BatchAction, tellWhom: TellWhom) = {

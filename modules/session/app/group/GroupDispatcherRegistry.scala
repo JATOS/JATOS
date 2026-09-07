@@ -1,12 +1,11 @@
 package group
 
 import daos.common.StudyDao
+import jakarta.persistence.EntityManager
 import play.api.Logger
-import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
-import scala.compat.java8.FunctionConverters.asJavaSupplier
 import scala.language.postfixOps
 
 /**
@@ -14,8 +13,7 @@ import scala.language.postfixOps
  */
 @Singleton
 class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.Factory,
-                                        studyDao: StudyDao,
-                                        jpa: JPAApi) {
+                                        studyDao: StudyDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -43,7 +41,7 @@ class GroupDispatcherRegistry @Inject()(groupDispatcherFactory: GroupDispatcher.
         dispatcher
 
       case None =>
-        val groupSessionWriteScope = jpa.withTransaction(asJavaSupplier(() => { studyDao.findGroupSessionWriteScope(groupResultId) }))
+        val groupSessionWriteScope = studyDao.withReadOnlyTransaction((_: EntityManager) => studyDao.findGroupSessionWriteScope(groupResultId))
         val dispatcher = groupDispatcherFactory.create(groupResultId, groupSessionWriteScope)
         dispatcherMap += (groupResultId -> dispatcher)
         logger.debug(s".getOrRegister: registered dispatcher for group result ID $groupResultId")

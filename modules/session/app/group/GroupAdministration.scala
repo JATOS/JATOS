@@ -9,7 +9,6 @@ import play.api.Logger
 import java.sql.Timestamp
 import java.util.Date
 import javax.inject.{Inject, Singleton}
-import scala.jdk.CollectionConverters._
 import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 
 /**
@@ -33,7 +32,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
     groupResultDao.withTransaction(asJavaFunction(_ => {
       val groupMaxNotReached = groupResultDao.findFirstMaxNotReachedForUpdate(batch)
-        .orElseGet(() => groupResultDao.create(new GroupResult(batch)))
+        .orElseGet(() => groupResultDao.persist(new GroupResult(batch)))
 
       groupMaxNotReached.addActiveMember(studyResult)
       studyResult.setActiveGroupResult(groupMaxNotReached)
@@ -59,7 +58,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
       checkAndFinishGroup(groupResult.getId)
     }))
     // Commit and flush the membership changes immediately so subsequent operations outside this transaction see the updated group state.
-    jpa.em().flush()
+    groupResultDao.flush()
 
     sendLeftMsg(studyResult, groupResult.getId)
     closeGroupChannel(studyResult.getId, groupResult.getId)

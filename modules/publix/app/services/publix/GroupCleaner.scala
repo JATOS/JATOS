@@ -1,17 +1,16 @@
 package services.publix
 
-import org.apache.pekko.actor.ActorSystem
 import daos.common.StudyResultDao
-import general.common.{Common, StudyLogger}
-import group.{GroupAdministration, GroupDispatcherRegistry}
+import general.common.Common
+import group.GroupDispatcherRegistry
+import jakarta.persistence.EntityManager
+import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.db.jpa.JPAApi
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import jakarta.persistence.EntityManager
-import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -21,11 +20,9 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 @Singleton
 class GroupCleaner @Inject()(actorSystem: ActorSystem,
                              lifecycle: ApplicationLifecycle,
-                             groupAdministration: GroupAdministration,
                              groupDispatcherRegistry: GroupDispatcherRegistry,
                              studyResultDao: StudyResultDao,
                              publixUtils: PublixUtils,
-                             studyLogger: StudyLogger,
                              jpa: JPAApi) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -53,9 +50,9 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
    * study result gets finished with a state FAIL.
    */
   private def findAndRemoveInactiveGroupMembers(): Unit = {
-    val idleStudyResults = jpa.withTransaction(asJavaSupplier(() => {
+    val idleStudyResults = jpa.withTransaction((_: EntityManager) => {
       studyResultDao.findIdleGroupMembers(Common.getGroupsCleaningMemberIdleAfter)
-    }))
+    })
 
     idleStudyResults.forEach(studyResult => {
       if (!groupDispatcherRegistry.hasChannel(studyResult.getId)) {
