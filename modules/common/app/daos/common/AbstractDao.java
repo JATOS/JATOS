@@ -1,11 +1,11 @@
 package daos.common;
 
+import jakarta.persistence.EntityManager;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Singleton;
-import jakarta.persistence.EntityManager;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -43,6 +43,10 @@ public abstract class AbstractDao {
             em.refresh(entity);
             return null;
         });
+    }
+
+    public void flush() {
+        jpa.withTransaction(EntityManager::flush);
     }
 
     public <T> T withReadOnlyTransaction(Function<EntityManager, T> block) {
