@@ -54,7 +54,6 @@ public class JatosPublixTest {
     private ResultCreator resultCreator;
     private IdCookieService idCookieService;
     private StudyAssets studyAssets;
-    private StudyLogger studyLogger;
     private ComponentResultDao componentResultDao;
 
     private JatosPublix publix;
@@ -83,7 +82,7 @@ public class JatosPublixTest {
         resultCreator = mock(ResultCreator.class);
         idCookieService = mock(IdCookieService.class);
         studyAssets = mock(StudyAssets.class);
-        studyLogger = mock(StudyLogger.class);
+        StudyLogger studyLogger = mock(StudyLogger.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
         componentResultDao = mock(ComponentResultDao.class);
