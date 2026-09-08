@@ -50,6 +50,6 @@ public class CommonGuiceModule extends AbstractModule implements PekkoGuiceSuppo
         defaultApi.start();
 
         // Wrap it with our propagation logic
-        return new TransactionJoiningJPAApi(defaultApi);
+        return new TransactionPropagatingJPAApi(defaultApi);
     }
 }

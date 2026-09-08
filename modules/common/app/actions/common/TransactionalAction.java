@@ -15,30 +15,29 @@ import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
 
 /**
- * The TransactionalAction class is responsible for managing database transactions
- * within the scope of a request. It ensures that the annotated actions or classes
- * are executed within a transactional context provided by JPA.
+ * The TransactionalAction class is responsible for managing database transactions within the scope of a request. It
+ * ensures that the annotated actions or classes are executed within a transactional context provided by JPA.
  *
  * Hint: In the Play Framework one cannot use jpa.em() directly. It always has to be wrapped "locally" in a
  * jpa.withTransaction(...) block.
  */
-    public class TransactionalAction extends Action<TransactionalAction.Transactional> {
+public class TransactionalAction extends Action<TransactionalAction.Transactional> {
 
-        public enum Mode { READ_WRITE, READ_ONLY }
+    public enum Mode {READ_WRITE, READ_ONLY}
 
-        @With(TransactionalAction.class)
-        @Target({ ElementType.TYPE, ElementType.METHOD })
-        @Retention(RetentionPolicy.RUNTIME)
-        public @interface Transactional {
-            Mode value() default Mode.READ_WRITE;
-        }
+    @With(TransactionalAction.class)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Transactional {
+        Mode value() default Mode.READ_WRITE;
+    }
 
-        private final JPAApi jpa;
+    private final JPAApi jpa;
 
-        @Inject
-        public TransactionalAction(JPAApi jpa) {
-            this.jpa = jpa;
-        }
+    @Inject
+    public TransactionalAction(JPAApi jpa) {
+        this.jpa = jpa;
+    }
 
     @Override
     public CompletionStage<Result> call(Http.Request req) {
@@ -50,4 +49,4 @@ import java.util.concurrent.CompletionStage;
             return result;
         });
     }
-    }
+}

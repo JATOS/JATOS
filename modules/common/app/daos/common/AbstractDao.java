@@ -1,5 +1,6 @@
 package daos.common;
 
+import general.common.TransactionPropagatingJPAApi;
 import jakarta.persistence.EntityManager;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
@@ -69,6 +70,16 @@ public abstract class AbstractDao {
             block.accept(em);
             return null;
         });
+    }
+
+    public <T> T withNewTransaction(Function<EntityManager, T> block) {
+        return ((TransactionPropagatingJPAApi) jpa).withTransaction(
+                TransactionPropagatingJPAApi.Propagation.REQUIRES_NEW, block);
+    }
+
+    public void withNewTransaction(Consumer<EntityManager> block) {
+        ((TransactionPropagatingJPAApi) jpa).withTransaction(
+                TransactionPropagatingJPAApi.Propagation.REQUIRES_NEW, block);
     }
 
     /**
