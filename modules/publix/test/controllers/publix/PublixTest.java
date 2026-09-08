@@ -7,7 +7,7 @@ import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.Common;
 import general.common.StudyLogger;
-import group.GroupAdministration;
+import jakarta.persistence.EntityManager;
 import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
@@ -32,7 +32,6 @@ import services.publix.idcookie.IdCookieService;
 import testutils.publix.JPAMocker;
 import utils.common.IOUtils;
 
-import jakarta.persistence.EntityManager;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,15 +52,20 @@ public class PublixTest {
 
     // Minimal concrete subclass for testing (Publix itself is abstract only by generic type)
     private static class TestPublix extends Publix {
-        public TestPublix(PublixUtils publixUtils, StudyAuthorisation studyAuthorisation,
-                          GroupAdministration groupAdministration, IdCookieService idCookieService,
-                          PublixErrorMessages errorMessages, StudyAssets studyAssets, DomainJsonMapper domainJsonMapper,
-                          ComponentResultDao componentResultDao, StudyResultDao studyResultDao,
-                          StudyLogger studyLogger, IOUtils ioUtils, IOExecutor ioExecutor,
+        public TestPublix(PublixUtils publixUtils,
+                          StudyAuthorisation studyAuthorisation,
+                          IdCookieService idCookieService,
+                          PublixErrorMessages errorMessages,
+                          StudyAssets studyAssets,
+                          DomainJsonMapper domainJsonMapper,
+                          ComponentResultDao componentResultDao,
+                          StudyResultDao studyResultDao,
+                          StudyLogger studyLogger,
+                          IOUtils ioUtils,
+                          IOExecutor ioExecutor,
                           StudyAssetsExecutor studyAssetsExecutor) {
-            super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages,
-                    studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
-                    studyAssetsExecutor);
+            super(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets, domainJsonMapper,
+                    componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor, studyAssetsExecutor);
         }
 
         @Override
@@ -88,7 +92,6 @@ public class PublixTest {
 
     private PublixUtils publixUtils;
     private StudyAuthorisation studyAuthorisation;
-    private GroupAdministration groupAdministration;
     private IdCookieService idCookieService;
     private PublixErrorMessages errorMessages;
     private StudyAssets studyAssets;
@@ -106,7 +109,6 @@ public class PublixTest {
     public void setUp() {
         publixUtils = mock(PublixUtils.class);
         studyAuthorisation = mock(StudyAuthorisation.class);
-        groupAdministration = mock(GroupAdministration.class);
         idCookieService = mock(IdCookieService.class);
         errorMessages = mock(PublixErrorMessages.class);
         studyAssets = mock(StudyAssets.class);
@@ -118,9 +120,9 @@ public class PublixTest {
         ioExecutor = mock(IOExecutor.class);
         studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
-                ioExecutor, studyAssetsExecutor);
+        publix = new TestPublix(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
+                studyAssetsExecutor);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
         JPAMocker.mockDaoTransactions(entityManager, componentResultDao, studyResultDao);
@@ -328,9 +330,9 @@ public class PublixTest {
 
         // Mock ioUtils and re-create publix with it
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
-                ioExecutor, studyAssetsExecutor);
+        publix = new TestPublix(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
+                studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(31L);
@@ -360,9 +362,9 @@ public class PublixTest {
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(10L);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
-                ioExecutor, studyAssetsExecutor);
+        publix = new TestPublix(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
+                studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(32L);
@@ -389,9 +391,9 @@ public class PublixTest {
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(Long.MAX_VALUE);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
-                ioExecutor, studyAssetsExecutor);
+        publix = new TestPublix(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
+                studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(33L);
@@ -418,9 +420,9 @@ public class PublixTest {
         commonStatic.when(Common::getResultUploadsLimitPerStudyRun).thenReturn(Long.MAX_VALUE);
 
         ioUtils = mock(IOUtils.class);
-        publix = new TestPublix(publixUtils, studyAuthorisation, groupAdministration, idCookieService,
-                errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
-                ioExecutor, studyAssetsExecutor);
+        publix = new TestPublix(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
+                domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
+                studyAssetsExecutor);
 
         Study study = new Study();
         Component component = newComponent(34L);

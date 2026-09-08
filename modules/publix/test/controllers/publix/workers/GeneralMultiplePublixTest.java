@@ -6,7 +6,6 @@ import daos.common.StudyResultDao;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
-import group.GroupAdministration;
 import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.GeneralMultipleWorker;
@@ -53,7 +52,6 @@ public class GeneralMultiplePublixTest {
         workerCreator = mock(WorkerCreator.class);
         idCookieService = mock(IdCookieService.class);
         studyLogger = mock(StudyLogger.class);
-        GroupAdministration groupAdministration = mock(GroupAdministration.class);
         StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
@@ -64,7 +62,7 @@ public class GeneralMultiplePublixTest {
         StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
         publix = new GeneralMultiplePublix(publixUtils, studyAuthorisation, resultCreator, workerCreator,
-                groupAdministration, idCookieService, errorMessages, studyAssets, domainJsonMapper,
+                idCookieService, errorMessages, studyAssets, domainJsonMapper,
                 componentResultDao, studyResultDao, studyLogger, ioUtils, ioContext, studyAssetsExecutor);
     }
 
@@ -141,8 +139,8 @@ public class GeneralMultiplePublixTest {
 
         // Verify interactions specific to GeneralMultiplePublix
         verify(workerCreator).createAndPersistGeneralMultipleWorker(batch);
-        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(any(), eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyRun();
+        verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
+        verify(publixUtils).finishOldestStudyRuns();
         verify(resultCreator).createStudyResult(sl, worker);
         verify(publixUtils).setUrlQueryParameter(sr);
         verify(idCookieService).writeIdCookie(sr);

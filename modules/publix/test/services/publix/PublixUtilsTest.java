@@ -15,6 +15,7 @@ import general.common.Common;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import http.common.Http.Context;
+import jakarta.persistence.EntityManager;
 import json.common.DefaultJson;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
@@ -26,14 +27,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import play.db.jpa.JPAApi;
 import play.mvc.Http;
 import play.test.Helpers;
 import services.publix.idcookie.IdCookieService;
 import testutils.publix.JPAMocker;
 import utils.common.IOUtils;
 
-import jakarta.persistence.EntityManager;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -73,10 +72,13 @@ public class PublixUtilsTest {
     }
 
     private ResultCreator resultCreator;
+    private IdCookieService idCookieService;
+    private GroupAdministration groupAdministration;
     private StudyResultDao studyResultDao;
     private ComponentDao componentDao;
     private ComponentResultDao componentResultDao;
     private UserDao userDao;
+    private StudyLogger studyLogger;
     private IOUtils ioUtils;
 
     private PublixUtils publixUtils;
@@ -84,14 +86,14 @@ public class PublixUtilsTest {
     @Before
     public void setup() {
         resultCreator = mock(ResultCreator.class);
-        IdCookieService idCookieService = mock(IdCookieService.class);
-        GroupAdministration groupAdministration = mock(GroupAdministration.class);
+        idCookieService = mock(IdCookieService.class);
+        groupAdministration = mock(GroupAdministration.class);
         studyResultDao = mock(StudyResultDao.class);
         componentDao = mock(ComponentDao.class);
         componentResultDao = mock(ComponentResultDao.class);
         WorkerDao workerDao = mock(WorkerDao.class);
         userDao = mock(UserDao.class);
-        StudyLogger studyLogger = mock(StudyLogger.class);
+        studyLogger = mock(StudyLogger.class);
         ioUtils = mock(IOUtils.class);
         DefaultJson defaultJson = new DefaultJson();
 
@@ -139,6 +141,265 @@ public class PublixUtilsTest {
         cr.setComponentState(state);
         sr.getComponentResultList().add(cr);
         return cr;
+    }
+
+    @Test
+    public void startComponentRun_allowsReloadWhenReloadable() {
+        Component c = newComponent(1, "a", true, true);
+        Study s = newStudyWithComponents(true, c);
+        StudyResult sr = newStudyResult(s);
+        ComponentResult last = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(last));
+
+        ComponentResult created = new ComponentResult();
+        when(resultCreator.createComponentResult(sr, c)).thenReturn(created);
+
+        ComponentResult res = publixUtils.startComponentRun(c, sr, "msg");
+        assertSame(created, res);
+        // Last should be set to RELOADED and updated
+        assertEquals(ComponentState.RELOADED, last.getComponentState());
+        verify(componentResultDao, atLeastOnce()).merge(last);
+    }
+
+    @Test
+    public void startComponentRun_forbidsReloadWhenNotReloadable() {
+        Component c = newComponent(1, "a", true, false);
+        Study s = newStudyWithComponents(true, c);
+        StudyResult sr = newStudyResult(s);
+        sr.setStudyState(StudyState.STARTED);
+        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
+
+        try {
+            publixUtils.startComponentRun(c, sr, "msg");
+            fail("Expected ForbiddenReloadException");
+        } catch (ForbiddenReloadException e) {
+            // ok
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e);
+        }
+        // Last should be set to FAIL and updated
+        ComponentResult last = lastElement(sr.getComponentResultList()).orElseThrow();
+        componentResultDao.findLastByStudyResult(sr);
+        assertEquals(ComponentState.FAIL, last.getComponentState());
+        verify(componentResultDao, atLeastOnce()).merge(last);
+    }
+
+    @Test
+    public void startComponentRun_forbidsNonLinearFlow() {
+        Component c1 = newComponent(1, "a", true, true);
+        Component c2 = newComponent(2, "b", true, true);
+        Study s = newStudyWithComponents(true, c1, c2); // linear
+        StudyResult sr = newStudyResult(s);
+        ComponentResult cr = newComponentResult(sr, c2, ComponentState.STARTED); // last was c2
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
+
+        try {
+            publixUtils.startComponentRun(c1, sr, "x"); // try to go back to c1
+            fail("Expected ForbiddenNonLinearFlowException");
+        } catch (ForbiddenNonLinearFlowException e) {
+            // ok
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e);
+        }
+        ComponentResult last = lastElement(sr.getComponentResultList()).orElseThrow();
+        assertEquals(ComponentState.FAIL, last.getComponentState());
+        verify(componentResultDao, atLeastOnce()).merge(last);
+    }
+
+    @Test
+    public void abortStudyResult_setsAbortedAndPurgesAndRemoves() throws IOException {
+        Study s = new Study();
+        StudyResult sr = newStudyResult(s);
+        sr.setStudySessionData("x");
+        Component c = newComponent(1, "a", true, true);
+        ComponentResult cr1 = newComponentResult(sr, c, ComponentState.STARTED);
+        ComponentResult cr2 = newComponentResult(sr, c, ComponentState.STARTED);
+
+        publixUtils.abortStudyResult("bye", sr);
+
+        assertEquals(StudyState.ABORTED, sr.getStudyState());
+        assertEquals("bye", sr.getMessage());
+        assertNull(sr.getStudySessionData());
+        assertNotNull(sr.getEndDate());
+        assertEquals(ComponentState.ABORTED, cr1.getComponentState());
+        assertEquals(ComponentState.ABORTED, cr2.getComponentState());
+        verify(componentResultDao, atLeast(2)).purgeData(anyLong());
+        verify(componentResultDao, atLeast(2)).merge(any(ComponentResult.class));
+        verify(ioUtils).removeResultUploadsDir(sr.getId());
+        verify(studyResultDao).merge(sr);
+    }
+
+    @Test
+    public void finishStudyResult_successful() {
+        Study s = new Study();
+        StudyResult sr = newStudyResult(s);
+        Worker worker = mock(Worker.class);
+        when(worker.generateConfirmationCode()).thenReturn("CONF");
+        sr.setWorker(worker);
+        Component c = newComponent(1, "a", true, true);
+        ComponentResult current = newComponentResult(sr, c, ComponentState.STARTED);
+        ComponentResult other = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(current));
+
+        String code = publixUtils.finishStudyResult(true, "done", sr);
+        assertEquals("CONF", code);
+        assertEquals(StudyState.FINISHED, sr.getStudyState());
+        assertEquals("done", sr.getMessage());
+        assertNull(sr.getStudySessionData());
+        assertNotNull(sr.getEndDate());
+        // Component results updated and finished
+        assertEquals(ComponentState.FINISHED, current.getComponentState());
+        assertEquals(ComponentState.FINISHED, other.getComponentState());
+        verify(componentResultDao, atLeast(2)).merge(any(ComponentResult.class));
+        verify(studyResultDao).merge(sr);
+    }
+
+    @Test
+    public void finishStudyResult_unsuccessful() {
+        Study s = new Study();
+        StudyResult sr = newStudyResult(s);
+        Worker worker = mock(Worker.class);
+        when(worker.generateConfirmationCode()).thenReturn("CONF");
+        sr.setWorker(worker);
+        Component c = newComponent(1, "a", true, true);
+        ComponentResult current = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(current));
+
+        String code = publixUtils.finishStudyResult(false, "fail", sr);
+        assertNull(code);
+        assertEquals(StudyState.FAIL, sr.getStudyState());
+        assertEquals(ComponentState.FAIL, current.getComponentState());
+        verify(studyResultDao).merge(sr);
+    }
+
+    @Test
+    public void finishOldestStudyRuns_maxReachedAndNotDone_finishesStudyRunAndDiscardsCookie() {
+        when(idCookieService.maxIdCookiesReached()).thenReturn(true, false);
+        when(idCookieService.getStudyResultIdOfOldestIdCookie()).thenReturn(10L);
+
+        Study s = new Study();
+        Worker w = mock(Worker.class);
+        StudyResult sr = newStudyResult(s);
+        sr.setId(10L);
+        sr.setWorker(w);
+        sr.setStudyState(StudyState.STARTED);
+        when(studyResultDao.findById(10L)).thenReturn(sr);
+
+        publixUtils.finishOldestStudyRuns();
+
+        verify(groupAdministration).leave(10L);
+        assertEquals(StudyState.FAIL, sr.getStudyState());
+        assertEquals(PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE, sr.getMessage());
+        verify(studyLogger).log(s, "Finish abandoned study", w);
+        verify(idCookieService).discardIdCookie(10L);
+    }
+
+    @Test
+    public void finishOldestStudyRuns_maxReachedAndAlreadyDone_discardsCookieWithoutFinishing() {
+        when(idCookieService.maxIdCookiesReached()).thenReturn(true, false);
+        when(idCookieService.getStudyResultIdOfOldestIdCookie()).thenReturn(10L);
+
+        Study s = new Study();
+        Worker w = mock(Worker.class);
+        StudyResult sr = newStudyResult(s);
+        sr.setId(10L);
+        sr.setWorker(w);
+        sr.setStudyState(StudyState.FINISHED);
+        when(studyResultDao.findById(10L)).thenReturn(sr);
+
+        publixUtils.finishOldestStudyRuns();
+
+        verify(groupAdministration, never()).leave(anyLong());
+        verify(studyLogger, never()).log(any(Study.class), any(String.class), any(Worker.class));
+        verify(idCookieService).discardIdCookie(10L);
+    }
+
+    @Test
+    public void finishOldestStudyRuns_maxNotReached_doesNothing() {
+        when(idCookieService.maxIdCookiesReached()).thenReturn(false);
+
+        publixUtils.finishOldestStudyRuns();
+
+        verify(idCookieService, never()).getStudyResultIdOfOldestIdCookie();
+        verify(idCookieService, never()).discardIdCookie(anyLong());
+    }
+
+    @Test
+    public void abortStudyRun_leavesGroupAbortsStudyResultAndLogs() {
+        Study s = new Study();
+        Worker w = mock(Worker.class);
+        StudyResult sr = newStudyResult(s);
+        sr.setId(10L);
+        sr.setWorker(w);
+        when(studyResultDao.findById(10L)).thenReturn(sr);
+
+        publixUtils.abortStudyRun(10L, "abort msg", "logger msg");
+
+        verify(groupAdministration).leave(10L);
+        assertEquals(StudyState.ABORTED, sr.getStudyState());
+        assertEquals("abort msg", sr.getMessage());
+        verify(studyLogger).log(s, "logger msg", w);
+        verify(studyResultDao).merge(sr);
+    }
+
+    @Test
+    public void retrieveCurrentComponentResult_returnsPresentIfNotDone() {
+        Study s = new Study();
+        StudyResult sr = newStudyResult(s);
+        Component c = newComponent(1, "a", true, true);
+        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
+
+        Optional<ComponentResult> current = publixUtils.retrieveCurrentComponentResult(sr);
+        assertTrue(current.isPresent());
+    }
+
+    @Test
+    public void retrieveCurrentComponentResult_returnsEmptyIfDone() {
+        Study s = new Study();
+        StudyResult sr = newStudyResult(s);
+        Component c = newComponent(1, "a", true, true);
+        ComponentResult cr = newComponentResult(sr, c, ComponentState.FINISHED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
+
+        Optional<ComponentResult> current = publixUtils.retrieveCurrentComponentResult(sr);
+        assertFalse(current.isPresent());
+    }
+
+    @Test
+    public void retrieveStartedComponentResult_returnsExistingCurrent() {
+        Study s = new Study();
+        StudyResult sr = newStudyResult(s);
+        Component c = newComponent(1, "a", true, true);
+        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
+
+        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
+
+        ComponentResult res = publixUtils.retrieveStartedComponentResult(c, sr);
+        assertSame(cr, res);
+        verifyNoInteractions(resultCreator);
+    }
+
+    @Test
+    public void retrieveStartedComponentResult_startsNewIfNone() {
+        Study s = new Study();
+        Component c = newComponent(1, "a", true, true);
+        StudyResult sr = newStudyResult(s);
+        ComponentResult created = new ComponentResult();
+
+        when(resultCreator.createComponentResult(sr, c)).thenReturn(created);
+
+        ComponentResult res = publixUtils.retrieveStartedComponentResult(c, sr);
+        assertSame(created, res);
+        verify(resultCreator).createComponentResult(sr, c);
     }
 
     @Test
@@ -199,195 +460,6 @@ public class PublixUtilsTest {
         c.setStudy(s);
         when(componentDao.findById(5L)).thenReturn(c);
         publixUtils.retrieveComponent(s, 5L);
-    }
-
-    @Test
-    public void retrieveCurrentComponentResult_returnsPresentIfNotDone() {
-        Study s = new Study();
-        StudyResult sr = newStudyResult(s);
-        Component c = newComponent(1, "a", true, true);
-        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
-
-        Optional<ComponentResult> current = publixUtils.retrieveCurrentComponentResult(sr);
-        assertTrue(current.isPresent());
-    }
-
-    @Test
-    public void retrieveCurrentComponentResult_returnsEmptyIfDone() {
-        Study s = new Study();
-        StudyResult sr = newStudyResult(s);
-        Component c = newComponent(1, "a", true, true);
-        ComponentResult cr = newComponentResult(sr, c, ComponentState.FINISHED);
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
-
-        Optional<ComponentResult> current = publixUtils.retrieveCurrentComponentResult(sr);
-        assertFalse(current.isPresent());
-    }
-
-    @Test
-    public void retrieveStartedComponentResult_returnsExistingCurrent() {
-        Study s = new Study();
-        StudyResult sr = newStudyResult(s);
-        Component c = newComponent(1, "a", true, true);
-        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
-
-        ComponentResult res = publixUtils.retrieveStartedComponentResult(c, sr);
-        assertSame(cr, res);
-        verifyNoInteractions(resultCreator);
-    }
-
-    @Test
-    public void retrieveStartedComponentResult_startsNewIfNone() {
-        Study s = new Study();
-        Component c = newComponent(1, "a", true, true);
-        StudyResult sr = newStudyResult(s);
-        ComponentResult created = new ComponentResult();
-
-        when(resultCreator.createComponentResult(sr, c)).thenReturn(created);
-
-        ComponentResult res = publixUtils.retrieveStartedComponentResult(c, sr);
-        assertSame(created, res);
-        verify(resultCreator).createComponentResult(sr, c);
-    }
-
-    @Test
-    public void startComponent_Run_allowsReloadWhenReloadable() {
-        Component c = newComponent(1, "a", true, true);
-        Study s = newStudyWithComponents(true, c);
-        StudyResult sr = newStudyResult(s);
-        ComponentResult last = newComponentResult(sr, c, ComponentState.STARTED);
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(last));
-
-        ComponentResult created = new ComponentResult();
-        when(resultCreator.createComponentResult(sr, c)).thenReturn(created);
-
-        ComponentResult res = publixUtils.startComponentRun(c, sr, "msg");
-        assertSame(created, res);
-        // Last should be set to RELOADED and updated
-        assertEquals(ComponentState.RELOADED, last.getComponentState());
-        verify(componentResultDao, atLeastOnce()).merge(last);
-    }
-
-    @Test
-    public void startComponent_Run_forbidsReloadWhenNotReloadable() {
-        Component c = newComponent(1, "a", true, false);
-        Study s = newStudyWithComponents(true, c);
-        StudyResult sr = newStudyResult(s);
-        sr.setStudyState(StudyState.STARTED);
-        ComponentResult cr = newComponentResult(sr, c, ComponentState.STARTED);
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
-
-        try {
-            publixUtils.startComponentRun(c, sr, "msg");
-            fail("Expected ForbiddenReloadException");
-        } catch (ForbiddenReloadException e) {
-            // ok
-        } catch (Exception e) {
-            fail("Unexpected exception: " + e);
-        }
-        // Last should be set to FAIL and updated
-        ComponentResult last = lastElement(sr.getComponentResultList()).orElseThrow();
-        componentResultDao.findLastByStudyResult(sr);
-        assertEquals(ComponentState.FAIL, last.getComponentState());
-        verify(componentResultDao, atLeastOnce()).merge(last);
-    }
-
-    @Test
-    public void startComponent_Run_forbidsNonLinearFlow() {
-        Component c1 = newComponent(1, "a", true, true);
-        Component c2 = newComponent(2, "b", true, true);
-        Study s = newStudyWithComponents(true, c1, c2); // linear
-        StudyResult sr = newStudyResult(s);
-        ComponentResult cr = newComponentResult(sr, c2, ComponentState.STARTED); // last was c2
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(cr));
-
-        try {
-            publixUtils.startComponentRun(c1, sr, "x"); // try to go back to c1
-            fail("Expected ForbiddenNonLinearFlowException");
-        } catch (ForbiddenNonLinearFlowException e) {
-            // ok
-        } catch (Exception e) {
-            fail("Unexpected exception: " + e);
-        }
-        ComponentResult last = lastElement(sr.getComponentResultList()).orElseThrow();
-        assertEquals(ComponentState.FAIL, last.getComponentState());
-        verify(componentResultDao, atLeastOnce()).merge(last);
-    }
-
-    @Test
-    public void finishStudyRun_successful() {
-        Study s = new Study();
-        StudyResult sr = newStudyResult(s);
-        Worker worker = mock(Worker.class);
-        when(worker.generateConfirmationCode()).thenReturn("CONF");
-        sr.setWorker(worker);
-        Component c = newComponent(1, "a", true, true);
-        ComponentResult current = newComponentResult(sr, c, ComponentState.STARTED);
-        ComponentResult other = newComponentResult(sr, c, ComponentState.STARTED);
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(current));
-
-        String code = publixUtils.finishStudyRun(true, "done", sr);
-        assertEquals("CONF", code);
-        assertEquals(StudyState.FINISHED, sr.getStudyState());
-        assertEquals("done", sr.getMessage());
-        assertNull(sr.getStudySessionData());
-        assertNotNull(sr.getEndDate());
-        // Component results updated and finished
-        assertEquals(ComponentState.FINISHED, current.getComponentState());
-        assertEquals(ComponentState.FINISHED, other.getComponentState());
-        verify(componentResultDao, atLeast(2)).merge(any(ComponentResult.class));
-        verify(studyResultDao).merge(sr);
-    }
-
-    @Test
-    public void finishStudyRun_unsuccessful() {
-        Study s = new Study();
-        StudyResult sr = newStudyResult(s);
-        Worker worker = mock(Worker.class);
-        when(worker.generateConfirmationCode()).thenReturn("CONF");
-        sr.setWorker(worker);
-        Component c = newComponent(1, "a", true, true);
-        ComponentResult current = newComponentResult(sr, c, ComponentState.STARTED);
-
-        when(componentResultDao.findLastByStudyResult(sr)).thenReturn(Optional.of(current));
-
-        String code = publixUtils.finishStudyRun(false, "fail", sr);
-        assertNull(code);
-        assertEquals(StudyState.FAIL, sr.getStudyState());
-        assertEquals(ComponentState.FAIL, current.getComponentState());
-        verify(studyResultDao).merge(sr);
-    }
-
-    @Test
-    public void abortStudy_Run_setsAbortedAndPurgesAndRemoves() throws IOException {
-        Study s = new Study();
-        StudyResult sr = newStudyResult(s);
-        sr.setStudySessionData("x");
-        Component c = newComponent(1, "a", true, true);
-        ComponentResult cr1 = newComponentResult(sr, c, ComponentState.STARTED);
-        ComponentResult cr2 = newComponentResult(sr, c, ComponentState.STARTED);
-
-        publixUtils.abortStudyResult("bye", sr);
-
-        assertEquals(StudyState.ABORTED, sr.getStudyState());
-        assertEquals("bye", sr.getMessage());
-        assertNull(sr.getStudySessionData());
-        assertNotNull(sr.getEndDate());
-        assertEquals(ComponentState.ABORTED, cr1.getComponentState());
-        assertEquals(ComponentState.ABORTED, cr2.getComponentState());
-        verify(componentResultDao, atLeast(2)).purgeData(anyLong());
-        verify(componentResultDao, atLeast(2)).merge(any(ComponentResult.class));
-        verify(ioUtils).removeResultUploadsDir(sr.getId());
-        verify(studyResultDao).merge(sr);
     }
 
     @Test
@@ -537,6 +609,6 @@ public class PublixUtilsTest {
         if (list == null || list.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(list.get(list.size() - 1));
+        return Optional.of(list.getLast());
     }
 }

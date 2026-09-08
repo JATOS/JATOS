@@ -6,7 +6,6 @@ import daos.common.StudyResultDao;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
-import group.GroupAdministration;
 import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.PersonalSingleWorker;
@@ -52,7 +51,6 @@ public class PersonalSinglePublixTest {
         resultCreator = mock(ResultCreator.class);
         idCookieService = mock(IdCookieService.class);
         studyLogger = mock(StudyLogger.class);
-        GroupAdministration groupAdministration = mock(GroupAdministration.class);
         StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
@@ -62,7 +60,7 @@ public class PersonalSinglePublixTest {
         IOExecutor ioExecutor = mock(IOExecutor.class);
         StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new PersonalSinglePublix(publixUtils, studyAuthorisation, resultCreator, groupAdministration,
+        publix = new PersonalSinglePublix(publixUtils, studyAuthorisation, resultCreator,
                 idCookieService, errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao,
                 studyLogger, ioUtils, ioExecutor, studyAssetsExecutor);
     }
@@ -136,7 +134,7 @@ public class PersonalSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-1/comp-uuid-1/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyRun();
+        verify(publixUtils).finishOldestStudyRuns();
         verify(resultCreator).createStudyResult(sl, worker);
         verify(idCookieService).writeIdCookie(sr);
         verify(publixUtils).setUrlQueryParameter(sr);
@@ -163,7 +161,7 @@ public class PersonalSinglePublixTest {
         assertTrue(loc.endsWith("/publix/sr-uuid-2/comp-uuid-2/start"));
 
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishOldestStudyRun();
+        verify(publixUtils, never()).finishOldestStudyRuns();
         verify(idCookieService).writeIdCookie(existing);
         verify(publixUtils).setUrlQueryParameter(existing);
         verifyNoInteractions(resultCreator);
@@ -188,7 +186,7 @@ public class PersonalSinglePublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid-3/comp-uuid-3/start"));
 
-        verify(publixUtils).finishOldestStudyRun();
+        verify(publixUtils).finishOldestStudyRuns();
         verify(idCookieService).writeIdCookie(existing);
         verifyNoInteractions(resultCreator);
     }

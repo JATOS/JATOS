@@ -90,7 +90,7 @@ public class MTPublixTest {
         StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
         publix = new MTPublix(publixUtils, studyAuthorisation, resultCreator, workerCreator,
-                groupAdministration, idCookieService, errorMessages, studyAssets, domainJsonMapper,
+                idCookieService, errorMessages, studyAssets, domainJsonMapper,
                 componentResultDao, studyResultDao, mtWorkerDao, studyLogger, ioUtils, ioExecutor,
                 studyAssetsExecutor);
 
@@ -169,7 +169,7 @@ public class MTPublixTest {
         verify(mtWorkerDao).findByMTWorkerId("mt-worker-1", WorkerType.MT);
         verify(workerCreator, never()).createAndPersistMTWorker(anyString(), anyBoolean(), any());
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResults();
+        verify(publixUtils).finishOldestStudyRuns();
         verify(resultCreator).createStudyResult(studyLink, worker);
         verify(publixUtils).setUrlQueryParameter(studyResult);
         verify(idCookieService).writeIdCookie(studyResult);
@@ -203,7 +203,7 @@ public class MTPublixTest {
         verify(mtWorkerDao).findByMTWorkerId("mt-worker-2", WorkerType.MT);
         verify(workerCreator).createAndPersistMTWorker("mt-worker-2", false, batch);
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyResults();
+        verify(publixUtils).finishOldestStudyRuns();
         verify(resultCreator).createStudyResult(studyLink, worker);
         verify(publixUtils).setUrlQueryParameter(studyResult);
         verify(idCookieService).writeIdCookie(studyResult);
@@ -273,7 +273,8 @@ public class MTPublixTest {
         StudyResult studyResult = newStudyResult(405L, "sr-uuid-mt-finish", study, batch, worker);
         Http.Request request = fakeRequest().build();
 
-        when(publixUtils.finishStudyRun(true, "done", studyResult)).thenReturn("CONFIRM-123");
+        when(publixUtils.finishStudyRun(eq(studyResult.getId()), eq(true), any(), any()))
+                .thenReturn("CONFIRM-123");
 
         Result result = publix.finishStudy(request, studyResult, true, "done");
 
@@ -281,10 +282,8 @@ public class MTPublixTest {
         assertEquals("CONFIRM-123", contentAsString(result));
 
         verify(studyAuthorisation).checkWorkerAllowedToDoStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishStudyRun(true, "done", studyResult);
-        verify(groupAdministration).leave(studyResult);
+        verify(publixUtils).finishStudyRun(eq(studyResult.getId()), eq(true), any(), any());
         verify(idCookieService).discardIdCookie(studyResult.getId());
-        verify(studyLogger).log(eq(study), contains("Finished study run"), eq(worker));
     }
 
     @Test
@@ -305,9 +304,8 @@ public class MTPublixTest {
         assertEquals("EXISTING-CONFIRMATION", contentAsString(result));
 
         verify(studyAuthorisation).checkWorkerAllowedToDoStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils, never()).finishStudyRun(anyBoolean(), any(), any());
+        verify(publixUtils, never()).finishStudyRun(any(), anyBoolean(), any(), any());
         verify(groupAdministration, never()).leave(any());
         verify(idCookieService).discardIdCookie(studyResult.getId());
-        verify(studyLogger).log(eq(study), contains("Finished study run"), eq(worker));
     }
 }

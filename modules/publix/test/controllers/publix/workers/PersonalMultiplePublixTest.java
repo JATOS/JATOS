@@ -6,7 +6,6 @@ import daos.common.StudyResultDao;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
-import group.GroupAdministration;
 import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.PersonalMultipleWorker;
@@ -50,7 +49,6 @@ public class PersonalMultiplePublixTest {
         resultCreator = mock(ResultCreator.class);
         idCookieService = mock(IdCookieService.class);
         studyLogger = mock(StudyLogger.class);
-        GroupAdministration groupAdministration = mock(GroupAdministration.class);
         StudyAssets studyAssets = mock(StudyAssets.class);
         PublixErrorMessages errorMessages = mock(PublixErrorMessages.class);
         DomainJsonMapper domainJsonMapper = mock(DomainJsonMapper.class);
@@ -61,7 +59,7 @@ public class PersonalMultiplePublixTest {
         StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
         publix = new PersonalMultiplePublix(publixUtils, studyAuthorisation, resultCreator,
-                groupAdministration, idCookieService, errorMessages, studyAssets, domainJsonMapper,
+                idCookieService, errorMessages, studyAssets, domainJsonMapper,
                 componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor, studyAssetsExecutor);
     }
 
@@ -138,7 +136,7 @@ public class PersonalMultiplePublixTest {
 
         // Verify interactions specific to PersonalMultiplePublix
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(worker), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyRun();
+        verify(publixUtils).finishOldestStudyRuns();
         verify(resultCreator).createStudyResult(sl, worker);
         verify(publixUtils).setUrlQueryParameter(sr);
         verify(idCookieService).writeIdCookie(sr);

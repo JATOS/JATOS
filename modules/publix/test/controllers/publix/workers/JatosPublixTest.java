@@ -10,7 +10,6 @@ import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.Common;
 import general.common.StudyLogger;
-import group.GroupAdministration;
 import http.common.Http.Context;
 import http.common.HttpUtils;
 import json.common.DomainJsonMapper;
@@ -53,7 +52,6 @@ public class JatosPublixTest {
     private PublixUtils publixUtils;
     private JatosStudyAuthorisation studyAuthorisation;
     private ResultCreator resultCreator;
-    private GroupAdministration groupAdministration;
     private IdCookieService idCookieService;
     private StudyAssets studyAssets;
     private StudyLogger studyLogger;
@@ -83,7 +81,6 @@ public class JatosPublixTest {
         publixUtils = mock(PublixUtils.class);
         studyAuthorisation = mock(JatosStudyAuthorisation.class);
         resultCreator = mock(ResultCreator.class);
-        groupAdministration = mock(GroupAdministration.class);
         idCookieService = mock(IdCookieService.class);
         studyAssets = mock(StudyAssets.class);
         studyLogger = mock(StudyLogger.class);
@@ -95,7 +92,7 @@ public class JatosPublixTest {
         IOExecutor ioExecutor = mock(IOExecutor.class);
         StudyAssetsExecutor studyAssetsExecutor = mock(StudyAssetsExecutor.class);
 
-        publix = new JatosPublix(publixUtils, studyAuthorisation, resultCreator, groupAdministration, idCookieService,
+        publix = new JatosPublix(publixUtils, studyAuthorisation, resultCreator, idCookieService,
                 errorMessages, studyAssets, domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils,
                 ioExecutor, studyAssetsExecutor);
 
@@ -185,7 +182,7 @@ public class JatosPublixTest {
         String loc = res.header("Location").orElse("");
         assertTrue(loc.endsWith("/publix/sr-uuid/comp-uuid-1/start"));
         verify(studyAuthorisation).checkWorkerAllowedToStartStudy(eq(jw), eq(study), eq(batch));
-        verify(publixUtils).finishOldestStudyRun();
+        verify(publixUtils).finishOldestStudyRuns();
         verify(publixUtils).setUrlQueryParameter(sr);
         verify(idCookieService).writeIdCookie(sr, JatosRun.RUN_STUDY);
     }
