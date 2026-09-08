@@ -20,8 +20,7 @@ import scala.util.Try
  * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
  */
 @Singleton
-class BatchActionHandler @Inject()(jpa: JPAApi,
-                                   batchDao: BatchDao,
+class BatchActionHandler @Inject()(batchDao: BatchDao,
                                    msgBuilder: BatchActionMsgBuilder) {
 
   private val logger: Logger = Logger(this.getClass)

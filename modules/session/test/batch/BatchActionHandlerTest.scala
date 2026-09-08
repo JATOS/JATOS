@@ -9,13 +9,10 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import play.api.libs.json._
-import play.db.jpa.JPAApi
-
-import java.util.function.Supplier
+import testutils.session.JPAMocker
 
 class BatchActionHandlerTest {
 
-  private var jpa: JPAApi = _
   private var batchDao: BatchDao = _
   private var msgBuilder: BatchActionMsgBuilder = _
   private var batchActionHandler: BatchActionHandler = _
@@ -24,15 +21,10 @@ class BatchActionHandlerTest {
 
   @Before
   def setUp(): Unit = {
-    jpa = mock(classOf[JPAApi])
-    when(jpa.withTransaction(any[Supplier[List[BatchMsg]]]())).thenAnswer(invocation => {
-      val supplier = invocation.getArgument[Supplier[List[BatchMsg]]](0)
-      supplier.get()
-    })
-
     batchDao = mock(classOf[BatchDao])
+    JPAMocker.mockDaoTransactions(null, batchDao)
     msgBuilder = mock(classOf[BatchActionMsgBuilder])
-    batchActionHandler = new BatchActionHandler(jpa, batchDao, msgBuilder)
+    batchActionHandler = new BatchActionHandler(batchDao, msgBuilder)
   }
 
   private def sessionMsg(patches: JsValue, version: Long = 1L, versioning: Boolean = true, sessionActionId: Long = 10L): BatchMsg = {
@@ -100,7 +92,7 @@ class BatchActionHandlerTest {
     val result = batchActionHandler.handleActionMsg(msg, batchId)
 
     assertEquals(List(failMsg), result)
-    verify(batchDao, never()).update(any[Batch]())
+    verify(batchDao, never()).merge(any[Batch]())
   }
 
   @Test
@@ -125,7 +117,7 @@ class BatchActionHandlerTest {
 
     assertEquals(List(patchBroadcast, ackMsg), result)
     assertEquals(3L, batch.getBatchSessionVersion) // Version incremented
-    verify(batchDao).update(batch)
+    verify(batchDao).merge(batch)
   }
 
   // =========================================================================
@@ -275,7 +267,7 @@ class BatchActionHandlerTest {
     val result = batchActionHandler.handleActionMsg(sessionMsg(patches), batchId)
 
     assertEquals(List(failMsg), result)
-    verify(batchDao, never()).update(any[Batch]())
+    verify(batchDao, never()).merge(any[Batch]())
   }
 
   // =========================================================================
