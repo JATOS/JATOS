@@ -9,7 +9,6 @@ import exceptions.common.ForbiddenException;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
-import group.GroupAdministration;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
 import models.common.*;
@@ -54,7 +53,6 @@ public class GeneralSinglePublix extends Publix implements IPublix {
                         GeneralSingleStudyAuthorisation studyAuthorisation,
                         ResultCreator resultCreator,
                         WorkerCreator workerCreator,
-                        GroupAdministration groupAdministration,
                         IdCookieService idCookieService,
                         PublixErrorMessages errorMessages,
                         StudyAssets studyAssets,
@@ -66,7 +64,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
                         GeneralSingleCookieService generalSingleCookieService,
                         IOExecutor ioExecutor,
                         StudyAssetsExecutor studyAssetsExecutor) {
-        super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+        super(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
                 domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
@@ -102,7 +100,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
         if (workerId == null) {
             worker = workerCreator.createAndPersistGeneralSingleWorker(batch);
             studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
-            publixUtils.finishOldestStudyRun();
+            publixUtils.finishOldestStudyRuns();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
             studyLogger.log(studyLink, "Started study run with " + WorkerType.GENERAL_SINGLE + " worker", worker);
         } else {
@@ -115,7 +113,7 @@ public class GeneralSinglePublix extends Publix implements IPublix {
             studyResult = publixUtils.getLastStudyResult(worker).orElseThrow(() -> new ForbiddenException(
                     "This study was run in this browser already. Although JATOS couldn't find the study result."));
             if (!idCookieService.hasIdCookie(studyResult.getId())) {
-                publixUtils.finishOldestStudyRun();
+                publixUtils.finishOldestStudyRuns();
             }
         }
         idCookieService.writeIdCookie(studyResult);

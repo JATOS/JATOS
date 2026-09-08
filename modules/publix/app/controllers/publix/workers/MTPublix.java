@@ -12,7 +12,6 @@ import exceptions.common.BadRequestException;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
-import group.GroupAdministration;
 import http.common.Http.Context;
 import http.common.HttpUtils;
 import json.common.DomainJsonMapper;
@@ -56,7 +55,6 @@ public class MTPublix extends Publix implements IPublix {
              MTStudyAuthorisation studyAuthorisation,
              ResultCreator resultCreator,
              WorkerCreator workerCreator,
-             GroupAdministration groupAdministration,
              IdCookieService idCookieService,
              PublixErrorMessages errorMessages,
              StudyAssets studyAssets,
@@ -68,7 +66,7 @@ public class MTPublix extends Publix implements IPublix {
              IOUtils ioUtils,
              IOExecutor ioContext,
              StudyAssetsExecutor studyAssetsExecutor) {
-        super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+        super(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
                 domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioContext, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
@@ -111,7 +109,7 @@ public class MTPublix extends Publix implements IPublix {
 
         studyAuthorisation.checkWorkerAllowedToStartStudy(worker, study, batch);
 
-        publixUtils.finishOldestStudyRun();
+        publixUtils.finishOldestStudyRuns();
         StudyResult studyResult = resultCreator.createStudyResult(studyLink, worker);
         publixUtils.setUrlQueryParameter(studyResult);
         idCookieService.writeIdCookie(studyResult);

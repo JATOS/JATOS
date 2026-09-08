@@ -8,7 +8,6 @@ import daos.common.StudyResultDao;
 import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.StudyLogger;
-import group.GroupAdministration;
 import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.PersonalSingleWorker;
@@ -48,7 +47,6 @@ public class PersonalSinglePublix extends Publix implements IPublix {
     PersonalSinglePublix(PublixUtils publixUtils,
                          PersonalSingleStudyAuthorisation studyAuthorisation,
                          ResultCreator resultCreator,
-                         GroupAdministration groupAdministration,
                          IdCookieService idCookieService,
                          PublixErrorMessages errorMessages,
                          StudyAssets studyAssets,
@@ -59,7 +57,7 @@ public class PersonalSinglePublix extends Publix implements IPublix {
                          IOUtils ioUtils,
                          IOExecutor ioContext,
                          StudyAssetsExecutor studyAssetsExecutor) {
-        super(publixUtils, studyAuthorisation, groupAdministration, idCookieService, errorMessages, studyAssets,
+        super(publixUtils, studyAuthorisation, idCookieService, errorMessages, studyAssets,
                 domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioContext, studyAssetsExecutor);
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
@@ -92,11 +90,11 @@ public class PersonalSinglePublix extends Publix implements IPublix {
         Optional<StudyResult> studyResultOpt = publixUtils.getLastStudyResult(worker);
         StudyResult studyResult;
         if (studyResultOpt.isEmpty()) {
-            publixUtils.finishOldestStudyRun();
+            publixUtils.finishOldestStudyRuns();
             studyResult = resultCreator.createStudyResult(studyLink, worker);
         } else {
             if (!idCookieService.hasIdCookie(studyResultOpt.get().getId())) {
-                publixUtils.finishOldestStudyRun();
+                publixUtils.finishOldestStudyRuns();
             }
             studyResult = studyResultOpt.get();
         }

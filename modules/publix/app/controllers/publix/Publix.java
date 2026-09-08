@@ -47,7 +47,6 @@ public abstract class Publix implements IPublix {
 
     protected final PublixUtils publixUtils;
     protected final StudyAuthorisation studyAuthorisation;
-    protected final GroupAdministration groupAdministration;
     protected final IdCookieService idCookieService;
     protected final PublixErrorMessages errorMessages;
     protected final StudyAssets studyAssets;
@@ -61,7 +60,6 @@ public abstract class Publix implements IPublix {
 
     public Publix(PublixUtils publixUtils,
                   StudyAuthorisation studyAuthorisation,
-                  GroupAdministration groupAdministration,
                   IdCookieService idCookieService,
                   PublixErrorMessages errorMessages,
                   StudyAssets studyAssets,
@@ -74,7 +72,6 @@ public abstract class Publix implements IPublix {
                   StudyAssetsExecutor studyAssetsExecutor) {
         this.publixUtils = publixUtils;
         this.studyAuthorisation = studyAuthorisation;
-        this.groupAdministration = groupAdministration;
         this.idCookieService = idCookieService;
         this.errorMessages = errorMessages;
         this.studyAssets = studyAssets;
