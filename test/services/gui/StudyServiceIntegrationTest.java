@@ -477,7 +477,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
         study.setAllowPreview(true);
         study.setLinearStudy(true);
         study.setGroupStudy(false);
-        s.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
+        study.setGroupSessionWriteScope(GroupSessionWriteScope.MEMBER);
         study = studyService.createAndPersistStudy(study);
 
         // Update description via updateStudy(updatedStudy)

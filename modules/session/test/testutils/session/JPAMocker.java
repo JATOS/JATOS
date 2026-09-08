@@ -34,6 +34,17 @@ public class JPAMocker {
                 block.accept(entityManager);
                 return null;
             }).when(dao).withTransaction(any(Consumer.class));
+
+            doAnswer(invocation -> {
+                Function<EntityManager, Object> block = invocation.getArgument(0);
+                return block.apply(entityManager);
+            }).when(dao).withNewTransaction(any(Function.class));
+
+            doAnswer(invocation -> {
+                Consumer<EntityManager> block = invocation.getArgument(0);
+                block.accept(entityManager);
+                return null;
+            }).when(dao).withNewTransaction(any(Consumer.class));
         }
     }
 }

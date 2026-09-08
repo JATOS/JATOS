@@ -1,16 +1,14 @@
 package group.session;
 
 import daos.common.StudyDao;
-import models.common.Study.GroupSessionWriteScope;
 import group.GroupDispatcher;
 import group.GroupDispatcherRegistry;
+import models.common.Study.GroupSessionWriteScope;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
-import play.db.jpa.JPAApi;
 import scala.Option;
-
-import java.util.function.Supplier;
+import testutils.session.JPAMocker;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
@@ -24,14 +22,10 @@ public class GroupDispatcherRegistryTest {
     @Before
     public void setUp() {
         factory = mock(GroupDispatcher.Factory.class);
-        JPAApi jpaApi = mock(JPAApi.class);
-        when(jpaApi.withTransaction(any(Supplier.class))).thenAnswer(inv -> {
-            Supplier<?> supplier = inv.getArgument(0);
-            return supplier.get();
-        });
         StudyDao studyDao = mock(StudyDao.class);
+        JPAMocker.mockDaoTransactions(null, studyDao);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
-        registry = new GroupDispatcherRegistry(factory, studyDao, jpaApi);
+        registry = new GroupDispatcherRegistry(factory, studyDao);
     }
 
     @Test

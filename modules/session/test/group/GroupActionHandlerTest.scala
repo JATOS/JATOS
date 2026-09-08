@@ -12,6 +12,7 @@ import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import play.api.libs.json._
 import play.db.jpa.JPAApi
+import testutils.session.JPAMocker
 
 import java.util.function.Supplier
 
@@ -27,16 +28,10 @@ class GroupActionHandlerTest {
 
   @Before
   def setUp(): Unit = {
-    jpa = mock(classOf[JPAApi])
-    // Make jpa.withTransaction execute the supplier directly
-    when(jpa.withTransaction(any[Supplier[List[GroupMsg]]]())).thenAnswer(invocation => {
-      val supplier = invocation.getArgument[Supplier[List[GroupMsg]]](0)
-      supplier.get()
-    })
-
     groupResultDao = mock(classOf[GroupResultDao])
+    JPAMocker.mockDaoTransactions(null, groupResultDao)
     msgBuilder = mock(classOf[GroupActionMsgBuilder])
-    groupActionHandler = new GroupActionHandler(jpa, groupResultDao, msgBuilder)
+    groupActionHandler = new GroupActionHandler(groupResultDao, msgBuilder)
   }
 
   // Helper to construct a group session GroupMsg
@@ -80,7 +75,7 @@ class GroupActionHandlerTest {
     val result = groupActionHandler.handleActionMsg(fixedMsg, groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
 
     assertEquals(GroupState.FIXED, groupResult.getGroupState)
-    verify(groupResultDao).update(groupResult)
+    verify(groupResultDao).merge(groupResult)
     assertEquals(List(expectedResponse), result)
   }
 
@@ -124,7 +119,7 @@ class GroupActionHandlerTest {
     val result = groupActionHandler.handleActionMsg(msg, groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
 
     assertEquals(List(failMsg), result)
-    verify(groupResultDao, never()).update(any[GroupResult]())
+    verify(groupResultDao, never()).merge(any[GroupResult]())
   }
 
   @Test
@@ -149,7 +144,7 @@ class GroupActionHandlerTest {
 
     assertEquals(List(patchBroadcast, ackMsg), result)
     assertEquals(3L, groupResult.getGroupSessionVersion) // Version incremented
-    verify(groupResultDao).update(groupResult)
+    verify(groupResultDao).merge(groupResult)
   }
 
   // =========================================================================
@@ -315,7 +310,7 @@ class GroupActionHandlerTest {
     val result = groupActionHandler.handleActionMsg(sessionMsg(patches), groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
 
     assertEquals(List(failMsg), result)
-    verify(groupResultDao, never()).update(any[GroupResult]())
+    verify(groupResultDao, never()).merge(any[GroupResult]())
   }
 
   // =========================================================================

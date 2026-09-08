@@ -11,7 +11,7 @@ import play.api.libs.json.Json
  */
 class GroupActionHandlerScopeTest {
 
-  private val groupActionHandler = new GroupActionHandler(null, null, null)
+  private val groupActionHandler = new GroupActionHandler(null, null)
 
   private val memberId = 123L
 
