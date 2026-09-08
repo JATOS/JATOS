@@ -5,6 +5,7 @@ import daos.common.StudyResultDao;
 import group.GroupAdministration;
 import group.GroupDispatcher;
 import group.GroupDispatcherRegistry;
+import jakarta.persistence.EntityManager;
 import models.common.Batch;
 import models.common.GroupResult;
 import models.common.Study;
@@ -14,13 +15,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import testutils.session.JPAMocker;
 
-import jakarta.persistence.EntityManager;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.function.Function;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,9 +77,14 @@ public class GroupAdministrationTest {
         Study study = groupStudy();
         StudyResult sr = newStudyResult(1L, study, batch);
 
+        when(studyResultDao.findById(sr.getId())).thenReturn(sr);
         when(groupResultDao.findFirstMaxNotReachedForUpdate(batch)).thenReturn(Optional.empty());
         // Return argument back for create
-        when(groupResultDao.persist(any(GroupResult.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(groupResultDao.persist(any(GroupResult.class))).thenAnswer(inv -> {
+            GroupResult gr = inv.getArgument(0);
+            gr.setId(10L);
+            return gr;
+        });
 
         // No dispatcher initially; sendJoinedMsg checks and is no-op if none
         when(registry.get(anyLong())).thenReturn(scala.Option.empty());
@@ -111,6 +111,7 @@ public class GroupAdministrationTest {
         GroupResult existing = new GroupResult(batch);
         existing.setId(99L);
 
+        when(studyResultDao.findById(sr.getId())).thenReturn(sr);
         when(groupResultDao.findFirstMaxNotReachedForUpdate(batch)).thenReturn(Optional.of(existing));
         when(registry.get(existing.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
 
@@ -132,14 +133,12 @@ public class GroupAdministrationTest {
         StudyResult sr1 = newStudyResult(3L, studyNonGroup, batch);
         // activeGroupResult null
         admin.leave(sr1);
-        verify(groupResultDao).withTransaction(Mockito.<Function<EntityManager, Object>>any());
-        verifyNoInteractions(studyResultDao, registry);
+        verifyNoInteractions(groupResultDao, studyResultDao, registry);
 
         // group study but no active group
         Study studyGroup = groupStudy();
         StudyResult sr2 = newStudyResult(4L, studyGroup, batch);
         admin.leave(sr2);
-        verify(groupResultDao, times(2)).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verifyNoMoreInteractions(groupResultDao, studyResultDao, registry);
     }
 

@@ -8,8 +8,8 @@ import play.api.Logger
 
 import java.sql.Timestamp
 import java.util.Date
+import java.util.function.Consumer
 import javax.inject.{Inject, Singleton}
-import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 
 /**
  * This class handles the joining, leaving, and reassigning of group members. A group's state is stored in a
@@ -30,19 +30,28 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * maxTotalMembers not reached). If there is none, create a new GroupResult.
    */
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
-    groupResultDao.withTransaction(asJavaFunction(_ => {
+    val groupResult = groupResultDao.withNewTransaction((_: EntityManager) => {
+      val managedStudyResult = studyResultDao.findById(studyResult.getId)
       val groupMaxNotReached = groupResultDao.findFirstMaxNotReachedForUpdate(batch)
         .orElseGet(() => groupResultDao.persist(new GroupResult(batch)))
 
-      groupMaxNotReached.addActiveMember(studyResult)
-      studyResult.setActiveGroupResult(groupMaxNotReached)
+      groupMaxNotReached.addActiveMember(managedStudyResult)
+      managedStudyResult.setActiveGroupResult(groupMaxNotReached)
       groupResultDao.merge(groupMaxNotReached)
-      studyResultDao.merge(studyResult)
+      studyResultDao.merge(managedStudyResult)
 
-      sendJoinedMsg(studyResult)
-
+      studyResult.setActiveGroupResult(groupMaxNotReached)
       groupMaxNotReached
-    }))
+    })
+
+    sendJoinedMsg(studyResult.getId, groupResult.getId)
+
+    groupResult
+  }
+
+  def leave(studyResultId: Long): Unit = {
+    val studyResult = studyResultDao.findById(studyResultId)
+    leave(studyResult)
   }
 
   /**
@@ -53,14 +62,15 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null) return
 
-    groupResultDao.withTransaction(asJavaFunction((_: EntityManager) => {
+    groupResultDao.withNewTransaction((_ => {
       moveActiveMemberToHistory(studyResult.getId)
       checkAndFinishGroup(groupResult.getId)
-    }))
-    // Commit and flush the membership changes immediately so subsequent operations outside this transaction see the updated group state.
-    groupResultDao.flush()
+    }): Consumer[EntityManager])
 
-    sendLeftMsg(studyResult, groupResult.getId)
+    studyResult.setActiveGroupResult(null)
+    studyResult.setHistoryGroupResult(groupResult)
+
+    sendLeftMsg(studyResult.getId, groupResult.getId)
     closeGroupChannel(studyResult.getId, groupResult.getId)
   }
 
@@ -83,10 +93,13 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    */
   def reassign(studyResult: StudyResult, batch: Batch): Boolean = {
     val originalGroupResult = studyResult.getActiveGroupResult
-    val differentGroupResultOption: Option[GroupResult] = reassignGroupResult(studyResult, batch)
-    if (differentGroupResultOption.isDefined && originalGroupResult != null) {
+    if (originalGroupResult == null) return false
+
+    val differentGroupResultOption: Option[GroupResult] = reassignGroupResult(studyResult.getId, batch)
+    if (differentGroupResultOption.isDefined) {
       val differentGroupResult = differentGroupResultOption.get
-      reassignGroupChannel(studyResult, originalGroupResult, differentGroupResult)
+      studyResult.setActiveGroupResult(differentGroupResult)
+      reassignGroupChannel(studyResult.getId, originalGroupResult.getId, differentGroupResult.getId)
       logger.info(s".reassign: studyResult ${studyResult.getId} reassigned from group" +
         s" ${originalGroupResult.getId} to group ${differentGroupResult.getId}")
       true
@@ -99,14 +112,15 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * Reassigns a study result to a different GroupResult. It looks in the database whether we have another incomplete
    * GroupResult. If there is more than one, it assigns to the one with the most active members.
    */
-  private def reassignGroupResult(studyResult: StudyResult, batch: Batch): Option[GroupResult] = {
-    groupResultDao.withTransaction(asJavaFunction(_ => {
-      val currentGroupResult = studyResult.getActiveGroupResult
-      if (currentGroupResult == null) {
-        logger.info(s".reassignGroupResult: The study result with ID ${studyResult.getId} isn't member in any group.")
+  private def reassignGroupResult(studyResultId: Long, batch: Batch): Option[GroupResult] = {
+    groupResultDao.withNewTransaction(_ => {
+      val studyResult = studyResultDao.findById(studyResultId)
+      if (studyResult == null || studyResult.getActiveGroupResult == null) {
+        logger.info(s".reassignGroupResult: The study result with ID $studyResultId isn't member in any group.")
         return None
       }
 
+      val currentGroupResult = studyResult.getActiveGroupResult
       val differentGroupResultOption = groupResultDao.findFirstDifferentMaxNotReachedForUpdate(batch, currentGroupResult)
       if (!differentGroupResultOption.isPresent) {
         logger.info(s"reassignGroupResult: Couldn't reassign the study result with ID ${studyResult.getId} to any other group.")
@@ -126,43 +140,39 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
       checkAndFinishGroup(currentGroupResult.getId)
 
       Option(differentGroupResult)
-    }))
+    })
   }
 
   /**
    * Sends a message to each member of the group. This message tells that this member has joined the GroupResult.
    */
-  private def sendJoinedMsg(studyResult: StudyResult): Unit = {
-    val groupResult = studyResult.getActiveGroupResult
-    if (groupResult != null) {
-      val groupDispatcherOption = groupDispatcherRegistry.get(groupResult.getId)
-      if (groupDispatcherOption.isDefined)
-        groupDispatcherOption.get.joined(studyResult.getId)
-    }
+  private def sendJoinedMsg(studyResultId: Long, groupResultId: Long): Unit = {
+    val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
+    if (groupDispatcherOption.isDefined)
+      groupDispatcherOption.get.joined(studyResultId)
   }
 
   /**
    * Sends a message to each member of the GroupResult that this member (specified by StudyResult)
    * has left the GroupResult.
    */
-  private def sendLeftMsg(studyResult: StudyResult, groupResultId: Long): Unit = {
+  private def sendLeftMsg(studyResultId: Long, groupResultId: Long): Unit = {
     val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
-    if (groupDispatcherOption.isDefined) {
-      groupDispatcherOption.get.left(studyResult.getId)
-    }
+    if (groupDispatcherOption.isDefined)
+      groupDispatcherOption.get.left(studyResultId)
   }
 
   /**
    * Reassigns the given group channel that belongs to the given StudyResult. It moves the group channel from
    * the current GroupDispatcher to the different one.
    */
-  private def reassignGroupChannel(studyResult: StudyResult,
-                                   currentGroupResult: GroupResult,
-                                   differentGroupResult: GroupResult): Unit = {
-    val currentDispatcher = groupDispatcherRegistry.get(currentGroupResult.getId).get
+  private def reassignGroupChannel(studyResultId: Long,
+                                   currentGroupResultId: Long,
+                                   differentGroupResultId: Long): Unit = {
+    val currentDispatcher = groupDispatcherRegistry.get(currentGroupResultId).get
     // Get or create, because if the dispatcher was empty, it was shutdown and has to be recreated
-    val differentDispatcher = groupDispatcherRegistry.getOrRegister(differentGroupResult.getId)
-    currentDispatcher.reassignChannel(studyResult.getId, differentDispatcher)
+    val differentDispatcher = groupDispatcherRegistry.getOrRegister(differentGroupResultId)
+    currentDispatcher.reassignChannel(studyResultId, differentDispatcher)
   }
 
   /**
@@ -172,12 +182,14 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
   private def moveActiveMemberToHistory(studyResultId: Long): Unit = {
     val studyResult = studyResultDao.findById(studyResultId)
     val groupResult = studyResult.getActiveGroupResult
-    groupResult.removeActiveMember(studyResult)
-    groupResult.addHistoryMember(studyResult)
-    studyResult.setActiveGroupResult(null)
-    studyResult.setHistoryGroupResult(groupResult)
-    groupResultDao.merge(groupResult)
-    studyResultDao.merge(studyResult)
+    if (groupResult != null) {
+      groupResult.removeActiveMember(studyResult)
+      groupResult.addHistoryMember(studyResult)
+      studyResult.setActiveGroupResult(null)
+      studyResult.setHistoryGroupResult(groupResult)
+      groupResultDao.merge(groupResult)
+      studyResultDao.merge(studyResult)
+    }
   }
 
   /**
