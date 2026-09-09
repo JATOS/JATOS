@@ -13,7 +13,6 @@ import play.db.jpa.JPAApi
 
 import java.io.IOException
 import javax.inject.{Inject, Singleton}
-import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 
 /**
  * Utility class that builds BatchMsgs. So it mostly handles the JSON creation.

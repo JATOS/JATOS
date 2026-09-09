@@ -9,12 +9,8 @@ import models.common.Batch
 import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.db.jpa.JPAApi
 
 import javax.inject.{Inject, Singleton}
-import scala.jdk.javaapi.FunctionConverters.asJavaFunction
-import scala.jdk.javaapi.FunctionConverters.asJavaSupplier
-import scala.util.Try
 
 /**
  * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
@@ -46,7 +42,7 @@ class BatchActionHandler @Inject()(batchDao: BatchDao,
    * Applies JSON Patch for the batch session and tells everyone in the batch
    */
   private def handlePatch(json: JsObject, batchId: Long): List[BatchMsg] = {
-    batchDao.withTransaction(asJavaFunction(_ => {
+    batchDao.withTransaction(_ => {
       val batch = batchDao.findById(batchId)
       if (batch == null) {
         val errorMsg = s"Couldn't find batch with ID $batchId in database."
@@ -80,7 +76,7 @@ class BatchActionHandler @Inject()(batchDao: BatchDao,
           val errorMsg = s"Failed to apply patch: ${e.getMessage}"
           List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
       }
-    }))
+    })
   }
 
   private def patchSessionData(patches: JsValue, batch: Batch): JsValue = {

@@ -12,7 +12,6 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 
 import javax.inject.{Inject, Singleton}
-import scala.jdk.javaapi.FunctionConverters.asJavaFunction
 import scala.concurrent.Future
 
 /**
@@ -193,7 +192,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    */
   def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action.async { request =>
     inIOContext(request) {
-      studyResultDao.withTransaction(asJavaFunction(_ => {
+      studyResultDao.withTransaction(_ => {
         try {
           val studyResult = fetchStudyResult(studyResultUuid)
           studyResult.getWorkerType match {
@@ -217,7 +216,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
             logger.error(".leaveGroup: Exception during leaving a group channel", e)
             InternalServerError
         }
-      }))
+      })
     }
   }
 

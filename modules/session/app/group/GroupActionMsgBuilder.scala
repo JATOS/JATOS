@@ -11,8 +11,6 @@ import play.api.libs.json._
 
 import javax.inject.{Inject, Singleton}
 import scala.jdk.CollectionConverters._
-import scala.jdk.javaapi.FunctionConverters.asJavaFunction
-
 
 /**
  * Utility class that builds GroupMsgs. So it mostly handles the JSON creation.

@@ -5,7 +5,6 @@ import com.flipkart.zjsonpatch.JsonPatch
 import com.google.common.base.Strings
 import daos.common.GroupResultDao
 import group.GroupDispatcher.{GroupAction, GroupActionJsonKey, GroupMsg, TellWhom}
-import jakarta.persistence.EntityManager
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
 import models.common.Study.GroupSessionWriteScope
@@ -13,8 +12,6 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
 import javax.inject.{Inject, Singleton}
-import scala.jdk.javaapi.FunctionConverters.asJavaFunction
-import scala.util.Try
 
 /**
  * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
@@ -57,7 +54,7 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
                           groupResultId: Long,
                           studyResultId: Long,
                           scope: GroupSessionWriteScope): List[GroupMsg] = {
-    groupResultDao.withTransaction(asJavaFunction(_ => {
+    groupResultDao.withTransaction(_ => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult == null) {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
@@ -99,7 +96,7 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
           val errorMsg = s"Failed to apply patch: ${e.getMessage}"
           List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
       }
-    }))
+    })
   }
 
   /**
@@ -177,7 +174,7 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
    * members
    */
   private def handleActionFix(groupResultId: Long): List[GroupMsg] = {
-    groupResultDao.withTransaction(asJavaFunction((_: EntityManager) => {
+    groupResultDao.withTransaction(_ => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)
@@ -187,7 +184,7 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
         List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))
       }
-    }))
+    })
   }
 
 }
