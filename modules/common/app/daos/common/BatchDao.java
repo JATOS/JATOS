@@ -125,7 +125,6 @@ public class BatchDao extends AbstractDao {
         return currentCount > batch.getMaxTotalWorkers();
     }
 
-    // todo in the past we had an exception with the "select 1 from BatchWorkerMap ..."
     public void addWorkerToBatch(Long batchId, Long workerId) {
         withTransaction(em -> {
             //noinspection SqlResolve
