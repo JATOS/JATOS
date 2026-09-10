@@ -1,10 +1,10 @@
 package group
 
-import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import com.google.inject.assistedinject.Assisted
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
 import models.common.Study.GroupSessionWriteScope
+import org.apache.pekko.actor.{ActorRef, PoisonPill}
 import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Json}
@@ -102,8 +102,7 @@ object GroupDispatcher {
 
 }
 
-class GroupDispatcher @Inject()(actorSystem: ActorSystem,
-                                dispatcherRegistry: GroupDispatcherRegistry,
+class GroupDispatcher @Inject()(dispatcherRegistry: GroupDispatcherRegistry,
                                 actionHandler: GroupActionHandler,
                                 actionMsgBuilder: GroupActionMsgBuilder,
                                 @Assisted groupResultId: Long,
@@ -180,8 +179,9 @@ class GroupDispatcher @Inject()(actorSystem: ActorSystem,
     logger.debug(s".poisonChannel: groupResultId $groupResultId, studyResultId $studyResultId")
     val channelOption = channelRegistry.getChannelActor(studyResultId)
     if (channelOption.isDefined) {
-      channelOption.get ! GroupMsg(Json.obj(GroupActionJsonKey.Action.toString -> GroupAction.Closed))
-      actorSystem.stop(channelOption.get)
+      val channel = channelOption.get
+      channel ! GroupMsg(Json.obj(GroupActionJsonKey.Action.toString -> GroupAction.Closed))
+      channel ! PoisonPill
       unregisterChannel(studyResultId)
       logger.debug(s".poisonChannel: groupResultId $groupResultId, studyResultId $studyResultId, " + "stopped and unregistered channel")
     } else {
