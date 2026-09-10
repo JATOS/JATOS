@@ -11,14 +11,10 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import play.api.libs.json._
-import play.db.jpa.JPAApi
 import testutils.session.JPAMocker
-
-import java.util.function.Supplier
 
 class GroupActionHandlerTest {
 
-  private var jpa: JPAApi = _
   private var groupResultDao: GroupResultDao = _
   private var msgBuilder: GroupActionMsgBuilder = _
   private var groupActionHandler: GroupActionHandler = _

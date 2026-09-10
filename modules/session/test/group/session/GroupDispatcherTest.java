@@ -51,7 +51,8 @@ public class GroupDispatcherTest {
 
         @Override
         public Receive createReceive() {
-            return receiveBuilder().matchAny(msg -> mailbox.offer(msg)).build();
+            //noinspection ResultOfMethodCallIgnored
+            return receiveBuilder().matchAny(mailbox::offer).build();
         }
     }
 
@@ -71,7 +72,7 @@ public class GroupDispatcherTest {
         registry = mock(GroupDispatcherRegistry.class);
         actionHandler = mock(GroupActionHandler.class);
         msgBuilder = mock(GroupActionMsgBuilder.class);
-        dispatcher = new GroupDispatcher(system, registry, actionHandler, msgBuilder, groupResultId,
+        dispatcher = new GroupDispatcher(registry, actionHandler, msgBuilder, groupResultId,
                 GroupSessionWriteScope.SHARED);
     }
 
@@ -230,7 +231,7 @@ public class GroupDispatcherTest {
 
     @Test
     public void reassignChannel_movesChannelAndTriggersJoinedLeft() {
-        GroupDispatcher different = spy(new GroupDispatcher(system, registry, actionHandler, msgBuilder,
+        GroupDispatcher different = spy(new GroupDispatcher(registry, actionHandler, msgBuilder,
                 groupResultId + 1, GroupSessionWriteScope.SHARED));
         GroupDispatcher spyDispatcher = spy(dispatcher);
 

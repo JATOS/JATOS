@@ -31,7 +31,7 @@ class BatchDispatcherTestScala {
                             registry: BatchDispatcherRegistry = new SilentRegistry(BatchDispatcherTestScala.NoopFactory),
                             handler: BatchActionHandler = new StubHandler(Nil),
                             builder: BatchActionMsgBuilder = new StubBuilder()): BatchDispatcher = {
-    new BatchDispatcher(system, registry, handler, builder, batchId)
+    new BatchDispatcher(registry, handler, builder, batchId)
   }
 
   @Test

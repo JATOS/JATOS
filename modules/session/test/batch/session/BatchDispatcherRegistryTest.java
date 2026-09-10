@@ -23,7 +23,7 @@ public class BatchDispatcherRegistryTest {
         final BatchDispatcherRegistry[] holder = new BatchDispatcherRegistry[1];
         BatchDispatcher.Factory registryAwareFactory = batchId -> {
             // Pass null for non-essential dependencies: tests only verify identity semantics.
-            return new BatchDispatcher(null, holder[0], null, null, batchId);
+            return new BatchDispatcher(holder[0], null, null, batchId);
         };
         holder[0] = new BatchDispatcherRegistry(registryAwareFactory);
         return holder[0];
@@ -99,7 +99,7 @@ public class BatchDispatcherRegistryTest {
         assertTrue("Threads did not finish in time", done.await(5, TimeUnit.SECONDS));
 
         assertFalse(refs.isEmpty());
-        BatchDispatcher first = refs.get(0);
+        BatchDispatcher first = refs.getFirst();
         for (BatchDispatcher r : refs) {
             assertEquals("All threads should see same dispatcher", first, r);
         }
