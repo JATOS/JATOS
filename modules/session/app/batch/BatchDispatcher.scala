@@ -1,9 +1,9 @@
 package batch
 
-import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import batch.BatchDispatcher.TellWhom.TellWhom
 import batch.BatchDispatcher._
 import com.google.inject.assistedinject.Assisted
+import org.apache.pekko.actor.{ActorRef, PoisonPill}
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 
@@ -77,8 +77,7 @@ object BatchDispatcher {
 
 }
 
-class BatchDispatcher @Inject()(actorSystem: ActorSystem,
-                                dispatcherRegistry: BatchDispatcherRegistry,
+class BatchDispatcher @Inject()(dispatcherRegistry: BatchDispatcherRegistry,
                                 actionHandler: BatchActionHandler,
                                 actionMsgBuilder: BatchActionMsgBuilder,
                                 @Assisted batchId: Long) {
@@ -129,8 +128,9 @@ class BatchDispatcher @Inject()(actorSystem: ActorSystem,
     logger.debug(s".poisonChannel: batchId $batchId, studyResultId $studyResultId")
     val channelOption = channelRegistry.getChannel(studyResultId)
     if (channelOption.isDefined) {
-      channelOption.get ! BatchMsg(Json.obj(BatchActionJsonKey.Action.toString -> BatchAction.Closed))
-      actorSystem.stop(channelOption.get)
+      val channel = channelOption.get
+      channel ! BatchMsg(Json.obj(BatchActionJsonKey.Action.toString -> BatchAction.Closed))
+      channel ! PoisonPill
       unregisterChannel(studyResultId)
       logger.debug(s".poisonChannel: batchId $batchId, studyResultId $studyResultId, " + "stopped and unregistered channel")
     }  else {

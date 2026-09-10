@@ -1,5 +1,6 @@
 package services.publix;
 
+import batch.BatchDispatcherRegistry;
 import controllers.publix.workers.JatosPublix;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -39,6 +40,7 @@ public class PublixUtils {
 
     private final ResultCreator resultCreator;
     private final IdCookieService idCookieService;
+    private final BatchDispatcherRegistry batchDispatcherRegistry;
     private final GroupAdministration groupAdministration;
     private final StudyResultDao studyResultDao;
     private final ComponentDao componentDao;
@@ -52,6 +54,7 @@ public class PublixUtils {
     @Inject
     public PublixUtils(ResultCreator resultCreator,
                        IdCookieService idCookieService,
+                       BatchDispatcherRegistry batchDispatcherRegistry,
                        GroupAdministration groupAdministration,
                        StudyResultDao studyResultDao,
                        ComponentDao componentDao,
@@ -63,6 +66,7 @@ public class PublixUtils {
                        DefaultJson defaultJson) {
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
+        this.batchDispatcherRegistry = batchDispatcherRegistry;
         this.groupAdministration = groupAdministration;
         this.studyResultDao = studyResultDao;
         this.componentDao = componentDao;
@@ -252,9 +256,10 @@ public class PublixUtils {
         // We need separate transactions for leaving the group and finishing the study result.
         groupAdministration.leave(studyResultId);
         return studyResultDao.withTransaction((em -> {
-            StudyResult managedStudyResult = studyResultDao.findById(studyResultId);
-            String confirmationCode = finishStudyResult(successful, studyResultMsg, managedStudyResult);
-            studyLogger.log(managedStudyResult.getStudy(), studyLoggerMsg, managedStudyResult.getWorker());
+            StudyResult studyResult = studyResultDao.findById(studyResultId);
+            batchDispatcherRegistry.closeBatchChannel(studyResult.getBatch().getId(), studyResultId);
+            String confirmationCode = finishStudyResult(successful, studyResultMsg, studyResult);
+            studyLogger.log(studyResult.getStudy(), studyLoggerMsg, studyResult.getWorker());
             return confirmationCode;
         }));
     }
@@ -264,6 +269,7 @@ public class PublixUtils {
         groupAdministration.leave(studyResultId);
         studyResultDao.withNewTransaction((em -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
+            batchDispatcherRegistry.closeBatchChannel(studyResult.getBatch().getId(), studyResultId);
             abortStudyResult(studyResultMsg, studyResult);
             studyLogger.log(studyResult.getStudy(), studyLoggerMsg, studyResult.getWorker());
         }));

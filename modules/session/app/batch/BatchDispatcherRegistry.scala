@@ -47,4 +47,11 @@ class BatchDispatcherRegistry @Inject()(batchDispatcherFactory: BatchDispatcher.
     }
   }
 
+  /*
+   * Closes (poisons) the batch channel for the given study result ID in the specified batch.
+   */
+  def closeBatchChannel(batchId: Long, studyResultId: Long): Unit = {
+    get(batchId).foreach(_.poisonChannel(studyResultId))
+  }
+
 }
