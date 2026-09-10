@@ -56,21 +56,11 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
     studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
 
     // To be sure, check if there is already a batch channel and close the old one before opening a new one.
-    closeBatchChannel(batch.getId, studyResult.getId)
+    batchDispatcherRegistry.closeBatchChannel(batch.getId, studyResult.getId)
 
     // Get the BatchDispatcher that will handle this batch.
     val batchDispatcher = batchDispatcherRegistry.getOrRegister(batch.getId)
     ActorFlow.actorRef { out => Props(new BatchChannelActor(out, studyResult.getId, batchDispatcher)) }
-  }
-
-  /**
-   * Closes the batch channel that belongs to the given study result ID.
-   */
-  private def closeBatchChannel(batchId: Long, studyResultId: Long): Unit = {
-    val batchDispatcherOption = batchDispatcherRegistry.get(batchId)
-    if (batchDispatcherOption.isDefined) {
-      batchDispatcherOption.get.poisonChannel(studyResultId)
-    }
   }
 
 }
