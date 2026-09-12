@@ -6,8 +6,6 @@ maintainer := "support@jatos.org"
 Universal / packageName := "jatos"
 Docker / packageName := "jatos/jatos"
 
-PlayKeys.externalizeResources := false
-
 // Submodule jatos-common: common utils for JSON, disk IO and such
 lazy val common = (project in file("modules/common"))
   .enablePlugins(PlayJava, PlayScala, BuildInfoPlugin)
