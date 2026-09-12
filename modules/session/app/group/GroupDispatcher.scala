@@ -49,6 +49,7 @@ object GroupDispatcher {
   //noinspection TypeAnnotation
   object GroupAction extends Enumeration {
     type GroupAction = Value
+    val Ready = Value("READY") // jatos.js signals that the group channel is ready (comes before OPENED)
     val Joined = Value("JOINED") // Signals to every group member that a new member joined
     val Left = Value("LEFT") // Signals to every member that a member left
     val Opened = Value("OPENED") // // Signals to every member that a new group channel opened

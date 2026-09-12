@@ -27,7 +27,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     /**
      * jatos.js version
      */
-    jatos.version = "@JATOS_VERSION@";
+    jatos.version = "3.11.1";
     /**
      * How long in ms should JATOS wait before retrying the HTTP call.
      */
@@ -597,6 +597,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             ((window.location.protocol === "https:") ? "wss://" : "ws://") +
             window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/batch/open");
         batchChannel.onopen = function () {
+            batchChannel.send('{"action":"READY"}');
             batchChannelHeartbeat();
             batchChannelClosedCheck();
             // The actual batch channel opening is done when we have the
@@ -711,10 +712,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             // Batch channel is alive:  clear all heartbeat timeouts
             // and set batchChannelAlive flag and fire batchChannelAliveEvent
             clearBatchChannelHeartbeatTimeoutTimers();
-            if (!batchChannelAlive) {
-                batchChannelAlive = true;
-                window.dispatchEvent(batchChannelAliveEvent);
-            }
+            setBatchChannelAlive();
             return;
         }
         if (typeof batchMsg.patches != 'undefined') {
@@ -748,6 +746,9 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      */
     function handleBatchAction(batchMsg) {
         switch (batchMsg.action) {
+            case "OPENED":
+                setBatchChannelAlive();
+                break;
             case "SESSION":
                 // Call onJatosBatchSession with JSON Patch's path and
                 // op (operation) for each patch
@@ -779,6 +780,16 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             case "ERROR":
                 console.error(batchMsg.errorMsg);
                 break;
+        }
+    }
+
+    /**
+     * Marks the batch channel as alive and fires the corresponding event once.
+     */
+    function setBatchChannelAlive() {
+        if (!batchChannelAlive) {
+            batchChannelAlive = true;
+            window.dispatchEvent(batchChannelAliveEvent);
         }
     }
 
@@ -1591,6 +1602,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             ((window.location.protocol === "https:") ? "wss://" : "ws://") +
             window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join");
         groupChannel.onopen = function () {
+            groupChannel.send('{"action":"READY"}');
             groupChannelHeartbeat();
             groupChannelClosedCheck();
             // The actual group channel opening is done when we have the current

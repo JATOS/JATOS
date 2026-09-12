@@ -1,5 +1,6 @@
 package group
 
+import group.GroupDispatcher.GroupActionJsonKey.Action
 import org.apache.pekko.actor.{Actor, ActorRef}
 import group.GroupDispatcher._
 import play.api.libs.json.{JsObject, Json}
@@ -21,24 +22,36 @@ class GroupChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
                                   private var groupDispatcher: GroupDispatcher) extends Actor {
 
+  private var registered = false
+
   val pong: JsObject = Json.obj("heartbeat" -> "pong")
 
-  override def preStart(): Unit = groupDispatcher.registerChannel(studyResultId, this)
-
-  override def postStop(): Unit = groupDispatcher.unregisterChannel(studyResultId)
+  override def postStop(): Unit = {
+    if (registered) groupDispatcher.unregisterChannel(studyResultId)
+  }
 
   override def toString: String = studyResultId.toString
 
   def setGroupDispatcher(groupDispatcher: GroupDispatcher): Unit = this.groupDispatcher = groupDispatcher
 
   def receive: Receive = {
+
+    case msg: JsObject if (msg \ Action.toString).asOpt[String].contains(GroupAction.Ready.toString) =>
+      // If we receive a "Ready" message, register with the GroupDispatcher
+      if (!registered) {
+        registered = true
+        groupDispatcher.registerChannel(studyResultId, this)
+      }
+
     case msg: JsObject if msg.keys.contains("heartbeat") =>
       // If we receive a heartbeat ping, answer directly with a pong
       out ! pong
+
     case json: JsObject =>
       // If we receive a JsonNode (only from the client) wrap it in a GroupMsg and forward it to
       // the GroupDispatcher
       groupDispatcher.handleGroupMsg(GroupMsg(json), studyResultId, self)
+
     case msg: GroupMsg =>
       // If we receive a GroupMsg (only from the GroupDispatcher) send the wrapped JsonNode to
       // the client

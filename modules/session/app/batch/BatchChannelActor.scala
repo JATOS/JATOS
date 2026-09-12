@@ -1,7 +1,8 @@
 package batch
 
-import org.apache.pekko.actor.{Actor, ActorRef}
+import batch.BatchDispatcher.BatchActionJsonKey.Action
 import batch.BatchDispatcher._
+import org.apache.pekko.actor.{Actor, ActorRef}
 import play.api.libs.json.{JsObject, Json}
 
 import javax.inject.Inject
@@ -21,20 +22,32 @@ class BatchChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
                                   batchDispatcher: BatchDispatcher) extends Actor {
 
-  override def preStart(): Unit = batchDispatcher.registerChannel(studyResultId, self)
+  private var registered = false
 
-  override def postStop(): Unit = batchDispatcher.unregisterChannel(studyResultId)
+  override def postStop(): Unit = {
+    if (registered) batchDispatcher.unregisterChannel(studyResultId)
+  }
 
   val pong: JsObject = Json.obj("heartbeat" -> "pong")
 
   def receive: Receive = {
+
+    case msg: JsObject if (msg \ Action.toString).asOpt[String].contains(BatchAction.Ready.toString) =>
+      // If we receive a "Ready" message, register with the BatchDispatcher
+      if (!registered) {
+        registered = true
+        batchDispatcher.registerChannel(studyResultId, self)
+      }
+
     case msg: JsObject if msg.keys.contains("heartbeat") =>
       // If we receive a heartbeat ping, answer directly with a pong
       out ! pong
+
     case msg: JsObject =>
       // If we receive an JSON object (can only come from the client), wrap it in a
       // BatchMsg and forward it to the BatchDispatcher
       batchDispatcher.handleActionMsg(BatchMsg(msg), studyResultId, self)
+
     case msg: BatchMsg =>
       // If we receive a BatchMsg (can only come from the BatchDispatcher),
       // send the unwrapped JSON to the client

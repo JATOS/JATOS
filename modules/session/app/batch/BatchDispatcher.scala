@@ -61,8 +61,9 @@ object BatchDispatcher {
   //noinspection TypeAnnotation
   object BatchAction extends Enumeration {
     type BatchAction = Value
-    val Opened = Value("OPENED") // Signals the opening of a batch channel
-    val Closed = Value("CLOSED") // Signals the closing of a batch channel
+    val Ready = Value("READY") // jatos.js signals that the batch channel is ready (comes before OPENED)
+    val Opened = Value("OPENED") // Signals that the batch channel was opened
+    val Closed = Value("CLOSED") // Signals that the batch channel was closed
     val Session = Value("SESSION") // Signals this message contains a batch session update
     val SessionAck = Value("SESSION_ACK") // Signals that the session update was successful
     val SessionFail = Value("SESSION_FAIL") // Signals that the session update failed
