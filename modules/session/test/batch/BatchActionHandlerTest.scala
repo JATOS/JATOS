@@ -7,9 +7,12 @@ import org.junit.Assert._
 import org.junit.{Before, Test}
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
+import org.mockito.invocation.InvocationOnMock
 import org.mockito.Mockito._
 import play.api.libs.json._
 import testutils.session.JPAMocker
+
+import java.lang
 
 class BatchActionHandlerTest {
 
@@ -23,6 +26,15 @@ class BatchActionHandlerTest {
   def setUp(): Unit = {
     batchDao = mock(classOf[BatchDao])
     JPAMocker.mockDaoTransactions(null, batchDao)
+    // Unless a test overrides this, simulate a successful compare-and-set update.
+    when(batchDao.updateBatchSession(
+      ArgumentMatchers.eq(lang.Long.valueOf(batchId)),
+      any[lang.Long](),
+      anyString()))
+      .thenAnswer((invocation: InvocationOnMock) => {
+        val expectedVersion = invocation.getArgument[lang.Long](1)
+        lang.Long.valueOf(expectedVersion + 1L)
+      })
     msgBuilder = mock(classOf[BatchActionMsgBuilder])
     batchActionHandler = new BatchActionHandler(batchDao, msgBuilder)
   }
@@ -92,7 +104,7 @@ class BatchActionHandlerTest {
     val result = batchActionHandler.handleActionMsg(msg, batchId)
 
     assertEquals(List(failMsg), result)
-    verify(batchDao, never()).merge(any[Batch]())
+    verify(batchDao, never()).updateBatchSession(anyLong(), anyLong(), anyString())
   }
 
   @Test
@@ -117,7 +129,93 @@ class BatchActionHandlerTest {
 
     assertEquals(List(patchBroadcast, ackMsg), result)
     assertEquals(3L, batch.getBatchSessionVersion) // Version incremented
-    verify(batchDao).merge(batch)
+    verify(batchDao).updateBatchSession(batchId, 2L, """{"a":1,"b":2}""")
+  }
+
+  @Test
+  def handleActionMsg_compareAndSetConflictWithVersioningEnabled_failsWithoutRetry(): Unit = {
+    val originalBatch = new Batch()
+    originalBatch.setId(batchId)
+    originalBatch.setBatchSessionData("""{"a":1}""")
+    originalBatch.setBatchSessionVersion(1L)
+
+    val concurrentlyUpdatedBatch = new Batch()
+    concurrentlyUpdatedBatch.setId(batchId)
+    concurrentlyUpdatedBatch.setBatchSessionData("""{"a":1,"other":true}""")
+    concurrentlyUpdatedBatch.setBatchSessionVersion(2L)
+
+    when(batchDao.findById(batchId)).thenReturn(originalBatch, concurrentlyUpdatedBatch)
+    when(batchDao.updateBatchSession(
+      ArgumentMatchers.eq(lang.Long.valueOf(batchId)),
+      ArgumentMatchers.eq(lang.Long.valueOf(1L)),
+      anyString())).thenReturn(null)
+
+    val failMsg = BatchMsg(Json.obj("action" -> "SESSION_FAIL"))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(concurrentlyUpdatedBatch),
+      ArgumentMatchers.eq(BatchAction.SessionFail),
+      ArgumentMatchers.eq(10L),
+      any(),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
+      .thenReturn(failMsg)
+
+    val patches = Json.arr(Json.obj("op" -> "add", "path" -> "/b", "value" -> 2))
+    //noinspection RedundantDefaultArgument
+    val result = batchActionHandler.handleActionMsg(
+      sessionMsg(patches, version = 1L, versioning = true), batchId)
+
+    assertEquals(List(failMsg), result)
+    verify(batchDao, times(1)).updateBatchSession(batchId, 1L, """{"a":1,"b":2}""")
+    verify(batchDao, times(2)).findById(batchId)
+  }
+
+  @Test
+  def handleActionMsg_compareAndSetConflictWithVersioningDisabled_reloadsReappliesAndRetries(): Unit = {
+    val originalBatch = new Batch()
+    originalBatch.setId(batchId)
+    originalBatch.setBatchSessionData("""{"a":1}""")
+    originalBatch.setBatchSessionVersion(1L)
+
+    val concurrentlyUpdatedBatch = new Batch()
+    concurrentlyUpdatedBatch.setId(batchId)
+    concurrentlyUpdatedBatch.setBatchSessionData("""{"a":1,"other":true}""")
+    concurrentlyUpdatedBatch.setBatchSessionVersion(2L)
+
+    when(batchDao.findById(batchId)).thenReturn(originalBatch, concurrentlyUpdatedBatch)
+    when(batchDao.updateBatchSession(
+      ArgumentMatchers.eq(lang.Long.valueOf(batchId)),
+      ArgumentMatchers.eq(lang.Long.valueOf(1L)),
+      anyString())).thenReturn(null)
+    when(batchDao.updateBatchSession(
+      ArgumentMatchers.eq(lang.Long.valueOf(batchId)),
+      ArgumentMatchers.eq(lang.Long.valueOf(2L)),
+      anyString())).thenReturn(lang.Long.valueOf(3L))
+
+    val patches = Json.arr(Json.obj("op" -> "add", "path" -> "/b", "value" -> 2))
+    val ackMsg = BatchMsg(Json.obj("action" -> "SESSION_ACK"))
+    val patchBroadcast = BatchMsg(Json.obj("action" -> "SESSION"))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(concurrentlyUpdatedBatch),
+      ArgumentMatchers.eq(BatchAction.SessionAck),
+      ArgumentMatchers.eq(10L),
+      ArgumentMatchers.eq(None),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
+      .thenReturn(ackMsg)
+    when(msgBuilder.buildSessionPatch(
+      ArgumentMatchers.eq(concurrentlyUpdatedBatch),
+      ArgumentMatchers.eq(patches),
+      ArgumentMatchers.eq(TellWhom.All)))
+      .thenReturn(patchBroadcast)
+
+    val result = batchActionHandler.handleActionMsg(
+      sessionMsg(patches, version = 99L, versioning = false), batchId)
+
+    assertEquals(List(patchBroadcast, ackMsg), result)
+    verify(batchDao).updateBatchSession(batchId, 1L, """{"a":1,"b":2}""")
+    verify(batchDao).updateBatchSession(batchId, 2L, """{"a":1,"other":true,"b":2}""")
+    assertEquals(3L, concurrentlyUpdatedBatch.getBatchSessionVersion)
+    assertEquals(Json.obj("a" -> 1, "other" -> true, "b" -> 2),
+      Json.parse(concurrentlyUpdatedBatch.getBatchSessionData))
   }
 
   // =========================================================================
@@ -267,7 +365,7 @@ class BatchActionHandlerTest {
     val result = batchActionHandler.handleActionMsg(sessionMsg(patches), batchId)
 
     assertEquals(List(failMsg), result)
-    verify(batchDao, never()).merge(any[Batch]())
+    verify(batchDao, never()).updateBatchSession(anyLong(), anyLong(), anyString())
   }
 
   // =========================================================================

@@ -9,6 +9,7 @@ import org.junit.Assert._
 import org.junit.{Before, Test}
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
+import org.mockito.invocation.InvocationOnMock
 import org.mockito.Mockito._
 import play.api.libs.json._
 import testutils.session.JPAMocker
@@ -26,6 +27,15 @@ class GroupActionHandlerTest {
   def setUp(): Unit = {
     groupResultDao = mock(classOf[GroupResultDao])
     JPAMocker.mockDaoTransactions(null, groupResultDao)
+    // Unless a test overrides this, simulate a successful compare-and-set update.
+    when(groupResultDao.updateGroupSession(
+      ArgumentMatchers.eq(java.lang.Long.valueOf(groupResultId)),
+      any[java.lang.Long](),
+      anyString()))
+      .thenAnswer((invocation: InvocationOnMock) => {
+        val expectedVersion = invocation.getArgument[java.lang.Long](1)
+        java.lang.Long.valueOf(expectedVersion + 1L)
+      })
     msgBuilder = mock(classOf[GroupActionMsgBuilder])
     groupActionHandler = new GroupActionHandler(groupResultDao, msgBuilder)
   }
@@ -115,7 +125,7 @@ class GroupActionHandlerTest {
     val result = groupActionHandler.handleActionMsg(msg, groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
 
     assertEquals(List(failMsg), result)
-    verify(groupResultDao, never()).merge(any[GroupResult]())
+    verify(groupResultDao, never()).updateGroupSession(anyLong(), anyLong(), anyString())
   }
 
   @Test
@@ -140,7 +150,96 @@ class GroupActionHandlerTest {
 
     assertEquals(List(patchBroadcast, ackMsg), result)
     assertEquals(3L, groupResult.getGroupSessionVersion) // Version incremented
-    verify(groupResultDao).merge(groupResult)
+    verify(groupResultDao).updateGroupSession(groupResultId, 2L, """{"a":1,"b":2}""")
+  }
+
+  @Test
+  def handleActionMsg_compareAndSetConflictWithVersioningEnabled_failsWithoutRetry(): Unit = {
+    val originalGroupResult = new GroupResult()
+    originalGroupResult.setId(groupResultId)
+    originalGroupResult.setGroupSessionData("""{"a":1}""")
+    originalGroupResult.setGroupSessionVersion(1L)
+
+    val concurrentlyUpdatedGroupResult = new GroupResult()
+    concurrentlyUpdatedGroupResult.setId(groupResultId)
+    concurrentlyUpdatedGroupResult.setGroupSessionData("""{"a":1,"other":true}""")
+    concurrentlyUpdatedGroupResult.setGroupSessionVersion(2L)
+
+    when(groupResultDao.findById(groupResultId)).thenReturn(originalGroupResult, concurrentlyUpdatedGroupResult)
+    when(groupResultDao.updateGroupSession(
+      ArgumentMatchers.eq(java.lang.Long.valueOf(groupResultId)),
+      ArgumentMatchers.eq(java.lang.Long.valueOf(1L)),
+      anyString())).thenReturn(null)
+
+    val failMsg = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(concurrentlyUpdatedGroupResult),
+      ArgumentMatchers.eq(GroupAction.SessionFail),
+      ArgumentMatchers.eq(Some(10L)),
+      any(),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
+      .thenReturn(failMsg)
+
+    val patches = Json.arr(Json.obj("op" -> "add", "path" -> "/b", "value" -> 2))
+    //noinspection RedundantDefaultArgument
+    val result = groupActionHandler.handleActionMsg(
+      sessionMsg(patches, version = 1L, versioning = true),
+      groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
+
+    assertEquals(List(failMsg), result)
+    verify(groupResultDao, times(1)).updateGroupSession(groupResultId, 1L, """{"a":1,"b":2}""")
+    verify(groupResultDao, times(2)).findById(groupResultId)
+  }
+
+  @Test
+  def handleActionMsg_compareAndSetConflictWithVersioningDisabled_reloadsReappliesAndRetries(): Unit = {
+    val originalGroupResult = new GroupResult()
+    originalGroupResult.setId(groupResultId)
+    originalGroupResult.setGroupSessionData("""{"a":1}""")
+    originalGroupResult.setGroupSessionVersion(1L)
+
+    val concurrentlyUpdatedGroupResult = new GroupResult()
+    concurrentlyUpdatedGroupResult.setId(groupResultId)
+    concurrentlyUpdatedGroupResult.setGroupSessionData("""{"a":1,"other":true}""")
+    concurrentlyUpdatedGroupResult.setGroupSessionVersion(2L)
+
+    when(groupResultDao.findById(groupResultId)).thenReturn(originalGroupResult, concurrentlyUpdatedGroupResult)
+    when(groupResultDao.updateGroupSession(
+      ArgumentMatchers.eq(java.lang.Long.valueOf(groupResultId)),
+      ArgumentMatchers.eq(java.lang.Long.valueOf(1L)),
+      anyString())).thenReturn(null)
+    when(groupResultDao.updateGroupSession(
+      ArgumentMatchers.eq(java.lang.Long.valueOf(groupResultId)),
+      ArgumentMatchers.eq(java.lang.Long.valueOf(2L)),
+      anyString())).thenReturn(java.lang.Long.valueOf(3L))
+
+    val patches = Json.arr(Json.obj("op" -> "add", "path" -> "/b", "value" -> 2))
+    val ackMsg = GroupMsg(Json.obj("action" -> "SESSION_ACK"))
+    val patchBroadcast = GroupMsg(Json.obj("action" -> "SESSION"))
+    when(msgBuilder.buildSimple(
+      ArgumentMatchers.eq(concurrentlyUpdatedGroupResult),
+      ArgumentMatchers.eq(GroupAction.SessionAck),
+      ArgumentMatchers.eq(Some(10L)),
+      ArgumentMatchers.eq(None),
+      ArgumentMatchers.eq(TellWhom.SenderOnly)))
+      .thenReturn(ackMsg)
+    when(msgBuilder.buildSessionPatch(
+      ArgumentMatchers.eq(concurrentlyUpdatedGroupResult),
+      ArgumentMatchers.eq(studyResultId),
+      ArgumentMatchers.eq(patches),
+      ArgumentMatchers.eq(TellWhom.All)))
+      .thenReturn(patchBroadcast)
+
+    val result = groupActionHandler.handleActionMsg(
+      sessionMsg(patches, version = 99L, versioning = false),
+      groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
+
+    assertEquals(List(patchBroadcast, ackMsg), result)
+    verify(groupResultDao).updateGroupSession(groupResultId, 1L, """{"a":1,"b":2}""")
+    verify(groupResultDao).updateGroupSession(groupResultId, 2L, """{"a":1,"other":true,"b":2}""")
+    assertEquals(3L, concurrentlyUpdatedGroupResult.getGroupSessionVersion)
+    assertEquals(Json.obj("a" -> 1, "other" -> true, "b" -> 2),
+      Json.parse(concurrentlyUpdatedGroupResult.getGroupSessionData))
   }
 
   // =========================================================================
@@ -306,7 +405,7 @@ class GroupActionHandlerTest {
     val result = groupActionHandler.handleActionMsg(sessionMsg(patches), groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
 
     assertEquals(List(failMsg), result)
-    verify(groupResultDao, never()).merge(any[GroupResult]())
+    verify(groupResultDao, never()).updateGroupSession(anyLong(), anyLong(), anyString())
   }
 
   // =========================================================================

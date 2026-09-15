@@ -11,6 +11,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, JsValue, Json}
 
 import javax.inject.{Inject, Singleton}
+import scala.annotation.tailrec
 
 /**
  * Handles batch action messages received by a BatchDispatcher from a client via a batch channel.
@@ -20,6 +21,8 @@ class BatchActionHandler @Inject()(batchDao: BatchDao,
                                    msgBuilder: BatchActionMsgBuilder) {
 
   private val logger: Logger = Logger(this.getClass)
+
+  private val maxUpdateAttempts = 5
 
   private val objectMapper = new ObjectMapper()
 
@@ -38,45 +41,87 @@ class BatchActionHandler @Inject()(batchDao: BatchDao,
     }
   }
 
-  /**
-   * Applies JSON Patch for the batch session and tells everyone in the batch
-   */
   private def handlePatch(json: JsObject, batchId: Long): List[BatchMsg] = {
-    batchDao.withTransaction(_ => {
-      val batch = batchDao.findById(batchId)
-      if (batch == null) {
-        val errorMsg = s"Couldn't find batch with ID $batchId in database."
-        return List(msgBuilder.buildError(errorMsg, TellWhom.SenderOnly))
-      }
+    val sessionActionId = (json \ BatchActionJsonKey.SessionActionId.toString).as[Long]
+    val clientsVersion = (json \ BatchActionJsonKey.SessionVersion.toString).as[Long]
+    val versioning = (json \ BatchActionJsonKey.SessionVersioning.toString).as[Boolean]
+    val patches = (json \ BatchActionJsonKey.SessionPatches.toString).get
 
-      val sessionActionId = (json \ BatchActionJsonKey.SessionActionId.toString).as[Long]
-      val clientsVersion = (json \ BatchActionJsonKey.SessionVersion.toString).as[Long]
-      val versioning = (json \ BatchActionJsonKey.SessionVersioning.toString).as[Boolean]
+    tryUpdate(
+      batchId = batchId,
+      sessionActionId = sessionActionId,
+      clientsVersion = clientsVersion,
+      versioning = versioning,
+      patches = patches,
+      attempt = 1
+    )
+  }
+
+  /**
+   * Attempts to update the batch session data for a specified batch. The update process verifies version compatibility
+   * and applies the patches if possible. In case of update conflicts, retry logic is implemented based on the number of
+   * attempts.
+   *
+   * @return a list of `BatchMsg` instances representing the results of the update process
+   */
+  @tailrec
+  private def tryUpdate(batchId: Long, sessionActionId: Long, clientsVersion: Long, versioning: Boolean,
+                        patches: JsValue, attempt: Int): List[BatchMsg] = {
+    val batch = batchDao.findById(batchId)
+    if (batch == null) {
+      return List(msgBuilder.buildError(s"Couldn't find batch with ID $batchId in database.", TellWhom.SenderOnly))
+    }
+
+    val currentVersion = batch.getBatchSessionVersion
+
+    // Reject a stale version before attempting to apply its patch.
+    if (versioning && clientsVersion != currentVersion) {
+      val errorMsg = s"Version mismatch (client version: $clientsVersion, current: $currentVersion)."
+      return List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
+    }
+
+    val patchedSessionData =
       try {
-        val patches = (json \ BatchActionJsonKey.SessionPatches.toString).get
-        val patchedSessionData = patchSessionData(patches, batch)
-        logger.debug(s".handlePatch: batchId $batchId, " +
-          s"clientsVersion $clientsVersion, versioning $versioning, batchSessionPatch ${Json.stringify(patches)}, " +
-          s"updatedSessionData ${Json.stringify(patchedSessionData)}")
-
-        val success = checkVersionAndPersistSessionData(patchedSessionData, batch, clientsVersion, versioning)
-        if (success) {
-          val msg1 = msgBuilder.buildSessionPatch(batch, patches, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(batch, BatchAction.SessionAck, sessionActionId, None, TellWhom.SenderOnly)
-          List(msg1, msg2)
-        } else {
-          val errorMsg = s"Version mismatch or concurrent update conflict (client version: $clientsVersion, current: ${batch.getBatchSessionVersion})."
-          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
-        }
-
+        patchSessionData(patches, batch)
       } catch {
         case e: Exception =>
-          logger.debug(s".handlePatch: batchId $batchId, json ${Json.stringify(json)}, " +
+          logger.debug(s".tryUpdate: batchId $batchId, patches ${Json.stringify(patches)}, " +
             s"${e.getClass.getName}: ${e.getMessage}")
           val errorMsg = s"Failed to apply patch: ${e.getMessage}"
-          List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
+          return List(msgBuilder.buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
       }
-    })
+
+    logger.debug(s".tryUpdate: batchId $batchId, clientsVersion $clientsVersion, versioning $versioning, " +
+      s"batchSessionPatch ${Json.stringify(patches)}, updatedSessionData ${Json.stringify(patchedSessionData)}")
+
+    val newVersion = batchDao.updateBatchSession(batchId, currentVersion, Json.stringify(patchedSessionData))
+
+    if (newVersion != null) {
+      // `batch` is detached and only used to build the outgoing messages. Make it reflect what was successfully committed.
+      batch.setBatchSessionData(Json.stringify(patchedSessionData))
+      batch.setBatchSessionVersion(newVersion)
+
+      val updateMsg = msgBuilder.buildSessionPatch(batch, patches, TellWhom.All)
+      val acknowledgement = msgBuilder.buildSimple(batch, BatchAction.SessionAck, sessionActionId, None, TellWhom.SenderOnly)
+      List(updateMsg, acknowledgement)
+
+    } else if (!versioning && attempt < maxUpdateAttempts) {
+      // Another transaction won. Reload the latest state, reapply the patch to that state, and try another compare-and-set.
+      tryUpdate(batchId, sessionActionId, clientsVersion, versioning, patches, attempt + 1)
+
+    } else {
+      // Either versioning was enabled, or all retry attempts were exhausted.
+      val currentBatch = batchDao.findById(batchId)
+      val actualVersion = Option(currentBatch).map(_.getBatchSessionVersion).getOrElse(currentVersion)
+
+      val errorMsg =
+        if (versioning)
+          s"Concurrent update conflict (client version: $clientsVersion, current: $actualVersion)."
+        else
+          s"Couldn't update batch session after $maxUpdateAttempts attempts because of concurrent updates."
+      val messageBatch = Option(currentBatch).getOrElse(batch)
+      List(msgBuilder.buildSimple(messageBatch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), TellWhom.SenderOnly))
+    }
   }
 
   private def patchSessionData(patches: JsValue, batch: Batch): JsValue = {
@@ -92,23 +137,6 @@ class BatchActionHandler @Inject()(batchDao: BatchDao,
     val resultNode = JsonPatch.apply(patchNode, sourceNode)
 
     Json.parse(resultNode.toString)
-  }
-
-  /**
-   * Persists the given sessionData in the Batch and increases the batchSessionVersion by 1 - but only if the stored
-   * version is equal to the received one or versioning is turned off. Returns true if this was successful -
-   * otherwise false.
-   */
-  private def checkVersionAndPersistSessionData(sessionData: JsValue, batch: Batch,
-                                                version: Long,
-                                                versioning: Boolean): Boolean = {
-    if (batch != null && sessionData != null && (!versioning || batch.getBatchSessionVersion == version)) {
-      batch.setBatchSessionData(sessionData.toString)
-      batch.setBatchSessionVersion(batch.getBatchSessionVersion + 1L)
-      batchDao.merge(batch)
-      return true
-    }
-    false
   }
 
 }

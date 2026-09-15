@@ -12,6 +12,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
 import javax.inject.{Inject, Singleton}
+import scala.annotation.tailrec
 
 /**
  * Handles group action messages. Those messages are of type GroupMsg with a JSON object that
@@ -23,6 +24,8 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
                                    msgBuilder: GroupActionMsgBuilder) {
 
   private val logger: Logger = Logger(this.getClass)
+
+  private val maxUpdateAttempts = 5
 
   private val objectMapper = new ObjectMapper()
 
@@ -47,56 +50,89 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
     }
   }
 
-  /**
-   * Applies the patch to the group session
-   */
-  private def handlePatch(json: JsObject,
-                          groupResultId: Long,
-                          studyResultId: Long,
+  private def handlePatch(json: JsObject, groupResultId: Long, studyResultId: Long,
                           scope: GroupSessionWriteScope): List[GroupMsg] = {
-    groupResultDao.withTransaction(_ => {
-      val groupResult = groupResultDao.findById(groupResultId)
-      if (groupResult == null) {
-        val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
-        return List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))
-      }
+    val sessionActionId = (json \ GroupActionJsonKey.SessionActionId.toString).as[Long]
+    val clientsVersion = (json \ GroupActionJsonKey.SessionVersion.toString).as[Long]
+    val versioning = (json \ GroupActionJsonKey.SessionVersioning.toString).as[Boolean]
+    val patches = (json \ GroupActionJsonKey.SessionPatches.toString).get
 
-      val sessionActionId = (json \ GroupActionJsonKey.SessionActionId.toString).as[Long]
-      val clientsVersion = (json \ GroupActionJsonKey.SessionVersion.toString).as[Long]
-      val versioning = (json \ GroupActionJsonKey.SessionVersioning.toString).as[Boolean]
+    tryUpdate(groupResultId, studyResultId, scope, sessionActionId, clientsVersion, versioning, patches, attempt = 1)
+  }
+
+  /**
+   * Attempts to update the group session data for a specified group result. The update process verifies
+   * version compatibility, validates patches based on the provided scope, and applies the patches
+   * if possible. In case of update conflicts, retry logic is implemented based on the number of attempts.
+   *
+   * @return a list of `GroupMsg` instances representing the results of the update process
+   */
+  @tailrec
+  private def tryUpdate(groupResultId: Long, studyResultId: Long, scope: GroupSessionWriteScope,
+                        sessionActionId: Long, clientsVersion: Long, versioning: Boolean,
+                        patches: JsValue, attempt: Int): List[GroupMsg] = {
+    val groupResult = groupResultDao.findById(groupResultId)
+    if (groupResult == null) {
+      return List(msgBuilder.buildError(groupResultId,
+        s"Couldn't find group result with ID $groupResultId in database.", TellWhom.SenderOnly))
+    }
+
+    val currentVersion = groupResult.getGroupSessionVersion
+    if (versioning && clientsVersion != currentVersion) {
+      val errorMsg = s"Version mismatch (client version: $clientsVersion, current: $currentVersion)."
+      return List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail,
+        Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
+    }
+
+    if (scope == GroupSessionWriteScope.MEMBER && !isPatchWithinMemberScope(patches, studyResultId)) {
+      logger.warn(s".tryUpdate: rejected out-of-scope group session patch from studyResultId " +
+        s"$studyResultId in groupResultId $groupResultId")
+      val errorMsg = s"Patch rejected: member $studyResultId is only allowed to modify '/$studyResultId' or '/shared'."
+      return List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail,
+        Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
+    }
+
+    val patchedSessionData =
       try {
-        val patches = (json \ GroupActionJsonKey.SessionPatches.toString).get
-
-        if (scope == GroupSessionWriteScope.MEMBER && !isPatchWithinMemberScope(patches, studyResultId)) {
-          logger.warn(s".handlePatch: rejected out-of-scope group session patch from studyResultId " +
-            s"$studyResultId in groupResultId $groupResultId")
-          val errorMsg = s"Patch rejected: member $studyResultId is only allowed to modify '/$studyResultId' or '/shared'."
-          return List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail,
-            Some(sessionActionId), Some(errorMsg),TellWhom.SenderOnly))
-        }
-
-        val patchedSessionData = patchSessionData(patches, groupResult)
-        logger.debug(s".handlePatch: groupResultId $groupResultId, " +
-          s"clientsVersion $clientsVersion, versioning $versioning, groupSessionPatch ${Json.stringify(patches)}, " +
-          s"updatedSessionData ${Json.stringify(patchedSessionData)}")
-
-        val success = checkVersionAndPersistSessionData(patchedSessionData, groupResult, clientsVersion, versioning)
-        if (success) {
-          val msg1 = msgBuilder.buildSessionPatch(groupResult, studyResultId, patches, TellWhom.All)
-          val msg2 = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck, Some(sessionActionId), None, TellWhom.SenderOnly)
-          List(msg1, msg2)
-        } else {
-          val errorMsg = s"Version mismatch or concurrent update conflict (client version: $clientsVersion, current: ${groupResult.getGroupSessionVersion})."
-          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
-        }
+        patchSessionData(patches, groupResult)
       } catch {
         case e: Exception =>
-          logger.debug(s".handlePatch: groupResultId $groupResultId, json ${Json.stringify(json)}," +
-            s" ${e.getClass.getName}: ${e.getMessage}")
+          logger.debug(s".tryUpdate: groupResultId $groupResultId, patches ${Json.stringify(patches)}, " +
+            s"${e.getClass.getName}: ${e.getMessage}")
           val errorMsg = s"Failed to apply patch: ${e.getMessage}"
-          List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
+          return List(msgBuilder.buildSimple(groupResult, GroupAction.SessionFail,
+            Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
       }
-    })
+
+    logger.debug(s".tryUpdate: groupResultId $groupResultId, clientsVersion $clientsVersion, " +
+      s"versioning $versioning, groupSessionPatch ${Json.stringify(patches)}, " +
+      s"updatedSessionData ${Json.stringify(patchedSessionData)}")
+
+    val newVersion = groupResultDao.updateGroupSession(groupResultId, currentVersion, Json.stringify(patchedSessionData))
+
+    if (newVersion != null) {
+      groupResult.setGroupSessionData(Json.stringify(patchedSessionData))
+      groupResult.setGroupSessionVersion(newVersion)
+      val updateMsg = msgBuilder.buildSessionPatch(groupResult, studyResultId, patches, TellWhom.All)
+      val acknowledgement = msgBuilder.buildSimple(groupResult, GroupAction.SessionAck,
+        Some(sessionActionId), None, TellWhom.SenderOnly)
+      List(updateMsg, acknowledgement)
+
+    } else if (!versioning && attempt < maxUpdateAttempts) {
+      tryUpdate(groupResultId, studyResultId, scope, sessionActionId, clientsVersion, versioning, patches, attempt + 1)
+
+    } else {
+      val currentGroupResult = groupResultDao.findById(groupResultId)
+      val actualVersion = Option(currentGroupResult).map(_.getGroupSessionVersion).getOrElse(currentVersion)
+      val errorMsg =
+        if (versioning)
+          s"Concurrent update conflict (client version: $clientsVersion, current: $actualVersion)."
+        else
+          s"Couldn't update group session after $maxUpdateAttempts attempts because of concurrent updates."
+      val messageGroupResult = Option(currentGroupResult).getOrElse(groupResult)
+      List(msgBuilder.buildSimple(messageGroupResult, GroupAction.SessionFail,
+        Some(sessionActionId), Some(errorMsg), TellWhom.SenderOnly))
+    }
   }
 
   /**
@@ -149,24 +185,6 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
     val resultNode = JsonPatch.apply(patchNode, sourceNode)
 
     Json.parse(resultNode.toString)
-  }
-
-  /**
-   * Persists the given sessionData in the GroupResult and increases the groupSessionVersion by 1 - but only if the
-   * stored version is equal to the received one or versioning is turned off. Returns true if this was successful -
-   * otherwise false.
-   */
-  private def checkVersionAndPersistSessionData(sessionData: JsValue,
-                                                groupResult: GroupResult,
-                                                version: Long,
-                                                versioning: Boolean): Boolean = {
-    if (groupResult != null && sessionData != null && (!versioning || groupResult.getGroupSessionVersion == version)) {
-      groupResult.setGroupSessionData(sessionData.toString)
-      groupResult.setGroupSessionVersion(groupResult.getGroupSessionVersion + 1L)
-      groupResultDao.merge(groupResult)
-      return true
-    }
-    false
   }
 
   /**
