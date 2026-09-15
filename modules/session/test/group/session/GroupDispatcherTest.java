@@ -17,6 +17,7 @@ import play.api.libs.json.Json$;
 import scala.Enumeration;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -88,6 +89,10 @@ public class GroupDispatcherTest {
         return new GroupMsg(json, TellWhom$.MODULE$.AllButSender());
     }
 
+    private GroupMsg actionMsgToAll(JsObject json) {
+        return new GroupMsg(json, TellWhom$.MODULE$.All());
+    }
+
     private GroupMsg directOrBroadcastMsg(JsObject json) {
         // tellWhom is Unknown for direct/broadcast inputs
         return new GroupMsg(json, TellWhom$.MODULE$.Unknown());
@@ -153,8 +158,10 @@ public class GroupDispatcherTest {
         dispatcher.registerChannel(2L, ch2);
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
-        assertNotNull("Expected an Opened message", msg1);
-        assertNotNull("Expected an Opened message", msg2);
+        assertNotNull(msg1);
+        assertNotNull(msg2);
+        assertEquals(js("{\"action\":\"OPENED\",\"who\":\"others\"}"), ((GroupMsg) msg1).json());
+        assertEquals(js("{\"action\":\"OPENED\",\"who\":\"sender\"}"), ((GroupMsg) msg2).json());
     }
 
     @Test
@@ -192,6 +199,7 @@ public class GroupDispatcherTest {
         Object msg2 = poll(out2);
         assertNull(msg1);
         assertNotNull(msg2);
+        assertEquals(js("{\"action\":\"CLOSED\"}"), ((GroupMsg) msg2).json());
         verify(registry, never()).unregister(anyLong());
 
         // Unregister second -> now empty, registry should unregister dispatcher
@@ -310,8 +318,39 @@ public class GroupDispatcherTest {
         Object msg2 = poll(out2);
 
         // Sender gets sender-only; other gets the all-but-sender
-        assertNotNull(msg1);
-        assertNotNull(msg2);
+        assertEquals(toSender, msg1);
+        assertEquals(toAllButSender, msg2);
+    }
+
+    @Test
+    public void handleGroupMsg_actionToAll_goesToAllChannels() {
+        BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
+        BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();
+        ActorRef outActor1 = system.actorOf(Props.create(CapturingActor.class, out1));
+        ActorRef outActor2 = system.actorOf(Props.create(CapturingActor.class, out2));
+        GroupChannelActor ch1 = mock(GroupChannelActor.class);
+        GroupChannelActor ch2 = mock(GroupChannelActor.class);
+        when(ch1.self()).thenReturn(outActor1);
+        when(ch2.self()).thenReturn(outActor2);
+
+        stubOpenCloseMessages();
+        dispatcher.registerChannel(1L, ch1);
+        dispatcher.registerChannel(2L, ch2);
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
+
+        GroupMsg sessionPatch = actionMsgToAll(js("{\"action\":\"SESSION\",\"sessionVersion\":2}"));
+        when(actionHandler.handleActionMsg(
+                any(GroupMsg.class),
+                eq(groupResultId),
+                eq(1L),
+                eq(GroupSessionWriteScope.SHARED)))
+                .thenReturn(asScala(List.of(sessionPatch)).toList());
+
+        dispatcher.handleGroupMsg(new GroupMsg(js("{\"action\":\"SESSION\"}"), TW_Unknown()), 1L, ch1.self());
+
+        assertEquals(sessionPatch, poll(out1));
+        assertEquals(sessionPatch, poll(out2));
     }
 
     @Test
@@ -339,6 +378,7 @@ public class GroupDispatcherTest {
         Object msg2 = poll(out2);
         assertNull(msg1);
         assertNotNull(msg2);
+        assertEquals(directJson, ((GroupMsg) msg2).json());
 
         // Direct to unknown -> should create error back to sender
         when(msgBuilder.buildError(eq(groupResultId), anyString(), eq(TW_SenderOnly())))
@@ -373,6 +413,7 @@ public class GroupDispatcherTest {
         Object msg2 = poll(out2);
         assertNull(msg1);
         assertNotNull(msg2);
+        assertEquals(broadcast, ((GroupMsg) msg2).json());
     }
 
     @Test
@@ -405,6 +446,7 @@ public class GroupDispatcherTest {
         Object msg2 = poll(out2);
         assertNull(msg1);
         assertNotNull(msg2);
+        assertEquals(js("{\"action\":\"JOINED\"}"), ((GroupMsg) msg2).json());
 
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
@@ -413,6 +455,7 @@ public class GroupDispatcherTest {
         Object msg3 = poll(out1);
         Object msg4 = poll(out2);
         assertNotNull(msg3);
+        assertEquals(js("{\"action\":\"LEFT\"}"), ((GroupMsg) msg3).json());
         assertNull(msg4);
 
         pollUntilEmpty(out1);
