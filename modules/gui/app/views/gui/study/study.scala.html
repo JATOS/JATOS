@@ -173,7 +173,10 @@
                 success : function(result) {
                     window.location.replace(window.routes.Home.home);
                 },
-                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't delete study"),
+                error: (err) => {
+                    const message = err?.responseJSON?.error?.message ?? "Couldn't delete study";
+                    alerts.error(message);
+                },
                 complete: WaitingModal.hide
             });
         };

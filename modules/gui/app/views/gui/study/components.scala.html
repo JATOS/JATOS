@@ -243,7 +243,10 @@
             success: function() {
                 $(checkbox).prop('checked', active);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle component activation")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't toggle component activation";
+                alerts.error(message);
+            }
         });
     });
 

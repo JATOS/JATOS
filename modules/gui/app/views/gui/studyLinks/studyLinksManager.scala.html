@@ -363,7 +363,10 @@
         $.ajax({
             url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, "", 1),
             success: () => studyLinksTable.ajax.reload(),
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't get study codes")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't get study codes";
+                alerts.error(message);
+            }
         });
     });
 

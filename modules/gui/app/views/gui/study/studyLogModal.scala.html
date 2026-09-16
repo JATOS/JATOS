@@ -42,7 +42,10 @@
         $.ajax({
             url: window.routes.Api.studyLog(window.study.id, 100, false),
             success: showStudyLogModal,
-            error: (err) => alerts.error("Couldn't get study log.")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't get study log.";
+                alerts.error(message);
+            }
         });
     });
 

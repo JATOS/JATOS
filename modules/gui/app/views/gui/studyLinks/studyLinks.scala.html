@@ -179,7 +179,10 @@
                 $(checkbox).prop('checked', isActive);
                 batch.active = isActive;
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle batch activation")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't toggle batch activation";
+                alerts.error(message);
+            }
         });
     });
 

@@ -232,7 +232,10 @@
         $.ajax({
             url: window.routes.Api.getStudyCodes(window.study.id, batch.id, type, "", 1),
             success: (response) => renderSingleStudyLinkDisplayModal(response.data, batch, type),
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get study code")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't get study codes";
+                alerts.error(message);
+            }
         });
     });
 
