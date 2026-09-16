@@ -251,7 +251,6 @@ public class Api extends Controller {
     public Result updateUser(Http.Request request, Long id) throws HttpException, IOException {
         User user = userDao.findById(id);
         User signedinUser = authService.getSignedinUser();
-        authorizationService.checkAuthMethodIsDbOrLdap(user);
         authorizationService.checkAdminOrSelf(signedinUser, user);
 
         UserProperties props = userService.bindToProperties(user);

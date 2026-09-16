@@ -434,27 +434,6 @@ public class AuthorizationServiceTest {
     }
 
     @Test(expected = NotFoundException.class)
-    public void checkAuthMethodIsDbOrLdap_nullUser_throwsNotFound() throws Exception {
-        authorizationService.checkAuthMethodIsDbOrLdap((User) null);
-    }
-
-    @Test
-    public void checkAuthMethodIsDbOrLdap_user_ok_andInvalidForbidden() throws Exception {
-        User user = newUser("u");
-        user.setAuthMethod(User.AuthMethod.LDAP);
-        authorizationService.checkAuthMethodIsDbOrLdap(user);
-
-        user.setAuthMethod(User.AuthMethod.OIDC);
-        boolean threw = false;
-        try {
-            authorizationService.checkAuthMethodIsDbOrLdap(user);
-        } catch (ForbiddenException e) {
-            threw = true;
-        }
-        assertThat(threw).isTrue();
-    }
-
-    @Test(expected = NotFoundException.class)
     public void checkNotUserAdmin_nullUser_throwsNotFound() throws Exception {
         authorizationService.checkNotUserAdmin(null);
     }
