@@ -1,5 +1,6 @@
 package services.publix;
 
+import batch.BatchDispatcher;
 import controllers.publix.workers.JatosPublix;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -73,6 +74,7 @@ public class PublixUtilsTest {
 
     private ResultCreator resultCreator;
     private IdCookieService idCookieService;
+    private BatchDispatcher batchDispatcher;
     private GroupAdministration groupAdministration;
     private StudyResultDao studyResultDao;
     private ComponentDao componentDao;
@@ -87,6 +89,7 @@ public class PublixUtilsTest {
     public void setup() {
         resultCreator = mock(ResultCreator.class);
         idCookieService = mock(IdCookieService.class);
+        batchDispatcher = mock(BatchDispatcher.class);
         groupAdministration = mock(GroupAdministration.class);
         studyResultDao = mock(StudyResultDao.class);
         componentDao = mock(ComponentDao.class);
@@ -97,7 +100,7 @@ public class PublixUtilsTest {
         ioUtils = mock(IOUtils.class);
         DefaultJson defaultJson = new DefaultJson();
 
-        publixUtils = new PublixUtils(resultCreator, idCookieService, groupAdministration,
+        publixUtils = new PublixUtils(resultCreator, idCookieService, batchDispatcher, groupAdministration,
                 studyResultDao, componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils, defaultJson);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);

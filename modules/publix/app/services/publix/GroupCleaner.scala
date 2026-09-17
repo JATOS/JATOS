@@ -2,7 +2,7 @@ package services.publix
 
 import daos.common.StudyResultDao
 import general.common.Common
-import group.GroupDispatcherRegistry
+import group.GroupDispatcher
 import jakarta.persistence.EntityManager
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
@@ -20,7 +20,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 @Singleton
 class GroupCleaner @Inject()(actorSystem: ActorSystem,
                              lifecycle: ApplicationLifecycle,
-                             groupDispatcherRegistry: GroupDispatcherRegistry,
+                             groupDispatcher: GroupDispatcher,
                              studyResultDao: StudyResultDao,
                              publixUtils: PublixUtils,
                              jpa: JPAApi) {
@@ -55,7 +55,7 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
     })
 
     idleStudyResults.forEach(studyResult => {
-      if (!groupDispatcherRegistry.hasChannel(studyResult.getId)) {
+      if (!groupDispatcher.hasChannel(studyResult.getId)) {
         logger.info(s"Force inactive group member with study result ID ${studyResult.getId} to leave its group.")
         publixUtils.finishStudyRun(
           studyResult.getId,

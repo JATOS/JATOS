@@ -4,7 +4,7 @@ import org.apache.pekko.actor.{ActorSystem, Props}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Flow
 import exceptions.common.ForbiddenException
-import group.{GroupAdministration, GroupChannelActor, GroupDispatcherRegistry}
+import group.{GroupAdministration, GroupChannelActor, GroupDispatcher}
 import models.common.workers._
 import models.common.{GroupResult, StudyResult}
 import play.api.Logger
@@ -36,7 +36,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
   var idCookieService: IdCookieService = _
 
   @Inject
-  var groupDispatcherRegistry: GroupDispatcherRegistry = _
+  var groupDispatcher: GroupDispatcher = _
 
   @Inject
   var groupAdministration: GroupAdministration = _
@@ -80,9 +80,7 @@ abstract class GroupChannel[A <: Worker](components: ControllerComponents,
     // To be sure, check if there is already a group channel and close the old one before opening a new one.
     groupAdministration.closeGroupChannel(studyResult.getId, groupResult.getId)
 
-    // Get the GroupDispatcher that will handle this GroupResult.
-    val groupDispatcher = groupDispatcherRegistry.getOrRegister(groupResult.getId)
-    ActorFlow.actorRef { out => Props(new GroupChannelActor(out, studyResult.getId, groupDispatcher)) }
+    ActorFlow.actorRef { out => Props(new GroupChannelActor(out, studyResult.getId, groupResult.getId, groupDispatcher)) }
   }
 
   /**

@@ -4,7 +4,7 @@ import org.apache.pekko.actor.{ActorSystem, Props}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.Timeout
-import batch.{BatchChannelActor, BatchDispatcherRegistry}
+import batch.{BatchChannelActor, BatchDispatcher}
 import models.common.StudyResult
 import models.common.workers._
 import play.api.Logger
@@ -37,7 +37,7 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
   var idCookieService: IdCookieService = _
 
   @Inject
-  private var batchDispatcherRegistry: BatchDispatcherRegistry = _
+  private var batchDispatcher: BatchDispatcher = _
 
   /**
    * Time to wait for an answer after asking a Pekko actor
@@ -56,11 +56,9 @@ abstract class BatchChannel[A <: Worker](components: ControllerComponents,
     studyAuthorisation.checkWorkerAllowedToDoStudy(worker, study, batch)
 
     // To be sure, check if there is already a batch channel and close the old one before opening a new one.
-    batchDispatcherRegistry.closeBatchChannel(batch.getId, studyResult.getId)
+    batchDispatcher.poisonChannel(batch.getId, studyResult.getId)
 
-    // Get the BatchDispatcher that will handle this batch.
-    val batchDispatcher = batchDispatcherRegistry.getOrRegister(batch.getId)
-    ActorFlow.actorRef { out => Props(new BatchChannelActor(out, studyResult.getId, batchDispatcher)) }
+    ActorFlow.actorRef { out => Props(new BatchChannelActor(out, studyResult.getId, batch.getId, batchDispatcher)) }
   }
 
 }
