@@ -2,15 +2,15 @@ package batch
 
 import batch.BatchDispatcher.TellWhom.TellWhom
 import batch.BatchDispatcher._
-import com.google.inject.assistedinject.Assisted
 import org.apache.pekko.actor.{ActorRef, PoisonPill}
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
+import scala.collection.mutable
 
 /**
- * A BatchDispatcher is responsible for distributing messages (BatchMsg) within a batch.
+ * The node-local BatchDispatcher distributes BatchMsgs for all batches handled by this JATOS node.
  *
  * A BatchDispatcher handles and distributes messages between currently active members of a batch. These messages are
  * essentially JSON Patches after RFC 6902 and used to describe changes in the batch session data. The session data are
@@ -19,14 +19,9 @@ import javax.inject.Inject
  * A BatchChannelActor is always opened during initialization of jatos.js (where a GroupChannelActor is opened only
  * after the group was joined). A BatchChannelActor registers and unregisters itself in a BatchDispatcher.
  *
- * A new BatchDispatcher is created by the BatchDispatcherRegistry. If a BatchDispatcher has no more members, it closes
- * itself.
+ * Channels are grouped by batch ID. Empty batch entries are removed automatically.
  */
 object BatchDispatcher {
-
-  trait Factory {
-    def create(batchId: Long): BatchDispatcher
-  }
 
   object TellWhom extends Enumeration {
     type TellWhom = Value
@@ -78,91 +73,103 @@ object BatchDispatcher {
 
 }
 
-class BatchDispatcher @Inject()(dispatcherRegistry: BatchDispatcherRegistry,
-                                actionHandler: BatchActionHandler,
-                                actionMsgBuilder: BatchActionMsgBuilder,
-                                @Assisted batchId: Long) {
+@Singleton
+class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
+                                actionMsgBuilder: BatchActionMsgBuilder) {
 
   private val logger: Logger = Logger(this.getClass)
 
-  private val channelRegistry = new BatchChannelRegistry
+  private val channelsByBatch = mutable.HashMap.empty[Long, mutable.HashMap[Long, ActorRef]]
 
   /**
    * Handles batch actions originating from a client
    */
-  def handleActionMsg(actionMsg: BatchMsg, studyResultId: Long, sender: ActorRef): Unit = {
+  def handleActionMsg(actionMsg: BatchMsg, batchId: Long, studyResultId: Long, sender: ActorRef): Unit = {
     logger.debug(s".handleActionMsg: batchId $batchId, " +
       s"studyResultId $studyResultId, " +
       s"actionMsg ${Json.stringify(actionMsg.json)}")
     val msgList = actionHandler.handleActionMsg(actionMsg, batchId)
-    tellActionMsg(msgList, sender)
+    tellActionMsg(msgList, batchId, sender)
   }
 
   /**
-   * Registers the given channel in the channelRegistry and sends an 'Opened' msg back to the channel
+   * Registers the given channel and sends an 'Opened' message back to it.
    */
-  def registerChannel(studyResultId: Long, channel: ActorRef): Unit = {
+  def registerChannel(batchId: Long, studyResultId: Long, channel: ActorRef): Unit = {
     logger.debug(s".registerChannel: batchId $batchId, studyResultId $studyResultId")
-    channelRegistry.register(studyResultId, channel)
-    tellActionMsg(List(actionMsgBuilder.buildSessionData(batchId, BatchAction.Opened, TellWhom.SenderOnly)), channel)
+    synchronized {
+      channelsByBatch.getOrElseUpdate(batchId, mutable.HashMap.empty).put(studyResultId, channel)
+    }
+    tellActionMsg(List(actionMsgBuilder.buildSessionData(batchId, BatchAction.Opened, TellWhom.SenderOnly)), batchId, channel)
   }
 
   /**
-   * Unregisters the given channel. Then, if the batch is now empty, it unregisters this BatchDispatcher itself.
+   * Unregisters the given channel and removes the batch entry if it is now empty.
    */
-  def unregisterChannel(studyResultId: Long): Unit = {
+  def unregisterChannel(batchId: Long, studyResultId: Long): Unit = {
     logger.debug(s".unregisterChannel: batchId $batchId, studyResultId $studyResultId")
 
-    if (channelRegistry.containsChannel(studyResultId)) {
-      channelRegistry.unregister(studyResultId)
-    }  else {
+    val removed = synchronized {
+      channelsByBatch.get(batchId).flatMap { channels =>
+        val channel = channels.remove(studyResultId)
+        if (channels.isEmpty) channelsByBatch.remove(batchId)
+        channel
+      }
+    }
+    if (removed.isEmpty) {
       logger.debug(s".unregisterChannel: study result $studyResultId is not handled by the BatchDispatcher $batchId.")
     }
-
-    if (channelRegistry.isEmpty) dispatcherRegistry.unregister(batchId)
   }
 
   /**
    * Stops the BatchChannelActor and unregisters the channel. It sends a 'Closed' msg to the channel before it stops.
    */
-  def poisonChannel(studyResultId: Long): Unit = {
+  def poisonChannel(batchId: Long, studyResultId: Long): Unit = {
     logger.debug(s".poisonChannel: batchId $batchId, studyResultId $studyResultId")
-    val channelOption = channelRegistry.getChannel(studyResultId)
+    val channelOption = channel(batchId, studyResultId)
     if (channelOption.isDefined) {
       val channel = channelOption.get
       channel ! BatchMsg(Json.obj(BatchActionJsonKey.Action.toString -> BatchAction.Closed))
       channel ! PoisonPill
-      unregisterChannel(studyResultId)
+      unregisterChannel(batchId, studyResultId)
       logger.debug(s".poisonChannel: batchId $batchId, studyResultId $studyResultId, " + "stopped and unregistered channel")
     }  else {
       logger.debug(s".poisonChannel: study result $studyResultId is not handled by the BatchDispatcher $batchId.")
     }
   }
 
-  private def tellActionMsg(msgList: List[BatchMsg], sender: ActorRef): Unit = {
+  private def tellActionMsg(msgList: List[BatchMsg], batchId: Long, sender: ActorRef): Unit = {
     msgList.foreach(msg =>
       msg.tellWhom match {
-        case TellWhom.All => tellAll(msg)
-        case TellWhom.SenderOnly => tellSenderOnly(msg, sender)
+        case TellWhom.All => tellAll(msg, batchId)
+        case TellWhom.SenderOnly => tellSenderOnly(msg, batchId, sender)
         case _ => logger.warn(s".tellActionMsg: no TellWhom specified")
       }
     )
   }
 
   /**
-   * Sends the message to everyone in batch channelRegistry.
+   * Sends the message to every local channel in the batch.
    */
-  private def tellAll(msg: BatchMsg): Unit = {
+  private def tellAll(msg: BatchMsg, batchId: Long): Unit = {
     logger.debug(s".tellAll: batchId $batchId, msg ${Json.stringify(msg.json)}")
-    for (recipient <- channelRegistry.getAllChannels) {
+    for (recipient <- channels(batchId)) {
       recipient ! msg
     }
+  }
+
+  private def channel(batchId: Long, studyResultId: Long): Option[ActorRef] = synchronized {
+    channelsByBatch.get(batchId).flatMap(_.get(studyResultId))
+  }
+
+  private def channels(batchId: Long): List[ActorRef] = synchronized {
+    channelsByBatch.get(batchId).fold(List.empty[ActorRef])(_.values.toList)
   }
 
   /**
    * Sends the message only to the sender.
    */
-  private def tellSenderOnly(msg: BatchMsg, sender: ActorRef): Unit = {
+  private def tellSenderOnly(msg: BatchMsg, batchId: Long, sender: ActorRef): Unit = {
     logger.debug(s".tellSenderOnly: batchId $batchId, msg ${Json.stringify(msg.json)}")
     sender ! msg
   }

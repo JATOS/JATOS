@@ -57,7 +57,7 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
   /**
    * Builds a GroupMsg with or without session data but always with the session version
    */
-  def build(groupResultId: Long, studyResultId: Long, registry: GroupChannelRegistry,
+  def build(groupResultId: Long, studyResultId: Long, channelStudyResultIds: Iterable[Long],
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
@@ -66,7 +66,7 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
         s"$action , tellWhom ${tellWhom.toString}")
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null)
-        buildAction(groupResult, studyResultId, registry, includeSessionData, action, tellWhom)
+        buildAction(groupResult, studyResultId, channelStudyResultIds, includeSessionData, action, tellWhom)
       else
         buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", TellWhom.SenderOnly)
     })
@@ -84,12 +84,12 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
     GroupMsg(json, tellWhom)
   }
 
-  private def buildAction(groupResult: GroupResult, studyResultId: Long, registry: GroupChannelRegistry,
+  private def buildAction(groupResult: GroupResult, studyResultId: Long, channelStudyResultIds: Iterable[Long],
                           includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     val members = JsArray(
       groupResult.getActiveMemberList.asScala.map(sr => JsString(sr.getId.toString)).toSeq
     )
-    val channels = JsArray(registry.getAllStudyResultIds.map(id => JsString(id.toString)).toSeq)
+    val channels = JsArray(channelStudyResultIds.map(id => JsString(id.toString)).toSeq)
     var json = Json.obj(
       GroupActionJsonKey.Action.toString -> action.toString,
       GroupActionJsonKey.MemberId.toString -> studyResultId.toString,

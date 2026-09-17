@@ -17,7 +17,7 @@ import javax.inject.{Inject, Singleton}
  * identified by the study result ID (which represents a particular study run).
  */
 @Singleton
-class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegistry,
+class GroupAdministration @Inject()(groupDispatcher: GroupDispatcher,
                                     studyResultDao: StudyResultDao,
                                     groupResultDao: GroupResultDao) {
 
@@ -79,10 +79,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * by its group result ID.
    */
   def closeGroupChannel(studyResultId: Long, groupResultId: Long): Unit = {
-    val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
-    if (groupDispatcherOption.isDefined) {
-      groupDispatcherOption.get.poisonChannel(studyResultId)
-    }
+    groupDispatcher.poisonChannel(groupResultId, studyResultId)
   }
 
   /**
@@ -147,9 +144,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * Sends a message to each member of the group. This message tells that this member has joined the GroupResult.
    */
   private def sendJoinedMsg(studyResultId: Long, groupResultId: Long): Unit = {
-    val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
-    if (groupDispatcherOption.isDefined)
-      groupDispatcherOption.get.joined(studyResultId)
+    groupDispatcher.joined(groupResultId, studyResultId)
   }
 
   /**
@@ -157,9 +152,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
    * has left the GroupResult.
    */
   private def sendLeftMsg(studyResultId: Long, groupResultId: Long): Unit = {
-    val groupDispatcherOption = groupDispatcherRegistry.get(groupResultId)
-    if (groupDispatcherOption.isDefined)
-      groupDispatcherOption.get.left(studyResultId)
+    groupDispatcher.left(groupResultId, studyResultId)
   }
 
   /**
@@ -169,10 +162,7 @@ class GroupAdministration @Inject()(groupDispatcherRegistry: GroupDispatcherRegi
   private def reassignGroupChannel(studyResultId: Long,
                                    currentGroupResultId: Long,
                                    differentGroupResultId: Long): Unit = {
-    val currentDispatcher = groupDispatcherRegistry.get(currentGroupResultId).get
-    // Get or create, because if the dispatcher was empty, it was shutdown and has to be recreated
-    val differentDispatcher = groupDispatcherRegistry.getOrRegister(differentGroupResultId)
-    currentDispatcher.reassignChannel(studyResultId, differentDispatcher)
+    groupDispatcher.reassignChannel(studyResultId, currentGroupResultId, differentGroupResultId)
   }
 
   /**

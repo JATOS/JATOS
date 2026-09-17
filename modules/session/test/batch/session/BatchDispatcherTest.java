@@ -4,7 +4,6 @@ import batch.BatchActionHandler;
 import batch.BatchActionMsgBuilder;
 import batch.BatchDispatcher;
 import batch.BatchDispatcher.BatchMsg;
-import batch.BatchDispatcherRegistry;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.pekko.actor.AbstractActor;
@@ -19,7 +18,6 @@ import play.api.libs.json.Json$;
 import scala.Enumeration;
 import scala.collection.immutable.List;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -59,23 +57,20 @@ public class BatchDispatcherTest {
         if (system != null) system.terminate();
     }
 
-    private BatchDispatcher newDispatcher(long batchId,
-                                          BatchDispatcherRegistry registry,
-                                          BatchActionHandler handler,
+    private BatchDispatcher newDispatcher(BatchActionHandler handler,
                                           BatchActionMsgBuilder builder) {
-        return new BatchDispatcher(registry, handler, builder, batchId);
+        return new BatchDispatcher(handler, builder);
     }
 
     @Test
     public void registerChannel_sendsOpenedToSenderOnly() throws InterruptedException {
         BatchMsg openedMsg = msg(js("{\"action\":\"OPENED\"}"), TW_SenderOnly());
-        BatchDispatcher dispatcher = newDispatcher(1L, new SilentRegistry(NoopFactory.INSTANCE),
-                new StubHandler(messages()), new StubBuilder(openedMsg));
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages()), new StubBuilder(openedMsg));
 
         BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
         ActorRef channel = system.actorOf(Props.create(RecordingActor.class, queue));
 
-        dispatcher.registerChannel(10L, channel);
+        dispatcher.registerChannel(1L, 10L, channel);
 
         assertEquals(openedMsg, queue.poll(2, TimeUnit.SECONDS));
     }
@@ -83,38 +78,54 @@ public class BatchDispatcherTest {
     @Test
     public void handleActionMsg_All_broadcastsToAllRegistered() throws InterruptedException {
         BatchMsg toAll = msg(js("{\"t\":\"all\"}"), TW_All());
-        BatchDispatcher dispatcher = newDispatcher(2L, new SilentRegistry(NoopFactory.INSTANCE),
-                new StubHandler(messages(toAll)), new StubBuilder());
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages(toAll)), new StubBuilder());
 
         BlockingQueue<Object> queue1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> queue2 = new LinkedBlockingQueue<>();
         ActorRef channel1 = system.actorOf(Props.create(RecordingActor.class, queue1));
         ActorRef channel2 = system.actorOf(Props.create(RecordingActor.class, queue2));
-        dispatcher.registerChannel(101L, channel1);
-        dispatcher.registerChannel(102L, channel2);
+        dispatcher.registerChannel(2L, 101L, channel1);
+        dispatcher.registerChannel(2L, 102L, channel2);
         discardOpened(queue1, queue2);
 
-        dispatcher.handleActionMsg(msg(js("{\"dummy\":true}"), TW_Unknown()), 101L, channel1);
+        dispatcher.handleActionMsg(msg(js("{\"dummy\":true}"), TW_Unknown()), 2L, 101L, channel1);
 
         assertEquals(toAll, queue1.poll(2, TimeUnit.SECONDS));
         assertEquals(toAll, queue2.poll(2, TimeUnit.SECONDS));
     }
 
     @Test
+    public void handleActionMsg_All_doesNotCrossBatchBoundary() throws InterruptedException {
+        BatchMsg toAll = msg(js("{\"t\":\"all\"}"), TW_All());
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages(toAll)), new StubBuilder());
+        BlockingQueue<Object> firstBatch = new LinkedBlockingQueue<>();
+        BlockingQueue<Object> secondBatch = new LinkedBlockingQueue<>();
+        ActorRef sender = system.actorOf(Props.create(RecordingActor.class, firstBatch));
+        ActorRef otherBatch = system.actorOf(Props.create(RecordingActor.class, secondBatch));
+        dispatcher.registerChannel(10L, 101L, sender);
+        dispatcher.registerChannel(11L, 102L, otherBatch);
+        discardOpened(firstBatch, secondBatch);
+
+        dispatcher.handleActionMsg(msg(js("{\"dummy\":true}"), TW_Unknown()), 10L, 101L, sender);
+
+        assertEquals(toAll, firstBatch.poll(2, TimeUnit.SECONDS));
+        assertNull(secondBatch.poll(200, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
     public void handleActionMsg_SenderOnly_sendsOnlyBackToSender() throws InterruptedException {
         BatchMsg toSender = msg(js("{\"t\":\"sender\"}"), TW_SenderOnly());
-        BatchDispatcher dispatcher = newDispatcher(3L, new SilentRegistry(NoopFactory.INSTANCE),
-                new StubHandler(messages(toSender)), new StubBuilder());
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages(toSender)), new StubBuilder());
 
         BlockingQueue<Object> queue1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> queue2 = new LinkedBlockingQueue<>();
         ActorRef channel1 = system.actorOf(Props.create(RecordingActor.class, queue1));
         ActorRef channel2 = system.actorOf(Props.create(RecordingActor.class, queue2));
-        dispatcher.registerChannel(201L, channel1);
-        dispatcher.registerChannel(202L, channel2);
+        dispatcher.registerChannel(3L, 201L, channel1);
+        dispatcher.registerChannel(3L, 202L, channel2);
         discardOpened(queue1, queue2);
 
-        dispatcher.handleActionMsg(msg(js("{\"dummy\":true}"), TW_Unknown()), 201L, channel1);
+        dispatcher.handleActionMsg(msg(js("{\"dummy\":true}"), TW_Unknown()), 3L, 201L, channel1);
 
         assertEquals(toSender, queue1.poll(2, TimeUnit.SECONDS));
         assertNull("Non-sender should not receive a message", queue2.poll(200, TimeUnit.MILLISECONDS));
@@ -124,18 +135,17 @@ public class BatchDispatcherTest {
     public void handleActionMsg_sessionUpdate_sendsPatchToAllAndAckToSender() throws InterruptedException {
         BatchMsg patch = msg(js("{\"action\":\"SESSION\",\"version\":2}"), TW_All());
         BatchMsg ack = msg(js("{\"action\":\"SESSION_ACK\",\"id\":10}"), TW_SenderOnly());
-        BatchDispatcher dispatcher = newDispatcher(4L, new SilentRegistry(NoopFactory.INSTANCE),
-                new StubHandler(messages(patch, ack)), new StubBuilder());
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages(patch, ack)), new StubBuilder());
 
         BlockingQueue<Object> senderQueue = new LinkedBlockingQueue<>();
         BlockingQueue<Object> otherQueue = new LinkedBlockingQueue<>();
         ActorRef sender = system.actorOf(Props.create(RecordingActor.class, senderQueue));
         ActorRef other = system.actorOf(Props.create(RecordingActor.class, otherQueue));
-        dispatcher.registerChannel(201L, sender);
-        dispatcher.registerChannel(202L, other);
+        dispatcher.registerChannel(4L, 201L, sender);
+        dispatcher.registerChannel(4L, 202L, other);
         discardOpened(senderQueue, otherQueue);
 
-        dispatcher.handleActionMsg(msg(js("{\"action\":\"SESSION\"}"), TW_Unknown()), 201L, sender);
+        dispatcher.handleActionMsg(msg(js("{\"action\":\"SESSION\"}"), TW_Unknown()), 4L, 201L, sender);
 
         assertEquals(patch, senderQueue.poll(2, TimeUnit.SECONDS));
         assertEquals(ack, senderQueue.poll(2, TimeUnit.SECONDS));
@@ -144,45 +154,40 @@ public class BatchDispatcherTest {
     }
 
     @Test
-    public void unregisterChannel_whenEmpty_unregistersDispatcherInRegistry() {
-        TestRegistry registry = new TestRegistry(NoopFactory.INSTANCE);
-        BatchDispatcher dispatcher = newDispatcher(42L, registry,
-                new StubHandler(messages()), new StubBuilder());
-        ActorRef channel = system.actorOf(Props.create(RecordingActor.class, new LinkedBlockingQueue<>()));
-        dispatcher.registerChannel(301L, channel);
+    public void unregisterChannel_whenEmpty_removesBatchEntry() throws InterruptedException {
+        BatchMsg toAll = msg(js("{\"t\":\"all\"}"), TW_All());
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages(toAll)), new StubBuilder());
+        BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
+        ActorRef channel = system.actorOf(Props.create(RecordingActor.class, queue));
+        dispatcher.registerChannel(42L, 301L, channel);
 
-        dispatcher.unregisterChannel(301L);
+        dispatcher.unregisterChannel(42L, 301L);
+        queue.poll(2, TimeUnit.SECONDS);
+        dispatcher.handleActionMsg(msg(js("{\"dummy\":true}"), TW_Unknown()), 42L, 301L, channel);
 
-        assertTrue("Registry should have been notified to unregister", registry.unregisteredIds.contains(42L));
+        assertNull(queue.poll(200, TimeUnit.MILLISECONDS));
     }
 
     @Test
-    public void unregisterChannel_unknownId_stillTriggersUnregisterIfEmpty() {
-        TestRegistry registry = new TestRegistry(NoopFactory.INSTANCE);
-        BatchDispatcher dispatcher = newDispatcher(43L, registry,
-                new StubHandler(messages()), new StubBuilder());
+    public void unregisterChannel_unknownId_doesNothing() {
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages()), new StubBuilder());
 
-        dispatcher.unregisterChannel(9999L);
-
-        assertTrue(registry.unregisteredIds.contains(43L));
+        dispatcher.unregisterChannel(43L, 9999L);
     }
 
     @Test
     public void poisonChannel_sendsClosedAndUnregisters() throws InterruptedException {
-        TestRegistry registry = new TestRegistry(NoopFactory.INSTANCE);
-        BatchDispatcher dispatcher = newDispatcher(44L, registry,
-                new StubHandler(messages()), new StubBuilder());
+        BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages()), new StubBuilder());
         BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
         ActorRef channel = system.actorOf(Props.create(RecordingActor.class, queue));
-        dispatcher.registerChannel(401L, channel);
+        dispatcher.registerChannel(44L, 401L, channel);
         queue.poll(2, TimeUnit.SECONDS);
 
-        dispatcher.poisonChannel(401L);
+        dispatcher.poisonChannel(44L, 401L);
 
         BatchMsg closed = (BatchMsg) queue.poll(2, TimeUnit.SECONDS);
         assertNotNull("Expected a Closed message", closed);
         assertEquals(js("{\"action\":\"CLOSED\"}"), closed.json());
-        assertTrue("Dispatcher should unregister itself when empty", registry.unregisteredIds.contains(44L));
     }
 
     private void discardOpened(BlockingQueue<Object> queue1,
@@ -213,15 +218,6 @@ public class BatchDispatcherTest {
 
     private static Enumeration.Value TW_Unknown() {
         return TellWhom$.MODULE$.Unknown();
-    }
-
-    private static final class NoopFactory implements BatchDispatcher.Factory {
-        private static final NoopFactory INSTANCE = new NoopFactory();
-
-        @Override
-        public BatchDispatcher create(long batchId) {
-            return null;
-        }
     }
 
     private static class StubHandler extends BatchActionHandler {
@@ -256,23 +252,4 @@ public class BatchDispatcherTest {
         }
     }
 
-    private static class SilentRegistry extends BatchDispatcherRegistry {
-        SilentRegistry(BatchDispatcher.Factory factory) {
-            super(factory);
-        }
-    }
-
-    private static class TestRegistry extends BatchDispatcherRegistry {
-        private final java.util.List<Long> unregisteredIds = new ArrayList<>();
-
-        TestRegistry(BatchDispatcher.Factory factory) {
-            super(factory);
-        }
-
-        @Override
-        public void unregister(long batchId) {
-            unregisteredIds.add(batchId);
-            super.unregister(batchId);
-        }
-    }
 }

@@ -7,6 +7,7 @@ import org.apache.pekko.actor.Props;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import models.common.Study.GroupSessionWriteScope;
+import daos.common.StudyDao;
 import group.*;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -34,7 +35,7 @@ public class GroupDispatcherTest {
 
     private static ActorSystem system;
 
-    private GroupDispatcherRegistry registry;
+    private StudyDao studyDao;
     private GroupActionHandler actionHandler;
     private GroupActionMsgBuilder msgBuilder;
 
@@ -70,11 +71,11 @@ public class GroupDispatcherTest {
 
     @Before
     public void setup() {
-        registry = mock(GroupDispatcherRegistry.class);
+        studyDao = mock(StudyDao.class);
         actionHandler = mock(GroupActionHandler.class);
         msgBuilder = mock(GroupActionMsgBuilder.class);
-        dispatcher = new GroupDispatcher(registry, actionHandler, msgBuilder, groupResultId,
-                GroupSessionWriteScope.SHARED);
+        when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
+        dispatcher = new GroupDispatcher(actionHandler, msgBuilder, studyDao);
     }
 
     private JsObject js(String s) {
@@ -140,22 +141,22 @@ public class GroupDispatcherTest {
         when(ch2.self()).thenReturn(outActor2);
 
         // Configure msg builder: OPENED -> one to sender, one to others
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\",\"who\":\"sender\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\",\"who\":\"others\"}")));
 
         // Register first channel -> it should get the sender-only OPENED; no others exist yet
-        dispatcher.registerChannel(1L, ch1);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
         assertEquals(1, out1.size());
         assertTrue(out2.isEmpty());
 
         // Clear first out; now register second channel ->
         // second gets sender-only OPENED, first gets others OPENED
         pollUntilEmpty(out1);
-        dispatcher.registerChannel(2L, ch2);
+        dispatcher.registerChannel(groupResultId, 2L, ch2);
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
         assertNotNull(msg1);
@@ -165,7 +166,7 @@ public class GroupDispatcherTest {
     }
 
     @Test
-    public void unregisterChannel_sendsClosedToOthers_andUnregistersDispatcherIfEmpty() {
+    public void unregisterChannel_sendsClosedToOthers_andRemovesEmptyGroup() {
         // Two channels setup
         BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();
@@ -176,35 +177,32 @@ public class GroupDispatcherTest {
         when(ch1.self()).thenReturn(outActor1);
         when(ch2.self()).thenReturn(outActor2);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Closed()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
 
-        dispatcher.registerChannel(1L, ch1);
-        dispatcher.registerChannel(2L, ch2);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
+        dispatcher.registerChannel(groupResultId, 2L, ch2);
         // Clear channels
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
 
         // Unregister first -> second should get CLOSED
-        dispatcher.unregisterChannel(1L);
+        dispatcher.unregisterChannel(groupResultId, 1L);
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
         assertNull(msg1);
         assertNotNull(msg2);
         assertEquals(js("{\"action\":\"CLOSED\"}"), ((GroupMsg) msg2).json());
-        verify(registry, never()).unregister(anyLong());
-
-        // Unregister second -> now empty, registry should unregister dispatcher
-        dispatcher.unregisterChannel(2L);
-        verify(registry).unregister(groupResultId);
+        dispatcher.unregisterChannel(groupResultId, 2L);
+        assertFalse(dispatcher.hasChannel(2L));
     }
 
     @Test
@@ -214,72 +212,69 @@ public class GroupDispatcherTest {
         GroupChannelActor ch1 = mock(GroupChannelActor.class);
         when(ch1.self()).thenReturn(outActor1);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Closed()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
 
-        dispatcher.registerChannel(1L, ch1);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
         pollUntilEmpty(out1);
 
-        dispatcher.poisonChannel(1L);
+        dispatcher.poisonChannel(groupResultId, 1L);
 
         // Should receive at least one CLOSED (the direct one before stopping)
         // Give a short time window for async delivery
         Object first = poll(out1);
         assertNotNull("Expected one message to have been delivered to out actor", first);
-        // After poison and unregister, dispatcher registry should be called as channels are empty
-        verify(registry).unregister(groupResultId);
+        assertFalse(dispatcher.hasChannel(1L));
     }
 
     @Test
     public void reassignChannel_movesChannelAndTriggersJoinedLeft() {
-        GroupDispatcher different = spy(new GroupDispatcher(registry, actionHandler, msgBuilder,
-                groupResultId + 1, GroupSessionWriteScope.SHARED));
         GroupDispatcher spyDispatcher = spy(dispatcher);
 
         GroupChannelActor ch = mock(GroupChannelActor.class);
         ActorRef dummyOut = system.actorOf(Props.create(CapturingActor.class, new LinkedBlockingQueue<>()));
         when(ch.self()).thenReturn(dummyOut);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), anyBoolean(),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), anyBoolean(),
                 eq(GA_Opened()), any(Enumeration.Value.class)))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(GroupChannelRegistry.class), anyBoolean(),
+        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(scala.collection.Iterable.class), anyBoolean(),
                 eq(GA_Opened()), any(Enumeration.Value.class)))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
         // Stub JOINED for different dispatcher to avoid NPE
-        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Joined()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"JOINED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Left()), any()))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"LEFT\"}")));
 
         // Register in first
         stubOpenCloseMessages();
-        spyDispatcher.registerChannel(1L, ch);
+        spyDispatcher.registerChannel(groupResultId, 1L, ch);
         // Reassign
-        spyDispatcher.reassignChannel(1L, different);
+        spyDispatcher.reassignChannel(1L, groupResultId, groupResultId + 1);
 
-        verify(ch).setGroupDispatcher(different);
-        verify(spyDispatcher).left(1L);
-        verify(different).joined(1L);
+        verify(ch).setGroupResultId(groupResultId + 1);
+        verify(spyDispatcher).left(groupResultId, 1L);
+        verify(spyDispatcher).joined(groupResultId + 1, 1L);
     }
 
     private void stubOpenCloseMessages() {
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Closed()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
     }
@@ -296,8 +291,8 @@ public class GroupDispatcherTest {
         when(ch2.self()).thenReturn(outActor2);
 
         stubOpenCloseMessages();
-        dispatcher.registerChannel(1L, ch1);
-        dispatcher.registerChannel(2L, ch2);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
+        dispatcher.registerChannel(groupResultId, 2L, ch2);
         // Wait for OPENED messages to be sent
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
@@ -313,7 +308,7 @@ public class GroupDispatcherTest {
                 .thenReturn(asScala(Arrays.asList(toSender, toAllButSender)).toList());
 
         JsObject input = js("{\"action\":\"SESSION\"}");
-        dispatcher.handleGroupMsg(new GroupMsg(input, TW_Unknown()), 1L, ch1.self());
+        dispatcher.handleGroupMsg(new GroupMsg(input, TW_Unknown()), groupResultId, 1L, ch1.self());
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
 
@@ -334,8 +329,8 @@ public class GroupDispatcherTest {
         when(ch2.self()).thenReturn(outActor2);
 
         stubOpenCloseMessages();
-        dispatcher.registerChannel(1L, ch1);
-        dispatcher.registerChannel(2L, ch2);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
+        dispatcher.registerChannel(groupResultId, 2L, ch2);
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
 
@@ -347,7 +342,7 @@ public class GroupDispatcherTest {
                 eq(GroupSessionWriteScope.SHARED)))
                 .thenReturn(asScala(List.of(sessionPatch)).toList());
 
-        dispatcher.handleGroupMsg(new GroupMsg(js("{\"action\":\"SESSION\"}"), TW_Unknown()), 1L, ch1.self());
+        dispatcher.handleGroupMsg(new GroupMsg(js("{\"action\":\"SESSION\"}"), TW_Unknown()), groupResultId, 1L, ch1.self());
 
         assertEquals(sessionPatch, poll(out1));
         assertEquals(sessionPatch, poll(out2));
@@ -365,15 +360,15 @@ public class GroupDispatcherTest {
         when(ch2.self()).thenReturn(outActor2);
 
         stubOpenCloseMessages();
-        dispatcher.registerChannel(1L, ch1);
-        dispatcher.registerChannel(2L, ch2);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
+        dispatcher.registerChannel(groupResultId, 2L, ch2);
         // Wait for OPENED messages to be sent
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
 
         // Direct message to 2
         JsObject directJson = js("{\"recipient\":\"2\",\"msg\":\"hi\"}");
-        dispatcher.handleGroupMsg(directOrBroadcastMsg(directJson), 1L, ch1.self());
+        dispatcher.handleGroupMsg(directOrBroadcastMsg(directJson), groupResultId, 1L, ch1.self());
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
         assertNull(msg1);
@@ -384,7 +379,7 @@ public class GroupDispatcherTest {
         when(msgBuilder.buildError(eq(groupResultId), anyString(), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"ERROR\"}")));
         JsObject toUnknown = js("{\"recipient\":\"999\"}");
-        dispatcher.handleGroupMsg(directOrBroadcastMsg(toUnknown), 1L, ch1.self());
+        dispatcher.handleGroupMsg(directOrBroadcastMsg(toUnknown), groupResultId, 1L, ch1.self());
         Object msg3 = poll(out1);
         assertNotNull(msg3);
     }
@@ -401,19 +396,45 @@ public class GroupDispatcherTest {
         when(ch2.self()).thenReturn(outActor2);
 
         stubOpenCloseMessages();
-        dispatcher.registerChannel(1L, ch1);
-        dispatcher.registerChannel(2L, ch2);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
+        dispatcher.registerChannel(groupResultId, 2L, ch2);
         // Wait for OPENED messages to be sent
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
 
         JsObject broadcast = js("{\"text\":\"hello all\"}");
-        dispatcher.handleGroupMsg(directOrBroadcastMsg(broadcast), 1L, ch1.self());
+        dispatcher.handleGroupMsg(directOrBroadcastMsg(broadcast), groupResultId, 1L, ch1.self());
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
         assertNull(msg1);
         assertNotNull(msg2);
         assertEquals(broadcast, ((GroupMsg) msg2).json());
+    }
+
+    @Test
+    public void handleGroupMsg_broadcast_doesNotCrossGroupBoundary() {
+        BlockingQueue<Object> senderQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<Object> otherGroupQueue = new LinkedBlockingQueue<>();
+        GroupChannelActor sender = mock(GroupChannelActor.class);
+        GroupChannelActor otherGroup = mock(GroupChannelActor.class);
+        when(sender.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, senderQueue)));
+        when(otherGroup.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, otherGroupQueue)));
+        when(msgBuilder.build(anyLong(), anyLong(), any(scala.collection.Iterable.class), eq(true),
+                eq(GA_Opened()), eq(TW_SenderOnly())))
+                .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
+        when(msgBuilder.build(anyLong(), anyLong(), any(scala.collection.Iterable.class), eq(false),
+                eq(GA_Opened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
+        dispatcher.registerChannel(groupResultId, 1L, sender);
+        dispatcher.registerChannel(groupResultId + 1, 2L, otherGroup);
+        pollUntilEmpty(senderQueue);
+        pollUntilEmpty(otherGroupQueue);
+
+        dispatcher.handleGroupMsg(directOrBroadcastMsg(js("{\"text\":\"hello\"}")),
+                groupResultId, 1L, sender.self());
+
+        assertNull(poll(senderQueue));
+        assertNull(poll(otherGroupQueue));
     }
 
     @Test
@@ -427,21 +448,21 @@ public class GroupDispatcherTest {
         when(ch1.self()).thenReturn(outActor1);
         when(ch2.self()).thenReturn(outActor2);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Joined()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"JOINED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(GroupChannelRegistry.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
                 eq(GA_Left()), any()))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"LEFT\"}")));
 
         stubOpenCloseMessages();
-        dispatcher.registerChannel(1L, ch1);
-        dispatcher.registerChannel(2L, ch2);
+        dispatcher.registerChannel(groupResultId, 1L, ch1);
+        dispatcher.registerChannel(groupResultId, 2L, ch2);
 
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
 
-        dispatcher.joined(1L);
+        dispatcher.joined(groupResultId, 1L);
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
         assertNull(msg1);
@@ -451,7 +472,7 @@ public class GroupDispatcherTest {
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
 
-        dispatcher.left(2L);
+        dispatcher.left(groupResultId, 2L);
         Object msg3 = poll(out1);
         Object msg4 = poll(out2);
         assertNotNull(msg3);
@@ -462,8 +483,8 @@ public class GroupDispatcherTest {
         pollUntilEmpty(out2);
 
         // If unknown ID -> we still get the LEFT messages
-        dispatcher.left(999L);
-        dispatcher.joined(999L);
+        dispatcher.left(groupResultId, 999L);
+        dispatcher.joined(groupResultId, 999L);
         assertEquals(2, out1.size() + out2.size());
     }
 

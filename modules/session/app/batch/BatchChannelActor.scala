@@ -20,12 +20,13 @@ import javax.inject.Inject
  */
 class BatchChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
+                                  batchId: Long,
                                   batchDispatcher: BatchDispatcher) extends Actor {
 
   private var registered = false
 
   override def postStop(): Unit = {
-    if (registered) batchDispatcher.unregisterChannel(studyResultId)
+    if (registered) batchDispatcher.unregisterChannel(batchId, studyResultId)
   }
 
   val pong: JsObject = Json.obj("heartbeat" -> "pong")
@@ -36,7 +37,7 @@ class BatchChannelActor @Inject()(out: ActorRef,
       // If we receive a "Ready" message, register with the BatchDispatcher
       if (!registered) {
         registered = true
-        batchDispatcher.registerChannel(studyResultId, self)
+        batchDispatcher.registerChannel(batchId, studyResultId, self)
       }
 
     case msg: JsObject if msg.keys.contains("heartbeat") =>
@@ -46,7 +47,7 @@ class BatchChannelActor @Inject()(out: ActorRef,
     case msg: JsObject =>
       // If we receive an JSON object (can only come from the client), wrap it in a
       // BatchMsg and forward it to the BatchDispatcher
-      batchDispatcher.handleActionMsg(BatchMsg(msg), studyResultId, self)
+      batchDispatcher.handleActionMsg(BatchMsg(msg), batchId, studyResultId, self)
 
     case msg: BatchMsg =>
       // If we receive a BatchMsg (can only come from the BatchDispatcher),

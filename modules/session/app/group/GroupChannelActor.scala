@@ -20,19 +20,20 @@ import javax.inject.Inject
  */
 class GroupChannelActor @Inject()(out: ActorRef,
                                   studyResultId: Long,
-                                  private var groupDispatcher: GroupDispatcher) extends Actor {
+                                  private var groupResultId: Long,
+                                  groupDispatcher: GroupDispatcher) extends Actor {
 
   private var registered = false
 
   val pong: JsObject = Json.obj("heartbeat" -> "pong")
 
   override def postStop(): Unit = {
-    if (registered) groupDispatcher.unregisterChannel(studyResultId)
+    if (registered) groupDispatcher.unregisterChannel(groupResultId, studyResultId)
   }
 
   override def toString: String = studyResultId.toString
 
-  def setGroupDispatcher(groupDispatcher: GroupDispatcher): Unit = this.groupDispatcher = groupDispatcher
+  def setGroupResultId(groupResultId: Long): Unit = this.groupResultId = groupResultId
 
   def receive: Receive = {
 
@@ -40,7 +41,7 @@ class GroupChannelActor @Inject()(out: ActorRef,
       // If we receive a "Ready" message, register with the GroupDispatcher
       if (!registered) {
         registered = true
-        groupDispatcher.registerChannel(studyResultId, this)
+        groupDispatcher.registerChannel(groupResultId, studyResultId, this)
       }
 
     case msg: JsObject if msg.keys.contains("heartbeat") =>
@@ -50,7 +51,7 @@ class GroupChannelActor @Inject()(out: ActorRef,
     case json: JsObject =>
       // If we receive a JsonNode (only from the client) wrap it in a GroupMsg and forward it to
       // the GroupDispatcher
-      groupDispatcher.handleGroupMsg(GroupMsg(json), studyResultId, self)
+      groupDispatcher.handleGroupMsg(GroupMsg(json), groupResultId, studyResultId, self)
 
     case msg: GroupMsg =>
       // If we receive a GroupMsg (only from the GroupDispatcher) send the wrapped JsonNode to

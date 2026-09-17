@@ -4,7 +4,6 @@ import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
 import group.GroupAdministration;
 import group.GroupDispatcher;
-import group.GroupDispatcherRegistry;
 import jakarta.persistence.EntityManager;
 import models.common.Batch;
 import models.common.GroupResult;
@@ -27,9 +26,7 @@ import static org.mockito.Mockito.*;
  */
 public class GroupAdministrationTest {
 
-    private GroupDispatcherRegistry registry;
-    private GroupDispatcher dispatcherCurrent;
-    private GroupDispatcher dispatcherDifferent;
+    private GroupDispatcher dispatcher;
     private GroupResultDao groupResultDao;
     private StudyResultDao studyResultDao;
 
@@ -37,13 +34,11 @@ public class GroupAdministrationTest {
 
     @Before
     public void setUp() {
-        registry = mock(GroupDispatcherRegistry.class);
-        dispatcherCurrent = mock(GroupDispatcher.class);
-        dispatcherDifferent = mock(GroupDispatcher.class);
+        dispatcher = mock(GroupDispatcher.class);
         groupResultDao = mock(GroupResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
 
-        admin = new GroupAdministration(registry, studyResultDao, groupResultDao);
+        admin = new GroupAdministration(dispatcher, studyResultDao, groupResultDao);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
         JPAMocker.mockDaoTransactions(entityManager, groupResultDao, studyResultDao);
@@ -86,9 +81,6 @@ public class GroupAdministrationTest {
             return gr;
         });
 
-        // No dispatcher initially; sendJoinedMsg checks and is no-op if none
-        when(registry.get(anyLong())).thenReturn(scala.Option.empty());
-
         GroupResult returned = admin.join(sr, batch);
 
         assertNotNull(returned);
@@ -97,9 +89,7 @@ public class GroupAdministrationTest {
         verify(groupResultDao).persist(any(GroupResult.class));
         verify(groupResultDao, atLeastOnce()).merge(any(GroupResult.class));
         verify(studyResultDao).merge(sr);
-        // Since no dispatcher, no joined() call
-        verify(registry).get(anyLong());
-        verifyNoInteractions(dispatcherCurrent);
+        verify(dispatcher).joined(10L, sr.getId());
     }
 
     @Test
@@ -113,7 +103,6 @@ public class GroupAdministrationTest {
 
         when(studyResultDao.findById(sr.getId())).thenReturn(sr);
         when(groupResultDao.findFirstMaxNotReachedForUpdate(batch)).thenReturn(Optional.of(existing));
-        when(registry.get(existing.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
 
         GroupResult returned = admin.join(sr, batch);
 
@@ -123,7 +112,7 @@ public class GroupAdministrationTest {
         // Ensure we didn't create a new one
         verify(groupResultDao, never()).persist(any(GroupResult.class));
         // Joined message should be sent
-        verify(dispatcherCurrent).joined(sr.getId());
+        verify(dispatcher).joined(existing.getId(), sr.getId());
     }
 
     @Test
@@ -133,13 +122,13 @@ public class GroupAdministrationTest {
         StudyResult sr1 = newStudyResult(3L, studyNonGroup, batch);
         // activeGroupResult null
         admin.leave(sr1);
-        verifyNoInteractions(groupResultDao, studyResultDao, registry);
+        verifyNoInteractions(groupResultDao, studyResultDao, dispatcher);
 
         // group study but no active group
         Study studyGroup = groupStudy();
         StudyResult sr2 = newStudyResult(4L, studyGroup, batch);
         admin.leave(sr2);
-        verifyNoMoreInteractions(groupResultDao, studyResultDao, registry);
+        verifyNoMoreInteractions(groupResultDao, studyResultDao, dispatcher);
     }
 
     @Test
@@ -155,7 +144,6 @@ public class GroupAdministrationTest {
 
         when(studyResultDao.findById(sr.getId())).thenReturn(sr);
         when(groupResultDao.findById(gr.getId())).thenReturn(gr);
-        when(registry.get(gr.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
 
         admin.leave(sr);
 
@@ -165,22 +153,14 @@ public class GroupAdministrationTest {
         assertEquals(1, gr.getHistoryMemberCount().intValue());
         verify(groupResultDao, atLeastOnce()).merge(gr);
         verify(studyResultDao).merge(sr);
-        verify(dispatcherCurrent).left(sr.getId());
-        verify(dispatcherCurrent).poisonChannel(sr.getId());
+        verify(dispatcher).left(gr.getId(), sr.getId());
+        verify(dispatcher).poisonChannel(gr.getId(), sr.getId());
     }
 
     @Test
-    public void closeGroupChannel_onlyIfDispatcherExists() {
-        // None case
-        when(registry.get(222L)).thenReturn(scala.Option.empty());
+    public void closeGroupChannel_delegatesToDispatcher() {
         admin.closeGroupChannel(111L, 222L);
-        verify(registry).get(222L);
-        verifyNoInteractions(dispatcherCurrent);
-
-        // Some case
-        when(registry.get(222L)).thenReturn(scala.Option.apply(dispatcherCurrent));
-        admin.closeGroupChannel(111L, 222L);
-        verify(dispatcherCurrent).poisonChannel(111L);
+        verify(dispatcher).poisonChannel(222L, 111L);
     }
 
     @Test
@@ -199,10 +179,8 @@ public class GroupAdministrationTest {
 
         // findFirstDifferentMaxNotReachedForUpdate returns group "different"
         when(groupResultDao.findFirstDifferentMaxNotReachedForUpdate(batch, current)).thenReturn(Optional.of(different));
-        when(registry.get(current.getId())).thenReturn(scala.Option.apply(dispatcherCurrent));
         when(studyResultDao.findById(sr.getId())).thenReturn(sr);
         when(groupResultDao.findById(current.getId())).thenReturn(current);
-        when(registry.getOrRegister(different.getId())).thenReturn(dispatcherDifferent);
 
         boolean reassigned = admin.reassign(sr, batch);
         assertTrue(reassigned);
@@ -215,7 +193,7 @@ public class GroupAdministrationTest {
         verify(groupResultDao).merge(different);
         verify(studyResultDao).merge(sr);
         // Channel reassigned
-        verify(dispatcherCurrent).reassignChannel(sr.getId(), dispatcherDifferent);
+        verify(dispatcher).reassignChannel(sr.getId(), current.getId(), different.getId());
     }
 
     @Test
@@ -235,8 +213,7 @@ public class GroupAdministrationTest {
         boolean reassigned = admin.reassign(sr, batch);
         assertFalse(reassigned);
         assertSame(current, sr.getActiveGroupResult());
-        verify(registry, never()).get(anyLong());
-        verify(registry, never()).getOrRegister(anyLong());
+        verifyNoInteractions(dispatcher);
     }
 
     @Test
@@ -251,7 +228,6 @@ public class GroupAdministrationTest {
         sr.setActiveGroupResult(gr);
 
         // After leaving, active=0 and history=1 which equals maxTotal -> finish
-        when(registry.get(gr.getId())).thenReturn(scala.Option.empty());
         when(studyResultDao.findById(sr.getId())).thenReturn(sr);
         when(groupResultDao.findById(gr.getId())).thenReturn(gr);
         admin.leave(sr);
