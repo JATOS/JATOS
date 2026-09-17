@@ -1,5 +1,6 @@
 package general
 
+import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import daos.common.LoginAttemptDao
 import general.common.{Common, JatosUpdater}
@@ -16,11 +17,28 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
+object OnStartStop {
+
+  private[general] def validateMultiNodeConfiguration(multiNode: Boolean, actorProvider: String): Unit = {
+    val clusterProvider = actorProvider == "cluster"
+    if (multiNode && !clusterProvider) {
+      throw new IllegalStateException(
+        s"Invalid multi-node configuration: jatos.multiNode=true requires " +
+          s"pekko.actor.provider=cluster, but it is '$actorProvider'.")
+    }
+    if (!multiNode && clusterProvider) {
+      throw new IllegalStateException(
+        "Invalid multi-node configuration: pekko.actor.provider=cluster requires jatos.multiNode=true.")
+    }
+  }
+}
+
 /**
  * Called during start-up
  */
 class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             environment: play.Environment,
+                            config: Config,
                             actorSystem: ActorSystem,
                             jatosUpdater: JatosUpdater,
                             mySQLCharsetFix: MySQLCharsetFix,
@@ -30,6 +48,10 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             groupCleaner: GroupCleaner) {
 
   private val logger = Logger(this.getClass)
+
+  OnStartStop.validateMultiNodeConfiguration(
+    config.getBoolean("jatos.multiNode"),
+    config.getString("pekko.actor.provider"))
 
   if (Common.isMultiNode && !Common.usesMysql()) {
     throw new RuntimeException("You cannot use an H2 database in multi node mode")
