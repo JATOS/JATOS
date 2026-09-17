@@ -22,6 +22,7 @@ object SharedSettings {
   // Dependency versions
   val mockitoVersion = "5.23.0"
   val assertjVersion = "3.27.7"
+  val pekkoVersion = "1.0.3"
 
   // Test dependencies (mockito is handled separately via mockitoSettings)
   val testDependencies: Seq[ModuleID] = Seq(
