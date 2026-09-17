@@ -74,7 +74,6 @@ public class PublixUtilsTest {
 
     private ResultCreator resultCreator;
     private IdCookieService idCookieService;
-    private BatchDispatcher batchDispatcher;
     private GroupAdministration groupAdministration;
     private StudyResultDao studyResultDao;
     private ComponentDao componentDao;
@@ -89,7 +88,7 @@ public class PublixUtilsTest {
     public void setup() {
         resultCreator = mock(ResultCreator.class);
         idCookieService = mock(IdCookieService.class);
-        batchDispatcher = mock(BatchDispatcher.class);
+        BatchDispatcher batchDispatcher = mock(BatchDispatcher.class);
         groupAdministration = mock(GroupAdministration.class);
         studyResultDao = mock(StudyResultDao.class);
         componentDao = mock(ComponentDao.class);

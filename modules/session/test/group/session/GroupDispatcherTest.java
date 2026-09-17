@@ -1,14 +1,17 @@
 package group.session;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import daos.common.StudyDao;
+import group.GroupActionHandler;
+import group.GroupActionMsgBuilder;
+import group.GroupChannelActor;
+import group.GroupDispatcher;
+import models.common.Study.GroupSessionWriteScope;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.actor.Props;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import models.common.Study.GroupSessionWriteScope;
-import daos.common.StudyDao;
-import group.*;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -35,7 +38,6 @@ public class GroupDispatcherTest {
 
     private static ActorSystem system;
 
-    private StudyDao studyDao;
     private GroupActionHandler actionHandler;
     private GroupActionMsgBuilder msgBuilder;
 
@@ -71,7 +73,7 @@ public class GroupDispatcherTest {
 
     @Before
     public void setup() {
-        studyDao = mock(StudyDao.class);
+        StudyDao studyDao = mock(StudyDao.class);
         actionHandler = mock(GroupActionHandler.class);
         msgBuilder = mock(GroupActionMsgBuilder.class);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
@@ -141,10 +143,10 @@ public class GroupDispatcherTest {
         when(ch2.self()).thenReturn(outActor2);
 
         // Configure msg builder: OPENED -> one to sender, one to others
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\",\"who\":\"sender\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\",\"who\":\"others\"}")));
 
@@ -177,14 +179,14 @@ public class GroupDispatcherTest {
         when(ch1.self()).thenReturn(outActor1);
         when(ch2.self()).thenReturn(outActor2);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Closed()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
 
@@ -212,13 +214,13 @@ public class GroupDispatcherTest {
         GroupChannelActor ch1 = mock(GroupChannelActor.class);
         when(ch1.self()).thenReturn(outActor1);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Closed()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
 
@@ -242,17 +244,17 @@ public class GroupDispatcherTest {
         ActorRef dummyOut = system.actorOf(Props.create(CapturingActor.class, new LinkedBlockingQueue<>()));
         when(ch.self()).thenReturn(dummyOut);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), anyBoolean(),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), anyBoolean(),
                 eq(GA_Opened()), any(Enumeration.Value.class)))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(scala.collection.Iterable.class), anyBoolean(),
+        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(), anyBoolean(),
                 eq(GA_Opened()), any(Enumeration.Value.class)))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
         // Stub JOINED for different dispatcher to avoid NPE
-        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(), eq(false),
                 eq(GA_Joined()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"JOINED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Left()), any()))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"LEFT\"}")));
 
@@ -268,13 +270,13 @@ public class GroupDispatcherTest {
     }
 
     private void stubOpenCloseMessages() {
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(true),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Closed()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
     }
@@ -419,10 +421,10 @@ public class GroupDispatcherTest {
         GroupChannelActor otherGroup = mock(GroupChannelActor.class);
         when(sender.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, senderQueue)));
         when(otherGroup.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, otherGroupQueue)));
-        when(msgBuilder.build(anyLong(), anyLong(), any(scala.collection.Iterable.class), eq(true),
+        when(msgBuilder.build(anyLong(), anyLong(), any(), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
-        when(msgBuilder.build(anyLong(), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(anyLong(), anyLong(), any(), eq(false),
                 eq(GA_Opened()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
         dispatcher.registerChannel(groupResultId, 1L, sender);
@@ -448,10 +450,10 @@ public class GroupDispatcherTest {
         when(ch1.self()).thenReturn(outActor1);
         when(ch2.self()).thenReturn(outActor2);
 
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Joined()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"JOINED\"}")));
-        when(msgBuilder.build(eq(groupResultId), anyLong(), any(scala.collection.Iterable.class), eq(false),
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
                 eq(GA_Left()), any()))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"LEFT\"}")));
 
