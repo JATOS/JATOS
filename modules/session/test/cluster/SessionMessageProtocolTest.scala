@@ -33,6 +33,16 @@ class SessionMessageProtocolTest {
   }
 
   @Test
+  def groupReassignmentMessage_containsSourceAndDestinationGroups(): Unit = {
+    val message = GroupReassignmentClusterMessage("node-1", 30L, 20L, 21L)
+
+    assertEquals("node-1", message.originNodeId)
+    assertEquals(30L, message.studyResultId)
+    assertEquals(20L, message.currentGroupResultId)
+    assertEquals(21L, message.differentGroupResultId)
+  }
+
+  @Test
   def nodeIdentity_isStableAndUniquePerInstance(): Unit = {
     val first = new NodeIdentity
     val second = new NodeIdentity

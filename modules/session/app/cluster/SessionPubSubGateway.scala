@@ -12,6 +12,7 @@ object SessionPubSubGateway {
   // Local commands for sending Batch/GroupClusterMessages through the gateway.
   private[cluster] final case class PublishBatchToCluster(message: BatchClusterMessage)
   private[cluster] final case class PublishGroupToCluster(message: GroupClusterMessage)
+  private[cluster] final case class PublishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage)
   private[cluster] final case class RegisterLocalReceiver(receiver: SessionMessageReceiver)
 
   def props(nodeIdentity: NodeIdentity): Props = Props(new SessionPubSubGateway(nodeIdentity))
@@ -50,8 +51,10 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
   private def active(receiver: SessionMessageReceiver): Receive = {
     case PublishBatchToCluster(message) => mediator ! Publish(BatchTopic, message)
     case PublishGroupToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishGroupReassignmentToCluster(message) => mediator ! Publish(GroupTopic, message)
     case message: BatchClusterMessage => receiveBatch(message, receiver)
     case message: GroupClusterMessage => receiveGroup(message, receiver)
+    case message: GroupReassignmentClusterMessage => receiveGroupReassignment(message, receiver)
     case RegisterLocalReceiver(newReceiver) =>
       newReceiver.ready()
       context.become(active(newReceiver))
@@ -72,5 +75,10 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
 
   private def receiveGroup(message: GroupClusterMessage, receiver: SessionMessageReceiver): Unit = {
     if (message.originNodeId != nodeIdentity.id) receiver.receiveGroup(message)
+  }
+
+  private def receiveGroupReassignment(message: GroupReassignmentClusterMessage,
+                                       receiver: SessionMessageReceiver): Unit = {
+    if (message.originNodeId != nodeIdentity.id) receiver.receiveGroupReassignment(message)
   }
 }

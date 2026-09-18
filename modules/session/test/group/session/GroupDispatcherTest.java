@@ -7,6 +7,7 @@ import cluster.NodeIdentity;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
 import cluster.GroupRecipients;
+import cluster.GroupReassignmentClusterMessage;
 import cluster.SessionMessagePublisher;
 import daos.common.StudyDao;
 import group.GroupActionHandler;
@@ -286,6 +287,28 @@ public class GroupDispatcherTest {
         verify(ch).setGroupResultId(groupResultId + 1);
         verify(spyDispatcher).left(groupResultId, 1L);
         verify(spyDispatcher).joined(groupResultId + 1, 1L);
+    }
+
+    @Test
+    public void reassignChannel_whenChannelIsNotLocal_publishesToCluster() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+
+        distributedDispatcher.reassignChannel(1L, groupResultId, groupResultId + 1);
+
+        assertEquals(List.of(new GroupReassignmentClusterMessage(
+                "node-1", 1L, groupResultId, groupResultId + 1)),
+                publisher.groupReassignmentMessages);
+    }
+
+    @Test
+    public void reassignFromRemote_whenChannelIsNotLocal_doesNotRepublish() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+
+        distributedDispatcher.reassignFromRemote(1L, groupResultId, groupResultId + 1);
+
+        assertTrue(publisher.groupReassignmentMessages.isEmpty());
     }
 
     private void stubOpenCloseMessages() {
@@ -586,6 +609,7 @@ public class GroupDispatcherTest {
 
     private static class RecordingMessagePublisher implements SessionMessagePublisher {
         private final List<GroupClusterMessage> groupMessages = new ArrayList<>();
+        private final List<GroupReassignmentClusterMessage> groupReassignmentMessages = new ArrayList<>();
 
         @Override
         public boolean isDistributed() {
@@ -599,6 +623,11 @@ public class GroupDispatcherTest {
         @Override
         public void publishGroupToCluster(GroupClusterMessage message) {
             groupMessages.add(message);
+        }
+
+        @Override
+        public void publishGroupReassignmentToCluster(GroupReassignmentClusterMessage message) {
+            groupReassignmentMessages.add(message);
         }
     }
 }

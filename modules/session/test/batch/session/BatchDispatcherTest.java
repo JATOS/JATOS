@@ -6,6 +6,7 @@ import batch.BatchDispatcher;
 import batch.BatchDispatcher.BatchMsg;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
+import cluster.GroupReassignmentClusterMessage;
 import cluster.NodeIdentity;
 import cluster.SessionMessagePublisher;
 import com.typesafe.config.Config;
@@ -316,6 +317,10 @@ public class BatchDispatcherTest {
         @Override
         public void publishGroupToCluster(GroupClusterMessage message) {
         }
+
+        @Override
+        public void publishGroupReassignmentToCluster(GroupReassignmentClusterMessage message) {
+        }
     }
 
     private static class DisabledMessageBus implements SessionMessagePublisher {
@@ -332,6 +337,11 @@ public class BatchDispatcherTest {
         @Override
         public void publishGroupToCluster(GroupClusterMessage message) {
             fail("A single-node dispatcher must not publish group messages");
+        }
+
+        @Override
+        public void publishGroupReassignmentToCluster(GroupReassignmentClusterMessage message) {
+            fail("A single-node dispatcher must not publish group reassignment messages");
         }
     }
 

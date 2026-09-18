@@ -3,7 +3,7 @@ package group
 import daos.common.StudyDao
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
-import cluster.{GroupClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
+import cluster.{GroupClusterMessage, GroupReassignmentClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
 import models.common.Study.GroupSessionWriteScope
 import org.apache.pekko.actor.{ActorRef, PoisonPill}
 import play.api.Logger
@@ -217,6 +217,30 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
    */
   def reassignChannel(studyResultId: Long, groupResultId: Long, differentGroupResultId: Long): Unit = {
     logger.debug(s".reassignChannel: groupResultId $groupResultId, differentGroupResultId $differentGroupResultId, studyResultId $studyResultId")
+    if (!reassignLocalChannel(studyResultId, groupResultId, differentGroupResultId) && messagePublisher.isDistributed) {
+      logger.debug(s".reassignChannel: publishing reassignment to cluster for study result $studyResultId")
+      messagePublisher.publishGroupReassignmentToCluster(GroupReassignmentClusterMessage(
+        originNodeId = nodeIdentity.id,
+        studyResultId = studyResultId,
+        currentGroupResultId = groupResultId,
+        differentGroupResultId = differentGroupResultId))
+    }
+  }
+
+  /**
+   * Applies a reassignment received from another JATOS node without publishing it again.
+   */
+  def reassignFromRemote(studyResultId: Long,
+                         groupResultId: Long,
+                         differentGroupResultId: Long): Unit = {
+    logger.debug(s".reassignFromRemote: groupResultId $groupResultId, " +
+      s"differentGroupResultId $differentGroupResultId, studyResultId $studyResultId")
+    reassignLocalChannel(studyResultId, groupResultId, differentGroupResultId)
+  }
+
+  private def reassignLocalChannel(studyResultId: Long,
+                                   groupResultId: Long,
+                                   differentGroupResultId: Long): Boolean = {
     val channelOption = channel(groupResultId, studyResultId)
     if (channelOption.isDefined) {
       unregisterChannel(groupResultId, studyResultId)
@@ -224,8 +248,10 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       channelOption.get.setGroupResultId(differentGroupResultId)
       registerChannel(differentGroupResultId, studyResultId, channelOption.get)
       joined(differentGroupResultId, studyResultId)
+      true
     } else {
-      logger.debug(s".reassignChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
+      logger.debug(s".reassignLocalChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
+      false
     }
   }
 

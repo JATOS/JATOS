@@ -65,7 +65,8 @@ class PekkoSessionMessageBusTest {
       BatchClusterMessage("node-1", 10L, "{}"),
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.All()),
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.AllButSender()),
-      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.Recipient(40L)))
+      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.Recipient(40L)),
+      GroupReassignmentClusterMessage("node-1", 30L, 20L, 21L))
 
     messages.foreach { message =>
       val serializer = serialization.findSerializerFor(message)
@@ -141,6 +142,8 @@ class PekkoSessionMessageBusTest {
     override def receiveBatch(message: BatchClusterMessage): Unit = batchMessages.offer(message)
 
     override def receiveGroup(message: GroupClusterMessage): Unit = groupMessages.offer(message)
+
+    override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = ()
 
     override def ready(): Unit = readyLatch.countDown()
 

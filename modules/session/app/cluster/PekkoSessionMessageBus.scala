@@ -22,5 +22,8 @@ class PekkoSessionMessageBus @Inject()(actorSystem: ActorSystem,
 
   override def publishGroupToCluster(message: GroupClusterMessage): Unit = gateway ! PublishGroupToCluster(message)
 
+  override def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit =
+    gateway ! PublishGroupReassignmentToCluster(message)
+
   override def registerLocalReceiver(receiver: SessionMessageReceiver): Unit = gateway ! RegisterLocalReceiver(receiver)
 }

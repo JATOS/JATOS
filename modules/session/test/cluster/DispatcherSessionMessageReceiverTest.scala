@@ -56,4 +56,14 @@ class DispatcherSessionMessageReceiverTest {
 
     verifyNoInteractions(groupDispatcher)
   }
+
+  @Test
+  def receiveGroupReassignment_routesToLocalDispatcher(): Unit = {
+    val groupDispatcher = mock(classOf[GroupDispatcher])
+    val receiver = new DispatcherSessionMessageReceiver(mock(classOf[BatchDispatcher]), groupDispatcher)
+
+    receiver.receiveGroupReassignment(GroupReassignmentClusterMessage("node-1", 30L, 20L, 21L))
+
+    verify(groupDispatcher).reassignFromRemote(30L, 20L, 21L)
+  }
 }

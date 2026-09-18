@@ -46,3 +46,11 @@ final case class GroupClusterMessage(originNodeId: String,
                                      senderStudyResultId: Long,
                                      json: String,
                                      recipients: GroupRecipients) extends SessionClusterMessage
+
+/**
+ * Requests that the node owning a group channel move it to another group.
+ */
+final case class GroupReassignmentClusterMessage(originNodeId: String,
+                                                 studyResultId: Long,
+                                                 currentGroupResultId: Long,
+                                                 differentGroupResultId: Long) extends SessionClusterMessage

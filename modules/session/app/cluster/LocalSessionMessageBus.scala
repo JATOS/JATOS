@@ -16,5 +16,7 @@ class LocalSessionMessageBus extends SessionMessageBus {
 
   override def publishGroupToCluster(message: GroupClusterMessage): Unit = ()
 
+  override def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit = ()
+
   override def registerLocalReceiver(receiver: SessionMessageReceiver): Unit = receiver.ready()
 }

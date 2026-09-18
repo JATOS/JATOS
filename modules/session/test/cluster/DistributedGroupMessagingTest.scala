@@ -95,8 +95,16 @@ class DistributedGroupMessagingTest {
     assertAction("LEFT", senderMessages.poll(10, TimeUnit.SECONDS))
     assertNull(remoteMessages.poll(300, TimeUnit.MILLISECONDS))
 
-    dispatcher2.unregisterChannel(groupResultId, 2L)
+    val differentGroupResultId = 101L
+    dispatcher1.reassignChannel(2L, groupResultId, differentGroupResultId)
     assertAction("CLOSED", senderMessages.poll(10, TimeUnit.SECONDS))
+    assertAction("LEFT", senderMessages.poll(10, TimeUnit.SECONDS))
+    assertAction("OPENED", remoteMessages.poll(10, TimeUnit.SECONDS))
+
+    val directAfterReassignment = Json.obj("recipient" -> "2", "text" -> "new group")
+    dispatcher1.handleGroupMsg(
+      GroupMsg(directAfterReassignment), differentGroupResultId, 1L, senderRef)
+    assertEquals(directAfterReassignment, remoteMessages.poll(10, TimeUnit.SECONDS).json)
   }
 
   private def newDispatcher(messagePublisher: SessionMessagePublisher,
@@ -192,6 +200,9 @@ class DistributedGroupMessagingTest {
     override def receiveBatch(message: BatchClusterMessage): Unit = delegate.receiveBatch(message)
 
     override def receiveGroup(message: GroupClusterMessage): Unit = delegate.receiveGroup(message)
+
+    override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit =
+      delegate.receiveGroupReassignment(message)
 
     override def ready(): Unit = readyLatch.countDown()
 

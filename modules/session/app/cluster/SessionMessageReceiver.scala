@@ -17,6 +17,8 @@ trait SessionMessageReceiver {
 
   def receiveGroup(message: GroupClusterMessage): Unit
 
+  def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit
+
   def ready(): Unit
 }
 
@@ -44,6 +46,11 @@ class DispatcherSessionMessageReceiver @Inject()(batchDispatcher: BatchDispatche
       case Failure(e) => logger.warn(
         s".receiveGroup: invalid JSON for group ${message.groupResultId} from node ${message.originNodeId}: ${e.getMessage}")
     }
+  }
+
+  override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = {
+    groupDispatcher.reassignFromRemote(
+      message.studyResultId, message.currentGroupResultId, message.differentGroupResultId)
   }
 
   override def ready(): Unit = ()

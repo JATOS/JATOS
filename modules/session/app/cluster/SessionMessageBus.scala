@@ -10,6 +10,8 @@ trait SessionMessagePublisher {
   def publishBatchToCluster(message: BatchClusterMessage): Unit
 
   def publishGroupToCluster(message: GroupClusterMessage): Unit
+
+  def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit
 }
 
 /**
