@@ -585,7 +585,7 @@
                 Helpers.activateTooltips(collapseElement);
             }).fail(function(err) {
                 const errMsg = err.responseText ? err.responseText : "Couldn't get study data by user";
-                Alerts.error(errMsg);
+                alerts.error(errMsg);
             }).always(WaitingModal.hide);
         }
     });
@@ -703,7 +703,7 @@
                 const isSuperuser = roles.includes("SUPERUSER");
                 $(checkbox).prop('checked', isSuperuser);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle superuser role")
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle superuser role")
         });
     });
 
@@ -724,7 +724,7 @@
                 const isAdmin = roles.includes("ADMIN");
                 $(checkbox).prop('checked', isAdmin);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle admin rights")
+            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle admin rights")
         });
     });
 
@@ -780,7 +780,7 @@
                 data: $('#userSettingsForm').serialize(),
                 success: function() {
                     $('#userSettingsModal').modal('hide');
-                    Alerts.success(`${user.username}'s settings were changed successfully.`);
+                    alerts.success(`${user.username}'s settings were changed successfully.`);
                     user.name = $('#userSettingsName').val();
                     user.email = $('#userSettingsEmail').val();
                     dataTable.row(tr).data(user);
@@ -819,7 +819,7 @@
                 data: $('#changePasswordForm').serialize(),
                 success: function(response) {
                     $('#changePasswordModal').modal('hide');
-                    Alerts.success(`${user.username}'s password was changed successfully.`);
+                    alerts.success(`${user.username}'s password was changed successfully.`);
                 },
                 error: function(err) {
                     alerts.warning(`${user.username}'s password was not changed.`, 5000);

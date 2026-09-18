@@ -175,7 +175,7 @@
                 },
                 error: (err) => {
                     const message = err?.responseJSON?.error?.message ?? "Couldn't delete study";
-                    alerts.error(message);
+                    Alerts.error(message);
                 },
                 complete: WaitingModal.hide
             });
