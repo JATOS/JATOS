@@ -569,7 +569,7 @@ public class Api extends Controller {
     public Result updateStudyProperties(Http.Request request, String id) throws IOException, HttpException {
         User signedinUser = authService.getSignedinUser();
         Study study = studyService.getStudyFromIdOrUuid(id);
-        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessStudy(study, signedinUser, true, true);
 
         boolean isMemberOrSuperuser = study.hasUser(signedinUser) || Helpers.isAllowedSuperuser(signedinUser);
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;

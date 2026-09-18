@@ -234,6 +234,39 @@ public class AuthorizationServiceTest {
     }
 
     @Test
+    public void canUserAccessStudy_adminAllowed_respectsFlag() throws Exception {
+        Study study = newStudy(1L);
+        User admin = newUser("admin");
+        admin.updateRoles(User.Role.ADMIN);
+
+        helpersMock = Mockito.mockStatic(Helpers.class);
+        helpersMock.when(() -> Helpers.isAllowedSuperuser(admin)).thenReturn(false);
+
+        // When adminAllowed is true, admin can access even if not a study member
+        authorizationService.canUserAccessStudy(study, admin, false, true);
+
+        // When adminAllowed is false, access is forbidden
+        boolean threw = false;
+        try {
+            authorizationService.canUserAccessStudy(study, admin, false, false);
+        } catch (ForbiddenException e) {
+            threw = true;
+        }
+        assertThat(threw).isTrue();
+
+        // Non-admin user cannot access even if adminAllowed is true
+        User nonAdmin = newUser("user");
+        helpersMock.when(() -> Helpers.isAllowedSuperuser(nonAdmin)).thenReturn(false);
+        threw = false;
+        try {
+            authorizationService.canUserAccessStudy(study, nonAdmin, false, true);
+        } catch (ForbiddenException e) {
+            threw = true;
+        }
+        assertThat(threw).isTrue();
+    }
+
+    @Test
     public void canUserAccessResults_chain_ok() throws Exception {
         Study study = newStudy(1L);
         User user = newUser("member");

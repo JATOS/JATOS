@@ -103,16 +103,23 @@ public class AuthorizationService {
     }
 
     public void canUserAccessStudy(Study study, User user) throws ForbiddenException, NotFoundException {
-        canUserAccessStudy(study, user, false);
+        canUserAccessStudy(study, user, false, false);
     }
 
-    public void canUserAccessStudy(Study study, User user, boolean studyMustNotBeLocked)
+    public void canUserAccessStudy(Study study, User user, boolean studyMustNotBeLocked) throws ForbiddenException, NotFoundException {
+        canUserAccessStudy(study, user, studyMustNotBeLocked, false);
+    }
+
+    public void canUserAccessStudy(Study study, User user, boolean studyMustNotBeLocked, boolean adminAllowed)
         throws ForbiddenException, NotFoundException {
         if (study == null) {
             throw new NotFoundException("Study doesn't exist.");
         }
-        // Check that the user is a member of the study or a superuser
-        if (!(study.hasUser(user) || Helpers.isAllowedSuperuser(user))) {
+        // Check that the user is a member of the study or a superuser or an admin (if allowed)
+        boolean isAuthorized = study.hasUser(user)
+                || Helpers.isAllowedSuperuser(user)
+                || (user.isAdmin() && adminAllowed);
+        if (!isAuthorized) {
             throw new ForbiddenException("No access to study.", ErrorCode.NO_ACCESS);
         }
         checkStudyNotLocked(study, studyMustNotBeLocked);
