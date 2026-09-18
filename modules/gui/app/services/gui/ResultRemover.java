@@ -135,6 +135,17 @@ public class ResultRemover {
     }
 
     /**
+     * Removes all StudyResults that reference the given study.
+     */
+    void removeAllStudyResults(Study study, User user) {
+        List<Long> studyResultIds = studyResultDao.findIdsByStudyId(study.getId());
+        for (Long studyResultId : studyResultIds) {
+            removeStudyResult(studyResultId);
+        }
+        studyLogger.log(study, user, "Removed result data and files");
+    }
+
+    /**
      * Remove ComponentResult from its StudyResult and then remove itself. Removes result upload files.
      */
     private void removeComponentResult(long componentResultId) {

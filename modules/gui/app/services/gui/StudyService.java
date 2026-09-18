@@ -41,6 +41,7 @@ public class StudyService {
 
     private final BatchService batchService;
     private final ComponentService componentService;
+    private final ResultRemover resultRemover;
     private final StudyDao studyDao;
     private final UserDao userDao;
     private final BatchDao batchDao;
@@ -49,11 +50,13 @@ public class StudyService {
     private final AuthService authService;
 
     @Inject
-    StudyService(BatchService batchService, ComponentService componentService, StudyDao studyDao,
-            UserDao userDao, BatchDao batchDao, IOUtils ioUtils,
-            StudyLogger studyLogger, AuthService authService) {
+    StudyService(BatchService batchService, ComponentService componentService, ResultRemover resultRemover,
+                 StudyDao studyDao,
+                 UserDao userDao, BatchDao batchDao, IOUtils ioUtils,
+                 StudyLogger studyLogger, AuthService authService) {
         this.batchService = batchService;
         this.componentService = componentService;
+        this.resultRemover = resultRemover;
         this.studyDao = studyDao;
         this.userDao = userDao;
         this.batchDao = batchDao;
@@ -373,10 +376,17 @@ public class StudyService {
     }
 
     /**
-     * Removes the given study, its components, component results, study results, group results and batches and persists
+     * Removes the given study, its components, component results, study results, group results, and batches and persists
      * the changes to the database. It also deletes the study's assets from the disk.
      */
     public void removeStudyInclAssets(Study study, User signedinUser) throws IOException {
+        // Delete by component and study first. This also catches inconsistent results where the batch reference is
+        // inconsistent and would therefore be missed by the batch-based cleanup below.
+        for (Component component : new ArrayList<>(study.getComponentList())) {
+            resultRemover.removeAllComponentResults(component, signedinUser);
+        }
+        resultRemover.removeAllStudyResults(study, signedinUser);
+
         // Remove all study's batches and their StudyResults and GroupResults
         for (Batch batch : Lists.newArrayList(study.getBatchList())) {
             batchService.remove(batch, signedinUser);

@@ -33,6 +33,7 @@ public class StudyServiceTest {
 
     private BatchService batchService;
     private ComponentService componentService;
+    private ResultRemover resultRemover;
     private UserDao userDao;
     private StudyDao studyDao;
     private BatchDao batchDao;
@@ -46,6 +47,7 @@ public class StudyServiceTest {
     public void setUp() {
         batchService = mock(BatchService.class);
         componentService = mock(ComponentService.class);
+        resultRemover = mock(ResultRemover.class);
         userDao = mock(UserDao.class);
         studyDao = mock(StudyDao.class);
         batchDao = mock(BatchDao.class);
@@ -53,7 +55,7 @@ public class StudyServiceTest {
         studyLogger = mock(StudyLogger.class);
         authService = mock(AuthService.class);
 
-        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao,
+        studyService = new StudyService(batchService, componentService, resultRemover, studyDao, userDao, batchDao,
                 ioUtils, studyLogger, authService);
     }
 
@@ -608,6 +610,7 @@ public class StudyServiceTest {
 
         verify(batchService).remove(b1, signedIn);
         verify(batchService).remove(b2, signedIn);
+        verify(resultRemover).removeAllStudyResults(study, signedIn);
 
         verify(studyDao).remove(study);
         verify(ioUtils).removeStudyAssetsDir("dir");
