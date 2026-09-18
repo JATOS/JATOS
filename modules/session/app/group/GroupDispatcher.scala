@@ -3,6 +3,7 @@ package group
 import daos.common.StudyDao
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
+import cluster.{GroupClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
 import models.common.Study.GroupSessionWriteScope
 import org.apache.pekko.actor.{ActorRef, PoisonPill}
 import play.api.Logger
@@ -101,7 +102,9 @@ object GroupDispatcher {
 @Singleton
 class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                 actionMsgBuilder: GroupActionMsgBuilder,
-                                studyDao: StudyDao) {
+                                studyDao: StudyDao,
+                                messagePublisher: SessionMessagePublisher,
+                                nodeIdentity: NodeIdentity) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -125,17 +128,37 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       // We have a group action message
       val msgList = actionHandler.handleActionMsg(msg, groupResultId, studyResultId,
         group(groupResultId).groupSessionWriteScope)
-      tellActionMsg(msgList, groupResultId, sender)
+      tellActionMsg(msgList, groupResultId, studyResultId, sender)
 
     } else if (msg.json.keys.contains(GroupActionJsonKey.Recipient.toString)) {
       // We have a message intended for only one recipient (direct msg)
       // Recipient's study result ID comes as a string with quotes, and we have to convert to Long
       val recipient = (msg.json \ GroupActionJsonKey.Recipient.toString).as[String].replace("\"", "").toLong
-      tellRecipientOnly(msg, groupResultId, recipient, sender)
+      tellRecipientOnly(msg, groupResultId, studyResultId, recipient, sender)
 
     } else {
       // We have broadcast msg: Tell everyone except the sender
-      tellAllButSender(msg, groupResultId, sender)
+      tellAllButSenderLocal(msg, groupResultId, sender)
+      publishToCluster(msg, groupResultId, studyResultId, GroupRecipients.AllButSender())
+    }
+  }
+
+  /**
+   * Delivers a message received from another JATOS node to matching local group channels.
+   *
+   * The message is not processed or published again.
+   */
+  def deliverFromRemote(groupResultId: Long,
+                        senderStudyResultId: Long,
+                        json: JsObject,
+                        recipients: GroupRecipients): Unit = {
+    logger.debug(s".deliverFromRemote: groupResultId $groupResultId, senderStudyResultId $senderStudyResultId, " +
+      s"recipients $recipients, msg ${Json.stringify(json)}")
+    val msg = GroupMsg(json)
+    recipients match {
+      case GroupRecipients.All() => tellAllLocal(msg, groupResultId)
+      case GroupRecipients.AllButSender() => tellAllButSenderLocal(msg, groupResultId, senderStudyResultId)
+      case GroupRecipients.Recipient(studyResultId) => channel(groupResultId, studyResultId).foreach(_.self ! msg)
     }
   }
 
@@ -150,7 +173,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       channelIds, includeSessionData = true, GroupAction.Opened, TellWhom.SenderOnly)
     val msg2 = actionMsgBuilder.build(groupResultId, studyResultId,
       channelIds, includeSessionData = false, GroupAction.Opened, TellWhom.AllButSender)
-    tellActionMsg(List(msg1, msg2), groupResultId, channel.self)
+    tellActionMsg(List(msg1, msg2), groupResultId, studyResultId, channel.self)
   }
 
   /**
@@ -164,7 +187,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       removeChannel(groupResultId, studyResultId)
       val msg = actionMsgBuilder.build(groupResultId, studyResultId,
         studyResultIds(groupResultId), includeSessionData = false, GroupAction.Closed, TellWhom.AllButSender)
-      tellActionMsg(List(msg), groupResultId, channelOption.get.self)
+      tellActionMsg(List(msg), groupResultId, studyResultId, channelOption.get.self)
     } else {
       logger.debug(s".unregisterChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
     }
@@ -215,7 +238,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     if (channelOption.isDefined) {
       val msg = actionMsgBuilder.build(groupResultId, studyResultId,
         studyResultIds(groupResultId), includeSessionData = false, GroupAction.Joined, TellWhom.AllButSender)
-      tellAllButSender(msg, groupResultId, channelOption.get.self)
+      tellActionMsg(List(msg), groupResultId, studyResultId, channelOption.get.self)
     } else {
       logger.debug(s".joined: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
     }
@@ -232,32 +255,44 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     val senderRef = channelOption.map(_.self).getOrElse(ActorRef.noSender)
     val msg = actionMsgBuilder.build(groupResultId, studyResultId, studyResultIds(groupResultId), includeSessionData = false,
       GroupAction.Left, tellWhom)
-    tellActionMsg(List(msg), groupResultId, senderRef)
+    tellActionMsg(List(msg), groupResultId, studyResultId, senderRef)
   }
 
   /**
    * Sends the message only to the recipient specified by the given study result ID.
    */
-  private def tellRecipientOnly(msg: GroupMsg, groupResultId: Long, recipientStudyResultId: Long, sender: ActorRef): Unit = {
+  private def tellRecipientOnly(msg: GroupMsg,
+                                groupResultId: Long,
+                                senderStudyResultId: Long,
+                                recipientStudyResultId: Long,
+                                sender: ActorRef): Unit = {
     logger.debug(s".tellRecipientOnly: groupResultId $groupResultId, recipientStudyResultId " +
       s"$recipientStudyResultId, msg ${Json.stringify(msg.json)}")
     val channelOption = channel(groupResultId, recipientStudyResultId)
-    if (channelOption.isDefined)
-      channelOption.get.self ! msg
-    else {
+    channelOption.foreach(_.self ! msg)
+    publishToCluster(msg, groupResultId, senderStudyResultId,
+      GroupRecipients.Recipient(recipientStudyResultId))
+    if (channelOption.isEmpty && !messagePublisher.isDistributed) {
       val errorMsg = s"Recipient $recipientStudyResultId isn't member of this group."
       logger.debug(s".tellRecipientOnly: groupResultId $groupResultId, errorMsg $errorMsg")
       val groupMsg = actionMsgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly)
-      tellActionMsg(List(groupMsg), groupResultId, sender)
+      tellActionMsg(List(groupMsg), groupResultId, senderStudyResultId, sender)
     }
   }
 
-  private def tellActionMsg(msgList: List[GroupMsg], groupResultId: Long, sender: ActorRef): Unit = {
+  private def tellActionMsg(msgList: List[GroupMsg],
+                            groupResultId: Long,
+                            senderStudyResultId: Long,
+                            sender: ActorRef): Unit = {
     msgList.foreach(msg =>
       msg.tellWhom match {
-        case TellWhom.All => tellAll(msg, groupResultId)
+        case TellWhom.All =>
+          tellAllLocal(msg, groupResultId)
+          publishToCluster(msg, groupResultId, senderStudyResultId, GroupRecipients.All())
         case TellWhom.SenderOnly => tellSenderOnly(msg, groupResultId, sender)
-        case TellWhom.AllButSender => tellAllButSender(msg, groupResultId, sender)
+        case TellWhom.AllButSender =>
+          tellAllButSenderLocal(msg, groupResultId, sender)
+          publishToCluster(msg, groupResultId, senderStudyResultId, GroupRecipients.AllButSender())
         case _ => logger.warn(s".tellActionMsg: no TellWhom specified")
       }
     )
@@ -266,8 +301,8 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
   /**
    * Sends the message to every local channel in the group.
    */
-  private def tellAll(msg: GroupMsg, groupResultId: Long): Unit = {
-    logger.debug(s".tellAll: groupResultId $groupResultId, msg ${Json.stringify(msg.json)}")
+  private def tellAllLocal(msg: GroupMsg, groupResultId: Long): Unit = {
+    logger.debug(s".tellAllLocal: groupResultId $groupResultId, msg ${Json.stringify(msg.json)}")
     for (recipient <- channels(groupResultId))
       recipient.self ! msg
   }
@@ -275,11 +310,36 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
   /**
    * Sends the message to every local channel in the group except the sender.
    */
-  private def tellAllButSender(msg: GroupMsg, groupResultId: Long, sender: ActorRef): Unit = {
-    logger.debug(s".tellAllButSender: groupResultId $groupResultId, " +
+  private def tellAllButSenderLocal(msg: GroupMsg, groupResultId: Long, sender: ActorRef): Unit = {
+    logger.debug(s".tellAllButSenderLocal: groupResultId $groupResultId, " +
       s"msg ${Json.stringify(msg.json)}")
     for (recipient <- channels(groupResultId))
       if (recipient.self != sender) recipient.self ! msg
+  }
+
+  private def tellAllButSenderLocal(msg: GroupMsg,
+                                    groupResultId: Long,
+                                    senderStudyResultId: Long): Unit = {
+    logger.debug(s".tellAllButSenderLocal: groupResultId $groupResultId, senderStudyResultId $senderStudyResultId, " +
+      s"msg ${Json.stringify(msg.json)}")
+    channelsByStudyResultId(groupResultId).foreach { case (studyResultId, recipient) =>
+      if (studyResultId != senderStudyResultId) recipient.self ! msg
+    }
+  }
+
+  private def publishToCluster(msg: GroupMsg,
+                               groupResultId: Long,
+                               senderStudyResultId: Long,
+                               recipients: GroupRecipients): Unit = {
+    if (!messagePublisher.isDistributed) return
+    logger.debug(s".publishToCluster: groupResultId $groupResultId, senderStudyResultId $senderStudyResultId, " +
+      s"recipients $recipients, msg ${Json.stringify(msg.json)}")
+    messagePublisher.publishGroupToCluster(GroupClusterMessage(
+      originNodeId = nodeIdentity.id,
+      groupResultId = groupResultId,
+      senderStudyResultId = senderStudyResultId,
+      json = Json.stringify(msg.json),
+      recipients = recipients))
   }
 
   /**
@@ -303,6 +363,10 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
 
   private def channels(groupResultId: Long): List[GroupChannelActor] = synchronized {
     groups.get(groupResultId).fold(List.empty[GroupChannelActor])(_.channels.values.toList)
+  }
+
+  private def channelsByStudyResultId(groupResultId: Long): List[(Long, GroupChannelActor)] = synchronized {
+    groups.get(groupResultId).fold(List.empty[(Long, GroupChannelActor)])(_.channels.toList)
   }
 
   private def studyResultIds(groupResultId: Long): List[Long] = synchronized {

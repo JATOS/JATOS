@@ -1,5 +1,6 @@
 package cluster
 
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class LocalSessionMessageBusTest {
@@ -8,7 +9,8 @@ class LocalSessionMessageBusTest {
   def publish_isNoOpForSingleNodeMode(): Unit = {
     val bus = new LocalSessionMessageBus
 
-    bus.publishBatch(BatchClusterMessage("node-1", 1L, "{}"))
-    bus.publishGroup(GroupClusterMessage("node-1", 3L, 4L, "{}", GroupDelivery.All()))
+    assertFalse(bus.isDistributed)
+    bus.publishBatchToCluster(BatchClusterMessage("node-1", 1L, "{}"))
+    bus.publishGroupToCluster(GroupClusterMessage("node-1", 3L, 4L, "{}", GroupRecipients.All()))
   }
 }

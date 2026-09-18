@@ -37,20 +37,22 @@ class PekkoSessionMessageBusTest {
 
     val receiver1 = new RecordingReceiver
     val receiver2 = new RecordingReceiver
-    val bus1 = new PekkoSessionMessageBus(system1, FixedNodeIdentity("node-1"), receiver1)
-    val bus2 = new PekkoSessionMessageBus(system2, FixedNodeIdentity("node-2"), receiver2)
+    val bus1 = new PekkoSessionMessageBus(system1, FixedNodeIdentity("node-1"))
+    val bus2 = new PekkoSessionMessageBus(system2, FixedNodeIdentity("node-2"))
+    bus1.registerLocalReceiver(receiver1)
+    bus2.registerLocalReceiver(receiver2)
 
     receiver1.awaitReady()
     receiver2.awaitReady()
 
     val batchMessage = BatchClusterMessage("node-1", 10L, """{"action":"SESSION"}""")
-    publishUntilReceived(() => bus1.publishBatch(batchMessage), receiver2.batchMessages, batchMessage)
+    publishUntilReceived(() => bus1.publishBatchToCluster(batchMessage), receiver2.batchMessages, batchMessage)
     assertNull("The origin node must ignore its own batch publication",
       receiver1.batchMessages.poll(300, TimeUnit.MILLISECONDS))
 
     val groupMessage = GroupClusterMessage(
-      "node-2", 20L, 30L, """{"msg":"hello"}""", GroupDelivery.Recipient(40L))
-    publishUntilReceived(() => bus2.publishGroup(groupMessage), receiver1.groupMessages, groupMessage)
+      "node-2", 20L, 30L, """{"msg":"hello"}""", GroupRecipients.Recipient(40L))
+    publishUntilReceived(() => bus2.publishGroupToCluster(groupMessage), receiver1.groupMessages, groupMessage)
     assertNull("The origin node must ignore its own group publication",
       receiver2.groupMessages.poll(300, TimeUnit.MILLISECONDS))
   }
@@ -61,9 +63,9 @@ class PekkoSessionMessageBusTest {
     val serialization = SerializationExtension(system)
     val messages: Seq[SessionClusterMessage] = Seq(
       BatchClusterMessage("node-1", 10L, "{}"),
-      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupDelivery.All()),
-      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupDelivery.AllButSender()),
-      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupDelivery.Recipient(40L)))
+      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.All()),
+      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.AllButSender()),
+      GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.Recipient(40L)))
 
     messages.foreach { message =>
       val serializer = serialization.findSerializerFor(message)
@@ -104,6 +106,7 @@ class PekkoSessionMessageBusTest {
     system
   }
 
+  //noinspection SameParameterValue
   private def awaitClusterUp(cluster: Cluster, expectedMembers: Int): Unit = {
     awaitCondition(10.seconds) {
       cluster.state.members.count(_.status == MemberStatus.Up) == expectedMembers
@@ -148,5 +151,5 @@ class PekkoSessionMessageBusTest {
 }
 
 object PekkoSessionMessageBusTest {
-  private final case class FixedNodeIdentity(id: String) extends NodeIdentity
+  private final case class FixedNodeIdentity(override val id: String) extends NodeIdentity
 }

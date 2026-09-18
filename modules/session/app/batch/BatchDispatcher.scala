@@ -2,6 +2,7 @@ package batch
 
 import batch.BatchDispatcher.TellWhom.TellWhom
 import batch.BatchDispatcher._
+import cluster.{BatchClusterMessage, NodeIdentity, SessionMessagePublisher}
 import org.apache.pekko.actor.{ActorRef, PoisonPill}
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
@@ -75,7 +76,9 @@ object BatchDispatcher {
 
 @Singleton
 class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
-                                actionMsgBuilder: BatchActionMsgBuilder) {
+                                actionMsgBuilder: BatchActionMsgBuilder,
+                                messagePublisher: SessionMessagePublisher,
+                                nodeIdentity: NodeIdentity) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -93,6 +96,16 @@ class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
   }
 
   /**
+   * Delivers a message received from another JATOS node to the local batch channels.
+   *
+   * The message is not processed or published again.
+   */
+  def deliverFromRemote(batchId: Long, json: JsObject): Unit = {
+    logger.debug(s".deliverFromRemote: batchId $batchId, msg ${Json.stringify(json)}")
+    tellAllLocal(BatchMsg(json, TellWhom.All), batchId)
+  }
+
+  /**
    * Registers the given channel and sends an 'Opened' message back to it.
    */
   def registerChannel(batchId: Long, studyResultId: Long, channel: ActorRef): Unit = {
@@ -100,7 +113,8 @@ class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
     synchronized {
       channelsByBatch.getOrElseUpdate(batchId, mutable.HashMap.empty).put(studyResultId, channel)
     }
-    tellActionMsg(List(actionMsgBuilder.buildSessionData(batchId, BatchAction.Opened, TellWhom.SenderOnly)), batchId, channel)
+    tellActionMsg(List(actionMsgBuilder.buildSessionData(batchId, BatchAction.Opened, TellWhom.SenderOnly)),
+      batchId, channel)
   }
 
   /**
@@ -138,10 +152,14 @@ class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
     }
   }
 
-  private def tellActionMsg(msgList: List[BatchMsg], batchId: Long, sender: ActorRef): Unit = {
+  private def tellActionMsg(msgList: List[BatchMsg],
+                            batchId: Long,
+                            sender: ActorRef): Unit = {
     msgList.foreach(msg =>
       msg.tellWhom match {
-        case TellWhom.All => tellAll(msg, batchId)
+        case TellWhom.All =>
+          tellAllLocal(msg, batchId)
+          publishToCluster(msg, batchId)
         case TellWhom.SenderOnly => tellSenderOnly(msg, batchId, sender)
         case _ => logger.warn(s".tellActionMsg: no TellWhom specified")
       }
@@ -151,11 +169,20 @@ class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
   /**
    * Sends the message to every local channel in the batch.
    */
-  private def tellAll(msg: BatchMsg, batchId: Long): Unit = {
-    logger.debug(s".tellAll: batchId $batchId, msg ${Json.stringify(msg.json)}")
+  private def tellAllLocal(msg: BatchMsg, batchId: Long): Unit = {
+    logger.debug(s".tellAllLocal: batchId $batchId, msg ${Json.stringify(msg.json)}")
     for (recipient <- channels(batchId)) {
       recipient ! msg
     }
+  }
+
+  private def publishToCluster(msg: BatchMsg, batchId: Long): Unit = {
+    if (!messagePublisher.isDistributed) return
+    logger.debug(s".publishToCluster: batchId $batchId, msg ${Json.stringify(msg.json)}")
+    messagePublisher.publishBatchToCluster(BatchClusterMessage(
+      originNodeId = nodeIdentity.id,
+      batchId = batchId,
+      json = Json.stringify(msg.json)))
   }
 
   private def channel(batchId: Long, studyResultId: Long): Option[ActorRef] = synchronized {

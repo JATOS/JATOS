@@ -21,21 +21,21 @@ class SessionMessageProtocolTest {
 
   @Test
   def groupMessage_supportsAllDeliveryModes(): Unit = {
-    val deliveries = Seq(
-      GroupDelivery.All(),
-      GroupDelivery.AllButSender(),
-      GroupDelivery.Recipient(30L))
+    val recipients = Seq(
+      GroupRecipients.All(),
+      GroupRecipients.AllButSender(),
+      GroupRecipients.Recipient(30L))
 
-    deliveries.foreach { delivery =>
-      val message = GroupClusterMessage("node-1", 10L, 20L, "{}", delivery)
-      assertEquals(delivery, message.delivery)
+    recipients.foreach { groupRecipients =>
+      val message = GroupClusterMessage("node-1", 10L, 20L, "{}", groupRecipients)
+      assertEquals(groupRecipients, message.recipients)
     }
   }
 
   @Test
-  def randomNodeIdentity_isStableAndUniquePerInstance(): Unit = {
-    val first = new RandomNodeIdentity
-    val second = new RandomNodeIdentity
+  def nodeIdentity_isStableAndUniquePerInstance(): Unit = {
+    val first = new NodeIdentity
+    val second = new NodeIdentity
 
     assertEquals(first.id, first.id)
     UUID.fromString(first.id)

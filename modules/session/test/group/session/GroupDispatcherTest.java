@@ -2,6 +2,12 @@ package group.session;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import cluster.LocalSessionMessageBus;
+import cluster.NodeIdentity;
+import cluster.BatchClusterMessage;
+import cluster.GroupClusterMessage;
+import cluster.GroupRecipients;
+import cluster.SessionMessagePublisher;
 import daos.common.StudyDao;
 import group.GroupActionHandler;
 import group.GroupActionMsgBuilder;
@@ -21,6 +27,7 @@ import play.api.libs.json.Json$;
 import scala.Enumeration;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,6 +47,7 @@ public class GroupDispatcherTest {
 
     private GroupActionHandler actionHandler;
     private GroupActionMsgBuilder msgBuilder;
+    private StudyDao studyDao;
 
     private GroupDispatcher dispatcher;
 
@@ -73,11 +81,22 @@ public class GroupDispatcherTest {
 
     @Before
     public void setup() {
-        StudyDao studyDao = mock(StudyDao.class);
+        studyDao = mock(StudyDao.class);
         actionHandler = mock(GroupActionHandler.class);
         msgBuilder = mock(GroupActionMsgBuilder.class);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
-        dispatcher = new GroupDispatcher(actionHandler, msgBuilder, studyDao);
+        dispatcher = new GroupDispatcher(actionHandler, msgBuilder, studyDao,
+                new LocalSessionMessageBus(), new NodeIdentity());
+    }
+
+    private GroupDispatcher newDistributedDispatcher(RecordingMessagePublisher publisher) {
+        NodeIdentity nodeIdentity = new NodeIdentity() {
+            @Override
+            public String id() {
+                return "node-1";
+            }
+        };
+        return new GroupDispatcher(actionHandler, msgBuilder, studyDao, publisher, nodeIdentity);
     }
 
     private JsObject js(String s) {
@@ -440,6 +459,67 @@ public class GroupDispatcherTest {
     }
 
     @Test
+    public void handleGroupMsg_broadcastPublishesAllButSenderToCluster() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        JsObject json = js("{\"text\":\"hello\"}");
+
+        distributedDispatcher.handleGroupMsg(directOrBroadcastMsg(json), groupResultId, 1L, ActorRef.noSender());
+
+        assertEquals(List.of(new GroupClusterMessage(
+                "node-1", groupResultId, 1L, Json$.MODULE$.stringify(json),
+                new GroupRecipients.AllButSender())), publisher.groupMessages);
+    }
+
+    @Test
+    public void handleGroupMsg_directPublishesRecipientToClusterWithoutLocalError() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        JsObject json = js("{\"recipient\":\"2\",\"text\":\"hello\"}");
+
+        distributedDispatcher.handleGroupMsg(directOrBroadcastMsg(json), groupResultId, 1L, ActorRef.noSender());
+
+        assertEquals(List.of(new GroupClusterMessage(
+                "node-1", groupResultId, 1L, Json$.MODULE$.stringify(json),
+                new GroupRecipients.Recipient(2L))), publisher.groupMessages);
+        verify(msgBuilder, never()).buildError(anyLong(), anyString(), any());
+    }
+
+    @Test
+    public void deliverFromRemote_appliesRecipientsWithoutHandlingOrRepublishing() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
+        BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();
+        GroupChannelActor ch1 = mock(GroupChannelActor.class);
+        GroupChannelActor ch2 = mock(GroupChannelActor.class);
+        when(ch1.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, out1)));
+        when(ch2.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, out2)));
+        stubOpenCloseMessages();
+        distributedDispatcher.registerChannel(groupResultId, 1L, ch1);
+        distributedDispatcher.registerChannel(groupResultId, 2L, ch2);
+        pollUntilEmpty(out1);
+        pollUntilEmpty(out2);
+        publisher.groupMessages.clear();
+        clearInvocations(actionHandler);
+
+        JsObject allButSender = js("{\"type\":\"all-but-sender\"}");
+        distributedDispatcher.deliverFromRemote(
+                groupResultId, 1L, allButSender, new GroupRecipients.AllButSender());
+        assertNull(poll(out1));
+        assertEquals(allButSender, ((GroupMsg) poll(out2)).json());
+
+        JsObject direct = js("{\"type\":\"direct\"}");
+        distributedDispatcher.deliverFromRemote(
+                groupResultId, 1L, direct, new GroupRecipients.Recipient(1L));
+        assertEquals(direct, ((GroupMsg) poll(out1)).json());
+        assertNull(poll(out2));
+
+        assertTrue(publisher.groupMessages.isEmpty());
+        verifyNoInteractions(actionHandler);
+    }
+
+    @Test
     public void joinedAndLeft_sendActionToOthersOnlyWhenChannelKnown() {
         BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();
@@ -501,6 +581,24 @@ public class GroupDispatcherTest {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
+        }
+    }
+
+    private static class RecordingMessagePublisher implements SessionMessagePublisher {
+        private final List<GroupClusterMessage> groupMessages = new ArrayList<>();
+
+        @Override
+        public boolean isDistributed() {
+            return true;
+        }
+
+        @Override
+        public void publishBatchToCluster(BatchClusterMessage message) {
+        }
+
+        @Override
+        public void publishGroupToCluster(GroupClusterMessage message) {
+            groupMessages.add(message);
         }
     }
 }

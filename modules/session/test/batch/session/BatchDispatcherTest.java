@@ -4,6 +4,10 @@ import batch.BatchActionHandler;
 import batch.BatchActionMsgBuilder;
 import batch.BatchDispatcher;
 import batch.BatchDispatcher.BatchMsg;
+import cluster.BatchClusterMessage;
+import cluster.GroupClusterMessage;
+import cluster.NodeIdentity;
+import cluster.SessionMessagePublisher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.pekko.actor.AbstractActor;
@@ -18,6 +22,7 @@ import play.api.libs.json.Json$;
 import scala.Enumeration;
 import scala.collection.immutable.List;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -59,7 +64,19 @@ public class BatchDispatcherTest {
 
     private BatchDispatcher newDispatcher(BatchActionHandler handler,
                                           BatchActionMsgBuilder builder) {
-        return new BatchDispatcher(handler, builder);
+        return newDispatcher(handler, builder, new RecordingMessageBus());
+    }
+
+    private BatchDispatcher newDispatcher(BatchActionHandler handler,
+                                          BatchActionMsgBuilder builder,
+                                          SessionMessagePublisher messagePublisher) {
+        NodeIdentity nodeIdentity = new NodeIdentity() {
+            @Override
+            public String id() {
+                return "node-1";
+            }
+        };
+        return new BatchDispatcher(handler, builder, messagePublisher, nodeIdentity);
     }
 
     @Test
@@ -154,6 +171,53 @@ public class BatchDispatcherTest {
     }
 
     @Test
+    public void handleActionMsg_publishesAllButNotSenderOnly() {
+        BatchMsg patch = msg(js("{\"action\":\"SESSION\"}"), TW_All());
+        BatchMsg ack = msg(js("{\"action\":\"SESSION_ACK\"}"), TW_SenderOnly());
+        RecordingMessageBus messageBus = new RecordingMessageBus();
+        BatchDispatcher dispatcher = newDispatcher(
+                new StubHandler(messages(patch, ack)), new StubBuilder(), messageBus);
+        ActorRef sender = system.actorOf(Props.create(RecordingActor.class, new LinkedBlockingQueue<>()));
+
+        dispatcher.handleActionMsg(msg(js("{\"action\":\"SESSION\"}"), TW_Unknown()),
+                4L, 201L, sender);
+
+        assertEquals(1, messageBus.batchMessages.size());
+        assertEquals(new BatchClusterMessage("node-1", 4L, "{\"action\":\"SESSION\"}"),
+                messageBus.batchMessages.getFirst());
+    }
+
+    @Test
+    public void handleActionMsg_singleNodeDoesNotCallPublish() {
+        BatchMsg patch = msg(js("{\"action\":\"SESSION\"}"), TW_All());
+        BatchDispatcher dispatcher = newDispatcher(
+                new StubHandler(messages(patch)), new StubBuilder(), new DisabledMessageBus());
+
+        dispatcher.handleActionMsg(msg(js("{\"action\":\"SESSION\"}"), TW_Unknown()),
+                4L, 201L, ActorRef.noSender());
+    }
+
+    @Test
+    public void deliverFromRemote_deliversLocallyWithoutHandlingOrRepublishing() throws InterruptedException {
+        StubHandler handler = new StubHandler(messages());
+        RecordingMessageBus messageBus = new RecordingMessageBus();
+        BatchDispatcher dispatcher = newDispatcher(handler, new StubBuilder(), messageBus);
+        BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
+        ActorRef channel = system.actorOf(Props.create(RecordingActor.class, queue));
+        dispatcher.registerChannel(5L, 301L, channel);
+        queue.poll(2, TimeUnit.SECONDS);
+
+        JsObject json = js("{\"action\":\"SESSION\",\"version\":2}");
+        dispatcher.deliverFromRemote(5L, json);
+
+        BatchMsg delivered = (BatchMsg) queue.poll(2, TimeUnit.SECONDS);
+        assertNotNull(delivered);
+        assertEquals(json, delivered.json());
+        assertEquals(0, handler.callCount);
+        assertTrue(messageBus.batchMessages.isEmpty());
+    }
+
+    @Test
     public void unregisterChannel_whenEmpty_removesBatchEntry() throws InterruptedException {
         BatchMsg toAll = msg(js("{\"t\":\"all\"}"), TW_All());
         BatchDispatcher dispatcher = newDispatcher(new StubHandler(messages(toAll)), new StubBuilder());
@@ -222,6 +286,7 @@ public class BatchDispatcherTest {
 
     private static class StubHandler extends BatchActionHandler {
         private final List<BatchMsg> resultMessages;
+        private int callCount;
 
         StubHandler(List<BatchMsg> resultMessages) {
             super(null, null);
@@ -230,7 +295,43 @@ public class BatchDispatcherTest {
 
         @Override
         public List<BatchMsg> handleActionMsg(BatchMsg actionMsg, long batchId) {
+            callCount++;
             return resultMessages;
+        }
+    }
+
+    private static class RecordingMessageBus implements SessionMessagePublisher {
+        private final java.util.List<BatchClusterMessage> batchMessages = new ArrayList<>();
+
+        @Override
+        public boolean isDistributed() {
+            return true;
+        }
+
+        @Override
+        public void publishBatchToCluster(BatchClusterMessage message) {
+            batchMessages.add(message);
+        }
+
+        @Override
+        public void publishGroupToCluster(GroupClusterMessage message) {
+        }
+    }
+
+    private static class DisabledMessageBus implements SessionMessagePublisher {
+        @Override
+        public boolean isDistributed() {
+            return false;
+        }
+
+        @Override
+        public void publishBatchToCluster(BatchClusterMessage message) {
+            fail("A single-node dispatcher must not publish batch messages");
+        }
+
+        @Override
+        public void publishGroupToCluster(GroupClusterMessage message) {
+            fail("A single-node dispatcher must not publish group messages");
         }
     }
 
