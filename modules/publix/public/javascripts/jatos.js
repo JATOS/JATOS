@@ -27,7 +27,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     /**
      * jatos.js version
      */
-    jatos.version = "3.11.2";
+    jatos.version = "3.11.3";
     /**
      * How long in ms should JATOS wait before retrying the HTTP call.
      */
