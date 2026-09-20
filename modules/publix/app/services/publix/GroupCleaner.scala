@@ -23,7 +23,8 @@ object GroupCleaner {
   private case object CleaningFinished
   private case object Stop
 
-  private class CleanerActor(clean: () => Future[Unit], intervalSeconds: Int) extends Actor with ActorLogging {
+  private class CleanerActor(clean: () => Future[Unit], intervalSeconds: Int, clusterSingleton: Boolean)
+    extends Actor with ActorLogging {
 
     implicit private val executionContext: ExecutionContext = context.dispatcher
     private var cleaning = false
@@ -31,6 +32,8 @@ object GroupCleaner {
     private var scheduler: Cancellable = _
 
     override def preStart(): Unit = {
+      if (clusterSingleton) log.info("This node acquired the GroupCleaner cluster singleton")
+      else log.info("GroupCleaner started")
       scheduler = context.system.scheduler.scheduleWithFixedDelay(
         initialDelay = Duration.Zero,
         delay = Duration(intervalSeconds, TimeUnit.SECONDS),
@@ -38,7 +41,11 @@ object GroupCleaner {
         message = Clean)
     }
 
-    override def postStop(): Unit = if (scheduler != null) scheduler.cancel()
+    override def postStop(): Unit = {
+      if (scheduler != null) scheduler.cancel()
+      if (clusterSingleton) log.info("This node released the GroupCleaner cluster singleton")
+      else log.info("GroupCleaner stopped")
+    }
 
     override def receive: Receive = {
       case Clean if !cleaning =>
@@ -57,8 +64,8 @@ object GroupCleaner {
     }
   }
 
-  private def props(clean: () => Future[Unit], intervalSeconds: Int): Props =
-    Props(new CleanerActor(clean, intervalSeconds))
+  private def props(clean: () => Future[Unit], intervalSeconds: Int, clusterSingleton: Boolean): Props =
+    Props(new CleanerActor(clean, intervalSeconds, clusterSingleton))
 }
 
 /**
@@ -79,11 +86,12 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
   def start(): Unit = {
     if (!Common.isGroupsCleaningAllowed) return
 
-    logger.info("Starting group cleaning")
-    val cleanerProps = props(
-      () => findAndRemoveInactiveGroupMembers(),
-      Common.getGroupsCleaningInterval)
-    if (Common.isMultiNode) startClusterSingleton(cleanerProps) else {
+    logger.info("Group cleaning is enabled")
+    val clean = () => findAndRemoveInactiveGroupMembers()
+    if (Common.isMultiNode) {
+      startClusterSingleton(props(clean, Common.getGroupsCleaningInterval, clusterSingleton = true))
+    } else {
+      val cleanerProps = props(clean, Common.getGroupsCleaningInterval, clusterSingleton = false)
       val cleaner = actorSystem.actorOf(cleanerProps, "groupCleaner")
       lifecycle.addStopHook(() => Future {
         cleaner ! Stop

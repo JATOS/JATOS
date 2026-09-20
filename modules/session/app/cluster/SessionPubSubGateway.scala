@@ -1,6 +1,8 @@
 package cluster
 
 import org.apache.pekko.actor.{Actor, ActorLogging, Props, Stash}
+import org.apache.pekko.cluster.Cluster
+import org.apache.pekko.cluster.ClusterEvent.{CurrentClusterState, InitialStateAsSnapshot, MemberRemoved, MemberUp, ReachableMember, UnreachableMember}
 import org.apache.pekko.cluster.pubsub.DistributedPubSub
 import org.apache.pekko.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe, SubscribeAck}
 
@@ -30,17 +32,40 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
   import SessionPubSubGateway._
 
   private val mediator = DistributedPubSub(context.system).mediator
+  private val cluster = Cluster(context.system)
   private var subscribedTopics = Set.empty[String]
   private var receiverOption = Option.empty[SessionMessageReceiver]
   private val deliveredDirectMessages = mutable.LinkedHashSet.empty[(String, String)]
   private val maxRememberedDirectMessages = 10000
 
   override def preStart(): Unit = {
+    cluster.subscribe(self, InitialStateAsSnapshot,
+      classOf[MemberUp], classOf[UnreachableMember], classOf[ReachableMember], classOf[MemberRemoved])
     mediator ! Subscribe(BatchTopic, self)
     mediator ! Subscribe(GroupTopic, self)
   }
 
-  override def receive: Receive = starting
+  override def postStop(): Unit = cluster.unsubscribe(self)
+
+  override def receive: Receive = clusterEvents.orElse(starting)
+
+  private def clusterEvents: Receive = {
+    case state: CurrentClusterState =>
+      log.info("Pekko cluster node [{}] started with [{}] member(s): [{}]",
+        cluster.selfAddress, state.members.size, state.members.map(_.address).mkString(", "))
+    case MemberUp(member) =>
+      log.info("Pekko cluster member joined: [{}]. Current member count: [{}]",
+        member.address, cluster.state.members.size)
+    case UnreachableMember(member) =>
+      log.warning("Pekko cluster member became unreachable: [{}]. Current member count: [{}]",
+        member.address, cluster.state.members.size)
+    case ReachableMember(member) =>
+      log.info("Pekko cluster member became reachable again: [{}]. Current member count: [{}]",
+        member.address, cluster.state.members.size)
+    case MemberRemoved(member, previousStatus) =>
+      log.info("Pekko cluster member removed: [{}], previous status [{}]. Current member count: [{}]",
+        member.address, previousStatus, cluster.state.members.size)
+  }
 
   private def starting: Receive = {
     case SubscribeAck(subscribe) =>
@@ -69,14 +94,14 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
     case message: GroupReassignmentClusterMessage => receiveGroupReassignment(message, receiver)
     case RegisterLocalReceiver(newReceiver) =>
       newReceiver.ready()
-      context.become(active(newReceiver))
+      context.become(clusterEvents.orElse(active(newReceiver)))
   }
 
   private def activateIfReady(): Unit = {
     if (subscribedTopics == Set(BatchTopic, GroupTopic) && receiverOption.isDefined) {
       val receiver = receiverOption.get
       receiver.ready()
-      context.become(active(receiver))
+      context.become(clusterEvents.orElse(active(receiver)))
       unstashAll()
     }
   }

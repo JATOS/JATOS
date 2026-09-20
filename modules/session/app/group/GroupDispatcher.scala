@@ -123,7 +123,9 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                            sender: ActorRef,
                                            timeout: Cancellable)
 
-  private case class PendingChannelPresence(result: Promise[Boolean], timeout: Cancellable)
+  private case class PendingChannelPresence(studyResultId: Long,
+                                            result: Promise[Boolean],
+                                            timeout: Cancellable)
 
   private val groups = mutable.HashMap.empty[Long, LocalGroup]
   private val pendingDirectDeliveries = mutable.HashMap.empty[String, PendingDirectDelivery]
@@ -147,7 +149,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       completeChannelPresence(requestId, present = false)
     }(actorSystem.dispatcher)
     synchronized {
-      pendingChannelPresences.put(requestId, PendingChannelPresence(result, timeout))
+      pendingChannelPresences.put(requestId, PendingChannelPresence(studyResultId, result, timeout))
     }
     messagePublisher.publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest(
       originNodeId = nodeIdentity.id,
@@ -164,6 +166,10 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
   private def completeChannelPresence(requestId: String, present: Boolean): Unit = {
     val pending = synchronized { pendingChannelPresences.remove(requestId) }
     pending.foreach { presence =>
+      if (!present) {
+        logger.debug(s".hasChannelInCluster: presence request $requestId for studyResultId " +
+          s"${presence.studyResultId} timed out after $messageAckTimeout")
+      }
       presence.timeout.cancel()
       presence.result.trySuccess(present)
     }
@@ -405,6 +411,9 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
   private def directDeliveryTimedOut(deliveryId: String): Unit = {
     val pending = synchronized { pendingDirectDeliveries.remove(deliveryId) }
     pending.foreach { delivery =>
+      logger.warn(s".directDeliveryTimedOut: deliveryId $deliveryId, groupResultId " +
+        s"${delivery.groupResultId}, recipientStudyResultId ${delivery.recipientStudyResultId}, " +
+        s"timeout $messageAckTimeout")
       val errorMsg = s"Recipient ${delivery.recipientStudyResultId} is not connected or the message could not be delivered."
       sendDirectDeliveryError(delivery.groupResultId, delivery.senderStudyResultId,
         delivery.recipientStudyResultId, delivery.sender, errorMsg)
