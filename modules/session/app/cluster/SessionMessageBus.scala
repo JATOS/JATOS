@@ -7,9 +7,11 @@ trait SessionMessagePublisher {
 
   def isDistributed: Boolean
 
-  def publishBatchToCluster(message: BatchClusterMessage): Unit
+  def publishBatchMsgToCluster(message: BatchClusterMessage): Unit
 
-  def publishGroupToCluster(message: GroupClusterMessage): Unit
+  def publishGroupMsgToCluster(message: GroupClusterMessage): Unit
+
+  def publishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest): Unit
 
   def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit
 }

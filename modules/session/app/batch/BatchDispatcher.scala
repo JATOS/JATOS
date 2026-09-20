@@ -179,7 +179,7 @@ class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
   private def publishToCluster(msg: BatchMsg, batchId: Long): Unit = {
     if (!messagePublisher.isDistributed) return
     logger.debug(s".publishToCluster: batchId $batchId, msg ${Json.stringify(msg.json)}")
-    messagePublisher.publishBatchToCluster(BatchClusterMessage(
+    messagePublisher.publishBatchMsgToCluster(BatchClusterMessage(
       originNodeId = nodeIdentity.id,
       batchId = batchId,
       json = Json.stringify(msg.json)))

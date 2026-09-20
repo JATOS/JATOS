@@ -35,8 +35,8 @@ class PekkoSessionMessageBusTest {
     awaitClusterUp(cluster1, expectedMembers = 2)
     awaitClusterUp(cluster2, expectedMembers = 2)
 
-    val receiver1 = new RecordingReceiver
-    val receiver2 = new RecordingReceiver
+    val receiver1 = new RecordingReceiver(deliverDirectMessages = false)
+    val receiver2 = new RecordingReceiver(deliverDirectMessages = true)
     val bus1 = new PekkoSessionMessageBus(system1, FixedNodeIdentity("node-1"))
     val bus2 = new PekkoSessionMessageBus(system2, FixedNodeIdentity("node-2"))
     bus1.registerLocalReceiver(receiver1)
@@ -46,15 +46,24 @@ class PekkoSessionMessageBusTest {
     receiver2.awaitReady()
 
     val batchMessage = BatchClusterMessage("node-1", 10L, """{"action":"SESSION"}""")
-    publishUntilReceived(() => bus1.publishBatchToCluster(batchMessage), receiver2.batchMessages, batchMessage)
+    publishUntilReceived(() => bus1.publishBatchMsgToCluster(batchMessage), receiver2.batchMessages, batchMessage)
     assertNull("The origin node must ignore its own batch publication",
       receiver1.batchMessages.poll(300, TimeUnit.MILLISECONDS))
 
     val groupMessage = GroupClusterMessage(
       "node-2", 20L, 30L, """{"msg":"hello"}""", GroupRecipients.Recipient(40L))
-    publishUntilReceived(() => bus2.publishGroupToCluster(groupMessage), receiver1.groupMessages, groupMessage)
+    publishUntilReceived(() => bus2.publishGroupMsgToCluster(groupMessage), receiver1.groupMessages, groupMessage)
     assertNull("The origin node must ignore its own group publication",
       receiver2.groupMessages.poll(300, TimeUnit.MILLISECONDS))
+
+    val directMessage = GroupDirectMsgDeliveryRequest(
+      "node-1", "delivery-1", 20L, 30L, 40L, """{"msg":"direct"}""")
+    val expectedAck = GroupDirectMsgDeliveryAck("node-2", "node-1", "delivery-1")
+    publishUntilReceived(
+      () => bus1.publishGroupDirectMsgToCluster(directMessage), receiver1.directDeliveryAcks, expectedAck)
+    assertEquals(directMessage, receiver2.directMessages.poll(2, TimeUnit.SECONDS))
+    assertNull("A repeated delivery request must not deliver the message twice",
+      receiver2.directMessages.poll(300, TimeUnit.MILLISECONDS))
   }
 
   @Test
@@ -66,6 +75,8 @@ class PekkoSessionMessageBusTest {
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.All()),
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.AllButSender()),
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.Recipient(40L)),
+      GroupDirectMsgDeliveryRequest("node-1", "delivery-1", 20L, 30L, 40L, "{}"),
+      GroupDirectMsgDeliveryAck("node-2", "node-1", "delivery-1"),
       GroupReassignmentClusterMessage("node-1", 30L, 20L, 21L))
 
     messages.foreach { message =>
@@ -134,14 +145,24 @@ class PekkoSessionMessageBusTest {
     assert(condition)
   }
 
-  private class RecordingReceiver extends SessionMessageReceiver {
+  private class RecordingReceiver(deliverDirectMessages: Boolean) extends SessionMessageReceiver {
     val batchMessages = new LinkedBlockingQueue[BatchClusterMessage]()
     val groupMessages = new LinkedBlockingQueue[GroupClusterMessage]()
+    val directMessages = new LinkedBlockingQueue[GroupDirectMsgDeliveryRequest]()
+    val directDeliveryAcks = new LinkedBlockingQueue[GroupDirectMsgDeliveryAck]()
     private val readyLatch = new CountDownLatch(1)
 
     override def receiveBatch(message: BatchClusterMessage): Unit = batchMessages.offer(message)
 
     override def receiveGroup(message: GroupClusterMessage): Unit = groupMessages.offer(message)
+
+    override def receiveGroupDirectMsg(message: GroupDirectMsgDeliveryRequest): Boolean = {
+      directMessages.offer(message)
+      deliverDirectMessages
+    }
+
+    override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit =
+      directDeliveryAcks.offer(message)
 
     override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = ()
 

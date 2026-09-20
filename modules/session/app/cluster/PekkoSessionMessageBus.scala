@@ -18,9 +18,12 @@ class PekkoSessionMessageBus @Inject()(actorSystem: ActorSystem,
 
   override val isDistributed: Boolean = true
 
-  override def publishBatchToCluster(message: BatchClusterMessage): Unit = gateway ! PublishBatchToCluster(message)
+  override def publishBatchMsgToCluster(message: BatchClusterMessage): Unit = gateway ! PublishBatchMsgToCluster(message)
 
-  override def publishGroupToCluster(message: GroupClusterMessage): Unit = gateway ! PublishGroupToCluster(message)
+  override def publishGroupMsgToCluster(message: GroupClusterMessage): Unit = gateway ! PublishGroupMsgToCluster(message)
+
+  override def publishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest): Unit =
+    gateway ! PublishGroupDirectMsgToCluster(message)
 
   override def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit =
     gateway ! PublishGroupReassignmentToCluster(message)

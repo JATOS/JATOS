@@ -6,6 +6,7 @@ import batch.BatchDispatcher;
 import batch.BatchDispatcher.BatchMsg;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
+import cluster.GroupDirectMsgDeliveryRequest;
 import cluster.GroupReassignmentClusterMessage;
 import cluster.NodeIdentity;
 import cluster.SessionMessagePublisher;
@@ -310,12 +311,16 @@ public class BatchDispatcherTest {
         }
 
         @Override
-        public void publishBatchToCluster(BatchClusterMessage message) {
+        public void publishBatchMsgToCluster(BatchClusterMessage message) {
             batchMessages.add(message);
         }
 
         @Override
-        public void publishGroupToCluster(GroupClusterMessage message) {
+        public void publishGroupMsgToCluster(GroupClusterMessage message) {
+        }
+
+        @Override
+        public void publishGroupDirectMsgToCluster(GroupDirectMsgDeliveryRequest message) {
         }
 
         @Override
@@ -330,13 +335,18 @@ public class BatchDispatcherTest {
         }
 
         @Override
-        public void publishBatchToCluster(BatchClusterMessage message) {
+        public void publishBatchMsgToCluster(BatchClusterMessage message) {
             fail("A single-node dispatcher must not publish batch messages");
         }
 
         @Override
-        public void publishGroupToCluster(GroupClusterMessage message) {
+        public void publishGroupMsgToCluster(GroupClusterMessage message) {
             fail("A single-node dispatcher must not publish group messages");
+        }
+
+        @Override
+        public void publishGroupDirectMsgToCluster(GroupDirectMsgDeliveryRequest message) {
+            fail("A single-node dispatcher must not publish direct group messages");
         }
 
         @Override

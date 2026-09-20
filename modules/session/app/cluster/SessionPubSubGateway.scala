@@ -4,14 +4,17 @@ import org.apache.pekko.actor.{Actor, ActorLogging, Props, Stash}
 import org.apache.pekko.cluster.pubsub.DistributedPubSub
 import org.apache.pekko.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe, SubscribeAck}
 
+import scala.collection.mutable
+
 object SessionPubSubGateway {
 
   val BatchTopic = "jatos-batch"
   val GroupTopic = "jatos-group"
 
   // Local commands for sending Batch/GroupClusterMessages through the gateway.
-  private[cluster] final case class PublishBatchToCluster(message: BatchClusterMessage)
-  private[cluster] final case class PublishGroupToCluster(message: GroupClusterMessage)
+  private[cluster] final case class PublishBatchMsgToCluster(message: BatchClusterMessage)
+  private[cluster] final case class PublishGroupMsgToCluster(message: GroupClusterMessage)
+  private[cluster] final case class PublishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest)
   private[cluster] final case class PublishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage)
   private[cluster] final case class RegisterLocalReceiver(receiver: SessionMessageReceiver)
 
@@ -28,6 +31,8 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
   private val mediator = DistributedPubSub(context.system).mediator
   private var subscribedTopics = Set.empty[String]
   private var receiverOption = Option.empty[SessionMessageReceiver]
+  private val deliveredDirectMessages = mutable.LinkedHashSet.empty[(String, String)]
+  private val maxRememberedDirectMessages = 10000
 
   override def preStart(): Unit = {
     mediator ! Subscribe(BatchTopic, self)
@@ -49,11 +54,14 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
   }
 
   private def active(receiver: SessionMessageReceiver): Receive = {
-    case PublishBatchToCluster(message) => mediator ! Publish(BatchTopic, message)
-    case PublishGroupToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishBatchMsgToCluster(message) => mediator ! Publish(BatchTopic, message)
+    case PublishGroupMsgToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishGroupDirectMsgToCluster(message) => mediator ! Publish(GroupTopic, message)
     case PublishGroupReassignmentToCluster(message) => mediator ! Publish(GroupTopic, message)
     case message: BatchClusterMessage => receiveBatch(message, receiver)
     case message: GroupClusterMessage => receiveGroup(message, receiver)
+    case message: GroupDirectMsgDeliveryRequest => receiveGroupDirectMsg(message, receiver)
+    case message: GroupDirectMsgDeliveryAck => receiveGroupDirectMsgDeliveryAck(message, receiver)
     case message: GroupReassignmentClusterMessage => receiveGroupReassignment(message, receiver)
     case RegisterLocalReceiver(newReceiver) =>
       newReceiver.ready()
@@ -75,6 +83,31 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
 
   private def receiveGroup(message: GroupClusterMessage, receiver: SessionMessageReceiver): Unit = {
     if (message.originNodeId != nodeIdentity.id) receiver.receiveGroup(message)
+  }
+
+  private def receiveGroupDirectMsg(message: GroupDirectMsgDeliveryRequest,
+                                    receiver: SessionMessageReceiver): Unit = {
+    val deliveryKey = message.originNodeId -> message.deliveryId
+    val wasDelivered = deliveredDirectMessages.contains(deliveryKey)
+    if (message.originNodeId != nodeIdentity.id && (wasDelivered || receiver.receiveGroupDirectMsg(message))) {
+      if (!wasDelivered) rememberDirectDelivery(deliveryKey)
+      mediator ! Publish(GroupTopic, GroupDirectMsgDeliveryAck(
+        originNodeId = nodeIdentity.id,
+        targetNodeId = message.originNodeId,
+        deliveryId = message.deliveryId))
+    }
+  }
+
+  private def rememberDirectDelivery(deliveryKey: (String, String)): Unit = {
+    deliveredDirectMessages += deliveryKey
+    if (deliveredDirectMessages.size > maxRememberedDirectMessages) {
+      deliveredDirectMessages.remove(deliveredDirectMessages.head)
+    }
+  }
+
+  private def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck,
+                                               receiver: SessionMessageReceiver): Unit = {
+    if (message.targetNodeId == nodeIdentity.id) receiver.receiveGroupDirectMsgDeliveryAck(message)
   }
 
   private def receiveGroupReassignment(message: GroupReassignmentClusterMessage,

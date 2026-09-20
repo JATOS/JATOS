@@ -43,6 +43,17 @@ class SessionMessageProtocolTest {
   }
 
   @Test
+  def groupDirectMessages_keepDeliveryRoutingData(): Unit = {
+    val request = GroupDirectMsgDeliveryRequest("node-1", "delivery-1", 10L, 20L, 30L, "{}")
+    val ack = GroupDirectMsgDeliveryAck("node-2", "node-1", "delivery-1")
+
+    assertEquals("delivery-1", request.deliveryId)
+    assertEquals(30L, request.recipientStudyResultId)
+    assertEquals("node-1", ack.targetNodeId)
+    assertEquals(request.deliveryId, ack.deliveryId)
+  }
+
+  @Test
   def nodeIdentity_isStableAndUniquePerInstance(): Unit = {
     val first = new NodeIdentity
     val second = new NodeIdentity

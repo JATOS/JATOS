@@ -3,15 +3,18 @@ package group
 import daos.common.StudyDao
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
-import cluster.{GroupClusterMessage, GroupReassignmentClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
+import cluster.{GroupClusterMessage, GroupDirectMsgDeliveryRequest, GroupReassignmentClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
+import general.common.Common
 import models.common.Study.GroupSessionWriteScope
-import org.apache.pekko.actor.{ActorRef, PoisonPill}
+import org.apache.pekko.actor.{ActorRef, ActorSystem, Cancellable, PoisonPill}
 import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Json}
 
 import javax.inject.{Inject, Singleton}
+import java.util.UUID
 import scala.collection.mutable
+import scala.jdk.DurationConverters._
 
 /**
  * The node-local GroupDispatcher distributes GroupMsgs for all groups handled by this JATOS node.
@@ -104,14 +107,23 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                 actionMsgBuilder: GroupActionMsgBuilder,
                                 studyDao: StudyDao,
                                 messagePublisher: SessionMessagePublisher,
-                                nodeIdentity: NodeIdentity) {
+                                nodeIdentity: NodeIdentity,
+                                actorSystem: ActorSystem) {
 
   private val logger: Logger = Logger(this.getClass)
 
   private case class LocalGroup(groupSessionWriteScope: GroupSessionWriteScope,
                                 channels: mutable.HashMap[Long, GroupChannelActor])
 
+  private case class PendingDirectDelivery(groupResultId: Long,
+                                           senderStudyResultId: Long,
+                                           recipientStudyResultId: Long,
+                                           sender: ActorRef,
+                                           timeout: Cancellable)
+
   private val groups = mutable.HashMap.empty[Long, LocalGroup]
+  private val pendingDirectDeliveries = mutable.HashMap.empty[String, PendingDirectDelivery]
+  private val directMessageAckTimeout = Common.getGroupDirectMessageAckTimeout.toScala
 
   def hasChannel(studyResultId: Long): Boolean = synchronized {
     groups.values.exists(_.channels.contains(studyResultId))
@@ -160,6 +172,29 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       case GroupRecipients.AllButSender() => tellAllButSenderLocal(msg, groupResultId, senderStudyResultId)
       case GroupRecipients.Recipient(studyResultId) => channel(groupResultId, studyResultId).foreach(_.self ! msg)
     }
+  }
+
+  /**
+   * Delivers a direct message received from another JATOS node and reports whether its channel exists locally.
+   */
+  def deliverDirectMsgFromRemote(groupResultId: Long,
+                                 recipientStudyResultId: Long,
+                                 json: JsObject): Boolean = {
+    logger.debug(s".deliverDirectMsgFromRemote: groupResultId $groupResultId, " +
+      s"recipientStudyResultId $recipientStudyResultId, msg ${Json.stringify(json)}")
+    channel(groupResultId, recipientStudyResultId) match {
+      case Some(recipient) =>
+        recipient.self ! GroupMsg(json)
+        true
+      case None => false
+    }
+  }
+
+  /**
+   * Completes a pending direct delivery after its owning node confirmed delivery.
+   */
+  def acknowledgeDirectDelivery(deliveryId: String): Unit = synchronized {
+    pendingDirectDeliveries.remove(deliveryId).foreach(_.timeout.cancel())
   }
 
   /**
@@ -295,15 +330,56 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     logger.debug(s".tellRecipientOnly: groupResultId $groupResultId, recipientStudyResultId " +
       s"$recipientStudyResultId, msg ${Json.stringify(msg.json)}")
     val channelOption = channel(groupResultId, recipientStudyResultId)
-    channelOption.foreach(_.self ! msg)
-    publishToCluster(msg, groupResultId, senderStudyResultId,
-      GroupRecipients.Recipient(recipientStudyResultId))
-    if (channelOption.isEmpty && !messagePublisher.isDistributed) {
-      val errorMsg = s"Recipient $recipientStudyResultId isn't member of this group."
-      logger.debug(s".tellRecipientOnly: groupResultId $groupResultId, errorMsg $errorMsg")
-      val groupMsg = actionMsgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly)
-      tellActionMsg(List(groupMsg), groupResultId, senderStudyResultId, sender)
+    channelOption match {
+      case Some(recipient) => recipient.self ! msg
+      case None if messagePublisher.isDistributed => publishDirectMsgToCluster(
+        msg, groupResultId, senderStudyResultId, recipientStudyResultId, sender)
+      case None => sendDirectDeliveryError(
+        groupResultId, senderStudyResultId, recipientStudyResultId, sender,
+        s"Recipient $recipientStudyResultId isn't member of this group.")
     }
+  }
+
+  private def publishDirectMsgToCluster(msg: GroupMsg,
+                                        groupResultId: Long,
+                                        senderStudyResultId: Long,
+                                        recipientStudyResultId: Long,
+                                        sender: ActorRef): Unit = {
+    val deliveryId = UUID.randomUUID().toString
+    val timeout = actorSystem.scheduler.scheduleOnce(directMessageAckTimeout) {
+      directDeliveryTimedOut(deliveryId)
+    }(actorSystem.dispatcher)
+    synchronized {
+      pendingDirectDeliveries.put(deliveryId, PendingDirectDelivery(
+        groupResultId, senderStudyResultId, recipientStudyResultId, sender, timeout))
+    }
+    messagePublisher.publishGroupDirectMsgToCluster(GroupDirectMsgDeliveryRequest(
+      originNodeId = nodeIdentity.id,
+      deliveryId = deliveryId,
+      groupResultId = groupResultId,
+      senderStudyResultId = senderStudyResultId,
+      recipientStudyResultId = recipientStudyResultId,
+      json = Json.stringify(msg.json)))
+  }
+
+  private def directDeliveryTimedOut(deliveryId: String): Unit = {
+    val pending = synchronized { pendingDirectDeliveries.remove(deliveryId) }
+    pending.foreach { delivery =>
+      val errorMsg = s"Recipient ${delivery.recipientStudyResultId} is not connected or the message could not be delivered."
+      sendDirectDeliveryError(delivery.groupResultId, delivery.senderStudyResultId,
+        delivery.recipientStudyResultId, delivery.sender, errorMsg)
+    }
+  }
+
+  private def sendDirectDeliveryError(groupResultId: Long,
+                                      senderStudyResultId: Long,
+                                      recipientStudyResultId: Long,
+                                      sender: ActorRef,
+                                      errorMsg: String): Unit = {
+    logger.debug(s".sendDirectDeliveryError: groupResultId $groupResultId, " +
+      s"recipientStudyResultId $recipientStudyResultId, errorMsg $errorMsg")
+    val groupMsg = actionMsgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly)
+    tellActionMsg(List(groupMsg), groupResultId, senderStudyResultId, sender)
   }
 
   private def tellActionMsg(msgList: List[GroupMsg],
@@ -360,7 +436,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     if (!messagePublisher.isDistributed) return
     logger.debug(s".publishToCluster: groupResultId $groupResultId, senderStudyResultId $senderStudyResultId, " +
       s"recipients $recipients, msg ${Json.stringify(msg.json)}")
-    messagePublisher.publishGroupToCluster(GroupClusterMessage(
+    messagePublisher.publishGroupMsgToCluster(GroupClusterMessage(
       originNodeId = nodeIdentity.id,
       groupResultId = groupResultId,
       senderStudyResultId = senderStudyResultId,

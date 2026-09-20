@@ -17,6 +17,10 @@ trait SessionMessageReceiver {
 
   def receiveGroup(message: GroupClusterMessage): Unit
 
+  def receiveGroupDirectMsg(message: GroupDirectMsgDeliveryRequest): Boolean
+
+  def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit
+
   def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit
 
   def ready(): Unit
@@ -46,6 +50,21 @@ class DispatcherSessionMessageReceiver @Inject()(batchDispatcher: BatchDispatche
       case Failure(e) => logger.warn(
         s".receiveGroup: invalid JSON for group ${message.groupResultId} from node ${message.originNodeId}: ${e.getMessage}")
     }
+  }
+
+  override def receiveGroupDirectMsg(message: GroupDirectMsgDeliveryRequest): Boolean = {
+    Try(Json.parse(message.json).as[JsObject]) match {
+      case Success(json) => groupDispatcher.deliverDirectMsgFromRemote(
+        message.groupResultId, message.recipientStudyResultId, json)
+      case Failure(e) =>
+        logger.warn(s".receiveGroupDirectMsg: invalid JSON for group ${message.groupResultId} " +
+          s"from node ${message.originNodeId}: ${e.getMessage}")
+        false
+    }
+  }
+
+  override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit = {
+    groupDispatcher.acknowledgeDirectDelivery(message.deliveryId)
   }
 
   override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = {

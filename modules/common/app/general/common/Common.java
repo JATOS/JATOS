@@ -119,6 +119,7 @@ public class Common {
     private static List<String> logsRequestCategories;
     private static String tmpPath;
     private static boolean multiNode;
+    private static Duration groupDirectMessageAckTimeout;
     private static String threadPoolSize;
     private static String studyArchiveSuffix;
     private static String resultsArchiveSuffix;
@@ -246,6 +247,7 @@ public class Common {
         logsAppender = config.getString("jatos.logs.appender");
         logsRequestCategories = config.getStringList("jatos.logs.requestCategories");
         multiNode = config.getBoolean("jatos.multiNode");
+        groupDirectMessageAckTimeout = getDurationWithDefaultUnit(config, "jatos.groupDirectMessageAckTimeout");
         tmpPath = config.getIsNull("jatos.tmpPath")
                 ? Path.of(System.getProperty("java.io.tmpdir"), "jatos").toString()
                 : obtainPath(config, "jatos.tmpPath");
@@ -1014,6 +1016,13 @@ public class Common {
      */
     public static boolean isMultiNode() {
         return multiNode;
+    }
+
+    /**
+     * Time to wait for another node to confirm delivery of a direct group message.
+     */
+    public static Duration getGroupDirectMessageAckTimeout() {
+        return groupDirectMessageAckTimeout;
     }
 
     /**

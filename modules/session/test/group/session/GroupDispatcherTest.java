@@ -6,6 +6,7 @@ import cluster.LocalSessionMessageBus;
 import cluster.NodeIdentity;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
+import cluster.GroupDirectMsgDeliveryRequest;
 import cluster.GroupRecipients;
 import cluster.GroupReassignmentClusterMessage;
 import cluster.SessionMessagePublisher;
@@ -14,6 +15,7 @@ import group.GroupActionHandler;
 import group.GroupActionMsgBuilder;
 import group.GroupChannelActor;
 import group.GroupDispatcher;
+import general.common.Common;
 import models.common.Study.GroupSessionWriteScope;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;
@@ -23,6 +25,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 import play.api.libs.json.JsObject;
 import play.api.libs.json.Json$;
 import scala.Enumeration;
@@ -32,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.time.Duration;
 
 import static group.GroupDispatcher.*;
 import static org.junit.Assert.*;
@@ -45,6 +49,7 @@ import static scala.jdk.javaapi.CollectionConverters.asScala;
 public class GroupDispatcherTest {
 
     private static ActorSystem system;
+    private static MockedStatic<Common> common;
 
     private GroupActionHandler actionHandler;
     private GroupActionMsgBuilder msgBuilder;
@@ -71,13 +76,17 @@ public class GroupDispatcherTest {
 
     @BeforeClass
     public static void setupClass() {
-        Config cfg = ConfigFactory.parseString("org.apache.pekko.loglevel=WARNING\norg.apache.pekko.log-dead-letters=off");
-        system = ActorSystem.create("gd-test-system", cfg);
+        common = mockStatic(Common.class);
+        common.when(Common::getGroupDirectMessageAckTimeout).thenReturn(Duration.ofMillis(200));
+        Config config = ConfigFactory.parseString(
+                "org.apache.pekko.loglevel=WARNING\norg.apache.pekko.log-dead-letters=off");
+        system = ActorSystem.create("gd-test-system", config);
     }
 
     @AfterClass
     public static void tearDownClass() {
         if (system != null) system.terminate();
+        if (common != null) common.close();
     }
 
     @Before
@@ -87,7 +96,7 @@ public class GroupDispatcherTest {
         msgBuilder = mock(GroupActionMsgBuilder.class);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
         dispatcher = new GroupDispatcher(actionHandler, msgBuilder, studyDao,
-                new LocalSessionMessageBus(), new NodeIdentity());
+                new LocalSessionMessageBus(), new NodeIdentity(), system);
     }
 
     private GroupDispatcher newDistributedDispatcher(RecordingMessagePublisher publisher) {
@@ -97,7 +106,7 @@ public class GroupDispatcherTest {
                 return "node-1";
             }
         };
-        return new GroupDispatcher(actionHandler, msgBuilder, studyDao, publisher, nodeIdentity);
+        return new GroupDispatcher(actionHandler, msgBuilder, studyDao, publisher, nodeIdentity, system);
     }
 
     private JsObject js(String s) {
@@ -495,17 +504,38 @@ public class GroupDispatcherTest {
     }
 
     @Test
-    public void handleGroupMsg_directPublishesRecipientToClusterWithoutLocalError() {
+    public void handleGroupMsg_directPublishesDeliveryRequestAndAckPreventsError() {
         RecordingMessagePublisher publisher = new RecordingMessagePublisher();
         GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
         JsObject json = js("{\"recipient\":\"2\",\"text\":\"hello\"}");
 
         distributedDispatcher.handleGroupMsg(directOrBroadcastMsg(json), groupResultId, 1L, ActorRef.noSender());
 
-        assertEquals(List.of(new GroupClusterMessage(
-                "node-1", groupResultId, 1L, Json$.MODULE$.stringify(json),
-                new GroupRecipients.Recipient(2L))), publisher.groupMessages);
+        assertEquals(1, publisher.groupDirectMessages.size());
+        GroupDirectMsgDeliveryRequest request = publisher.groupDirectMessages.get(0);
+        assertEquals("node-1", request.originNodeId());
+        assertEquals(groupResultId, request.groupResultId());
+        assertEquals(1L, request.senderStudyResultId());
+        assertEquals(2L, request.recipientStudyResultId());
+        assertEquals(Json$.MODULE$.stringify(json), request.json());
+        distributedDispatcher.acknowledgeDirectDelivery(request.deliveryId());
         verify(msgBuilder, never()).buildError(anyLong(), anyString(), any());
+    }
+
+    @Test
+    public void handleGroupMsg_directWithoutAckSendsErrorAfterTimeout() throws InterruptedException {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        BlockingQueue<Object> senderMessages = new LinkedBlockingQueue<>();
+        ActorRef sender = system.actorOf(Props.create(CapturingActor.class, senderMessages));
+        GroupMsg error = actionMsgToSender(js("{\"action\":\"ERROR\"}"));
+        when(msgBuilder.buildError(eq(groupResultId), contains("could not be delivered"), eq(TW_SenderOnly())))
+                .thenReturn(error);
+
+        distributedDispatcher.handleGroupMsg(
+                directOrBroadcastMsg(js("{\"recipient\":\"999\"}")), groupResultId, 1L, sender);
+
+        assertEquals(error, senderMessages.poll(2, java.util.concurrent.TimeUnit.SECONDS));
     }
 
     @Test
@@ -609,6 +639,7 @@ public class GroupDispatcherTest {
 
     private static class RecordingMessagePublisher implements SessionMessagePublisher {
         private final List<GroupClusterMessage> groupMessages = new ArrayList<>();
+        private final List<GroupDirectMsgDeliveryRequest> groupDirectMessages = new ArrayList<>();
         private final List<GroupReassignmentClusterMessage> groupReassignmentMessages = new ArrayList<>();
 
         @Override
@@ -617,12 +648,17 @@ public class GroupDispatcherTest {
         }
 
         @Override
-        public void publishBatchToCluster(BatchClusterMessage message) {
+        public void publishBatchMsgToCluster(BatchClusterMessage message) {
         }
 
         @Override
-        public void publishGroupToCluster(GroupClusterMessage message) {
+        public void publishGroupMsgToCluster(GroupClusterMessage message) {
             groupMessages.add(message);
+        }
+
+        @Override
+        public void publishGroupDirectMsgToCluster(GroupDirectMsgDeliveryRequest message) {
+            groupDirectMessages.add(message);
         }
 
         @Override

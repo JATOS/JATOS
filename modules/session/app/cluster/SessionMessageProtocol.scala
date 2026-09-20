@@ -48,6 +48,23 @@ final case class GroupClusterMessage(originNodeId: String,
                                      recipients: GroupRecipients) extends SessionClusterMessage
 
 /**
+ * Requests delivery of a direct group message by the node owning the recipient's channel.
+ */
+final case class GroupDirectMsgDeliveryRequest(originNodeId: String,
+                                               deliveryId: String,
+                                               groupResultId: Long,
+                                               senderStudyResultId: Long,
+                                               recipientStudyResultId: Long,
+                                               json: String) extends SessionClusterMessage
+
+/**
+ * Confirms that a direct group message was delivered to its recipient's local channel.
+ */
+final case class GroupDirectMsgDeliveryAck(originNodeId: String,
+                                           targetNodeId: String,
+                                           deliveryId: String) extends SessionClusterMessage
+
+/**
  * Requests that the node owning a group channel move it to another group.
  */
 final case class GroupReassignmentClusterMessage(originNodeId: String,

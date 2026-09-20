@@ -5,15 +5,18 @@ import com.typesafe.config.ConfigFactory
 import daos.common.StudyDao
 import group.GroupDispatcher.{GroupAction, GroupMsg, TellWhom}
 import group.{GroupActionHandler, GroupActionMsgBuilder, GroupChannelActor, GroupDispatcher}
+import general.common.Common
 import models.common.Study.GroupSessionWriteScope
 import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
 import org.apache.pekko.cluster.{Cluster, MemberStatus}
 import org.junit.Assert.{assertEquals, assertNull}
-import org.junit.{After, Test}
+import org.junit.{After, Before, Test}
+import org.mockito.{MockedStatic, Mockito}
 import org.mockito.Mockito.{mock, when}
 import play.api.libs.json.{JsObject, Json}
 
 import java.util.concurrent.{CountDownLatch, LinkedBlockingQueue, TimeUnit}
+import java.time.Duration
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -21,10 +24,18 @@ import scala.concurrent.duration._
 class DistributedGroupMessagingTest {
 
   private val actorSystems = ListBuffer.empty[ActorSystem]
+  private var common: MockedStatic[Common] = _
+
+  @Before
+  def setUp(): Unit = {
+    common = Mockito.mockStatic(classOf[Common])
+    common.when(() => Common.getGroupDirectMessageAckTimeout).thenReturn(Duration.ofSeconds(1))
+  }
 
   @After
   def tearDown(): Unit = {
     actorSystems.foreach(system => Await.ready(system.terminate(), 10.seconds))
+    common.close()
   }
 
   @Test
@@ -42,8 +53,8 @@ class DistributedGroupMessagingTest {
     val identity2 = new FixedNodeIdentity("node-2")
     val bus1 = new PekkoSessionMessageBus(system1, identity1)
     val bus2 = new PekkoSessionMessageBus(system2, identity2)
-    val dispatcher1 = newDispatcher(bus1, identity1, sessionHandler = true)
-    val dispatcher2 = newDispatcher(bus2, identity2, sessionHandler = false)
+    val dispatcher1 = newDispatcher(bus1, identity1, system1, sessionHandler = true)
+    val dispatcher2 = newDispatcher(bus2, identity2, system2, sessionHandler = false)
     val receiver1 = new ReadyGroupReceiver(dispatcher1)
     val receiver2 = new ReadyGroupReceiver(dispatcher2)
     bus1.registerLocalReceiver(receiver1)
@@ -85,7 +96,11 @@ class DistributedGroupMessagingTest {
     val direct = Json.obj("recipient" -> "2", "text" -> "hello member")
     dispatcher1.handleGroupMsg(GroupMsg(direct), groupResultId, 1L, senderRef)
     assertEquals(direct, remoteMessages.poll(10, TimeUnit.SECONDS).json)
-    assertNull(senderMessages.poll(300, TimeUnit.MILLISECONDS))
+    assertNull(senderMessages.poll(1500, TimeUnit.MILLISECONDS))
+
+    val missingDirect = Json.obj("recipient" -> "999", "text" -> "anyone there?")
+    dispatcher1.handleGroupMsg(GroupMsg(missingDirect), groupResultId, 1L, senderRef)
+    assertAction("ERROR", senderMessages.poll(3, TimeUnit.SECONDS))
 
     dispatcher2.joined(groupResultId, 2L)
     assertAction("JOINED", senderMessages.poll(10, TimeUnit.SECONDS))
@@ -109,6 +124,7 @@ class DistributedGroupMessagingTest {
 
   private def newDispatcher(messagePublisher: SessionMessagePublisher,
                             nodeIdentity: NodeIdentity,
+                            actorSystem: ActorSystem,
                             sessionHandler: Boolean): GroupDispatcher = {
     val studyDao = mock(classOf[StudyDao])
     when(studyDao.findGroupSessionWriteScope(org.mockito.ArgumentMatchers.anyLong()))
@@ -118,7 +134,8 @@ class DistributedGroupMessagingTest {
       new StubBuilder,
       studyDao,
       messagePublisher,
-      nodeIdentity)
+      nodeIdentity,
+      actorSystem)
   }
 
   private def channel(ref: ActorRef): GroupChannelActor = {
@@ -200,6 +217,12 @@ class DistributedGroupMessagingTest {
     override def receiveBatch(message: BatchClusterMessage): Unit = delegate.receiveBatch(message)
 
     override def receiveGroup(message: GroupClusterMessage): Unit = delegate.receiveGroup(message)
+
+    override def receiveGroupDirectMsg(message: GroupDirectMsgDeliveryRequest): Boolean =
+      delegate.receiveGroupDirectMsg(message)
+
+    override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit =
+      delegate.receiveGroupDirectMsgDeliveryAck(message)
 
     override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit =
       delegate.receiveGroupReassignment(message)

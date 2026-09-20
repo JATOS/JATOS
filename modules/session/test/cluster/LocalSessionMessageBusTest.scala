@@ -10,7 +10,7 @@ class LocalSessionMessageBusTest {
     val bus = new LocalSessionMessageBus
 
     assertFalse(bus.isDistributed)
-    bus.publishBatchToCluster(BatchClusterMessage("node-1", 1L, "{}"))
-    bus.publishGroupToCluster(GroupClusterMessage("node-1", 3L, 4L, "{}", GroupRecipients.All()))
+    bus.publishBatchMsgToCluster(BatchClusterMessage("node-1", 1L, "{}"))
+    bus.publishGroupMsgToCluster(GroupClusterMessage("node-1", 3L, 4L, "{}", GroupRecipients.All()))
   }
 }

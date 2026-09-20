@@ -12,9 +12,11 @@ class LocalSessionMessageBus extends SessionMessageBus {
 
   override val isDistributed: Boolean = false
 
-  override def publishBatchToCluster(message: BatchClusterMessage): Unit = ()
+  override def publishBatchMsgToCluster(message: BatchClusterMessage): Unit = ()
 
-  override def publishGroupToCluster(message: GroupClusterMessage): Unit = ()
+  override def publishGroupMsgToCluster(message: GroupClusterMessage): Unit = ()
+
+  override def publishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest): Unit = ()
 
   override def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit = ()
 

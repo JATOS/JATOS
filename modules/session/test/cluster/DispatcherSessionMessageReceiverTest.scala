@@ -5,6 +5,7 @@ import group.GroupDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito.{mock, verify, verifyNoInteractions}
+import org.mockito.Mockito.when
 import play.api.libs.json.Json
 
 class DispatcherSessionMessageReceiverTest {
@@ -55,6 +56,21 @@ class DispatcherSessionMessageReceiverTest {
       "node-1", 10L, 20L, "not-json", GroupRecipients.All()))
 
     verifyNoInteractions(groupDispatcher)
+  }
+
+  @Test
+  def receiveGroupDirect_reportsLocalDeliveryAndRoutesAck(): Unit = {
+    val groupDispatcher = mock(classOf[GroupDispatcher])
+    val receiver = new DispatcherSessionMessageReceiver(mock(classOf[BatchDispatcher]), groupDispatcher)
+    val json = Json.obj("recipient" -> "30", "text" -> "hello")
+    val request = GroupDirectMsgDeliveryRequest("node-1", "delivery-1", 10L, 20L, 30L, Json.stringify(json))
+    when(groupDispatcher.deliverDirectMsgFromRemote(10L, 30L, json)).thenReturn(true)
+
+    assertEquals(true, receiver.receiveGroupDirectMsg(request))
+    receiver.receiveGroupDirectMsgDeliveryAck(GroupDirectMsgDeliveryAck("node-2", "node-1", "delivery-1"))
+
+    verify(groupDispatcher).deliverDirectMsgFromRemote(10L, 30L, json)
+    verify(groupDispatcher).acknowledgeDirectDelivery("delivery-1")
   }
 
   @Test
