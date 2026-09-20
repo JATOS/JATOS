@@ -77,6 +77,8 @@ class PekkoSessionMessageBusTest {
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.Recipient(40L)),
       GroupDirectMsgDeliveryRequest("node-1", "delivery-1", 20L, 30L, 40L, "{}"),
       GroupDirectMsgDeliveryAck("node-2", "node-1", "delivery-1"),
+      GroupChannelPresenceRequest("node-1", "presence-1", 40L),
+      GroupChannelPresenceAck("node-2", "node-1", "presence-1"),
       GroupReassignmentClusterMessage("node-1", 30L, 20L, 21L))
 
     messages.foreach { message =>
@@ -163,6 +165,10 @@ class PekkoSessionMessageBusTest {
 
     override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit =
       directDeliveryAcks.offer(message)
+
+    override def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean = false
+
+    override def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck): Unit = ()
 
     override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = ()
 

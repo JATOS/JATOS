@@ -74,6 +74,20 @@ class DispatcherSessionMessageReceiverTest {
   }
 
   @Test
+  def receiveGroupChannelPresence_checksLocalDispatcherAndRoutesAck(): Unit = {
+    val groupDispatcher = mock(classOf[GroupDispatcher])
+    val receiver = new DispatcherSessionMessageReceiver(mock(classOf[BatchDispatcher]), groupDispatcher)
+    val request = GroupChannelPresenceRequest("node-1", "presence-1", 30L)
+    when(groupDispatcher.hasChannel(30L)).thenReturn(true)
+
+    assertEquals(true, receiver.receiveGroupChannelPresence(request))
+    receiver.receiveGroupChannelPresenceAck(GroupChannelPresenceAck("node-2", "node-1", "presence-1"))
+
+    verify(groupDispatcher).hasChannel(30L)
+    verify(groupDispatcher).acknowledgeChannelPresence("presence-1")
+  }
+
+  @Test
   def receiveGroupReassignment_routesToLocalDispatcher(): Unit = {
     val groupDispatcher = mock(classOf[GroupDispatcher])
     val receiver = new DispatcherSessionMessageReceiver(mock(classOf[BatchDispatcher]), groupDispatcher)

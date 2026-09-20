@@ -29,7 +29,7 @@ class DistributedGroupMessagingTest {
   @Before
   def setUp(): Unit = {
     common = Mockito.mockStatic(classOf[Common])
-    common.when(() => Common.getGroupDirectMessageAckTimeout).thenReturn(Duration.ofSeconds(1))
+    common.when(() => Common.getGroupMessageAckTimeout).thenReturn(Duration.ofSeconds(3))
   }
 
   @After
@@ -81,6 +81,9 @@ class DistributedGroupMessagingTest {
     senderMessages.clear()
     remoteMessages.clear()
 
+    assertEquals(true, Await.result(dispatcher1.hasChannelInCluster(2L), 5.seconds))
+    assertEquals(false, Await.result(dispatcher1.hasChannelInCluster(999L), 5.seconds))
+
     val sessionInput = GroupMsg(Json.obj("action" -> "SESSION"))
     dispatcher1.handleGroupMsg(sessionInput, groupResultId, 1L, senderRef)
     assertAction("SESSION", senderMessages.poll(2, TimeUnit.SECONDS))
@@ -100,7 +103,7 @@ class DistributedGroupMessagingTest {
 
     val missingDirect = Json.obj("recipient" -> "999", "text" -> "anyone there?")
     dispatcher1.handleGroupMsg(GroupMsg(missingDirect), groupResultId, 1L, senderRef)
-    assertAction("ERROR", senderMessages.poll(3, TimeUnit.SECONDS))
+    assertAction("ERROR", senderMessages.poll(5, TimeUnit.SECONDS))
 
     dispatcher2.joined(groupResultId, 2L)
     assertAction("JOINED", senderMessages.poll(10, TimeUnit.SECONDS))
@@ -135,6 +138,7 @@ class DistributedGroupMessagingTest {
       studyDao,
       messagePublisher,
       nodeIdentity,
+      mock(classOf[Common]),
       actorSystem)
   }
 
@@ -223,6 +227,12 @@ class DistributedGroupMessagingTest {
 
     override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit =
       delegate.receiveGroupDirectMsgDeliveryAck(message)
+
+    override def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean =
+      delegate.receiveGroupChannelPresence(message)
+
+    override def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck): Unit =
+      delegate.receiveGroupChannelPresenceAck(message)
 
     override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit =
       delegate.receiveGroupReassignment(message)

@@ -74,6 +74,7 @@ public class PublixUtilsTest {
 
     private ResultCreator resultCreator;
     private IdCookieService idCookieService;
+    private BatchDispatcher batchDispatcher;
     private GroupAdministration groupAdministration;
     private StudyResultDao studyResultDao;
     private ComponentDao componentDao;
@@ -88,7 +89,7 @@ public class PublixUtilsTest {
     public void setup() {
         resultCreator = mock(ResultCreator.class);
         idCookieService = mock(IdCookieService.class);
-        BatchDispatcher batchDispatcher = mock(BatchDispatcher.class);
+        batchDispatcher = mock(BatchDispatcher.class);
         groupAdministration = mock(GroupAdministration.class);
         studyResultDao = mock(StudyResultDao.class);
         componentDao = mock(ComponentDao.class);
@@ -128,9 +129,12 @@ public class PublixUtilsTest {
     }
 
     private static StudyResult newStudyResult(Study s) {
+        Batch batch = new Batch();
+        batch.setId(20L);
         StudyResult sr = new StudyResult();
         sr.setId(10L);
         sr.setStudy(s);
+        sr.setBatch(batch);
         sr.setStudyState(StudyState.PRE);
         return sr;
     }
@@ -296,6 +300,7 @@ public class PublixUtilsTest {
         publixUtils.finishOldestStudyRuns();
 
         verify(groupAdministration).leave(10L);
+        verify(batchDispatcher).poisonChannel(20L, 10L);
         assertEquals(StudyState.FAIL, sr.getStudyState());
         assertEquals(PublixErrorMessages.ABANDONED_STUDY_BY_COOKIE, sr.getMessage());
         verify(studyLogger).log(s, "Finish abandoned study", w);
@@ -344,6 +349,7 @@ public class PublixUtilsTest {
         publixUtils.abortStudyRun(10L, "abort msg", "logger msg");
 
         verify(groupAdministration).leave(10L);
+        verify(batchDispatcher).poisonChannel(20L, 10L);
         assertEquals(StudyState.ABORTED, sr.getStudyState());
         assertEquals("abort msg", sr.getMessage());
         verify(studyLogger).log(s, "logger msg", w);

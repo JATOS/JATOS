@@ -18,6 +18,8 @@ class LocalSessionMessageBus extends SessionMessageBus {
 
   override def publishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest): Unit = ()
 
+  override def publishGroupChannelPresenceToCluster(message: GroupChannelPresenceRequest): Unit = ()
+
   override def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit = ()
 
   override def registerLocalReceiver(receiver: SessionMessageReceiver): Unit = receiver.ready()

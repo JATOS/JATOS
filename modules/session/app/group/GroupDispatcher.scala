@@ -3,7 +3,7 @@ package group
 import daos.common.StudyDao
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
-import cluster.{GroupClusterMessage, GroupDirectMsgDeliveryRequest, GroupReassignmentClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
+import cluster.{GroupChannelPresenceRequest, GroupClusterMessage, GroupDirectMsgDeliveryRequest, GroupReassignmentClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
 import general.common.Common
 import models.common.Study.GroupSessionWriteScope
 import org.apache.pekko.actor.{ActorRef, ActorSystem, Cancellable, PoisonPill}
@@ -14,6 +14,7 @@ import play.api.libs.json.{JsObject, Json}
 import javax.inject.{Inject, Singleton}
 import java.util.UUID
 import scala.collection.mutable
+import scala.concurrent.{Future, Promise}
 import scala.jdk.DurationConverters._
 
 /**
@@ -108,6 +109,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                 studyDao: StudyDao,
                                 messagePublisher: SessionMessagePublisher,
                                 nodeIdentity: NodeIdentity,
+                                _common: Common, // Needed, because Guice doesn't guarantee Common's creation before this class.
                                 actorSystem: ActorSystem) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -121,12 +123,50 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                            sender: ActorRef,
                                            timeout: Cancellable)
 
+  private case class PendingChannelPresence(result: Promise[Boolean], timeout: Cancellable)
+
   private val groups = mutable.HashMap.empty[Long, LocalGroup]
   private val pendingDirectDeliveries = mutable.HashMap.empty[String, PendingDirectDelivery]
-  private val directMessageAckTimeout = Common.getGroupDirectMessageAckTimeout.toScala
+  private val pendingChannelPresences = mutable.HashMap.empty[String, PendingChannelPresence]
+  private val messageAckTimeout = Common.getGroupMessageAckTimeout.toScala
 
   def hasChannel(studyResultId: Long): Boolean = synchronized {
     groups.values.exists(_.channels.contains(studyResultId))
+  }
+
+  /**
+   * Reports whether this or another cluster node owns a channel for the given study result.
+   */
+  def hasChannelInCluster(studyResultId: Long): Future[Boolean] = {
+    if (hasChannel(studyResultId)) return Future.successful(true)
+    if (!messagePublisher.isDistributed) return Future.successful(false)
+
+    val requestId = UUID.randomUUID().toString
+    val result = Promise[Boolean]()
+    val timeout = actorSystem.scheduler.scheduleOnce(messageAckTimeout) {
+      completeChannelPresence(requestId, present = false)
+    }(actorSystem.dispatcher)
+    synchronized {
+      pendingChannelPresences.put(requestId, PendingChannelPresence(result, timeout))
+    }
+    messagePublisher.publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest(
+      originNodeId = nodeIdentity.id,
+      requestId = requestId,
+      studyResultId = studyResultId))
+    result.future
+  }
+
+  /**
+   * Completes a pending cluster presence check after another node found the channel.
+   */
+  def acknowledgeChannelPresence(requestId: String): Unit = completeChannelPresence(requestId, present = true)
+
+  private def completeChannelPresence(requestId: String, present: Boolean): Unit = {
+    val pending = synchronized { pendingChannelPresences.remove(requestId) }
+    pending.foreach { presence =>
+      presence.timeout.cancel()
+      presence.result.trySuccess(present)
+    }
   }
 
   /**
@@ -346,7 +386,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                         recipientStudyResultId: Long,
                                         sender: ActorRef): Unit = {
     val deliveryId = UUID.randomUUID().toString
-    val timeout = actorSystem.scheduler.scheduleOnce(directMessageAckTimeout) {
+    val timeout = actorSystem.scheduler.scheduleOnce(messageAckTimeout) {
       directDeliveryTimedOut(deliveryId)
     }(actorSystem.dispatcher)
     synchronized {

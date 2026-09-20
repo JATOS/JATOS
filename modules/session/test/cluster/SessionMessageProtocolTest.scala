@@ -54,6 +54,16 @@ class SessionMessageProtocolTest {
   }
 
   @Test
+  def groupChannelPresenceMessages_keepRequestRoutingData(): Unit = {
+    val request = GroupChannelPresenceRequest("node-1", "presence-1", 30L)
+    val ack = GroupChannelPresenceAck("node-2", "node-1", "presence-1")
+
+    assertEquals(30L, request.studyResultId)
+    assertEquals("node-1", ack.targetNodeId)
+    assertEquals(request.requestId, ack.requestId)
+  }
+
+  @Test
   def nodeIdentity_isStableAndUniquePerInstance(): Unit = {
     val first = new NodeIdentity
     val second = new NodeIdentity

@@ -6,6 +6,7 @@ import batch.BatchDispatcher;
 import batch.BatchDispatcher.BatchMsg;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
+import cluster.GroupChannelPresenceRequest;
 import cluster.GroupDirectMsgDeliveryRequest;
 import cluster.GroupReassignmentClusterMessage;
 import cluster.NodeIdentity;
@@ -324,6 +325,10 @@ public class BatchDispatcherTest {
         }
 
         @Override
+        public void publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest message) {
+        }
+
+        @Override
         public void publishGroupReassignmentToCluster(GroupReassignmentClusterMessage message) {
         }
     }
@@ -347,6 +352,11 @@ public class BatchDispatcherTest {
         @Override
         public void publishGroupDirectMsgToCluster(GroupDirectMsgDeliveryRequest message) {
             fail("A single-node dispatcher must not publish direct group messages");
+        }
+
+        @Override
+        public void publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest message) {
+            fail("A single-node dispatcher must not publish group channel presence messages");
         }
 
         @Override

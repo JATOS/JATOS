@@ -21,6 +21,10 @@ trait SessionMessageReceiver {
 
   def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit
 
+  def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean
+
+  def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck): Unit
+
   def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit
 
   def ready(): Unit
@@ -65,6 +69,14 @@ class DispatcherSessionMessageReceiver @Inject()(batchDispatcher: BatchDispatche
 
   override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit = {
     groupDispatcher.acknowledgeDirectDelivery(message.deliveryId)
+  }
+
+  override def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean = {
+    groupDispatcher.hasChannel(message.studyResultId)
+  }
+
+  override def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck): Unit = {
+    groupDispatcher.acknowledgeChannelPresence(message.requestId)
   }
 
   override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = {

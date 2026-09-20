@@ -65,6 +65,20 @@ final case class GroupDirectMsgDeliveryAck(originNodeId: String,
                                            deliveryId: String) extends SessionClusterMessage
 
 /**
+ * Asks whether any other node owns a channel for the given study result.
+ */
+final case class GroupChannelPresenceRequest(originNodeId: String,
+                                             requestId: String,
+                                             studyResultId: Long) extends SessionClusterMessage
+
+/**
+ * Confirms that a node owns the channel requested by a group-channel presence check.
+ */
+final case class GroupChannelPresenceAck(originNodeId: String,
+                                         targetNodeId: String,
+                                         requestId: String) extends SessionClusterMessage
+
+/**
  * Requests that the node owning a group channel move it to another group.
  */
 final case class GroupReassignmentClusterMessage(originNodeId: String,

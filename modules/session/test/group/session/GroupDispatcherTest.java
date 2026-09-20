@@ -6,6 +6,7 @@ import cluster.LocalSessionMessageBus;
 import cluster.NodeIdentity;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
+import cluster.GroupChannelPresenceRequest;
 import cluster.GroupDirectMsgDeliveryRequest;
 import cluster.GroupRecipients;
 import cluster.GroupReassignmentClusterMessage;
@@ -29,6 +30,8 @@ import org.mockito.MockedStatic;
 import play.api.libs.json.JsObject;
 import play.api.libs.json.Json$;
 import scala.Enumeration;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -77,7 +80,7 @@ public class GroupDispatcherTest {
     @BeforeClass
     public static void setupClass() {
         common = mockStatic(Common.class);
-        common.when(Common::getGroupDirectMessageAckTimeout).thenReturn(Duration.ofMillis(200));
+        common.when(Common::getGroupMessageAckTimeout).thenReturn(Duration.ofMillis(200));
         Config config = ConfigFactory.parseString(
                 "org.apache.pekko.loglevel=WARNING\norg.apache.pekko.log-dead-letters=off");
         system = ActorSystem.create("gd-test-system", config);
@@ -96,7 +99,7 @@ public class GroupDispatcherTest {
         msgBuilder = mock(GroupActionMsgBuilder.class);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
         dispatcher = new GroupDispatcher(actionHandler, msgBuilder, studyDao,
-                new LocalSessionMessageBus(), new NodeIdentity(), system);
+                new LocalSessionMessageBus(), new NodeIdentity(), mock(Common.class), system);
     }
 
     private GroupDispatcher newDistributedDispatcher(RecordingMessagePublisher publisher) {
@@ -106,7 +109,8 @@ public class GroupDispatcherTest {
                 return "node-1";
             }
         };
-        return new GroupDispatcher(actionHandler, msgBuilder, studyDao, publisher, nodeIdentity, system);
+        return new GroupDispatcher(actionHandler, msgBuilder, studyDao, publisher, nodeIdentity,
+                mock(Common.class), system);
     }
 
     private JsObject js(String s) {
@@ -539,6 +543,29 @@ public class GroupDispatcherTest {
     }
 
     @Test
+    public void hasChannelInCluster_remoteAckReturnsTrue() throws Exception {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+
+        Future<Object> result = distributedDispatcher.hasChannelInCluster(2L);
+
+        assertEquals(1, publisher.groupChannelPresenceRequests.size());
+        GroupChannelPresenceRequest request = publisher.groupChannelPresenceRequests.get(0);
+        distributedDispatcher.acknowledgeChannelPresence(request.requestId());
+        assertEquals(true, Await.result(result, scala.concurrent.duration.Duration.create(1, "second")));
+    }
+
+    @Test
+    public void hasChannelInCluster_withoutAckReturnsFalseAfterTimeout() throws Exception {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+
+        Future<Object> result = distributedDispatcher.hasChannelInCluster(999L);
+
+        assertEquals(false, Await.result(result, scala.concurrent.duration.Duration.create(1, "second")));
+    }
+
+    @Test
     public void deliverFromRemote_appliesRecipientsWithoutHandlingOrRepublishing() {
         RecordingMessagePublisher publisher = new RecordingMessagePublisher();
         GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
@@ -640,6 +667,7 @@ public class GroupDispatcherTest {
     private static class RecordingMessagePublisher implements SessionMessagePublisher {
         private final List<GroupClusterMessage> groupMessages = new ArrayList<>();
         private final List<GroupDirectMsgDeliveryRequest> groupDirectMessages = new ArrayList<>();
+        private final List<GroupChannelPresenceRequest> groupChannelPresenceRequests = new ArrayList<>();
         private final List<GroupReassignmentClusterMessage> groupReassignmentMessages = new ArrayList<>();
 
         @Override
@@ -659,6 +687,11 @@ public class GroupDispatcherTest {
         @Override
         public void publishGroupDirectMsgToCluster(GroupDirectMsgDeliveryRequest message) {
             groupDirectMessages.add(message);
+        }
+
+        @Override
+        public void publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest message) {
+            groupChannelPresenceRequests.add(message);
         }
 
         @Override

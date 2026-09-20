@@ -15,6 +15,7 @@ object SessionPubSubGateway {
   private[cluster] final case class PublishBatchMsgToCluster(message: BatchClusterMessage)
   private[cluster] final case class PublishGroupMsgToCluster(message: GroupClusterMessage)
   private[cluster] final case class PublishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest)
+  private[cluster] final case class PublishGroupChannelPresenceToCluster(message: GroupChannelPresenceRequest)
   private[cluster] final case class PublishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage)
   private[cluster] final case class RegisterLocalReceiver(receiver: SessionMessageReceiver)
 
@@ -57,11 +58,14 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
     case PublishBatchMsgToCluster(message) => mediator ! Publish(BatchTopic, message)
     case PublishGroupMsgToCluster(message) => mediator ! Publish(GroupTopic, message)
     case PublishGroupDirectMsgToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishGroupChannelPresenceToCluster(message) => mediator ! Publish(GroupTopic, message)
     case PublishGroupReassignmentToCluster(message) => mediator ! Publish(GroupTopic, message)
     case message: BatchClusterMessage => receiveBatch(message, receiver)
     case message: GroupClusterMessage => receiveGroup(message, receiver)
     case message: GroupDirectMsgDeliveryRequest => receiveGroupDirectMsg(message, receiver)
     case message: GroupDirectMsgDeliveryAck => receiveGroupDirectMsgDeliveryAck(message, receiver)
+    case message: GroupChannelPresenceRequest => receiveGroupChannelPresence(message, receiver)
+    case message: GroupChannelPresenceAck => receiveGroupChannelPresenceAck(message, receiver)
     case message: GroupReassignmentClusterMessage => receiveGroupReassignment(message, receiver)
     case RegisterLocalReceiver(newReceiver) =>
       newReceiver.ready()
@@ -108,6 +112,21 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
   private def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck,
                                                receiver: SessionMessageReceiver): Unit = {
     if (message.targetNodeId == nodeIdentity.id) receiver.receiveGroupDirectMsgDeliveryAck(message)
+  }
+
+  private def receiveGroupChannelPresence(message: GroupChannelPresenceRequest,
+                                          receiver: SessionMessageReceiver): Unit = {
+    if (message.originNodeId != nodeIdentity.id && receiver.receiveGroupChannelPresence(message)) {
+      mediator ! Publish(GroupTopic, GroupChannelPresenceAck(
+        originNodeId = nodeIdentity.id,
+        targetNodeId = message.originNodeId,
+        requestId = message.requestId))
+    }
+  }
+
+  private def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck,
+                                             receiver: SessionMessageReceiver): Unit = {
+    if (message.targetNodeId == nodeIdentity.id) receiver.receiveGroupChannelPresenceAck(message)
   }
 
   private def receiveGroupReassignment(message: GroupReassignmentClusterMessage,

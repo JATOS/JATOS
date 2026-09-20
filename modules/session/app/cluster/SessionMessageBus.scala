@@ -13,6 +13,8 @@ trait SessionMessagePublisher {
 
   def publishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest): Unit
 
+  def publishGroupChannelPresenceToCluster(message: GroupChannelPresenceRequest): Unit
+
   def publishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage): Unit
 }
 
