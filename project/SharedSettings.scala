@@ -22,6 +22,7 @@ object SharedSettings {
   // Dependency versions
   val mockitoVersion = "5.23.0"
   val assertjVersion = "3.27.7"
+  val guavaVersion = "33.4.8-jre"
   val pekkoVersion = "1.0.3"
 
   // Test dependencies (mockito is handled separately via mockitoSettings)
@@ -54,6 +55,7 @@ object SharedSettings {
     version := jatosVersion,
     organization := jatosOrganization,
     scalaVersion := jatosScalaVersion,
+    dependencyOverrides += "com.google.guava" % "guava" % guavaVersion,
     javacOptions ++= Seq("--release", jatosJavaRelease, "-Xlint"),
     Compile / doc / sources := Seq.empty,
     Compile / packageDoc / publishArtifact := false,
