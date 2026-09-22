@@ -403,7 +403,7 @@ publish_docker() {
 
     log "Building and pushing Docker images"
 
-    sbt "Docker / stage"
+    sbt "Assets / clean" "Docker / stage"
 
     local tags=(
         --tag "$DOCKER_IMAGE:$VERSION"
