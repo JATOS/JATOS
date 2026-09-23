@@ -3,7 +3,7 @@ package group
 import daos.common.StudyDao
 import group.GroupDispatcher.TellWhom.TellWhom
 import group.GroupDispatcher._
-import cluster.{GroupChannelPresenceRequest, GroupClusterMessage, GroupDirectMsgDeliveryRequest, GroupReassignmentClusterMessage, GroupRecipients, NodeIdentity, SessionMessagePublisher}
+import cluster.{GroupChannelCloseRequest, GroupChannelPresenceRequest, GroupOpenChannelsRequest, GroupOpenChannelsResponse, GroupClusterMessage, GroupDirectMsgDeliveryRequest, GroupReassignmentRequest, GroupRecipients, NodeIdentity, ChannelMessagePublisher}
 import general.common.Common
 import models.common.Study.GroupSessionWriteScope
 import org.apache.pekko.actor.{ActorRef, ActorSystem, Cancellable, PoisonPill}
@@ -52,8 +52,10 @@ object GroupDispatcher {
     val Ready = Value("READY") // jatos.js signals that the group channel is ready (comes before OPENED)
     val Joined = Value("JOINED") // Signals to every group member that a new member joined
     val Left = Value("LEFT") // Signals to every member that a member left
-    val Opened = Value("OPENED") // // Signals to every member that a new group channel opened
-    val Closed = Value("CLOSED") // // Signals to every member that a group channel was closed
+    val Opened = Value("OPENED") // Signals to the sender that its group channel opened
+    val Closed = Value("CLOSED") // Signals to the recipient that its group channel was closed by JATOS
+    val ChannelOpened = Value("CHANNEL_OPENED") // Signals that another member's group channel opened
+    val ChannelClosed = Value("CHANNEL_CLOSED") // Signals that another member's group channel closed
     val Session = Value("SESSION") // Signals this message contains a group session update
     val SessionAck = Value("SESSION_ACK") // Signals that the session update was successful
     val SessionFail = Value("SESSION_FAIL") // Signals that the session update failed
@@ -107,7 +109,7 @@ object GroupDispatcher {
 class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                 actionMsgBuilder: GroupActionMsgBuilder,
                                 studyDao: StudyDao,
-                                messagePublisher: SessionMessagePublisher,
+                                messagePublisher: ChannelMessagePublisher,
                                 nodeIdentity: NodeIdentity,
                                 _common: Common, // Needed, because Guice doesn't guarantee Common's creation before this class.
                                 actorSystem: ActorSystem) {
@@ -127,10 +129,21 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                             result: Promise[Boolean],
                                             timeout: Cancellable)
 
+  private case class PendingOpenChannels(groupResultId: Long,
+                                         studyResultId: Long,
+                                         sender: ActorRef,
+                                         responses: mutable.HashMap[String, Set[Long]],
+                                         channelChanges: mutable.LinkedHashMap[Long, Boolean],
+                                         timeout: Cancellable)
+
   private val groups = mutable.HashMap.empty[Long, LocalGroup]
   private val pendingDirectDeliveries = mutable.HashMap.empty[String, PendingDirectDelivery]
   private val pendingChannelPresences = mutable.HashMap.empty[String, PendingChannelPresence]
+  private val pendingOpenChannels = mutable.HashMap.empty[String, PendingOpenChannels]
+  private val pendingJoinedMembers = mutable.HashSet.empty[(Long, Long)]
   private val messageAckTimeout = Common.getGroupMessageAckTimeout.toScala
+
+  // Channel presence
 
   def hasChannel(studyResultId: Long): Boolean = synchronized {
     groups.values.exists(_.channels.contains(studyResultId))
@@ -151,7 +164,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     synchronized {
       pendingChannelPresences.put(requestId, PendingChannelPresence(studyResultId, result, timeout))
     }
-    messagePublisher.publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest(
+    messagePublisher.publishGroupChannelPresenceRequestToCluster(GroupChannelPresenceRequest(
       originNodeId = nodeIdentity.id,
       requestId = requestId,
       studyResultId = studyResultId))
@@ -163,6 +176,9 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
    */
   def acknowledgeChannelPresence(requestId: String): Unit = completeChannelPresence(requestId, present = true)
 
+  /**
+   * Completes a pending cluster-wide channel-presence check.
+   */
   private def completeChannelPresence(requestId: String, present: Boolean): Unit = {
     val pending = synchronized { pendingChannelPresences.remove(requestId) }
     pending.foreach { presence =>
@@ -174,6 +190,8 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       presence.result.trySuccess(present)
     }
   }
+
+  // Message entry points
 
   /**
    * Handle a GroupMsg received from a client. What to do with it depends on the JSON inside the GroupMsg. It can be
@@ -212,6 +230,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                         recipients: GroupRecipients): Unit = {
     logger.debug(s".deliverFromRemote: groupResultId $groupResultId, senderStudyResultId $senderStudyResultId, " +
       s"recipients $recipients, msg ${Json.stringify(json)}")
+    recordChannelChangeFromAction(groupResultId, json)
     val msg = GroupMsg(json)
     recipients match {
       case GroupRecipients.All() => tellAllLocal(msg, groupResultId)
@@ -219,6 +238,160 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       case GroupRecipients.Recipient(studyResultId) => channel(groupResultId, studyResultId).foreach(_.self ! msg)
     }
   }
+
+  // Channel lifecycle
+
+  /**
+   * Registers the given channel, sends CHANNEL_OPENED to the other members, and initializes the sender with OPENED.
+   */
+  def registerChannel(groupResultId: Long, studyResultId: Long, channel: GroupChannelActor): Unit = {
+    logger.debug(s".registerChannel: groupResultId $groupResultId, studyResultId $studyResultId")
+    synchronized { group(groupResultId).channels.put(studyResultId, channel) }
+    recordChannelChange(groupResultId, studyResultId, opened = true)
+    val openedForOthers = actionMsgBuilder.build(groupResultId, studyResultId, None,
+      includeSessionData = false, GroupAction.ChannelOpened, TellWhom.AllButSender)
+    tellActionMsg(List(openedForOthers), groupResultId, studyResultId, channel.self)
+
+    if (messagePublisher.isDistributed) requestOpenChannels(groupResultId, studyResultId, channel.self)
+    else sendOpenedToNewChannel(groupResultId, studyResultId, studyResultIds(groupResultId), channel.self)
+  }
+
+  /**
+   * Unregisters the given channel, sends CHANNEL_CLOSED to the other members, and removes an empty group entry.
+   */
+  def unregisterChannel(groupResultId: Long, studyResultId: Long): Unit = {
+    logger.debug(s".unregisterChannel: groupResultId $groupResultId, studyResultId $studyResultId")
+
+    val channelOption = channel(groupResultId, studyResultId)
+    if (channelOption.isDefined) {
+      removeChannel(groupResultId, studyResultId)
+      recordChannelChange(groupResultId, studyResultId, opened = false)
+      val msg = actionMsgBuilder.build(groupResultId, studyResultId, None,
+        includeSessionData = false, GroupAction.ChannelClosed, TellWhom.AllButSender)
+      tellActionMsg(List(msg), groupResultId, studyResultId, channelOption.get.self)
+    } else {
+      logger.debug(s".unregisterChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
+    }
+
+  }
+
+  /**
+   * Stops and unregisters the GroupChannelActor belonging to the given study result ID. Before it sends a 'Closed'
+   * message to the GroupChannelActor.
+   */
+  def poisonChannel(groupResultId: Long, studyResultId: Long): Unit = {
+    if (!poisonLocalChannel(groupResultId, studyResultId) && messagePublisher.isDistributed) {
+      logger.debug(s".poisonChannel: publishing channel close to cluster for study result $studyResultId")
+      messagePublisher.publishGroupChannelCloseRequestToCluster(GroupChannelCloseRequest(
+        originNodeId = nodeIdentity.id,
+        groupResultId = groupResultId,
+        studyResultId = studyResultId))
+    }
+  }
+
+  /**
+   * Applies a channel-close request received from another JATOS node without publishing it again.
+   */
+  def poisonChannelFromRemote(groupResultId: Long, studyResultId: Long): Unit = {
+    logger.debug(s".poisonChannelFromRemote: groupResultId $groupResultId, studyResultId $studyResultId")
+    poisonLocalChannel(groupResultId, studyResultId)
+  }
+
+  /**
+   * Closes and unregisters a channel if it is owned by this node.
+   */
+  private def poisonLocalChannel(groupResultId: Long, studyResultId: Long): Boolean = {
+    logger.debug(s".poisonChannel: groupResultId $groupResultId, studyResultId $studyResultId")
+    val channelOption = channel(groupResultId, studyResultId)
+    if (channelOption.isDefined) {
+      val channel = channelOption.get
+      channel.self ! GroupMsg(Json.obj(GroupActionJsonKey.Action.toString -> GroupAction.Closed))
+      channel.self ! PoisonPill
+      unregisterChannel(groupResultId, studyResultId)
+      logger.debug(s".poisonChannel: groupResultId $groupResultId, studyResultId $studyResultId, " + "stopped and unregistered channel")
+      true
+    } else {
+      logger.debug(s".poisonChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
+      false
+    }
+  }
+
+  // Channel reassignment
+
+  /**
+   * Moves the given channel from one group entry to another and updates the channel's group result ID.
+   */
+  def reassignChannel(studyResultId: Long, groupResultId: Long, differentGroupResultId: Long): Unit = {
+    logger.debug(s".reassignChannel: groupResultId $groupResultId, differentGroupResultId $differentGroupResultId, studyResultId $studyResultId")
+    if (!reassignLocalChannel(studyResultId, groupResultId, differentGroupResultId) && messagePublisher.isDistributed) {
+      logger.debug(s".reassignChannel: publishing reassignment to cluster for study result $studyResultId")
+      messagePublisher.publishGroupReassignmentRequestToCluster(GroupReassignmentRequest(
+        originNodeId = nodeIdentity.id,
+        studyResultId = studyResultId,
+        currentGroupResultId = groupResultId,
+        differentGroupResultId = differentGroupResultId))
+    }
+  }
+
+  /**
+   * Applies a reassignment received from another JATOS node without publishing it again.
+   */
+  def reassignFromRemote(studyResultId: Long,
+                         groupResultId: Long,
+                         differentGroupResultId: Long): Unit = {
+    logger.debug(s".reassignFromRemote: groupResultId $groupResultId, " +
+      s"differentGroupResultId $differentGroupResultId, studyResultId $studyResultId")
+    reassignLocalChannel(studyResultId, groupResultId, differentGroupResultId)
+  }
+
+  /**
+   * Moves a locally owned channel from its current group to another group.
+   */
+  private def reassignLocalChannel(studyResultId: Long,
+                                   groupResultId: Long,
+                                   differentGroupResultId: Long): Boolean = {
+    val channelOption = channel(groupResultId, studyResultId)
+    if (channelOption.isDefined) {
+      left(groupResultId, studyResultId)
+      unregisterChannel(groupResultId, studyResultId)
+      channelOption.get.setGroupResultId(differentGroupResultId)
+      joined(differentGroupResultId, studyResultId)
+      registerChannel(differentGroupResultId, studyResultId, channelOption.get)
+      true
+    } else {
+      logger.debug(s".reassignLocalChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
+      false
+    }
+  }
+
+  // Group membership lifecycle
+
+  /**
+   * Sends JOINED to all current group members. If the joining member's channel is not open yet, its notification is
+   * retained until registration while the existing members are notified immediately.
+   */
+  def joined(groupResultId: Long, studyResultId: Long): Unit = {
+    logger.debug(s".joined: groupResultId $groupResultId studyResultId $studyResultId")
+    val channelOption = channel(groupResultId, studyResultId)
+    val tellWhom = if (channelOption.isDefined) TellWhom.All else TellWhom.AllButSender
+    if (channelOption.isEmpty) synchronized { pendingJoinedMembers.add(groupResultId -> studyResultId) }
+    val msg = actionMsgBuilder.build(groupResultId, studyResultId, None,
+      includeSessionData = false, GroupAction.Joined, tellWhom)
+    tellActionMsg(List(msg), groupResultId, studyResultId,
+      channelOption.map(_.self).getOrElse(ActorRef.noSender))
+  }
+
+  /**
+   * Sends LEFT to every group member, including the member that left.
+   */
+  def left(groupResultId: Long, studyResultId: Long): Unit = {
+    logger.debug(s".left: groupResultId $groupResultId, studyResultId $studyResultId")
+    val msg = actionMsgBuilder.build(groupResultId, studyResultId, None, includeSessionData = false,
+      GroupAction.Left, TellWhom.All)
+    tellActionMsg(List(msg), groupResultId, studyResultId, ActorRef.noSender)
+  }
+
+  // Direct message delivery
 
   /**
    * Delivers a direct message received from another JATOS node and reports whether its channel exists locally.
@@ -244,128 +417,6 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
   }
 
   /**
-   * Registers the given channel and sends an OPENED action group message to everyone in this group.
-   */
-  def registerChannel(groupResultId: Long, studyResultId: Long, channel: GroupChannelActor): Unit = {
-    logger.debug(s".registerChannel: groupResultId $groupResultId, studyResultId $studyResultId")
-    synchronized { group(groupResultId).channels.put(studyResultId, channel) }
-    val channelIds = studyResultIds(groupResultId)
-    val msg1 = actionMsgBuilder.build(groupResultId, studyResultId,
-      channelIds, includeSessionData = true, GroupAction.Opened, TellWhom.SenderOnly)
-    val msg2 = actionMsgBuilder.build(groupResultId, studyResultId,
-      channelIds, includeSessionData = false, GroupAction.Opened, TellWhom.AllButSender)
-    tellActionMsg(List(msg1, msg2), groupResultId, studyResultId, channel.self)
-  }
-
-  /**
-   * Unregisters the given channel, sends a CLOSED action message, and removes an empty group entry.
-   */
-  def unregisterChannel(groupResultId: Long, studyResultId: Long): Unit = {
-    logger.debug(s".unregisterChannel: groupResultId $groupResultId, studyResultId $studyResultId")
-
-    val channelOption = channel(groupResultId, studyResultId)
-    if (channelOption.isDefined) {
-      removeChannel(groupResultId, studyResultId)
-      val msg = actionMsgBuilder.build(groupResultId, studyResultId,
-        studyResultIds(groupResultId), includeSessionData = false, GroupAction.Closed, TellWhom.AllButSender)
-      tellActionMsg(List(msg), groupResultId, studyResultId, channelOption.get.self)
-    } else {
-      logger.debug(s".unregisterChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
-    }
-
-  }
-
-  /**
-   * Stops and unregisters the GroupChannelActor belonging to the given study result ID. Before it sends a 'Closed'
-   * message to the GroupChannelActor.
-   */
-  def poisonChannel(groupResultId: Long, studyResultId: Long): Unit = {
-    logger.debug(s".poisonChannel: groupResultId $groupResultId, studyResultId $studyResultId")
-    val channelOption = channel(groupResultId, studyResultId)
-    if (channelOption.isDefined) {
-      val channel = channelOption.get
-      channel.self ! GroupMsg(Json.obj(GroupActionJsonKey.Action.toString -> GroupAction.Closed))
-      channel.self ! PoisonPill
-      unregisterChannel(groupResultId, studyResultId)
-      logger.debug(s".poisonChannel: groupResultId $groupResultId, studyResultId $studyResultId, " + "stopped and unregistered channel")
-    } else {
-      logger.debug(s".poisonChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
-    }
-  }
-
-  /**
-   * Moves the given channel from one group entry to another and updates the channel's group result ID.
-   */
-  def reassignChannel(studyResultId: Long, groupResultId: Long, differentGroupResultId: Long): Unit = {
-    logger.debug(s".reassignChannel: groupResultId $groupResultId, differentGroupResultId $differentGroupResultId, studyResultId $studyResultId")
-    if (!reassignLocalChannel(studyResultId, groupResultId, differentGroupResultId) && messagePublisher.isDistributed) {
-      logger.debug(s".reassignChannel: publishing reassignment to cluster for study result $studyResultId")
-      messagePublisher.publishGroupReassignmentToCluster(GroupReassignmentClusterMessage(
-        originNodeId = nodeIdentity.id,
-        studyResultId = studyResultId,
-        currentGroupResultId = groupResultId,
-        differentGroupResultId = differentGroupResultId))
-    }
-  }
-
-  /**
-   * Applies a reassignment received from another JATOS node without publishing it again.
-   */
-  def reassignFromRemote(studyResultId: Long,
-                         groupResultId: Long,
-                         differentGroupResultId: Long): Unit = {
-    logger.debug(s".reassignFromRemote: groupResultId $groupResultId, " +
-      s"differentGroupResultId $differentGroupResultId, studyResultId $studyResultId")
-    reassignLocalChannel(studyResultId, groupResultId, differentGroupResultId)
-  }
-
-  private def reassignLocalChannel(studyResultId: Long,
-                                   groupResultId: Long,
-                                   differentGroupResultId: Long): Boolean = {
-    val channelOption = channel(groupResultId, studyResultId)
-    if (channelOption.isDefined) {
-      unregisterChannel(groupResultId, studyResultId)
-      left(groupResultId, studyResultId)
-      channelOption.get.setGroupResultId(differentGroupResultId)
-      registerChannel(differentGroupResultId, studyResultId, channelOption.get)
-      joined(differentGroupResultId, studyResultId)
-      true
-    } else {
-      logger.debug(s".reassignLocalChannel: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
-      false
-    }
-  }
-
-  /**
-   * Send the 'Joined' group action message to all group members.
-   */
-  def joined(groupResultId: Long, studyResultId: Long): Unit = {
-    logger.debug(s".joined: groupResultId $groupResultId studyResultId $studyResultId")
-    val channelOption = channel(groupResultId, studyResultId)
-    if (channelOption.isDefined) {
-      val msg = actionMsgBuilder.build(groupResultId, studyResultId,
-        studyResultIds(groupResultId), includeSessionData = false, GroupAction.Joined, TellWhom.AllButSender)
-      tellActionMsg(List(msg), groupResultId, studyResultId, channelOption.get.self)
-    } else {
-      logger.debug(s".joined: study result $studyResultId is not handled by the GroupDispatcher $groupResultId.")
-    }
-  }
-
-  /**
-   * Send the 'Left' group action message to all group members. It sends the message to all group members except the
-   * sender, and even if the study result is not handled by the GroupDispatcher (or never was).
-   */
-  def left(groupResultId: Long, studyResultId: Long): Unit = {
-    logger.debug(s".left: groupResultId $groupResultId, studyResultId $studyResultId")
-    val channelOption = channel(groupResultId, studyResultId)
-    val tellWhom = if (channelOption.isDefined) TellWhom.AllButSender else TellWhom.All
-    val senderRef = channelOption.map(_.self).getOrElse(ActorRef.noSender)
-    val msg = actionMsgBuilder.build(groupResultId, studyResultId, studyResultIds(groupResultId), includeSessionData = false,
-      GroupAction.Left, tellWhom)
-    tellActionMsg(List(msg), groupResultId, studyResultId, senderRef)
-  }
-
-  /**
    * Sends the message only to the recipient specified by the given study result ID.
    */
   private def tellRecipientOnly(msg: GroupMsg,
@@ -386,6 +437,9 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     }
   }
 
+  /**
+   * Publishes a direct message to the cluster and tracks its delivery acknowledgement.
+   */
   private def publishDirectMsgToCluster(msg: GroupMsg,
                                         groupResultId: Long,
                                         senderStudyResultId: Long,
@@ -408,6 +462,9 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       json = Json.stringify(msg.json)))
   }
 
+  /**
+   * Fails a pending direct delivery when no node acknowledged it in time.
+   */
   private def directDeliveryTimedOut(deliveryId: String): Unit = {
     val pending = synchronized { pendingDirectDeliveries.remove(deliveryId) }
     pending.foreach { delivery =>
@@ -420,6 +477,9 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     }
   }
 
+  /**
+   * Sends a direct-message delivery error to the original sender.
+   */
   private def sendDirectDeliveryError(groupResultId: Long,
                                       senderStudyResultId: Long,
                                       recipientStudyResultId: Long,
@@ -430,6 +490,8 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     val groupMsg = actionMsgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly)
     tellActionMsg(List(groupMsg), groupResultId, senderStudyResultId, sender)
   }
+
+  // Message routing
 
   private def tellActionMsg(msgList: List[GroupMsg],
                             groupResultId: Long,
@@ -478,6 +540,17 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
     }
   }
 
+  /**
+   * Sends the message only to the sender.
+   */
+  private def tellSenderOnly(msg: GroupMsg, groupResultId: Long, sender: ActorRef): Unit = {
+    logger.debug(s".tellSenderOnly: groupResultId $groupResultId, msg ${Json.stringify(msg.json)}")
+    sender ! msg
+  }
+
+  /**
+   * Publishes a group message to the other nodes in a distributed installation.
+   */
   private def publishToCluster(msg: GroupMsg,
                                groupResultId: Long,
                                senderStudyResultId: Long,
@@ -493,13 +566,114 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
       recipients = recipients))
   }
 
+  // Cluster-wide open-channel discovery
+
   /**
-   * Sends the message only to the sender.
+   * Returns the channels for a group that are owned by this node.
    */
-  private def tellSenderOnly(msg: GroupMsg, groupResultId: Long, sender: ActorRef): Unit = {
-    logger.debug(s".tellSenderOnly: groupResultId $groupResultId, msg ${Json.stringify(msg.json)}")
-    sender ! msg
+  def localStudyResultIds(groupResultId: Long): List[Long] = studyResultIds(groupResultId)
+
+  /**
+   * Adds one node's response to a pending cluster-wide open-channel request.
+   */
+  def receiveOpenChannelsResponse(response: GroupOpenChannelsResponse): Unit = {
+    val shouldComplete = synchronized {
+      pendingOpenChannels.get(response.requestId).exists { pending =>
+        pending.responses.put(response.originNodeId, response.channelStudyResultIds.flatMap(_.toLongOption))
+        pending.responses.size >= response.clusterMemberCount
+      }
+    }
+    if (shouldComplete) completeOpenChannels(response.requestId, timedOut = false)
   }
+
+  /**
+   * Requests the currently open group channels from every cluster node.
+   */
+  private def requestOpenChannels(groupResultId: Long,
+                                  studyResultId: Long,
+                                  sender: ActorRef): Unit = {
+    val requestId = UUID.randomUUID().toString
+    val timeout = actorSystem.scheduler.scheduleOnce(messageAckTimeout) {
+      completeOpenChannels(requestId, timedOut = true)
+    }(actorSystem.dispatcher)
+    synchronized {
+      pendingOpenChannels.put(requestId, PendingOpenChannels(
+        groupResultId,
+        studyResultId,
+        sender,
+        mutable.HashMap.empty,
+        mutable.LinkedHashMap.empty,
+        timeout))
+    }
+    messagePublisher.publishGroupOpenChannelsRequestToCluster(GroupOpenChannelsRequest(
+      originNodeId = nodeIdentity.id,
+      requestId = requestId,
+      groupResultId = groupResultId))
+  }
+
+  /**
+   * Completes an open-channel request and initializes the newly opened channel.
+   */
+  private def completeOpenChannels(requestId: String, timedOut: Boolean): Unit = {
+    val pendingOption = synchronized { pendingOpenChannels.remove(requestId) }
+    pendingOption.foreach { pending =>
+      pending.timeout.cancel()
+      val openChannelIds = pending.responses.values.flatten.to(mutable.Set)
+      pending.channelChanges.foreach { case (studyResultId, opened) =>
+        if (opened) openChannelIds += studyResultId else openChannelIds -= studyResultId
+      }
+      // The registering channel must be present even if the local PubSub response was delayed or lost.
+      openChannelIds += pending.studyResultId
+      if (timedOut) {
+        logger.warn(s".completeOpenChannels: request $requestId for groupResultId " +
+          s"${pending.groupResultId} timed out after $messageAckTimeout; using ${pending.responses.size} response(s)")
+      }
+      sendOpenedToNewChannel(
+        pending.groupResultId, pending.studyResultId, openChannelIds.toList, pending.sender)
+    }
+  }
+
+  /**
+   * Sends the initial OPENED message and any pending JOINED message to a new channel.
+   */
+  private def sendOpenedToNewChannel(groupResultId: Long,
+                                     studyResultId: Long,
+                                     channelIds: Iterable[Long],
+                                     sender: ActorRef): Unit = {
+    val opened = actionMsgBuilder.build(groupResultId, studyResultId, Some(channelIds),
+      includeSessionData = true, GroupAction.Opened, TellWhom.SenderOnly)
+    tellSenderOnly(opened, groupResultId, sender)
+    val joinedIsPending = synchronized { pendingJoinedMembers.remove(groupResultId -> studyResultId) }
+    if (joinedIsPending) {
+      val joined = actionMsgBuilder.build(groupResultId, studyResultId, None,
+        includeSessionData = false, GroupAction.Joined, TellWhom.SenderOnly)
+      tellSenderOnly(joined, groupResultId, sender)
+    }
+  }
+
+  /**
+   * Extracts an open or close event and applies it to pending open-channel requests.
+   */
+  private def recordChannelChangeFromAction(groupResultId: Long, json: JsObject): Unit = {
+    val action = (json \ GroupActionJsonKey.Action.toString).asOpt[String]
+    val studyResultId = (json \ GroupActionJsonKey.MemberId.toString).asOpt[String].flatMap(_.toLongOption)
+    (action, studyResultId) match {
+      case (Some("CHANNEL_OPENED"), Some(id)) => recordChannelChange(groupResultId, id, opened = true)
+      case (Some("CHANNEL_CLOSED"), Some(id)) => recordChannelChange(groupResultId, id, opened = false)
+      case _ =>
+    }
+  }
+
+  /**
+   * Records a channel delta that occurred while an open-channel request was pending.
+   */
+  private def recordChannelChange(groupResultId: Long, studyResultId: Long, opened: Boolean): Unit = synchronized {
+    pendingOpenChannels.values
+      .filter(_.groupResultId == groupResultId)
+      .foreach(_.channelChanges.put(studyResultId, opened))
+  }
+
+  // Local group state
 
   private def group(groupResultId: Long): LocalGroup = synchronized {
     groups.getOrElseUpdate(groupResultId, {

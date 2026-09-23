@@ -7,7 +7,8 @@ ENV JATOS_DATA=/opt/jatos_data
 
 WORKDIR ${JATOS_HOME}
 
-COPY opt/docker ${JATOS_HOME}
+COPY */opt/docker/ ${JATOS_HOME}/
+COPY opt/docker/ ${JATOS_HOME}/
 
 RUN groupadd --gid 1000 jatos \
  && useradd --uid 1000 --gid 1000 jatos \

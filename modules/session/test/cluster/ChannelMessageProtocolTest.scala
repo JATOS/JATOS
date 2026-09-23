@@ -5,7 +5,7 @@ import org.junit.Test
 
 import java.util.UUID
 
-class SessionMessageProtocolTest {
+class ChannelMessageProtocolTest {
 
   @Test
   def batchMessage_keepsRoutingData(): Unit = {
@@ -34,12 +34,21 @@ class SessionMessageProtocolTest {
 
   @Test
   def groupReassignmentMessage_containsSourceAndDestinationGroups(): Unit = {
-    val message = GroupReassignmentClusterMessage("node-1", 30L, 20L, 21L)
+    val message = GroupReassignmentRequest("node-1", 30L, 20L, 21L)
 
     assertEquals("node-1", message.originNodeId)
     assertEquals(30L, message.studyResultId)
     assertEquals(20L, message.currentGroupResultId)
     assertEquals(21L, message.differentGroupResultId)
+  }
+
+  @Test
+  def groupChannelCloseMessage_identifiesChannel(): Unit = {
+    val message = GroupChannelCloseRequest("node-1", 20L, 30L)
+
+    assertEquals("node-1", message.originNodeId)
+    assertEquals(20L, message.groupResultId)
+    assertEquals(30L, message.studyResultId)
   }
 
   @Test
@@ -61,6 +70,19 @@ class SessionMessageProtocolTest {
     assertEquals(30L, request.studyResultId)
     assertEquals("node-1", ack.targetNodeId)
     assertEquals(request.requestId, ack.requestId)
+  }
+
+  @Test
+  def groupOpenChannelsMessages_keepChannelsAndRoutingData(): Unit = {
+    val request = GroupOpenChannelsRequest("node-1", "open-channels-1", 20L)
+    val response = GroupOpenChannelsResponse(
+      "node-2", "node-1", "open-channels-1", 20L, Set("30", "40"), 2)
+
+    assertEquals(20L, request.groupResultId)
+    assertEquals("node-1", response.targetNodeId)
+    assertEquals(request.requestId, response.requestId)
+    assertEquals(Set("30", "40"), response.channelStudyResultIds)
+    assertEquals(2, response.clusterMemberCount)
   }
 
   @Test

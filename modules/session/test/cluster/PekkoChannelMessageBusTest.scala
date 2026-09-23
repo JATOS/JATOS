@@ -12,9 +12,9 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class PekkoSessionMessageBusTest {
+class PekkoChannelMessageBusTest {
 
-  import PekkoSessionMessageBusTest._
+  import PekkoChannelMessageBusTest._
 
   private val actorSystems = ListBuffer.empty[ActorSystem]
 
@@ -37,8 +37,8 @@ class PekkoSessionMessageBusTest {
 
     val receiver1 = new RecordingReceiver(deliverDirectMessages = false)
     val receiver2 = new RecordingReceiver(deliverDirectMessages = true)
-    val bus1 = new PekkoSessionMessageBus(system1, FixedNodeIdentity("node-1"))
-    val bus2 = new PekkoSessionMessageBus(system2, FixedNodeIdentity("node-2"))
+    val bus1 = new PekkoChannelMessageBus(system1, FixedNodeIdentity("node-1"))
+    val bus2 = new PekkoChannelMessageBus(system2, FixedNodeIdentity("node-2"))
     bus1.registerLocalReceiver(receiver1)
     bus2.registerLocalReceiver(receiver2)
 
@@ -70,7 +70,7 @@ class PekkoSessionMessageBusTest {
   def clusterMessagesRoundTripThroughJacksonCbor(): Unit = {
     val system = createActorSystem()
     val serialization = SerializationExtension(system)
-    val messages: Seq[SessionClusterMessage] = Seq(
+    val messages: Seq[ChannelClusterMessage] = Seq(
       BatchClusterMessage("node-1", 10L, "{}"),
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.All()),
       GroupClusterMessage("node-1", 20L, 30L, "{}", GroupRecipients.AllButSender()),
@@ -79,7 +79,10 @@ class PekkoSessionMessageBusTest {
       GroupDirectMsgDeliveryAck("node-2", "node-1", "delivery-1"),
       GroupChannelPresenceRequest("node-1", "presence-1", 40L),
       GroupChannelPresenceAck("node-2", "node-1", "presence-1"),
-      GroupReassignmentClusterMessage("node-1", 30L, 20L, 21L))
+      GroupOpenChannelsRequest("node-1", "open-channels-1", 20L),
+      GroupOpenChannelsResponse("node-2", "node-1", "open-channels-1", 20L, Set("30", "40"), 2),
+      GroupReassignmentRequest("node-1", 30L, 20L, 21L),
+      GroupChannelCloseRequest("node-1", 20L, 30L))
 
     messages.foreach { message =>
       val serializer = serialization.findSerializerFor(message)
@@ -115,7 +118,7 @@ class PekkoSessionMessageBusTest {
          |""".stripMargin)
       .withFallback(ConfigFactory.defaultReference())
 
-    val system = ActorSystem("session-pubsub-test", config)
+    val system = ActorSystem("channel-pubsub-test", config)
     actorSystems += system
     system
   }
@@ -147,7 +150,7 @@ class PekkoSessionMessageBusTest {
     assert(condition)
   }
 
-  private class RecordingReceiver(deliverDirectMessages: Boolean) extends SessionMessageReceiver {
+  private class RecordingReceiver(deliverDirectMessages: Boolean) extends ChannelMessageReceiver {
     val batchMessages = new LinkedBlockingQueue[BatchClusterMessage]()
     val groupMessages = new LinkedBlockingQueue[GroupClusterMessage]()
     val directMessages = new LinkedBlockingQueue[GroupDirectMsgDeliveryRequest]()
@@ -166,11 +169,11 @@ class PekkoSessionMessageBusTest {
     override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit =
       directDeliveryAcks.offer(message)
 
-    override def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean = false
+    override def receiveGroupChannelPresenceRequest(message: GroupChannelPresenceRequest): Boolean = false
 
     override def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck): Unit = ()
 
-    override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = ()
+    override def receiveGroupReassignmentRequest(message: GroupReassignmentRequest): Unit = ()
 
     override def ready(): Unit = readyLatch.countDown()
 
@@ -180,6 +183,6 @@ class PekkoSessionMessageBusTest {
   }
 }
 
-object PekkoSessionMessageBusTest {
+object PekkoChannelMessageBusTest {
   private final case class FixedNodeIdentity(override val id: String) extends NodeIdentity
 }

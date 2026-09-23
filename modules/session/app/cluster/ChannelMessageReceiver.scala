@@ -9,9 +9,9 @@ import javax.inject.{Inject, Singleton}
 import scala.util.{Failure, Success, Try}
 
 /**
- * Receives session messages published by other JATOS nodes.
+ * Receives batch and group channel messages published by other JATOS nodes.
  */
-trait SessionMessageReceiver {
+trait ChannelMessageReceiver {
 
   def receiveBatch(message: BatchClusterMessage): Unit
 
@@ -21,11 +21,17 @@ trait SessionMessageReceiver {
 
   def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit
 
-  def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean
+  def receiveGroupChannelPresenceRequest(message: GroupChannelPresenceRequest): Boolean
 
   def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck): Unit
 
-  def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit
+  def receiveGroupOpenChannelsRequest(message: GroupOpenChannelsRequest): Set[String] = Set.empty
+
+  def receiveGroupOpenChannelsResponse(message: GroupOpenChannelsResponse): Unit = ()
+
+  def receiveGroupReassignmentRequest(message: GroupReassignmentRequest): Unit
+
+  def receiveGroupChannelCloseRequest(message: GroupChannelCloseRequest): Unit = ()
 
   def ready(): Unit
 }
@@ -34,12 +40,12 @@ trait SessionMessageReceiver {
  * Routes messages received from other JATOS nodes to the node-local dispatchers.
  */
 @Singleton
-class DispatcherSessionMessageReceiver @Inject()(batchDispatcher: BatchDispatcher,
-                                                  groupDispatcher: GroupDispatcher) extends SessionMessageReceiver {
+class DispatcherChannelMessageReceiver @Inject()(batchDispatcher: BatchDispatcher,
+                                                  groupDispatcher: GroupDispatcher) extends ChannelMessageReceiver {
 
   private val logger = Logger(this.getClass)
 
-  override def receiveBatch(message: BatchClusterMessage): Unit = {
+    override def receiveBatch(message: BatchClusterMessage): Unit = {
     Try(Json.parse(message.json).as[JsObject]) match {
       case Success(json) => batchDispatcher.deliverFromRemote(message.batchId, json)
       case Failure(e) => logger.warn(
@@ -71,7 +77,7 @@ class DispatcherSessionMessageReceiver @Inject()(batchDispatcher: BatchDispatche
     groupDispatcher.acknowledgeDirectDelivery(message.deliveryId)
   }
 
-  override def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean = {
+  override def receiveGroupChannelPresenceRequest(message: GroupChannelPresenceRequest): Boolean = {
     groupDispatcher.hasChannel(message.studyResultId)
   }
 
@@ -79,9 +85,21 @@ class DispatcherSessionMessageReceiver @Inject()(batchDispatcher: BatchDispatche
     groupDispatcher.acknowledgeChannelPresence(message.requestId)
   }
 
-  override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit = {
+  override def receiveGroupOpenChannelsRequest(message: GroupOpenChannelsRequest): Set[String] = {
+    groupDispatcher.localStudyResultIds(message.groupResultId).map(_.toString).toSet
+  }
+
+  override def receiveGroupOpenChannelsResponse(message: GroupOpenChannelsResponse): Unit = {
+    groupDispatcher.receiveOpenChannelsResponse(message)
+  }
+
+  override def receiveGroupReassignmentRequest(message: GroupReassignmentRequest): Unit = {
     groupDispatcher.reassignFromRemote(
       message.studyResultId, message.currentGroupResultId, message.differentGroupResultId)
+  }
+
+  override def receiveGroupChannelCloseRequest(message: GroupChannelCloseRequest): Unit = {
+    groupDispatcher.poisonChannelFromRemote(message.groupResultId, message.studyResultId)
   }
 
   override def ready(): Unit = ()
@@ -91,7 +109,7 @@ class DispatcherSessionMessageReceiver @Inject()(batchDispatcher: BatchDispatche
  * Registers the receiver after both the receiver and transport have been fully constructed.
  */
 @Singleton
-class SessionMessageReceiverRegistration @Inject()(receiver: SessionMessageReceiver,
-                                                    registrar: SessionMessageReceiverRegistrar) {
+class ChannelMessageReceiverRegistration @Inject()(receiver: ChannelMessageReceiver,
+                                                     registrar: ChannelMessageReceiverRegistrar) {
   registrar.registerLocalReceiver(receiver)
 }

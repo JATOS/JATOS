@@ -2,15 +2,18 @@ package group.session;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import cluster.LocalSessionMessageBus;
+import cluster.LocalChannelMessageBus;
 import cluster.NodeIdentity;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
 import cluster.GroupChannelPresenceRequest;
+import cluster.GroupChannelCloseRequest;
+import cluster.GroupOpenChannelsRequest;
+import cluster.GroupOpenChannelsResponse;
 import cluster.GroupDirectMsgDeliveryRequest;
 import cluster.GroupRecipients;
-import cluster.GroupReassignmentClusterMessage;
-import cluster.SessionMessagePublisher;
+import cluster.GroupReassignmentRequest;
+import cluster.ChannelMessagePublisher;
 import daos.common.StudyDao;
 import group.GroupActionHandler;
 import group.GroupActionMsgBuilder;
@@ -35,7 +38,9 @@ import scala.concurrent.Future;
 
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.time.Duration;
@@ -99,7 +104,7 @@ public class GroupDispatcherTest {
         msgBuilder = mock(GroupActionMsgBuilder.class);
         when(studyDao.findGroupSessionWriteScope(anyLong())).thenReturn(GroupSessionWriteScope.SHARED);
         dispatcher = new GroupDispatcher(actionHandler, msgBuilder, studyDao,
-                new LocalSessionMessageBus(), new NodeIdentity(), mock(Common.class), system);
+                new LocalChannelMessageBus(), new NodeIdentity(), mock(Common.class), system);
     }
 
     private GroupDispatcher newDistributedDispatcher(RecordingMessagePublisher publisher) {
@@ -109,8 +114,10 @@ public class GroupDispatcherTest {
                 return "node-1";
             }
         };
-        return new GroupDispatcher(actionHandler, msgBuilder, studyDao, publisher, nodeIdentity,
+        GroupDispatcher result = new GroupDispatcher(actionHandler, msgBuilder, studyDao, publisher, nodeIdentity,
                 mock(Common.class), system);
+        publisher.dispatcher = result;
+        return result;
     }
 
     private JsObject js(String s) {
@@ -138,8 +145,12 @@ public class GroupDispatcherTest {
         return GroupAction$.MODULE$.Opened();
     }
 
-    private Enumeration.Value GA_Closed() {
-        return GroupAction$.MODULE$.Closed();
+    private Enumeration.Value GA_ChannelOpened() {
+        return GroupAction$.MODULE$.ChannelOpened();
+    }
+
+    private Enumeration.Value GA_ChannelClosed() {
+        return GroupAction$.MODULE$.ChannelClosed();
     }
 
     private Enumeration.Value GA_Joined() {
@@ -158,12 +169,16 @@ public class GroupDispatcherTest {
         return TellWhom$.MODULE$.AllButSender();
     }
 
+    private Enumeration.Value TW_All() {
+        return TellWhom$.MODULE$.All();
+    }
+
     private Enumeration.Value TW_Unknown() {
         return TellWhom$.MODULE$.Unknown();
     }
 
     @Test
-    public void registerChannel_sendsOpenedToSelfAndOthers() {
+    public void registerChannel_sendsOpenedToSelfAndChannelOpenedToOthers() {
         // Prepare two fake channels with distinct out actors
         BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();
@@ -175,33 +190,109 @@ public class GroupDispatcherTest {
         when(ch1.self()).thenReturn(outActor1);
         when(ch2.self()).thenReturn(outActor2);
 
-        // Configure msg builder: OPENED -> one to sender, one to others
+        // Configure msg builder: OPENED to sender, CHANNEL_OPENED to others
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(true),
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\",\"who\":\"sender\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Opened()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\",\"who\":\"others\"}")));
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_OPENED\",\"who\":\"others\"}")));
 
         // Register first channel -> it should get the sender-only OPENED; no others exist yet
         dispatcher.registerChannel(groupResultId, 1L, ch1);
-        assertEquals(1, out1.size());
+        assertNotNull(poll(out1));
         assertTrue(out2.isEmpty());
 
         // Clear first out; now register second channel ->
-        // second gets sender-only OPENED, first gets others OPENED
+        // second gets sender-only OPENED, first gets CHANNEL_OPENED
         pollUntilEmpty(out1);
         dispatcher.registerChannel(groupResultId, 2L, ch2);
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
         assertNotNull(msg1);
         assertNotNull(msg2);
-        assertEquals(js("{\"action\":\"OPENED\",\"who\":\"others\"}"), ((GroupMsg) msg1).json());
+        assertEquals(js("{\"action\":\"CHANNEL_OPENED\",\"who\":\"others\"}"), ((GroupMsg) msg1).json());
         assertEquals(js("{\"action\":\"OPENED\",\"who\":\"sender\"}"), ((GroupMsg) msg2).json());
     }
 
     @Test
-    public void unregisterChannel_sendsClosedToOthers_andRemovesEmptyGroup() {
+    public void joinedBeforeChannelRegistration_notifiesExistingMembersAndThenJoiningMember() {
+        BlockingQueue<Object> existingOut = new LinkedBlockingQueue<>();
+        BlockingQueue<Object> joiningOut = new LinkedBlockingQueue<>();
+        GroupChannelActor existing = mock(GroupChannelActor.class);
+        GroupChannelActor joining = mock(GroupChannelActor.class);
+        when(existing.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, existingOut)));
+        when(joining.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, joiningOut)));
+
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(true),
+                eq(GA_Opened()), eq(TW_SenderOnly())))
+                .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_OPENED\"}")));
+        when(msgBuilder.build(eq(groupResultId), eq(2L), any(), eq(false),
+                eq(GA_Joined()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"JOINED\"}")));
+        when(msgBuilder.build(eq(groupResultId), eq(2L), any(), eq(false),
+                eq(GA_Joined()), eq(TW_SenderOnly())))
+                .thenReturn(actionMsgToSender(js("{\"action\":\"JOINED\"}")));
+
+        dispatcher.registerChannel(groupResultId, 1L, existing);
+        pollUntilEmpty(existingOut);
+
+        dispatcher.joined(groupResultId, 2L);
+        assertEquals(js("{\"action\":\"JOINED\"}"), ((GroupMsg) poll(existingOut)).json());
+
+        dispatcher.registerChannel(groupResultId, 2L, joining);
+        assertEquals(js("{\"action\":\"CHANNEL_OPENED\"}"), ((GroupMsg) poll(existingOut)).json());
+        assertEquals(js("{\"action\":\"OPENED\"}"), ((GroupMsg) poll(joiningOut)).json());
+        assertEquals(js("{\"action\":\"JOINED\"}"), ((GroupMsg) poll(joiningOut)).json());
+    }
+
+    @Test
+    public void registerChannel_distributedInitializesSenderWithClusterWideOpenChannels() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        publisher.autoRespondOpenChannels = false;
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        BlockingQueue<Object> out = new LinkedBlockingQueue<>();
+        GroupChannelActor channel = mock(GroupChannelActor.class);
+        when(channel.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, out)));
+
+        when(msgBuilder.build(eq(groupResultId), eq(1L), any(), eq(false),
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js(
+                        "{\"action\":\"CHANNEL_OPENED\",\"memberId\":\"1\"}")));
+        when(msgBuilder.build(eq(groupResultId), eq(1L), any(), eq(true),
+                eq(GA_Opened()), eq(TW_SenderOnly())))
+                .thenReturn(actionMsgToSender(js(
+                        "{\"action\":\"OPENED\",\"channels\":[\"1\",\"2\",\"3\"]}")));
+
+        distributedDispatcher.registerChannel(groupResultId, 1L, channel);
+
+        assertTrue(out.isEmpty());
+        assertEquals(1, publisher.groupOpenChannelsRequests.size());
+        assertFalse(publisher.groupMessages.get(0).json().contains("channels"));
+        GroupOpenChannelsRequest request = publisher.groupOpenChannelsRequests.get(0);
+        distributedDispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
+                "node-1", "node-1", request.requestId(), groupResultId,
+                asScala(Set.of("1")).toSet(), 2));
+        distributedDispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
+                "node-2", "node-1", request.requestId(), groupResultId,
+                asScala(Set.of("2", "3")).toSet(), 2));
+
+        GroupMsg opened = (GroupMsg) poll(out);
+        assertNotNull(opened);
+        verify(msgBuilder).build(eq(groupResultId), eq(1L), argThat(ids -> {
+                    if (ids.isEmpty()) return false;
+                    Set<Long> actual = new HashSet<>();
+                    scala.jdk.javaapi.CollectionConverters.asJava(ids.get())
+                            .forEach(id -> actual.add(((Number) id).longValue()));
+                    return actual.equals(Set.of(1L, 2L, 3L));
+                }), eq(true), eq(GA_Opened()), eq(TW_SenderOnly()));
+    }
+
+    @Test
+    public void unregisterChannel_sendsChannelClosedToOthers_andRemovesEmptyGroup() {
         // Two channels setup
         BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();
@@ -216,12 +307,12 @@ public class GroupDispatcherTest {
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Opened()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_OPENED\"}")));
 
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Closed()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
+                eq(GA_ChannelClosed()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_CLOSED\"}")));
 
         dispatcher.registerChannel(groupResultId, 1L, ch1);
         dispatcher.registerChannel(groupResultId, 2L, ch2);
@@ -229,13 +320,13 @@ public class GroupDispatcherTest {
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
 
-        // Unregister first -> second should get CLOSED
+        // Unregister first -> second should get CHANNEL_CLOSED
         dispatcher.unregisterChannel(groupResultId, 1L);
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
         assertNull(msg1);
         assertNotNull(msg2);
-        assertEquals(js("{\"action\":\"CLOSED\"}"), ((GroupMsg) msg2).json());
+        assertEquals(js("{\"action\":\"CHANNEL_CLOSED\"}"), ((GroupMsg) msg2).json());
         dispatcher.unregisterChannel(groupResultId, 2L);
         assertFalse(dispatcher.hasChannel(2L));
     }
@@ -251,11 +342,11 @@ public class GroupDispatcherTest {
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Opened()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_OPENED\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Closed()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
+                eq(GA_ChannelClosed()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_CLOSED\"}")));
 
         dispatcher.registerChannel(groupResultId, 1L, ch1);
         pollUntilEmpty(out1);
@@ -267,6 +358,27 @@ public class GroupDispatcherTest {
         Object first = poll(out1);
         assertNotNull("Expected one message to have been delivered to out actor", first);
         assertFalse(dispatcher.hasChannel(1L));
+    }
+
+    @Test
+    public void poisonChannel_whenChannelIsNotLocal_publishesCloseToCluster() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+
+        distributedDispatcher.poisonChannel(groupResultId, 1L);
+
+        assertEquals(List.of(new GroupChannelCloseRequest("node-1", groupResultId, 1L)),
+                publisher.groupChannelCloseMessages);
+    }
+
+    @Test
+    public void poisonChannelFromRemote_whenChannelIsNotLocal_doesNotRepublish() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+
+        distributedDispatcher.poisonChannelFromRemote(groupResultId, 1L);
+
+        assertTrue(publisher.groupChannelCloseMessages.isEmpty());
     }
 
     @Test
@@ -283,13 +395,19 @@ public class GroupDispatcherTest {
         when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(), anyBoolean(),
                 eq(GA_Opened()), any(Enumeration.Value.class)))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
+        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(), eq(false),
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_OPENED\"}")));
         // Stub JOINED for different dispatcher to avoid NPE
         when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(), eq(false),
                 eq(GA_Joined()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"JOINED\"}")));
+        when(msgBuilder.build(eq(groupResultId + 1), anyLong(), any(), eq(false),
+                eq(GA_Joined()), eq(TW_SenderOnly())))
+                .thenReturn(actionMsgToSender(js("{\"action\":\"JOINED\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Left()), any()))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"LEFT\"}")));
+                eq(GA_Left()), eq(TW_All())))
+                .thenReturn(actionMsgToAll(js("{\"action\":\"LEFT\"}")));
 
         // Register in first
         stubOpenCloseMessages();
@@ -309,7 +427,7 @@ public class GroupDispatcherTest {
 
         distributedDispatcher.reassignChannel(1L, groupResultId, groupResultId + 1);
 
-        assertEquals(List.of(new GroupReassignmentClusterMessage(
+        assertEquals(List.of(new GroupReassignmentRequest(
                 "node-1", 1L, groupResultId, groupResultId + 1)),
                 publisher.groupReassignmentMessages);
     }
@@ -329,11 +447,11 @@ public class GroupDispatcherTest {
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Opened()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_OPENED\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Closed()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CLOSED\"}")));
+                eq(GA_ChannelClosed()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_CLOSED\"}")));
     }
 
     @Test
@@ -480,8 +598,8 @@ public class GroupDispatcherTest {
                 eq(GA_Opened()), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
         when(msgBuilder.build(anyLong(), anyLong(), any(), eq(false),
-                eq(GA_Opened()), eq(TW_AllButSender())))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"OPENED\"}")));
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"CHANNEL_OPENED\"}")));
         dispatcher.registerChannel(groupResultId, 1L, sender);
         dispatcher.registerChannel(groupResultId + 1, 2L, otherGroup);
         pollUntilEmpty(senderQueue);
@@ -600,7 +718,7 @@ public class GroupDispatcherTest {
     }
 
     @Test
-    public void joinedAndLeft_sendActionToOthersOnlyWhenChannelKnown() {
+    public void joinedAndLeft_sendActionToEveryMemberIncludingAffectedMember() {
         BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();
         ActorRef outActor1 = system.actorOf(Props.create(CapturingActor.class, out1));
@@ -614,8 +732,11 @@ public class GroupDispatcherTest {
                 eq(GA_Joined()), eq(TW_AllButSender())))
                 .thenReturn(actionMsgToAllButSender(js("{\"action\":\"JOINED\"}")));
         when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
-                eq(GA_Left()), any()))
-                .thenReturn(actionMsgToAllButSender(js("{\"action\":\"LEFT\"}")));
+                eq(GA_Joined()), eq(TW_All())))
+                .thenReturn(actionMsgToAll(js("{\"action\":\"JOINED\"}")));
+        when(msgBuilder.build(eq(groupResultId), anyLong(), any(), eq(false),
+                eq(GA_Left()), eq(TW_All())))
+                .thenReturn(actionMsgToAll(js("{\"action\":\"LEFT\"}")));
 
         stubOpenCloseMessages();
         dispatcher.registerChannel(groupResultId, 1L, ch1);
@@ -627,8 +748,9 @@ public class GroupDispatcherTest {
         dispatcher.joined(groupResultId, 1L);
         Object msg1 = poll(out1);
         Object msg2 = poll(out2);
-        assertNull(msg1);
+        assertNotNull(msg1);
         assertNotNull(msg2);
+        assertEquals(js("{\"action\":\"JOINED\"}"), ((GroupMsg) msg1).json());
         assertEquals(js("{\"action\":\"JOINED\"}"), ((GroupMsg) msg2).json());
 
         pollUntilEmpty(out1);
@@ -639,7 +761,8 @@ public class GroupDispatcherTest {
         Object msg4 = poll(out2);
         assertNotNull(msg3);
         assertEquals(js("{\"action\":\"LEFT\"}"), ((GroupMsg) msg3).json());
-        assertNull(msg4);
+        assertNotNull(msg4);
+        assertEquals(js("{\"action\":\"LEFT\"}"), ((GroupMsg) msg4).json());
 
         pollUntilEmpty(out1);
         pollUntilEmpty(out2);
@@ -647,7 +770,12 @@ public class GroupDispatcherTest {
         // If unknown ID -> we still get the LEFT messages
         dispatcher.left(groupResultId, 999L);
         dispatcher.joined(groupResultId, 999L);
-        assertEquals(2, out1.size() + out2.size());
+        assertNotNull(poll(out1));
+        assertNotNull(poll(out1));
+        assertNotNull(poll(out2));
+        assertNotNull(poll(out2));
+        verify(msgBuilder).build(eq(groupResultId), eq(999L), any(), eq(false),
+                eq(GA_Left()), eq(TW_All()));
     }
 
     private void pollUntilEmpty(BlockingQueue<Object> q) {
@@ -664,11 +792,13 @@ public class GroupDispatcherTest {
         }
     }
 
-    private static class RecordingMessagePublisher implements SessionMessagePublisher {
+    private static class RecordingMessagePublisher implements ChannelMessagePublisher {
         private final List<GroupClusterMessage> groupMessages = new ArrayList<>();
         private final List<GroupDirectMsgDeliveryRequest> groupDirectMessages = new ArrayList<>();
         private final List<GroupChannelPresenceRequest> groupChannelPresenceRequests = new ArrayList<>();
-        private final List<GroupReassignmentClusterMessage> groupReassignmentMessages = new ArrayList<>();
+        private final List<GroupOpenChannelsRequest> groupOpenChannelsRequests = new ArrayList<>();
+        private final List<GroupReassignmentRequest> groupReassignmentMessages = new ArrayList<>();
+        private final List<GroupChannelCloseRequest> groupChannelCloseMessages = new ArrayList<>();
 
         @Override
         public boolean isDistributed() {
@@ -690,13 +820,33 @@ public class GroupDispatcherTest {
         }
 
         @Override
-        public void publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest message) {
+        public void publishGroupChannelPresenceRequestToCluster(GroupChannelPresenceRequest message) {
             groupChannelPresenceRequests.add(message);
         }
 
+        private GroupDispatcher dispatcher;
+        private boolean autoRespondOpenChannels = true;
+
         @Override
-        public void publishGroupReassignmentToCluster(GroupReassignmentClusterMessage message) {
+        public void publishGroupOpenChannelsRequestToCluster(GroupOpenChannelsRequest message) {
+            groupOpenChannelsRequests.add(message);
+            if (!autoRespondOpenChannels) return;
+            scala.collection.immutable.Set<String> channelIds = asScala(
+                    scala.jdk.javaapi.CollectionConverters.asJava(
+                            dispatcher.localStudyResultIds(message.groupResultId()))
+                            .stream().map(Object::toString).toList()).toSet();
+            dispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
+                    "node-1", "node-1", message.requestId(), message.groupResultId(), channelIds, 1));
+        }
+
+        @Override
+        public void publishGroupReassignmentRequestToCluster(GroupReassignmentRequest message) {
             groupReassignmentMessages.add(message);
+        }
+
+        @Override
+        public void publishGroupChannelCloseRequestToCluster(GroupChannelCloseRequest message) {
+            groupChannelCloseMessages.add(message);
         }
     }
 }

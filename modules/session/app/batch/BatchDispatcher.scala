@@ -2,7 +2,7 @@ package batch
 
 import batch.BatchDispatcher.TellWhom.TellWhom
 import batch.BatchDispatcher._
-import cluster.{BatchClusterMessage, NodeIdentity, SessionMessagePublisher}
+import cluster.{BatchClusterMessage, NodeIdentity, ChannelMessagePublisher}
 import org.apache.pekko.actor.{ActorRef, PoisonPill}
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
@@ -77,7 +77,7 @@ object BatchDispatcher {
 @Singleton
 class BatchDispatcher @Inject()(actionHandler: BatchActionHandler,
                                 actionMsgBuilder: BatchActionMsgBuilder,
-                                messagePublisher: SessionMessagePublisher,
+                                messagePublisher: ChannelMessagePublisher,
                                 nodeIdentity: NodeIdentity) {
 
   private val logger: Logger = Logger(this.getClass)

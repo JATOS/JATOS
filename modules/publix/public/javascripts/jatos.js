@@ -1755,11 +1755,29 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             // Group member ID is equal to study result ID
             jatos.groupMemberId = jatos.studyResultId;
         }
-        if (typeof groupMsg.members != 'undefined') {
+        // OPENED contains the complete member list. JOINED and LEFT are subsequent deltas.
+        if (groupMsg.action === 'OPENED' && typeof groupMsg.members != 'undefined') {
             jatos.groupMembers = groupMsg.members;
+        } else if (typeof groupMsg.memberId != 'undefined' && groupMsg.action === 'JOINED'
+                && !jatos.groupMembers.includes(groupMsg.memberId)) {
+            jatos.groupMembers.push(groupMsg.memberId);
+        } else if (typeof groupMsg.memberId != 'undefined' && groupMsg.action === 'LEFT') {
+            jatos.groupMembers = jatos.groupMembers.filter(function (memberId) {
+                return memberId !== groupMsg.memberId;
+            });
         }
-        if (typeof groupMsg.channels != 'undefined') {
+        // The initial OPENED message contains the cluster-wide open channels.
+        // CHANNEL_OPENED and CHANNEL_CLOSED are subsequent deltas.
+        if (groupMsg.action === 'OPENED' && typeof groupMsg.channels != 'undefined') {
             jatos.groupChannels = groupMsg.channels;
+        } else if (typeof groupMsg.memberId != 'undefined' && groupMsg.action === 'CHANNEL_OPENED'
+                && !jatos.groupChannels.includes(groupMsg.memberId)) {
+            jatos.groupChannels.push(groupMsg.memberId);
+        } else if (typeof groupMsg.memberId != 'undefined'
+                && (groupMsg.action === 'CHANNEL_CLOSED' || groupMsg.action === 'CLOSED')) {
+            jatos.groupChannels = jatos.groupChannels.filter(function (memberId) {
+                return memberId !== groupMsg.memberId;
+            });
         }
         if (typeof groupMsg.sessionPatches != 'undefined') {
             const patchResults = jsonpatch.applyPatch(groupSessionData, groupMsg.sessionPatches);
@@ -1790,27 +1808,20 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         }
         switch (groupMsg.action) {
             case "OPENED":
-                // onOpen and onMemberOpen
-                // Someone opened a group channel; distinguish between the worker running
-                // this study and others
-                if (groupMsg.memberId === jatos.groupMemberId) {
-                    callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
-                } else {
-                    callWithArgs(groupChannelCallbacks.onMemberOpen, groupMsg.memberId);
-                    call(groupChannelCallbacks.onUpdate);
-                }
+                // This client's own group channel was initialized.
+                callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
                 break;
             case "CLOSED":
-                // onMemberClose
-                // Some member closed its group channel
-                // (onClose callback function is handled during groupChannel.onclose)
-                if (typeof groupMsg.memberId != 'undefined' && groupMsg.memberId !== jatos.groupMemberId) {
-                    callWithArgs(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
-                    call(groupChannelCallbacks.onUpdate);
-                } else {
-                    clearInterval(groupChannelClosedCheckTimer);
-                    console.info("Group channel closed by JATOS server");
-                }
+                clearInterval(groupChannelClosedCheckTimer);
+                console.info("Group channel closed by JATOS server");
+                break;
+            case "CHANNEL_OPENED":
+                callWithArgs(groupChannelCallbacks.onMemberOpen, groupMsg.memberId);
+                call(groupChannelCallbacks.onUpdate);
+                break;
+            case "CHANNEL_CLOSED":
+                callWithArgs(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
+                call(groupChannelCallbacks.onUpdate);
                 break;
             case "JOINED":
                 // onMemberJoin

@@ -57,7 +57,7 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
   /**
    * Builds a GroupMsg with or without session data but always with the session version
    */
-  def build(groupResultId: Long, studyResultId: Long, channelStudyResultIds: Iterable[Long],
+  def build(groupResultId: Long, studyResultId: Long, channelStudyResultIds: Option[Iterable[Long]],
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
@@ -84,20 +84,22 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
     GroupMsg(json, tellWhom)
   }
 
-  private def buildAction(groupResult: GroupResult, studyResultId: Long, channelStudyResultIds: Iterable[Long],
+  private def buildAction(groupResult: GroupResult, studyResultId: Long,
+                          channelStudyResultIds: Option[Iterable[Long]],
                           includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     val members = JsArray(
       groupResult.getActiveMemberList.asScala.map(sr => JsString(sr.getId.toString)).toSeq
     )
-    val channels = JsArray(channelStudyResultIds.map(id => JsString(id.toString)).toSeq)
     var json = Json.obj(
       GroupActionJsonKey.Action.toString -> action.toString,
       GroupActionJsonKey.MemberId.toString -> studyResultId.toString,
       GroupActionJsonKey.GroupResultId.toString -> groupResult.getId.toString,
       GroupActionJsonKey.GroupState.toString -> groupResult.getGroupState.name,
       GroupActionJsonKey.Members.toString -> members,
-      GroupActionJsonKey.Channels.toString -> channels,
       GroupActionJsonKey.SessionVersion.toString -> JsNumber(BigDecimal(groupResult.getGroupSessionVersion)))
+    channelStudyResultIds.foreach { ids =>
+      json = json + (GroupActionJsonKey.Channels.toString -> JsArray(ids.map(id => JsString(id.toString)).toSeq))
+    }
     if (includeSessionData)
       json = json + (GroupActionJsonKey.SessionData.toString -> Json.parse(groupResult.getGroupSessionData))
     GroupMsg(json, tellWhom)

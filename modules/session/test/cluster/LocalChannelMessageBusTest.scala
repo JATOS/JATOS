@@ -3,11 +3,11 @@ package cluster
 import org.junit.Assert.assertFalse
 import org.junit.Test
 
-class LocalSessionMessageBusTest {
+class LocalChannelMessageBusTest {
 
   @Test
   def publish_isNoOpForSingleNodeMode(): Unit = {
-    val bus = new LocalSessionMessageBus
+    val bus = new LocalChannelMessageBus
 
     assertFalse(bus.isDistributed)
     bus.publishBatchMsgToCluster(BatchClusterMessage("node-1", 1L, "{}"))

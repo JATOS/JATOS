@@ -45,8 +45,8 @@ class DistributedBatchMessagingTest {
     val handler2 = new StubHandler(Nil)
     val identity1 = FixedNodeIdentity("node-1")
     val identity2 = FixedNodeIdentity("node-2")
-    val bus1 = new PekkoSessionMessageBus(system1, identity1)
-    val bus2 = new PekkoSessionMessageBus(system2, identity2)
+    val bus1 = new PekkoChannelMessageBus(system1, identity1)
+    val bus2 = new PekkoChannelMessageBus(system2, identity2)
     val dispatcher1 = new BatchDispatcher(handler1, new StubBuilder(opened), bus1, identity1)
     val dispatcher2 = new BatchDispatcher(handler2, new StubBuilder(opened), bus2, identity2)
     val receiver1 = new ReadyDispatcherReceiver(dispatcher1)
@@ -137,7 +137,7 @@ class DistributedBatchMessagingTest {
   }
 
   private class ReadyDispatcherReceiver(dispatcher: BatchDispatcher)
-    extends DispatcherSessionMessageReceiver(dispatcher, mock(classOf[GroupDispatcher])) {
+    extends DispatcherChannelMessageReceiver(dispatcher, mock(classOf[GroupDispatcher])) {
     private val readyLatch = new CountDownLatch(1)
     override def ready(): Unit = readyLatch.countDown()
     def awaitReady(): Unit = assert(readyLatch.await(10, TimeUnit.SECONDS), "Gateway did not subscribe in time")

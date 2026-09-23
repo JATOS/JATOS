@@ -1,0 +1,103 @@
+# Build the JATOS image from the current checkout before starting this stack:
+#
+#   sbt "Assets / clean" "Docker / stage"
+#   docker build -f deploy/Dockerfile -t jatos-multi-node-test target/docker/stage
+#   docker compose -f deploy/docker-compose-multi-node.yaml up --scale jatos=2
+#
+# Open http://localhost:9000 to access the cluster through the load balancer, or
+# http://localhost:9001 to access the seed node directly. Docker assigns a free
+# host port to port 9000 of every scalable jatos container; list them with
+# `docker compose -f deploy/docker-compose-multi-node.yaml ps`. All nodes use the
+# same database and shared JATOS data volume. This setup is intended for local
+# testing only; its credentials and secret are not suitable for production.
+
+name: jatos-multi-node-test
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: jatos
+      MYSQL_USER: jatos
+      MYSQL_PASSWORD: jatos
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  jatos-seed:
+    image: jatos-multi-node-test
+    hostname: jatos-seed
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment: &jatos-environment
+      JATOS_SECRET: local-multi-node-test-secret-change-before-production
+      JATOS_DB_URL: jdbc:mysql://mysql:3306/jatos?characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+      JATOS_DB_DRIVER: com.mysql.cj.jdbc.Driver
+      JATOS_DB_USERNAME: jatos
+      JATOS_DB_PASSWORD: jatos
+      JATOS_DB_CONNECTIONPOOL_SIZE: 20
+      JATOS_THREADPOOL_SIZE: 30
+    ports:
+      - "9001:9000"
+    expose:
+      - "25520"
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /ping HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && IFS= read -r status <&3 && [[ \"$$status\" == *\" 200 \"* ]]"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+    volumes:
+      - jatos-data:/opt/jatos_data
+      - ./jatos-seed.conf:/opt/jatos/conf/jatos.conf:ro
+
+  # Scale this service with, for example, `--scale jatos=3`. Do not set a fixed
+  # hostname or host port here: every replica needs a unique Pekko address and
+  # a non-conflicting HTTP port.
+  jatos:
+    image: jatos-multi-node-test
+    depends_on:
+      mysql:
+        condition: service_healthy
+      jatos-seed:
+        condition: service_healthy
+    environment:
+      <<: *jatos-environment
+    ports:
+      - "9000"
+    expose:
+      - "25520"
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /ping HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && IFS= read -r status <&3 && [[ \"$$status\" == *\" 200 \"* ]]"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+    volumes:
+      - jatos-data:/opt/jatos_data
+      - ./jatos.conf:/opt/jatos/conf/jatos.conf:ro
+
+  load-balancer:
+    image: nginx:1.28-alpine
+    depends_on:
+      jatos-seed:
+        condition: service_healthy
+      jatos:
+        condition: service_healthy
+    ports:
+      - "9000:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - ./nginx-multi-node.conf:/etc/nginx/nginx.conf:ro
+
+volumes:
+  mysql-data:
+  jatos-data:

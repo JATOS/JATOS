@@ -8,9 +8,9 @@ import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
 import cluster.GroupChannelPresenceRequest;
 import cluster.GroupDirectMsgDeliveryRequest;
-import cluster.GroupReassignmentClusterMessage;
+import cluster.GroupReassignmentRequest;
 import cluster.NodeIdentity;
-import cluster.SessionMessagePublisher;
+import cluster.ChannelMessagePublisher;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.pekko.actor.AbstractActor;
@@ -72,7 +72,7 @@ public class BatchDispatcherTest {
 
     private BatchDispatcher newDispatcher(BatchActionHandler handler,
                                           BatchActionMsgBuilder builder,
-                                          SessionMessagePublisher messagePublisher) {
+                                          ChannelMessagePublisher messagePublisher) {
         NodeIdentity nodeIdentity = new NodeIdentity() {
             @Override
             public String id() {
@@ -303,7 +303,7 @@ public class BatchDispatcherTest {
         }
     }
 
-    private static class RecordingMessageBus implements SessionMessagePublisher {
+    private static class RecordingMessageBus implements ChannelMessagePublisher {
         private final java.util.List<BatchClusterMessage> batchMessages = new ArrayList<>();
 
         @Override
@@ -325,15 +325,15 @@ public class BatchDispatcherTest {
         }
 
         @Override
-        public void publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest message) {
+        public void publishGroupChannelPresenceRequestToCluster(GroupChannelPresenceRequest message) {
         }
 
         @Override
-        public void publishGroupReassignmentToCluster(GroupReassignmentClusterMessage message) {
+        public void publishGroupReassignmentRequestToCluster(GroupReassignmentRequest message) {
         }
     }
 
-    private static class DisabledMessageBus implements SessionMessagePublisher {
+    private static class DisabledMessageBus implements ChannelMessagePublisher {
         @Override
         public boolean isDistributed() {
             return false;
@@ -355,12 +355,12 @@ public class BatchDispatcherTest {
         }
 
         @Override
-        public void publishGroupChannelPresenceToCluster(GroupChannelPresenceRequest message) {
+        public void publishGroupChannelPresenceRequestToCluster(GroupChannelPresenceRequest message) {
             fail("A single-node dispatcher must not publish group channel presence messages");
         }
 
         @Override
-        public void publishGroupReassignmentToCluster(GroupReassignmentClusterMessage message) {
+        public void publishGroupReassignmentRequestToCluster(GroupReassignmentRequest message) {
             fail("A single-node dispatcher must not publish group reassignment messages");
         }
     }

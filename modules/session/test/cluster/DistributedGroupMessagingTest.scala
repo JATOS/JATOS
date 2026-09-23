@@ -51,8 +51,8 @@ class DistributedGroupMessagingTest {
 
     val identity1 = new FixedNodeIdentity("node-1")
     val identity2 = new FixedNodeIdentity("node-2")
-    val bus1 = new PekkoSessionMessageBus(system1, identity1)
-    val bus2 = new PekkoSessionMessageBus(system2, identity2)
+    val bus1 = new PekkoChannelMessageBus(system1, identity1)
+    val bus2 = new PekkoChannelMessageBus(system2, identity2)
     val dispatcher1 = newDispatcher(bus1, identity1, system1, sessionHandler = true)
     val dispatcher2 = newDispatcher(bus2, identity2, system2, sessionHandler = false)
     val receiver1 = new ReadyGroupReceiver(dispatcher1)
@@ -74,10 +74,40 @@ class DistributedGroupMessagingTest {
     val remoteChannel = channel(remoteRef)
 
     dispatcher1.registerChannel(groupResultId, 1L, senderChannel)
-    assertAction("OPENED", senderMessages.poll(2, TimeUnit.SECONDS))
+    val senderOpened = senderMessages.poll(2, TimeUnit.SECONDS)
+    assertAction("OPENED", senderOpened)
+    assertEquals(Set("1"), (senderOpened.json \ "channels").as[Set[String]])
     dispatcher2.registerChannel(groupResultId, 2L, remoteChannel)
-    assertAction("OPENED", remoteMessages.poll(2, TimeUnit.SECONDS))
-    assertAction("OPENED", senderMessages.poll(10, TimeUnit.SECONDS))
+    val remoteOpened = remoteMessages.poll(2, TimeUnit.SECONDS)
+    assertAction("OPENED", remoteOpened)
+    assertEquals(Set("1", "2"), (remoteOpened.json \ "channels").as[Set[String]])
+    assertAction("CHANNEL_OPENED", senderMessages.poll(10, TimeUnit.SECONDS))
+    senderMessages.clear()
+    remoteMessages.clear()
+
+    // The leave request can arrive on a different node from the departing member's channel.
+    val departingMessages = new LinkedBlockingQueue[GroupMsg]()
+    val departingRef = system2.actorOf(Props(new QueueActor(departingMessages)))
+    dispatcher2.registerChannel(groupResultId, 3L, channel(departingRef))
+    assertAction("OPENED", departingMessages.poll(2, TimeUnit.SECONDS))
+    assertAction("CHANNEL_OPENED", senderMessages.poll(10, TimeUnit.SECONDS))
+    assertAction("CHANNEL_OPENED", remoteMessages.poll(2, TimeUnit.SECONDS))
+    senderMessages.clear()
+    remoteMessages.clear()
+
+    dispatcher1.left(groupResultId, 3L)
+    dispatcher1.poisonChannel(groupResultId, 3L)
+
+    assertEquals(Set("LEFT", "CHANNEL_CLOSED"), Set(
+      (senderMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String],
+      (senderMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String]))
+    assertEquals(Set("LEFT", "CHANNEL_CLOSED"), Set(
+      (remoteMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String],
+      (remoteMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String]))
+    assertEquals(Set("LEFT", "CLOSED"), Set(
+      (departingMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String],
+      (departingMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String]))
+    assertEquals(false, dispatcher2.hasChannel(3L))
     senderMessages.clear()
     remoteMessages.clear()
 
@@ -107,17 +137,20 @@ class DistributedGroupMessagingTest {
 
     dispatcher2.joined(groupResultId, 2L)
     assertAction("JOINED", senderMessages.poll(10, TimeUnit.SECONDS))
-    assertNull(remoteMessages.poll(300, TimeUnit.MILLISECONDS))
+    assertAction("JOINED", remoteMessages.poll(2, TimeUnit.SECONDS))
 
     dispatcher2.left(groupResultId, 2L)
     assertAction("LEFT", senderMessages.poll(10, TimeUnit.SECONDS))
-    assertNull(remoteMessages.poll(300, TimeUnit.MILLISECONDS))
+    assertAction("LEFT", remoteMessages.poll(2, TimeUnit.SECONDS))
 
     val differentGroupResultId = 101L
     dispatcher1.reassignChannel(2L, groupResultId, differentGroupResultId)
-    assertAction("CLOSED", senderMessages.poll(10, TimeUnit.SECONDS))
-    assertAction("LEFT", senderMessages.poll(10, TimeUnit.SECONDS))
+    assertEquals(Set("LEFT", "CHANNEL_CLOSED"), Set(
+      (senderMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String],
+      (senderMessages.poll(10, TimeUnit.SECONDS).json \ "action").as[String]))
+    assertAction("LEFT", remoteMessages.poll(10, TimeUnit.SECONDS))
     assertAction("OPENED", remoteMessages.poll(10, TimeUnit.SECONDS))
+    assertAction("JOINED", remoteMessages.poll(10, TimeUnit.SECONDS))
 
     val directAfterReassignment = Json.obj("recipient" -> "2", "text" -> "new group")
     dispatcher1.handleGroupMsg(
@@ -125,7 +158,7 @@ class DistributedGroupMessagingTest {
     assertEquals(directAfterReassignment, remoteMessages.poll(10, TimeUnit.SECONDS).json)
   }
 
-  private def newDispatcher(messagePublisher: SessionMessagePublisher,
+  private def newDispatcher(messagePublisher: ChannelMessagePublisher,
                             nodeIdentity: NodeIdentity,
                             actorSystem: ActorSystem,
                             sessionHandler: Boolean): GroupDispatcher = {
@@ -206,16 +239,19 @@ class DistributedGroupMessagingTest {
   private class StubBuilder extends GroupActionMsgBuilder(null) {
     override def build(groupResultId: Long,
                        studyResultId: Long,
-                       channelStudyResultIds: Iterable[Long],
+                       channelStudyResultIds: Option[Iterable[Long]],
                        includeSessionData: Boolean,
                        action: GroupAction.Value,
                        tellWhom: TellWhom.Value): GroupMsg = {
-      GroupMsg(Json.obj("action" -> action.toString, "memberId" -> studyResultId.toString), tellWhom)
+      var json = Json.obj("action" -> action.toString, "memberId" -> studyResultId.toString)
+      channelStudyResultIds.foreach(ids =>
+        json = json + ("channels" -> Json.toJson(ids.map(_.toString).toSeq)))
+      GroupMsg(json, tellWhom)
     }
   }
 
-  private class ReadyGroupReceiver(groupDispatcher: GroupDispatcher) extends SessionMessageReceiver {
-    private val delegate = new DispatcherSessionMessageReceiver(mock(classOf[BatchDispatcher]), groupDispatcher)
+  private class ReadyGroupReceiver(groupDispatcher: GroupDispatcher) extends ChannelMessageReceiver {
+    private val delegate = new DispatcherChannelMessageReceiver(mock(classOf[BatchDispatcher]), groupDispatcher)
     private val readyLatch = new CountDownLatch(1)
 
     override def receiveBatch(message: BatchClusterMessage): Unit = delegate.receiveBatch(message)
@@ -228,14 +264,23 @@ class DistributedGroupMessagingTest {
     override def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck): Unit =
       delegate.receiveGroupDirectMsgDeliveryAck(message)
 
-    override def receiveGroupChannelPresence(message: GroupChannelPresenceRequest): Boolean =
-      delegate.receiveGroupChannelPresence(message)
+    override def receiveGroupChannelPresenceRequest(message: GroupChannelPresenceRequest): Boolean =
+      delegate.receiveGroupChannelPresenceRequest(message)
 
     override def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck): Unit =
       delegate.receiveGroupChannelPresenceAck(message)
 
-    override def receiveGroupReassignment(message: GroupReassignmentClusterMessage): Unit =
-      delegate.receiveGroupReassignment(message)
+    override def receiveGroupOpenChannelsRequest(message: GroupOpenChannelsRequest): Set[String] =
+      delegate.receiveGroupOpenChannelsRequest(message)
+
+    override def receiveGroupOpenChannelsResponse(message: GroupOpenChannelsResponse): Unit =
+      delegate.receiveGroupOpenChannelsResponse(message)
+
+    override def receiveGroupReassignmentRequest(message: GroupReassignmentRequest): Unit =
+      delegate.receiveGroupReassignmentRequest(message)
+
+    override def receiveGroupChannelCloseRequest(message: GroupChannelCloseRequest): Unit =
+      delegate.receiveGroupChannelCloseRequest(message)
 
     override def ready(): Unit = readyLatch.countDown()
 

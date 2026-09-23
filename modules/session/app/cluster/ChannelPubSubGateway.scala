@@ -8,33 +8,42 @@ import org.apache.pekko.cluster.pubsub.DistributedPubSubMediator.{Publish, Subsc
 
 import scala.collection.mutable
 
-object SessionPubSubGateway {
+object ChannelPubSubGateway {
 
   val BatchTopic = "jatos-batch"
   val GroupTopic = "jatos-group"
 
   // Local commands for sending Batch/GroupClusterMessages through the gateway.
   private[cluster] final case class PublishBatchMsgToCluster(message: BatchClusterMessage)
-  private[cluster] final case class PublishGroupMsgToCluster(message: GroupClusterMessage)
-  private[cluster] final case class PublishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest)
-  private[cluster] final case class PublishGroupChannelPresenceToCluster(message: GroupChannelPresenceRequest)
-  private[cluster] final case class PublishGroupReassignmentToCluster(message: GroupReassignmentClusterMessage)
-  private[cluster] final case class RegisterLocalReceiver(receiver: SessionMessageReceiver)
 
-  def props(nodeIdentity: NodeIdentity): Props = Props(new SessionPubSubGateway(nodeIdentity))
+  private[cluster] final case class PublishGroupMsgToCluster(message: GroupClusterMessage)
+
+  private[cluster] final case class PublishGroupDirectMsgToCluster(message: GroupDirectMsgDeliveryRequest)
+
+  private[cluster] final case class PublishGroupChannelPresenceRequestToCluster(message: GroupChannelPresenceRequest)
+
+  private[cluster] final case class PublishGroupOpenChannelsRequestToCluster(message: GroupOpenChannelsRequest)
+
+  private[cluster] final case class PublishGroupReassignmentRequestToCluster(message: GroupReassignmentRequest)
+
+  private[cluster] final case class PublishGroupChannelCloseRequestToCluster(message: GroupChannelCloseRequest)
+
+  private[cluster] final case class RegisterLocalReceiver(receiver: ChannelMessageReceiver)
+
+  def props(nodeIdentity: NodeIdentity): Props = Props(new ChannelPubSubGateway(nodeIdentity))
 }
 
 /**
- * Bridges the local session-message bus and Pekko Distributed PubSub.
+ * Bridges the local channel-message bus and Pekko Distributed PubSub.
  */
-class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorLogging with Stash {
+class ChannelPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorLogging with Stash {
 
-  import SessionPubSubGateway._
+  import ChannelPubSubGateway._
 
   private val mediator = DistributedPubSub(context.system).mediator
   private val cluster = Cluster(context.system)
   private var subscribedTopics = Set.empty[String]
-  private var receiverOption = Option.empty[SessionMessageReceiver]
+  private var receiverOption = Option.empty[ChannelMessageReceiver]
   private val deliveredDirectMessages = mutable.LinkedHashSet.empty[(String, String)]
   private val maxRememberedDirectMessages = 10000
 
@@ -79,19 +88,24 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
     case _ => stash()
   }
 
-  private def active(receiver: SessionMessageReceiver): Receive = {
+  private def active(receiver: ChannelMessageReceiver): Receive = {
     case PublishBatchMsgToCluster(message) => mediator ! Publish(BatchTopic, message)
     case PublishGroupMsgToCluster(message) => mediator ! Publish(GroupTopic, message)
     case PublishGroupDirectMsgToCluster(message) => mediator ! Publish(GroupTopic, message)
-    case PublishGroupChannelPresenceToCluster(message) => mediator ! Publish(GroupTopic, message)
-    case PublishGroupReassignmentToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishGroupChannelPresenceRequestToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishGroupOpenChannelsRequestToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishGroupReassignmentRequestToCluster(message) => mediator ! Publish(GroupTopic, message)
+    case PublishGroupChannelCloseRequestToCluster(message) => mediator ! Publish(GroupTopic, message)
     case message: BatchClusterMessage => receiveBatch(message, receiver)
     case message: GroupClusterMessage => receiveGroup(message, receiver)
     case message: GroupDirectMsgDeliveryRequest => receiveGroupDirectMsg(message, receiver)
     case message: GroupDirectMsgDeliveryAck => receiveGroupDirectMsgDeliveryAck(message, receiver)
-    case message: GroupChannelPresenceRequest => receiveGroupChannelPresence(message, receiver)
+    case message: GroupChannelPresenceRequest => receiveGroupChannelPresenceRequest(message, receiver)
     case message: GroupChannelPresenceAck => receiveGroupChannelPresenceAck(message, receiver)
-    case message: GroupReassignmentClusterMessage => receiveGroupReassignment(message, receiver)
+    case message: GroupOpenChannelsRequest => receiveGroupOpenChannelsRequest(message, receiver)
+    case message: GroupOpenChannelsResponse => receiveGroupOpenChannelsResponse(message, receiver)
+    case message: GroupReassignmentRequest => receiveGroupReassignmentRequest(message, receiver)
+    case message: GroupChannelCloseRequest => receiveGroupChannelCloseRequest(message, receiver)
     case RegisterLocalReceiver(newReceiver) =>
       newReceiver.ready()
       context.become(clusterEvents.orElse(active(newReceiver)))
@@ -106,16 +120,16 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
     }
   }
 
-  private def receiveBatch(message: BatchClusterMessage, receiver: SessionMessageReceiver): Unit = {
+  private def receiveBatch(message: BatchClusterMessage, receiver: ChannelMessageReceiver): Unit = {
     if (message.originNodeId != nodeIdentity.id) receiver.receiveBatch(message)
   }
 
-  private def receiveGroup(message: GroupClusterMessage, receiver: SessionMessageReceiver): Unit = {
+  private def receiveGroup(message: GroupClusterMessage, receiver: ChannelMessageReceiver): Unit = {
     if (message.originNodeId != nodeIdentity.id) receiver.receiveGroup(message)
   }
 
   private def receiveGroupDirectMsg(message: GroupDirectMsgDeliveryRequest,
-                                    receiver: SessionMessageReceiver): Unit = {
+                                    receiver: ChannelMessageReceiver): Unit = {
     val deliveryKey = message.originNodeId -> message.deliveryId
     val wasDelivered = deliveredDirectMessages.contains(deliveryKey)
     if (message.originNodeId != nodeIdentity.id && (wasDelivered || receiver.receiveGroupDirectMsg(message))) {
@@ -135,13 +149,13 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
   }
 
   private def receiveGroupDirectMsgDeliveryAck(message: GroupDirectMsgDeliveryAck,
-                                               receiver: SessionMessageReceiver): Unit = {
+                                               receiver: ChannelMessageReceiver): Unit = {
     if (message.targetNodeId == nodeIdentity.id) receiver.receiveGroupDirectMsgDeliveryAck(message)
   }
 
-  private def receiveGroupChannelPresence(message: GroupChannelPresenceRequest,
-                                          receiver: SessionMessageReceiver): Unit = {
-    if (message.originNodeId != nodeIdentity.id && receiver.receiveGroupChannelPresence(message)) {
+  private def receiveGroupChannelPresenceRequest(message: GroupChannelPresenceRequest,
+                                                 receiver: ChannelMessageReceiver): Unit = {
+    if (message.originNodeId != nodeIdentity.id && receiver.receiveGroupChannelPresenceRequest(message)) {
       mediator ! Publish(GroupTopic, GroupChannelPresenceAck(
         originNodeId = nodeIdentity.id,
         targetNodeId = message.originNodeId,
@@ -150,12 +164,34 @@ class SessionPubSubGateway(nodeIdentity: NodeIdentity) extends Actor with ActorL
   }
 
   private def receiveGroupChannelPresenceAck(message: GroupChannelPresenceAck,
-                                             receiver: SessionMessageReceiver): Unit = {
+                                             receiver: ChannelMessageReceiver): Unit = {
     if (message.targetNodeId == nodeIdentity.id) receiver.receiveGroupChannelPresenceAck(message)
   }
 
-  private def receiveGroupReassignment(message: GroupReassignmentClusterMessage,
-                                       receiver: SessionMessageReceiver): Unit = {
-    if (message.originNodeId != nodeIdentity.id) receiver.receiveGroupReassignment(message)
+  private def receiveGroupOpenChannelsRequest(message: GroupOpenChannelsRequest,
+                                              receiver: ChannelMessageReceiver): Unit = {
+    val channelIds = receiver.receiveGroupOpenChannelsRequest(message)
+    mediator ! Publish(GroupTopic, GroupOpenChannelsResponse(
+      originNodeId = nodeIdentity.id,
+      targetNodeId = message.originNodeId,
+      requestId = message.requestId,
+      groupResultId = message.groupResultId,
+      channelStudyResultIds = channelIds,
+      clusterMemberCount = cluster.state.members.size))
+  }
+
+  private def receiveGroupOpenChannelsResponse(message: GroupOpenChannelsResponse,
+                                               receiver: ChannelMessageReceiver): Unit = {
+    if (message.targetNodeId == nodeIdentity.id) receiver.receiveGroupOpenChannelsResponse(message)
+  }
+
+  private def receiveGroupReassignmentRequest(message: GroupReassignmentRequest,
+                                              receiver: ChannelMessageReceiver): Unit = {
+    if (message.originNodeId != nodeIdentity.id) receiver.receiveGroupReassignmentRequest(message)
+  }
+
+  private def receiveGroupChannelCloseRequest(message: GroupChannelCloseRequest,
+                                              receiver: ChannelMessageReceiver): Unit = {
+    if (message.originNodeId != nodeIdentity.id) receiver.receiveGroupChannelCloseRequest(message)
   }
 }
