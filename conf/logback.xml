@@ -1,12 +1,13 @@
 <configuration>
 
-    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${jatos.logs.path:-./logs}/${jatos.logs.filename:-application}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Daily rollover with compression -->
-            <fileNamePattern>${jatos.logs.path:-./logs}/${jatos.logs.filename:-application}-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <fileNamePattern>${jatos.logs.path:-./logs}/${jatos.logs.filename:-application}-log-%d{yyyy-MM-dd}.gz
+            </fileNamePattern>
             <!-- keep 30 days worth of history -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>
@@ -34,11 +35,11 @@
     <logger name="org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator" level="ERROR"/>
 
     <logger name="play" level="INFO"/>
-    <logger name="services" level="INFO"/>
-    <logger name="batch" level="INFO"/>
-    <logger name="group" level="INFO"/>
+    <logger name="services" level="${jatos.logs.level.services:-INFO}"/>
+    <logger name="batch" level="${jatos.logs.level.batch:-INFO}"/>
+    <logger name="group" level="${jatos.logs.level.group:-INFO}"/>
 
-    <root level="INFO">
+    <root level="${jatos.logs.level.root:-INFO}">
         <appender-ref ref="${jatos.logs.appender:-ASYNCFILE}"/>
     </root>
 
