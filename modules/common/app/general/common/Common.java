@@ -67,6 +67,7 @@ public class Common {
     private static String oidcDiscoveryUrl;
     private static String oidcClientId;
     private static String oidcClientSecret;
+    private static String oidcPkceMode;
     private static List<String> oidcScope;
     private static String oidcUsernameFrom;
     private static String oidcIdTokenSigningAlgorithm;
@@ -76,6 +77,7 @@ public class Common {
     private static String orcidDiscoveryUrl;
     private static String orcidClientId;
     private static String orcidClientSecret;
+    private static String orcidPkceMode;
     private static List<String> orcidScope;
     private static String orcidUsernameFrom;
     private static String orcidIdTokenSigningAlgorithm;
@@ -85,6 +87,7 @@ public class Common {
     private static String sramDiscoveryUrl;
     private static String sramClientId;
     private static String sramClientSecret;
+    private static String sramPkceMode;
     private static List<String> sramScope;
     private static String sramUsernameFrom;
     private static String sramIdTokenSigningAlgorithm;
@@ -94,6 +97,7 @@ public class Common {
     private static String conextDiscoveryUrl;
     private static String conextClientId;
     private static String conextClientSecret;
+    private static String conextPkceMode;
     private static List<String> conextScope;
     private static String conextUsernameFrom;
     private static String conextIdTokenSigningAlgorithm;
@@ -193,6 +197,7 @@ public class Common {
         oidcDiscoveryUrl = config.getString("jatos.user.authentication.oidc.discoveryUrl");
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
         oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
+        oidcPkceMode = readPkceMode(config, "jatos.user.authentication.oidc.pkceMode");
         oidcScope = config.getStringList("jatos.user.authentication.oidc.scope");
         oidcUsernameFrom = config.getString("jatos.user.authentication.oidc.usernameFrom");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
@@ -202,6 +207,7 @@ public class Common {
         orcidDiscoveryUrl = config.getString("jatos.user.authentication.orcid.discoveryUrl");
         orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
         orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
+        orcidPkceMode = readPkceMode(config, "jatos.user.authentication.orcid.pkceMode");
         orcidScope = config.getStringList("jatos.user.authentication.orcid.scope");
         orcidUsernameFrom = config.getString("jatos.user.authentication.orcid.usernameFrom");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
@@ -211,6 +217,7 @@ public class Common {
         sramDiscoveryUrl = config.getString("jatos.user.authentication.sram.discoveryUrl");
         sramClientId = config.getString("jatos.user.authentication.sram.clientId");
         sramClientSecret = config.getString("jatos.user.authentication.sram.clientSecret");
+        sramPkceMode = readPkceMode(config, "jatos.user.authentication.sram.pkceMode");
         sramScope = config.getStringList("jatos.user.authentication.sram.scope");
         sramUsernameFrom = config.getString("jatos.user.authentication.sram.usernameFrom");
         sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.sram.idTokenSigningAlgorithm");
@@ -220,6 +227,7 @@ public class Common {
         conextDiscoveryUrl = config.getString("jatos.user.authentication.conext.discoveryUrl");
         conextClientId = config.getString("jatos.user.authentication.conext.clientId");
         conextClientSecret = config.getString("jatos.user.authentication.conext.clientSecret");
+        conextPkceMode = readPkceMode(config, "jatos.user.authentication.conext.pkceMode");
         conextScope = config.getStringList("jatos.user.authentication.conext.scope");
         conextUsernameFrom = config.getString("jatos.user.authentication.conext.usernameFrom");
         conextIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.conext.idTokenSigningAlgorithm");
@@ -327,6 +335,17 @@ public class Common {
             // Otherwise, use the standard HOCON duration parsing (e.g., "5m", "10s")
             return config.getDuration(path);
         }
+    }
+
+    /**
+     * Read and validate a provider's PKCE policy during configuration initialization.
+     */
+    private String readPkceMode(Config config, String path) {
+        String pkceMode = config.getString(path);
+        if (!List.of("off", "auto", "required").contains(pkceMode)) {
+            throw new IllegalArgumentException("Invalid OIDC pkceMode at " + path + ": " + pkceMode);
+        }
+        return pkceMode;
     }
 
     /**
@@ -600,6 +619,10 @@ public class Common {
         return oidcClientSecret;
     }
 
+    public static String getOidcPkceMode() {
+        return oidcPkceMode;
+    }
+
     /**
      * OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
      */
@@ -665,6 +688,10 @@ public class Common {
      */
     public static String getOrcidClientSecret() {
         return orcidClientSecret;
+    }
+
+    public static String getOrcidPkceMode() {
+        return orcidPkceMode;
     }
 
     /**
@@ -737,6 +764,10 @@ public class Common {
         return sramClientSecret;
     }
 
+    public static String getSramPkceMode() {
+        return sramPkceMode;
+    }
+
     /**
      * SRAM's OpenId Connect (OIDC) scope (e.g. "openid", "profile", "email")
      */
@@ -805,6 +836,10 @@ public class Common {
      */
     public static String getConextClientSecret() {
         return conextClientSecret;
+    }
+
+    public static String getConextPkceMode() {
+        return conextPkceMode;
     }
 
     /**

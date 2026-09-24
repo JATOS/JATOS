@@ -13,6 +13,8 @@ import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.State;
+import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
+import com.nimbusds.oauth2.sdk.pkce.CodeVerifier;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.*;
 import com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet;
@@ -49,12 +51,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * OpenID Connect (OIDC) authentication using Authorization Code Flow with Proof Key for Code Exchange (PKCE). OIDC is
- * just used for authentication - authorization and session management are still done with the session cookies from the
- * Play Framework.
- * <p>
+ * OpenID Connect (OIDC) authentication using Authorization Code Flow with optional Proof Key for Code Exchange (PKCE).
+ * OIDC is just used for authentication - authorization and session management are still done with the session cookies
+ * from the Play Framework.
+ *
  * This class is meant to be extended by the actual OIDC implementations.
- * <p>
+ *
  * Using library: Nimbus OAuth 2.0 SDK with OpenID Connect extensions
  * https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/guides/java-cookbook-for-openid-connect-public-clients
  *
@@ -65,9 +67,12 @@ public abstract class SigninOidc extends Controller {
 
     private static final ALogger LOGGER = Logger.of(SigninOidc.class);
 
-    @Inject private AuthService authService;
-    @Inject private UserDao userDao;
-    @Inject private UserService userService;
+    @Inject
+    private AuthService authService;
+    @Inject
+    private UserDao userDao;
+    @Inject
+    private UserService userService;
 
     private final OidcConfig oidcConfig;
     private OIDCProviderMetadata oidcProviderMetadata;
@@ -93,11 +98,6 @@ public abstract class SigninOidc extends Controller {
         private final String callbackUrlPath;
 
         /**
-         * Dynamically filled during signin request
-         */
-        private String callbackUrl;
-
-        /**
          * OIDC client ID
          */
         private final String clientId;
@@ -108,9 +108,16 @@ public abstract class SigninOidc extends Controller {
         private final String clientSecret;
 
         /**
-         * List of scopes. For OIDC, scopes can be used to request that specific sets of information be made available as Claim Values.
+         * List of scopes. For OIDC, scopes can be used to request that specific sets of information be made available
+         * as Claim Values.
          */
         private final String[] scope;
+
+        /**
+         * PKCE policy: "off" preserves the legacy flow, "auto" uses S256 when advertised by discovery, and "required"
+         * always uses S256. Validated when configuration is loaded in Common.
+         */
+        private final String pkceMode;
 
         /**
          * Defines from which OIDC claim the username of the user stored in JATOS' database should be taken from.
@@ -123,19 +130,20 @@ public abstract class SigninOidc extends Controller {
         private final String idTokenSigningAlgorithm;
 
         /**
-         * A message that is shown to the signing in user in the browser.
+         * A message that is shown to the signing-in user in the browser.
          */
         private final String successMsg;
 
         OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath, String clientId,
-                   String clientSecret, List<String> scope, String usernameFrom, String idTokenSigningAlgorithm,
-                   String successMsg) {
+                   String clientSecret, List<String> scope, String pkceMode, String usernameFrom,
+                   String idTokenSigningAlgorithm, String successMsg) {
             this.authMethod = authMethod;
             this.discoveryUrl = discoveryUrl;
             this.callbackUrlPath = callbackUrlPath;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
             this.scope = scope.toArray(new String[0]);
+            this.pkceMode = pkceMode;
             this.usernameFrom = usernameFrom;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
             this.successMsg = successMsg;
@@ -152,23 +160,24 @@ public abstract class SigninOidc extends Controller {
      * The method stores the OIDC state, nonce, and a flag indicating whether to keep the user signed in, in the Play
      * session.
      *
-     * @param request       the HTTP request received from the client
-     * @param realHostUrl   the real host URL to be used for constructing the callback URL
-     * @param keepSignedin  a flag indicating whether the user should remain signed in
+     * @param request      the HTTP request received from the client
+     * @param realHostUrl  the real host URL to be used for constructing the callback URL
+     * @param keepSignedin a flag indicating whether the user should remain signed in
      * @return the authentication request URI as String
      * @throws URISyntaxException if an invalid URI is encountered during the process
-     * @throws ParseException if parsing operations fail while working with OIDC configurations
-     * @throws AuthException if an authentication-related error occurs
+     * @throws ParseException     if parsing operations fail while working with OIDC configurations
+     * @throws AuthException      if an authentication-related error occurs
      */
     @GuiAccessLogging
     @Transactional
     public final Result signin(Http.Request request, String realHostUrl, boolean keepSignedin)
             throws URISyntaxException, ParseException, AuthException {
-        oidcConfig.callbackUrl = Helpers.urlDecode(realHostUrl) + oidcConfig.callbackUrlPath;
+        String callbackUrl = Helpers.urlDecode(realHostUrl) + oidcConfig.callbackUrlPath;
         ClientID clientID = new ClientID(oidcConfig.clientId);
-        URI callback = new URI(oidcConfig.callbackUrl);
+        URI callback = new URI(callbackUrl);
         State state = new State();
         Nonce nonce = new Nonce();
+        CodeVerifier verifier = usePkce() ? new CodeVerifier() : null;
         AuthenticationRequest authRequest = new AuthenticationRequest.Builder(
                 new ResponseType("code"),
                 new Scope(oidcConfig.scope),
@@ -177,13 +186,20 @@ public abstract class SigninOidc extends Controller {
         ).endpointURI(getProviderInfo().getAuthorizationEndpointURI())
                 .state(state)
                 .nonce(nonce)
+                .codeChallenge(verifier, CodeChallengeMethod.S256)
                 .build();
 
-        // We use Play's session here to pass on information to the callback
-        return ok(authRequest.toURI().toString())
-                .addingToSession(request, "oidcState", state.getValue())
-                .addingToSession(request, "oidcNonce", nonce.getValue())
-                .addingToSession(request, "keepSignedin", String.valueOf(keepSignedin));
+        Http.Session loginSession = new Http.Session(request.session().data());
+        loginSession.put(sessionKey("state"), state.getValue());
+        loginSession.put(sessionKey("nonce"), nonce.getValue());
+        loginSession.put(sessionKey("callback"), callbackUrl);
+        loginSession.put(sessionKey("keepSignedin"), String.valueOf(keepSignedin));
+        loginSession.put(sessionKey("pkce"), String.valueOf(verifier != null));
+        loginSession.remove(sessionKey("verifier"));
+        if (verifier != null) {
+            loginSession.put(sessionKey("verifier"), verifier.getValue());
+        }
+        return ok(authRequest.toURI().toString()).withSession(loginSession);
     }
 
     /**
@@ -194,7 +210,7 @@ public abstract class SigninOidc extends Controller {
         try {
             AuthorizationCode authorizationCode = getAuthorisationCode(request);
 
-            OIDCTokens oidcTokens = requestToken(authorizationCode);
+            OIDCTokens oidcTokens = requestToken(request, authorizationCode);
 
             IDTokenClaimsSet idTokenClaims = verifyIdToken(request, oidcTokens.getIDToken(), getProviderInfo());
 
@@ -205,7 +221,7 @@ public abstract class SigninOidc extends Controller {
             User user = getOrRegisterUser(userInfo);
 
             String normalizedUsername = getNormalizedUsername(userInfo);
-            boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional("keepSignedin").orElse("false"));
+            boolean keepSignedin = Boolean.parseBoolean(request.session().getOptional(sessionKey("keepSignedin")).orElse("false"));
             authService.writeSessionCookie(session(), normalizedUsername, keepSignedin);
             userService.setLastSignin(normalizedUsername);
 
@@ -221,7 +237,26 @@ public abstract class SigninOidc extends Controller {
             LOGGER.error(".callback: " + e.getMessage());
             FlashScopeMessaging.error("OIDC error - contact your admin and check the logs for more information.");
             return redirect(auth.gui.routes.Signin.signin());
+        } finally {
+            clearLoginSession(session());
         }
+    }
+
+    String sessionKey(String name) {
+        return "oidc." + oidcConfig.authMethod.name() + "." + name;
+    }
+
+    void clearLoginSession(Http.Session session) {
+        for (String name : List.of("state", "nonce", "callback", "keepSignedin", "pkce", "verifier")) {
+            session.remove(sessionKey(name));
+        }
+    }
+
+    private boolean usePkce() throws ParseException, URISyntaxException, AuthException {
+        if (oidcConfig.pkceMode.equals("required")) return true;
+        if (oidcConfig.pkceMode.equals("off")) return false;
+        List<CodeChallengeMethod> methods = getProviderInfo().getCodeChallengeMethods();
+        return methods != null && methods.contains(CodeChallengeMethod.S256);
     }
 
     private OIDCProviderMetadata getProviderInfo() throws ParseException, URISyntaxException, AuthException {
@@ -246,8 +281,8 @@ public abstract class SigninOidc extends Controller {
         AuthenticationResponse response = AuthenticationResponseParser.parse(new URI(request.uri()));
 
         // Check state, submitted with sign-in request, is still the same
-        Optional<String> state = request.session().getOptional("oidcState");
-        if (state.isEmpty() || !response.getState().getValue().equals(state.get())) {
+        Optional<String> state = request.session().getOptional(sessionKey("state"));
+        if (state.isEmpty() || response.getState() == null || !response.getState().getValue().equals(state.get())) {
             throw new AuthException("OIDC error - Unexpected authentication response");
         }
 
@@ -262,10 +297,9 @@ public abstract class SigninOidc extends Controller {
      * Construct the code grant from the code obtained from the authentication endpoint and the original callback URI
      * used at the authentication endpoint
      */
-    private OIDCTokens requestToken(AuthorizationCode authorizationCode)
+    private OIDCTokens requestToken(Http.Request request, AuthorizationCode authorizationCode)
             throws AuthException, URISyntaxException, ParseException, IOException {
-        URI callback = new URI(oidcConfig.callbackUrl);
-        TokenRequest tokenRequest = buildTokenRequest(authorizationCode, callback);
+        TokenRequest tokenRequest = buildTokenRequest(request, authorizationCode);
         TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenRequest.toHTTPRequest().send());
         if (!tokenResponse.indicatesSuccess()) {
             throw new AuthException("OIDC error requesting access token - "
@@ -275,9 +309,25 @@ public abstract class SigninOidc extends Controller {
         return successResponse.getOIDCTokens();
     }
 
-    private TokenRequest buildTokenRequest(AuthorizationCode authorizationCode, URI callback)
+    TokenRequest buildTokenRequest(Http.Request request, AuthorizationCode authorizationCode)
             throws ParseException, URISyntaxException, AuthException {
-        AuthorizationGrant authorizationCodeGrant = new AuthorizationCodeGrant(authorizationCode, callback);
+        URI callback = new URI(request.session().getOptional(sessionKey("callback"))
+                .orElseThrow(() -> new AuthException("OIDC error - Missing login transaction")));
+        String pkce = request.session().getOptional(sessionKey("pkce"))
+                .orElseThrow(() -> new AuthException("OIDC error - Missing PKCE transaction state"));
+        CodeVerifier verifier = null;
+        if (pkce.equals("true")) {
+            String value = request.session().getOptional(sessionKey("verifier"))
+                    .orElseThrow(() -> new AuthException("OIDC error - Missing PKCE verifier"));
+            try {
+                verifier = new CodeVerifier(value);
+            } catch (IllegalArgumentException e) {
+                throw new AuthException("OIDC error - Invalid PKCE verifier");
+            }
+        } else if (!pkce.equals("false") || oidcConfig.pkceMode.equals("required")) {
+            throw new AuthException("OIDC error - PKCE required or invalid transaction state");
+        }
+        AuthorizationGrant authorizationCodeGrant = new AuthorizationCodeGrant(authorizationCode, callback, verifier);
         ClientID clientID = new ClientID(oidcConfig.clientId);
         URI tokenEndpoint = getProviderInfo().getTokenEndpointURI();
         TokenRequest tokenRequest;
@@ -298,7 +348,7 @@ public abstract class SigninOidc extends Controller {
         JWSAlgorithm jwsAlg = JWSAlgorithm.parse(oidcConfig.idTokenSigningAlgorithm);
         URL jwkSetURL = providerMetadata.getJWKSetURI().toURL();
         IDTokenValidator validator = new IDTokenValidator(issuer, clientID, jwsAlg, jwkSetURL);
-        Nonce expectedNonce = request.session().getOptional("oidcNonce").map(Nonce::new).orElse(null);
+        Nonce expectedNonce = request.session().getOptional(sessionKey("nonce")).map(Nonce::new).orElse(null);
         try {
             return validator.validate(idToken, expectedNonce);
         } catch (BadJOSEException | JOSEException e) {
@@ -307,8 +357,8 @@ public abstract class SigninOidc extends Controller {
     }
 
     /**
-     * OIDC Core 5.3.2 requires UserInfo to identify the same subject as the validated ID token.
-     * Compare the original, case-sensitive subjects before any username normalization.
+     * OIDC Core 5.3.2 requires UserInfo to identify the same subject as the validated ID token. Compare the original,
+     * case-sensitive subjects before any username normalization.
      */
     static void verifyUserInfoSubject(IDTokenClaimsSet idTokenClaims, UserInfo userInfo) throws AuthException {
         if (idTokenClaims.getSubject() == null || !idTokenClaims.getSubject().equals(userInfo.getSubject())) {
