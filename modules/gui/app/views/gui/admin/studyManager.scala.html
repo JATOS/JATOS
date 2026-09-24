@@ -156,7 +156,10 @@
                 $(checkbox).prop('checked', isActive);
                 studyInfo.active = isActive;
             },
-            error: (err) => err.responseJSON ? Alerts.error(err.responseJSON?.error?.message) : Alerts.error("Couldn't toggle study activation")
+            error: (err) => {
+                const message = err?.responseJSON?.error?.message ?? "Couldn't toggle study activation";
+                Alerts.error(message);
+            }
         });
     });
 

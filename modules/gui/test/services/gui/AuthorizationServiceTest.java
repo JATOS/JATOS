@@ -117,6 +117,39 @@ public class AuthorizationServiceTest {
     }
 
     @Test
+    public void canUserAccessStudy_adminAllowed_respectsFlag() throws Exception {
+        Study study = newStudy(1L);
+        User admin = newUser("admin");
+        admin.updateRoles(User.Role.ADMIN);
+
+        helpersMock = Mockito.mockStatic(Helpers.class);
+        helpersMock.when(() -> Helpers.isAllowedSuperuser(admin)).thenReturn(false);
+
+        // When adminAllowed is true, admin can access even if not a study member
+        authorizationService.canUserAccessStudy(study, admin, false, true);
+
+        // When adminAllowed is false, access is forbidden
+        boolean threw = false;
+        try {
+            authorizationService.canUserAccessStudy(study, admin, false, false);
+        } catch (ForbiddenException e) {
+            threw = true;
+        }
+        assertThat(threw).isTrue();
+
+        // Non-admin user cannot access even if adminAllowed is true
+        User nonAdmin = newUser("user");
+        helpersMock.when(() -> Helpers.isAllowedSuperuser(nonAdmin)).thenReturn(false);
+        threw = false;
+        try {
+            authorizationService.canUserAccessStudy(study, nonAdmin, false, true);
+        } catch (ForbiddenException e) {
+            threw = true;
+        }
+        assertThat(threw).isTrue();
+    }
+
+    @Test
     public void canUserAccessStudy_allowsLockedStudy_whenUnlockedStudyIsNotRequired() {
         Study study = study(1L);
         User user = user("member", Role.USER);
@@ -229,38 +262,6 @@ public class AuthorizationServiceTest {
         user.setAuthMethod(AuthMethod.DB);
 
         authorizationService.checkAuthMethodIsDbOrLdap(user);
-    }
-
-    @Test
-    public void checkAuthMethodIsDbOrLdap_allowsLdapUser() {
-        User user = user("ldap-user", Role.USER);
-        user.setAuthMethod(AuthMethod.LDAP);
-
-        authorizationService.checkAuthMethodIsDbOrLdap(user);
-    }
-
-    @Test(expected = ForbiddenException.class)
-    public void checkAuthMethodIsDbOrLdap_throwsForbidden_forOidcUser() {
-        User user = user("oidc-user", Role.USER);
-        user.setAuthMethod(AuthMethod.OIDC);
-
-        authorizationService.checkAuthMethodIsDbOrLdap(user);
-    }
-
-    @Test
-    public void checkAuthMethodIsDbOrLdap_allowsDbNewUserProperties() {
-        NewUserProperties props = new NewUserProperties();
-        props.setAuthMethod(AuthMethod.DB);
-
-        authorizationService.checkAuthMethodIsDbOrLdap(props);
-    }
-
-    @Test(expected = ForbiddenException.class)
-    public void checkAuthMethodIsDbOrLdap_throwsForbidden_forOidcNewUserProperties() {
-        NewUserProperties props = new NewUserProperties();
-        props.setAuthMethod(AuthMethod.OIDC);
-
-        authorizationService.checkAuthMethodIsDbOrLdap(props);
     }
 
     @Test(expected = NotFoundException.class)

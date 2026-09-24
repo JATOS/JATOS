@@ -117,14 +117,22 @@ public class AuthorizationService {
     }
 
     public void canUserAccessStudy(Study study, User user) {
-        canUserAccessStudy(study, user, false);
+        canUserAccessStudy(study, user, false, false);
     }
 
     public void canUserAccessStudy(Study study, User user, boolean studyMustNotBeLocked) {
+        canUserAccessStudy(study, user, studyMustNotBeLocked, false);
+    }
+
+    public void canUserAccessStudy(Study study, User user, boolean studyMustNotBeLocked, boolean adminAllowed) {
         if (study == null) {
             throw new NotFoundException("Study doesn't exist.");
         }
-        if (!isMemberOrSuperuser(study, user)) {
+        // Check that the user is a member of the study or a superuser or an admin (if allowed)
+        boolean isAuthorized = study.hasUser(user)
+                || Helpers.isAllowedSuperuser(user)
+                || (user.isAdmin() && adminAllowed);
+        if (!isAuthorized) {
             throw new ForbiddenException("No access to study.", ErrorCode.NO_ACCESS);
         }
         checkStudyNotLocked(study, studyMustNotBeLocked);
@@ -207,15 +215,6 @@ public class AuthorizationService {
         }
     }
 
-    public void checkAuthMethodIsDbOrLdap(User user) {
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
-        if (!Arrays.asList(DB, LDAP).contains(user.getAuthMethod())) {
-            throw new ForbiddenException("Invalid authentication method", ErrorCode.INVALID_AUTH_METHOD);
-        }
-    }
-
     public void checkNotUserAdmin(User user) {
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -251,9 +250,9 @@ public class AuthorizationService {
         if (!props.isActive() && signedinUser.equals(user)) {
             throw new ForbiddenException("A user cannot deactivate themselves");
         }
-        // LDAP users cannot change their password
-        if (passwordChangeRequested && user.isLdap()) {
-            throw new ForbiddenException("LDAP user's password cannot be changed");
+        // Only DB user's password can be changed
+        if (passwordChangeRequested && !user.isDb()) {
+            throw new ForbiddenException("Only the password of locally stored users may be changed");
         }
     }
 

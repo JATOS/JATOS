@@ -174,7 +174,10 @@
                 success : function() {
                     window.location.replace(window.routes.Home.home);
                 },
-                error: (err) => err.responseJSON ? Alerts.error(err.responseJSON?.error?.message) : Alerts.error("Couldn't delete study"),
+                error: (err) => {
+                    const message = err?.responseJSON?.error?.message ?? "Couldn't delete study";
+                    Alerts.error(message);
+                },
                 complete: WaitingModal.hide
             });
         };
