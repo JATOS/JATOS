@@ -15,6 +15,7 @@ import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.*;
+import com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
@@ -195,10 +196,11 @@ public abstract class SigninOidc extends Controller {
 
             OIDCTokens oidcTokens = requestToken(authorizationCode);
 
-            verifyIdToken(request, oidcTokens.getIDToken(), getProviderInfo());
+            IDTokenClaimsSet idTokenClaims = verifyIdToken(request, oidcTokens.getIDToken(), getProviderInfo());
 
             BearerAccessToken bearerAccessToken = (BearerAccessToken) oidcTokens.getAccessToken();
             UserInfo userInfo = getUserInfo(bearerAccessToken);
+            verifyUserInfoSubject(idTokenClaims, userInfo);
 
             User user = getOrRegisterUser(userInfo);
 
@@ -289,7 +291,7 @@ public abstract class SigninOidc extends Controller {
         return tokenRequest;
     }
 
-    private void verifyIdToken(Http.Request request, JWT idToken, OIDCProviderMetadata providerMetadata)
+    private IDTokenClaimsSet verifyIdToken(Http.Request request, JWT idToken, OIDCProviderMetadata providerMetadata)
             throws AuthException, MalformedURLException {
         Issuer issuer = providerMetadata.getIssuer();
         ClientID clientID = new ClientID(oidcConfig.clientId);
@@ -298,9 +300,19 @@ public abstract class SigninOidc extends Controller {
         IDTokenValidator validator = new IDTokenValidator(issuer, clientID, jwsAlg, jwkSetURL);
         Nonce expectedNonce = request.session().getOptional("oidcNonce").map(Nonce::new).orElse(null);
         try {
-            validator.validate(idToken, expectedNonce);
+            return validator.validate(idToken, expectedNonce);
         } catch (BadJOSEException | JOSEException e) {
             throw new AuthException("OIDC token validation failed");
+        }
+    }
+
+    /**
+     * OIDC Core 5.3.2 requires UserInfo to identify the same subject as the validated ID token.
+     * Compare the original, case-sensitive subjects before any username normalization.
+     */
+    static void verifyUserInfoSubject(IDTokenClaimsSet idTokenClaims, UserInfo userInfo) throws AuthException {
+        if (idTokenClaims.getSubject() == null || !idTokenClaims.getSubject().equals(userInfo.getSubject())) {
+            throw new AuthException("OIDC UserInfo subject does not match ID token subject");
         }
     }
 

@@ -1,7 +1,9 @@
 package auth.gui;
 
 import com.nimbusds.oauth2.sdk.id.Subject;
+import com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import exceptions.gui.AuthException;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,6 +93,37 @@ public class SigninOidcTest {
         assertThat(session.getOptional("oidcState").isPresent()).isTrue();
         assertThat(session.getOptional("oidcNonce").isPresent()).isTrue();
         assertThat(session.getOptional("keepSignedin").orElse("false")).isEqualTo("true");
+    }
+
+    @Test
+    public void verifyUserInfoSubject_acceptsMatchingSubjects() throws Exception {
+        SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), new UserInfo(new Subject("Subject-A")));
+    }
+
+    @Test(expected = AuthException.class)
+    public void verifyUserInfoSubject_rejectsDifferentSubjects() throws Exception {
+        SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), new UserInfo(new Subject("Subject-B")));
+    }
+
+    @Test(expected = AuthException.class)
+    public void verifyUserInfoSubject_rejectsCaseDifference() throws Exception {
+        SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), new UserInfo(new Subject("subject-a")));
+    }
+
+    @Test(expected = AuthException.class)
+    public void verifyUserInfoSubject_rejectsMissingUserInfoSubject() throws Exception {
+        SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), Mockito.mock(UserInfo.class));
+    }
+
+    @Test(expected = AuthException.class)
+    public void verifyUserInfoSubject_rejectsMissingIdTokenSubject() throws Exception {
+        SigninOidc.verifyUserInfoSubject(idTokenClaims(null), new UserInfo(new Subject("Subject-A")));
+    }
+
+    private static IDTokenClaimsSet idTokenClaims(String subject) {
+        IDTokenClaimsSet claims = Mockito.mock(IDTokenClaimsSet.class);
+        when(claims.getSubject()).thenReturn(subject == null ? null : new Subject(subject));
+        return claims;
     }
 
     private static void injectProviderMetadata(SigninOidc so, OIDCProviderMetadata meta) throws Exception {
