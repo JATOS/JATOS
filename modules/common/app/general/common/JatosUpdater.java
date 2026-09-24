@@ -569,7 +569,15 @@ public class JatosUpdater {
         // Get command line arguments, like -Dhttp.address
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         List<String> args = runtimeMxBean.getInputArguments();
-        cmd.addAll(args);
+        // Only allow well-formed JVM options through - discard anything that doesn't look like a
+        // regular '-X...'/'-D...' style flag to prevent injection of unexpected process arguments
+        List<String> safeArgs = new ArrayList<>();
+        for (String arg : args) {
+            if (arg.matches("-[a-zA-Z0-9][a-zA-Z0-9._+=,:/$#{}\\[\\]-]*")) {
+                safeArgs.add(arg);
+            }
+        }
+        cmd.addAll(safeArgs);
         // Remove arguments that are set anew with each start
         cmd.removeIf(a -> a.startsWith("-agentlib"));
         cmd.removeIf(a -> a.startsWith("-Dplay.crypto.secret")); // old secret config key
