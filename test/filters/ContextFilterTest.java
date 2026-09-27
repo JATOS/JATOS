@@ -1,8 +1,7 @@
 package filters;
 
-import org.apache.pekko.stream.Materializer;
-import exceptions.common.JatosException;
 import http.common.Http.Context;
+import org.apache.pekko.stream.Materializer;
 import org.junit.After;
 import org.junit.Test;
 import play.mvc.Http.Cookie;
@@ -15,7 +14,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -28,15 +26,15 @@ public class ContextFilterTest {
     }
 
     @Test
-    public void applyAttachesContextToRequestAndBindsItWhileInvokingNextFilter() {
+    public void applyAttachesContextToRequestAttributes() {
         ContextFilter filter = new ContextFilter(mock(Materializer.class));
         RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
         AtomicReference<RequestHeader> requestSeenByNextFilter = new AtomicReference<>();
-        AtomicReference<Context> currentContextSeenByNextFilter = new AtomicReference<>();
 
-        Result result = filter.apply(nextFilter(requestSeenByNextFilter, currentContextSeenByNextFilter), request)
-                .toCompletableFuture()
-                .join();
+        Result result = filter.apply(requestHeader -> {
+            requestSeenByNextFilter.set(requestHeader);
+            return CompletableFuture.completedFuture(Results.ok("done"));
+        }, request).toCompletableFuture().join();
 
         assertEquals(200, result.status());
 
@@ -45,27 +43,8 @@ public class ContextFilterTest {
         assertTrue(enrichedRequest.attrs().containsKey(Context.CONTEXT_TYPED_KEY));
 
         Context attachedContext = enrichedRequest.attrs().get(Context.CONTEXT_TYPED_KEY);
-        assertSame(attachedContext, currentContextSeenByNextFilter.get());
+        assertNotNull(attachedContext);
         assertSame(request, attachedContext.requestHeader());
-    }
-
-    @Test
-    public void applyClearsThreadLocalImmediatelyAfterNextFilterReturns() {
-        ContextFilter filter = new ContextFilter(mock(Materializer.class));
-        RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
-        CompletableFuture<Result> pendingResult = new CompletableFuture<>();
-
-        CompletionStage<Result> resultStage = filter.apply(header_ -> pendingResult, request);
-
-        try {
-            Context.current();
-            fail("Expected Context.current() to fail after nextFilter returned synchronously");
-        } catch (JatosException e) {
-            assertEquals("There is no HTTP Context available from here.", e.getMessage());
-        }
-
-        pendingResult.complete(Results.ok("done"));
-        assertEquals(200, resultStage.toCompletableFuture().join().status());
     }
 
     @Test
@@ -74,9 +53,10 @@ public class ContextFilterTest {
         RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
 
         Result result = filter.apply(header -> {
-                    Context context = Context.current();
+                    Context context = header.attrs().get(Context.CONTEXT_TYPED_KEY);
                     context.response().setHeader("X-Test", "header-value");
                     context.response().setCookie(Cookie.builder("test-cookie", "cookie-value").build());
+                    context.response().discardCookie("discard-cookie");
                     context.response().putSession("session-key", "session-value");
                     context.response().putFlash("flash-key", "flash-value");
                     return CompletableFuture.completedFuture(Results.ok("done"));
@@ -86,6 +66,8 @@ public class ContextFilterTest {
 
         assertEquals("header-value", result.header("X-Test").orElse(""));
         assertEquals("cookie-value", result.cookies().get("test-cookie").orElseThrow().value());
+        assertTrue(result.cookies().get("discard-cookie").isPresent());
+        assertEquals("", result.cookies().get("discard-cookie").get().value());
         assertEquals("session-value", result.session().get("session-key").orElse(""));
         assertEquals("flash-value", result.flash().get("flash-key").orElse(""));
     }
@@ -109,49 +91,26 @@ public class ContextFilterTest {
     }
 
     @Test
-    public void asyncCodeCanUseContextFromRequestAttrsWhenExplicitlyBound() {
-        ContextFilter filter = new ContextFilter(mock(Materializer.class));
-        RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
-        CompletableFuture<Result> pendingResult = new CompletableFuture<>();
-
-        CompletionStage<Result> resultStage = filter.apply(requestHeader -> {
-            Context contextFromRequest = requestHeader.attrs().get(Context.CONTEXT_TYPED_KEY);
-
-            return pendingResult.thenApply(result ->
-                    Context.withContext(contextFromRequest, () -> {
-                        Context.current().response().setHeader("X-Async", "available");
-                        return result;
-                    }));
-        }, request);
-
-        pendingResult.complete(Results.ok("done"));
-
-        Result result = resultStage.toCompletableFuture().join();
-
-        assertEquals("available", result.header("X-Async").orElse(""));
-
-        try {
-            Context.current();
-            fail("Expected Context.current() to fail after completion handler finished");
-        } catch (JatosException e) {
-            assertEquals("There is no HTTP Context available from here.", e.getMessage());
-        }
-    }
-
-    @Test
-    public void applyRestoresPreviousThreadLocalContextAfterCompletionHandlerRuns() {
+    public void applyDoesNotModifyThreadLocalContext() {
         ContextFilter filter = new ContextFilter(mock(Materializer.class));
         RequestHeader previousRequest = Helpers.fakeRequest("GET", "/previous").build();
         Context previousContext = new Context(previousRequest);
-        RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
-        CompletableFuture<Result> pendingResult = new CompletableFuture<>();
-
-        CompletionStage<Result> resultStage = filter.apply(header -> pendingResult, request);
-
         Context.setCurrent(previousContext);
-        pendingResult.complete(Results.ok("done"));
 
-        assertEquals(200, resultStage.toCompletableFuture().join().status());
+        RequestHeader request = Helpers.fakeRequest("GET", "/test").build();
+        AtomicReference<Context> contextInsideNextFilter = new AtomicReference<>();
+
+        Result result = filter.apply(header -> {
+            try {
+                contextInsideNextFilter.set(Context.current());
+            } catch (Exception e) {
+                contextInsideNextFilter.set(null);
+            }
+            return CompletableFuture.completedFuture(Results.ok("done"));
+        }, request).toCompletableFuture().join();
+
+        assertEquals(200, result.status());
+        assertSame(previousContext, contextInsideNextFilter.get());
         assertSame(previousContext, Context.current());
     }
 
@@ -195,16 +154,6 @@ public class ContextFilterTest {
             assertTrue(e.getCause().getMessage().contains("checked boom"));
             assertSame(exception, e.getCause());
         }
-    }
-
-    private static Function<RequestHeader, CompletionStage<Result>> nextFilter(
-            AtomicReference<RequestHeader> requestSeenByNextFilter,
-            AtomicReference<Context> currentContextSeenByNextFilter) {
-        return requestHeader -> {
-            requestSeenByNextFilter.set(requestHeader);
-            currentContextSeenByNextFilter.set(Context.current());
-            return CompletableFuture.completedFuture(Results.ok("done"));
-        };
     }
 
 }

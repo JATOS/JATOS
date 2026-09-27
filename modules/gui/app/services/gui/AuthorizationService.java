@@ -129,10 +129,7 @@ public class AuthorizationService {
             throw new NotFoundException("Study doesn't exist.");
         }
         // Check that the user is a member of the study or a superuser or an admin (if allowed)
-        boolean isAuthorized = study.hasUser(user)
-                || Helpers.isAllowedSuperuser(user)
-                || (user.isAdmin() && adminAllowed);
-        if (!isAuthorized) {
+        if (!(isMemberOrSuperuser(study, user) || (user.isAdmin() && adminAllowed))) {
             throw new ForbiddenException("No access to study.", ErrorCode.NO_ACCESS);
         }
         checkStudyNotLocked(study, studyMustNotBeLocked);
