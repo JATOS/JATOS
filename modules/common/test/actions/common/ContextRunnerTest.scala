@@ -65,15 +65,13 @@ class ContextRunnerTest extends ContextRunner {
     Await.result(future, 3.seconds)
 
     val checkFuture = new CompletableFuture[Boolean]()
-    singleThreadEc.execute(new Runnable {
-      override def run(): Unit = {
-        try {
-          Context.current()
-          checkFuture.complete(false)
-        } catch {
-          case _: JatosException =>
-            checkFuture.complete(true)
-        }
+    singleThreadEc.execute(() => {
+      try {
+        Context.current()
+        checkFuture.complete(false)
+      } catch {
+        case _: JatosException =>
+          checkFuture.complete(true)
       }
     })
 
