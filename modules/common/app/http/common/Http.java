@@ -89,7 +89,7 @@ public class Http {
         public Context(RequestHeader request) {
             this.id = request.asScala().id();
             this.requestHeader = request;
-            this.response = new Response(request.session());
+            this.response = new Response(request.session(), request.flash());
             this.args = new Args();
         }
 
@@ -179,8 +179,12 @@ public class Http {
         private boolean flashChanged;
 
         public Response(Session session) {
+            this(session, new Flash(new HashMap<>()));
+        }
+
+        public Response(Session session, Flash flash) {
             this.session = session;
-            this.flash = new Flash(new HashMap<>());
+            this.flash = flash != null ? flash : new Flash(new HashMap<>());
         }
 
         /**
@@ -375,10 +379,7 @@ public class Http {
          * If no outgoing flash scope exists yet, it starts from the current request flash scope.
          */
         public void putFlash(String key, String value) {
-            Map<String, String> data = new HashMap<>(current().requestHeader().flash().data());
-            if (flash != null) {
-                data.putAll(flash.data());
-            }
+            Map<String, String> data = new HashMap<>(flash != null ? flash.data() : Collections.emptyMap());
             data.put(key, value);
             setFlash(new Flash(data));
         }
@@ -389,10 +390,7 @@ public class Http {
          * If no outgoing flash scope exists yet, it starts from the current request flash scope.
          */
         public void removeFlash(String key) {
-            Map<String, String> data = new HashMap<>(current().requestHeader().flash().data());
-            if (flash != null) {
-                data.putAll(flash.data());
-            }
+            Map<String, String> data = new HashMap<>(flash != null ? flash.data() : Collections.emptyMap());
             data.remove(key);
             setFlash(new Flash(data));
         }
