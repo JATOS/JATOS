@@ -170,7 +170,7 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
         errorResult(request, InternalServerError, cause.getMessage, ErrorCode.IO_ERROR)
 
       case _ =>
-        logger.error(s"${logPrefix(request, e)}: ${e.getMessage}")
+        logger.error(s"${logPrefix(request, e)}: ${e.getMessage}", e)
         errorResult(request, InternalServerError, e.getMessage, e.getErrorCode)
     }
   }
