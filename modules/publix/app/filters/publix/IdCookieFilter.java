@@ -58,12 +58,9 @@ public class IdCookieFilter extends Filter {
         }
 
         Context context = requestHeader.attrs().get(Context.CONTEXT_TYPED_KEY);
-
-        return Context.withContext(context, () -> {
-            IdCookieCollection cookies = idCookieService.extractFromCookies(requestHeader.cookies());
-            Context.current().args().put(IDCOOKIES_TYPED_KEY, cookies);
-            return nextFilter.apply(requestHeader);
-        });
+        IdCookieCollection cookies = idCookieService.extractFromCookies(requestHeader.cookies());
+        context.args().put(IDCOOKIES_TYPED_KEY, cookies);
+        return nextFilter.apply(requestHeader);
     }
 
 }
