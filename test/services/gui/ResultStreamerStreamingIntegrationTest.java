@@ -86,6 +86,8 @@ public class ResultStreamerStreamingIntegrationTest {
     @Before
     public void setUp() {
         app = new GuiceApplicationBuilder()
+                .configure("jatos.resultUploads.path", resultUploadsRoot.toString())
+                .configure("jatos.maxResultsDbQuerySize", 10)
                 .disable(GuiceModule.class)
                 .build();
         Helpers.start(app);
@@ -261,10 +263,11 @@ public class ResultStreamerStreamingIntegrationTest {
                 .thenReturn(Collections.singletonList(2L));
         when(studyDao.findIdsByStudyResultIds(Collections.singletonList(2L)))
                 .thenReturn(Collections.singletonList(1L));
+
         when(studyDao.findById(1L)).thenReturn(study);
         when(studyResultDao.findIdsFromListThatBelongToStudy(Collections.singletonList(2L), 1L))
                 .thenReturn(Collections.singletonList(2L));
-        when(studyResultDao.findByIds(Collections.singletonList(2L), 0, 10))
+        when(studyResultDao.findByIds(eq(Collections.singletonList(2L)), eq(0), anyInt()))
                 .thenReturn(Collections.singletonList(studyResult));
         when(componentResultDao.findIdsByStudyResultId(2L))
                 .thenReturn(Collections.singletonList(10L));
@@ -364,7 +367,7 @@ public class ResultStreamerStreamingIntegrationTest {
         componentResult2.setId(20L);
 
         when(componentResultDao.countByComponent(component)).thenReturn(2);
-        when(componentResultDao.findAllByComponent(component, 0, 10))
+        when(componentResultDao.findAllByComponent(eq(component), eq(0), anyInt()))
                 .thenReturn(Arrays.asList(componentResult1, componentResult2));
 
         when(domainJsonMapper.componentResultAsJsonNode(componentResult1))
