@@ -15,7 +15,6 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
-import exceptions.gui.AuthException;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import daos.common.UserDao;
 import exceptions.common.AuthException;
@@ -26,6 +25,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
 import services.gui.UserService;
@@ -36,6 +36,7 @@ import java.net.URI;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -123,33 +124,33 @@ public class SigninOidcTest {
 
         // Session flags present
         play.mvc.Http.Session session = Context.current().response().session();
-        assertThat(session.get("state").isPresent()).isTrue();
-        assertThat(session.get("nonce").isPresent()).isTrue();
-        assertThat(session.get("keepSignedin").orElse("false")).isEqualTo("true");
+        assertThat(session.get(tso.sessionKey("state")).isPresent()).isTrue();
+        assertThat(session.get(tso.sessionKey("nonce")).isPresent()).isTrue();
+        assertThat(session.get(tso.sessionKey("keepSignedin")).orElse("false")).isEqualTo("true");
     }
 
     @Test
-    public void verifyUserInfoSubject_acceptsMatchingSubjects() throws Exception {
+    public void verifyUserInfoSubject_acceptsMatchingSubjects() {
         SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), new UserInfo(new Subject("Subject-A")));
     }
 
     @Test(expected = AuthException.class)
-    public void verifyUserInfoSubject_rejectsDifferentSubjects() throws Exception {
+    public void verifyUserInfoSubject_rejectsDifferentSubjects() {
         SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), new UserInfo(new Subject("Subject-B")));
     }
 
     @Test(expected = AuthException.class)
-    public void verifyUserInfoSubject_rejectsCaseDifference() throws Exception {
+    public void verifyUserInfoSubject_rejectsCaseDifference() {
         SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), new UserInfo(new Subject("subject-a")));
     }
 
     @Test(expected = AuthException.class)
-    public void verifyUserInfoSubject_rejectsMissingUserInfoSubject() throws Exception {
+    public void verifyUserInfoSubject_rejectsMissingUserInfoSubject() {
         SigninOidc.verifyUserInfoSubject(idTokenClaims("Subject-A"), Mockito.mock(UserInfo.class));
     }
 
     @Test(expected = AuthException.class)
-    public void verifyUserInfoSubject_rejectsMissingIdTokenSubject() throws Exception {
+    public void verifyUserInfoSubject_rejectsMissingIdTokenSubject() {
         SigninOidc.verifyUserInfoSubject(idTokenClaims(null), new UserInfo(new Subject("Subject-A")));
     }
 
@@ -169,11 +170,14 @@ public class SigninOidcTest {
     }
 
     private static Result start(TestSigninOidc controller) throws Exception {
-        return controller.signin(emptyRequest(), "https%3A%2F%2Fapp.example.com", false);
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
+        return controller.signin("https%3A%2F%2Fapp.example.com", false)
+                .withSession(Context.current().response().session());
     }
 
-    private static Http.Request callbackRequest(Result result) {
-        return new Http.RequestBuilder().session(result.session().data()).build();
+    private static TokenRequest tokenRequest(TestSigninOidc controller, Result result) throws Exception {
+        Context.setCurrent(new Context(Helpers.fakeRequest().session(result.session().data()).build()));
+        return controller.buildTokenRequest(new AuthorizationCode("code"));
     }
 
     @Test
@@ -181,9 +185,9 @@ public class SigninOidcTest {
         TestSigninOidc controller = provider("off", "secret", ",\"code_challenge_methods_supported\":[\"S256\"]");
         Result result = start(controller);
         assertThat(contentAsString(result)).doesNotContain("code_challenge");
-        assertThat(result.session().getOptional(controller.sessionKey("verifier")).isPresent()).isFalse();
-        TokenRequest token = controller.buildTokenRequest(callbackRequest(result), new AuthorizationCode("code"));
-        assertThat(token.toHTTPRequest().getQuery()).doesNotContain("code_verifier");
+        assertThat(result.session().get(controller.sessionKey("verifier")).isPresent()).isFalse();
+        TokenRequest token = tokenRequest(controller, result);
+        assertThat(token.toHTTPRequest().getBody()).doesNotContain("code_verifier");
         assertThat(token.getClientAuthentication()).isInstanceOf(ClientSecretBasic.class);
     }
 
@@ -191,7 +195,7 @@ public class SigninOidcTest {
     public void pkce_requiredSendsMatchingS256AndVerifierWithoutMetadata() throws Exception {
         TestSigninOidc controller = provider("required", "secret", "");
         Result result = start(controller);
-        String verifier = result.session().getOptional(controller.sessionKey("verifier")).get();
+        String verifier = result.session().get(controller.sessionKey("verifier")).orElseThrow();
         // Compute independently of Nimbus to verify the actual S256 wire value.
         String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(
                 MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.US_ASCII)));
@@ -199,8 +203,8 @@ public class SigninOidcTest {
         assertThat(auth.getCodeChallenge().getValue()).isEqualTo(challenge);
         assertThat(auth.getCodeChallengeMethod()).isEqualTo(CodeChallengeMethod.S256);
         assertThat(contentAsString(result)).doesNotContain(verifier);
-        TokenRequest token = controller.buildTokenRequest(callbackRequest(result), new AuthorizationCode("code"));
-        assertThat(token.toHTTPRequest().getQuery()).contains("code_verifier=" + verifier);
+        TokenRequest token = tokenRequest(controller, result);
+        assertThat(token.toHTTPRequest().getBody()).contains("code_verifier=" + verifier);
         assertThat(token.getClientAuthentication()).isInstanceOf(ClientSecretBasic.class);
     }
 
@@ -211,14 +215,14 @@ public class SigninOidcTest {
             TestSigninOidc controller = provider("auto", "", metadata);
             Result result = start(controller);
             assertThat(contentAsString(result)).doesNotContain("code_challenge");
-            assertThat(controller.buildTokenRequest(callbackRequest(result), new AuthorizationCode("code"))
-                    .toHTTPRequest().getQuery()).doesNotContain("code_verifier");
+            assertThat(tokenRequest(controller, result)
+                    .toHTTPRequest().getBody()).doesNotContain("code_verifier");
         }
         TestSigninOidc controller = provider("auto", "", ",\"code_challenge_methods_supported\":[\"plain\",\"S256\"]");
         Result result = start(controller);
         assertThat(contentAsString(result)).contains("code_challenge_method=S256");
-        TokenRequest token = controller.buildTokenRequest(callbackRequest(result), new AuthorizationCode("code"));
-        assertThat(token.toHTTPRequest().getQuery()).contains("code_verifier=");
+        TokenRequest token = tokenRequest(controller, result);
+        assertThat(token.toHTTPRequest().getBody()).contains("code_verifier=");
         assertThat(token.getClientAuthentication()).isNull();
         assertThat(token.getClientID().getValue()).isEqualTo("client-123");
     }
@@ -230,54 +234,63 @@ public class SigninOidcTest {
         OIDCProviderMetadata changedMetadata = Mockito.mock(OIDCProviderMetadata.class);
         when(changedMetadata.getTokenEndpointURI()).thenReturn(URI.create("https://auth.example/token"));
         injectProviderMetadata(controller, changedMetadata);
-        assertThat(controller.buildTokenRequest(callbackRequest(result), new AuthorizationCode("code"))
-                .toHTTPRequest().getQuery()).contains("code_verifier=");
+        assertThat(tokenRequest(controller, result)
+                .toHTTPRequest().getBody()).contains("code_verifier=");
     }
 
     @Test
     public void pkce_parallelBrowsersKeepTheirOwnVerifierAndCallback() throws Exception {
         TestSigninOidc controller = provider("required", "", "");
         Result first = start(controller);
-        Result second = controller.signin(emptyRequest(), "https%3A%2F%2Fsecond.example.com", false);
-        String firstVerifier = first.session().getOptional(controller.sessionKey("verifier")).get();
-        String secondVerifier = second.session().getOptional(controller.sessionKey("verifier")).get();
+        Context.setCurrent(new Context(Helpers.fakeRequest().build()));
+        Result second = controller.signin("https%3A%2F%2Fsecond.example.com", false)
+                .withSession(Context.current().response().session());
+        String firstVerifier = first.session().get(controller.sessionKey("verifier")).orElseThrow();
+        String secondVerifier = second.session().get(controller.sessionKey("verifier")).orElseThrow();
         assertThat(firstVerifier).isNotEqualTo(secondVerifier);
-        AuthorizationCodeGrant grant = (AuthorizationCodeGrant) controller.buildTokenRequest(
-                callbackRequest(first), new AuthorizationCode("code")).getAuthorizationGrant();
+        AuthorizationCodeGrant grant = (AuthorizationCodeGrant) tokenRequest(controller, first).getAuthorizationGrant();
         assertThat(grant.getCodeVerifier().getValue()).isEqualTo(firstVerifier);
         assertThat(grant.getRedirectionURI()).isEqualTo(URI.create("https://app.example.com/callback"));
     }
 
-    @Test(expected = AuthException.class)
+    @Test
     public void pkce_missingVerifierFailsClosed() throws Exception {
         TestSigninOidc controller = provider("required", "", "");
-        Http.Session session = start(controller).session();
-        session.removing(controller.sessionKey("verifier"));
-        controller.buildTokenRequest(new Http.RequestBuilder().session(session.data()).build(), new AuthorizationCode("code"));
+        start(controller);
+        Context.current().response().removeSession(controller.sessionKey("verifier"));
+        assertThatThrownBy(() -> controller.buildTokenRequest(new AuthorizationCode("code")))
+                .isInstanceOf(AuthException.class)
+                .hasMessage("OIDC error - Missing PKCE verifier");
     }
 
-    @Test(expected = AuthException.class)
+    @Test
     public void pkce_invalidVerifierFailsClosed() throws Exception {
         TestSigninOidc controller = provider("required", "", "");
-        Http.Session session = start(controller).session();
-        session.adding(controller.sessionKey("verifier"), "too-short");
-        controller.buildTokenRequest(new Http.RequestBuilder().session(session.data()).build(), new AuthorizationCode("code"));
+        start(controller);
+        Context.current().response().putSession(controller.sessionKey("verifier"), "too-short");
+        assertThatThrownBy(() -> controller.buildTokenRequest(new AuthorizationCode("code")))
+                .isInstanceOf(AuthException.class)
+                .hasMessage("OIDC error - Invalid PKCE verifier");
     }
 
-    @Test(expected = AuthException.class)
+    @Test
     public void pkce_missingDecisionFailsClosedInAutoMode() throws Exception {
         TestSigninOidc controller = provider("auto", "", "");
-        Http.Session session = start(controller).session();
-        session.removing(controller.sessionKey("pkce"));
-        controller.buildTokenRequest(new Http.RequestBuilder().session(session.data()).build(), new AuthorizationCode("code"));
+        start(controller);
+        Context.current().response().removeSession(controller.sessionKey("pkce"));
+        assertThatThrownBy(() -> controller.buildTokenRequest(new AuthorizationCode("code")))
+                .isInstanceOf(AuthException.class)
+                .hasMessage("OIDC error - Missing PKCE transaction state");
     }
 
-    @Test(expected = AuthException.class)
+    @Test
     public void pkce_requiredRejectsNonPkceTransaction() throws Exception {
         TestSigninOidc controller = provider("required", "", "");
-        Http.Session session = start(controller).session();
-        session.adding(controller.sessionKey("pkce"), "false");
-        controller.buildTokenRequest(new Http.RequestBuilder().session(session.data()).build(), new AuthorizationCode("code"));
+        start(controller);
+        Context.current().response().putSession(controller.sessionKey("pkce"), "false");
+        assertThatThrownBy(() -> controller.buildTokenRequest(new AuthorizationCode("code")))
+                .isInstanceOf(AuthException.class)
+                .hasMessage("OIDC error - PKCE required or invalid transaction state");
     }
 
     @Test
@@ -286,21 +299,24 @@ public class SigninOidcTest {
         Http.Request request = new Http.RequestBuilder()
                 .session(controller.sessionKey("verifier"), "old-value")
                 .session("unrelated", "keep").build();
-        Result result = controller.signin(request, "https%3A%2F%2Fapp.example.com", false);
-        assertThat(result.session().getOptional(controller.sessionKey("verifier")).isPresent()).isFalse();
-        assertThat(result.session().getOptional("unrelated").get()).isEqualTo("keep");
+        Context.setCurrent(new Context(request));
+        controller.signin("https%3A%2F%2Fapp.example.com", false);
+        Http.Session session = Context.current().response().session();
+        assertThat(session.get(controller.sessionKey("verifier"))).isEmpty();
+        assertThat(session.get("unrelated")).contains("keep");
     }
 
     @Test
     public void clearLoginSessionRemovesOnlyThisProvidersTransaction() throws Exception {
         TestSigninOidc controller = provider("required", "", "");
-        Http.Session session = start(controller).session();
-        session.adding("username", "alice");
-        session.adding("oidc.ORCID.verifier", "other-provider");
-        controller.clearLoginSession(session);
+        start(controller);
+        Context.current().response().putSession("username", "alice");
+        Context.current().response().putSession("oidc.ORCID.verifier", "other-provider");
+        controller.clearLoginSession();
+        Http.Session session = Context.current().response().session();
         assertThat(session.data()).hasSize(2);
-        assertThat(session.getOptional("username").get()).isEqualTo("alice");
-        assertThat(session.getOptional("oidc.ORCID.verifier").get()).isEqualTo("other-provider");
+        assertThat(session.get("username").orElseThrow()).isEqualTo("alice");
+        assertThat(session.get("oidc.ORCID.verifier").orElseThrow()).isEqualTo("other-provider");
     }
 
     @Test
@@ -324,17 +340,18 @@ public class SigninOidcTest {
             when(metadata.getTokenEndpointURI()).thenReturn(URI.create(
                     "http://127.0.0.1:" + server.getAddress().getPort() + "/token"));
             injectProviderMetadata(controller, metadata);
+            injectServices(controller);
             Result login = start(controller);
-            Http.Context.current().session().adding(login.session().data());
-            Http.Context.current().session().adding("unrelated", "keep");
-            String state = login.session().getOptional(controller.sessionKey("state")).get();
+            String state = login.session().get(controller.sessionKey("state")).orElseThrow();
             Http.Request request = new Http.RequestBuilder().uri("/callback?code=code&state=" + state)
-                    .session(login.session().data()).build();
-            Result result = controller.callback(request);
+                    .session(login.session().data()).session("unrelated", "keep").build();
+            Context.setCurrent(new Context(request));
+            Result result = controller.callback();
             assertThat(result.status()).isEqualTo(303);
             assertThat(tokenCalls.get()).isEqualTo(1);
-            assertThat(Http.Context.current().session().data()).hasSize(1);
-            assertThat(Http.Context.current().session().getOptional("unrelated").get()).isEqualTo("keep");
+            Mockito.verifyNoInteractions(authService, userDao, userService);
+            assertThat(Context.current().response().session().data()).hasSize(1);
+            assertThat(Context.current().response().session().get("unrelated").orElseThrow()).isEqualTo("keep");
         } finally {
             server.stop(0);
         }
@@ -355,7 +372,7 @@ public class SigninOidcTest {
 
         tso.signin("https%3A%2F%2Fapp.example.com", false);
 
-        assertThat(Context.current().response().getSession("keepSignedin").orElse("true")).isEqualTo("false");
+        assertThat(Context.current().response().getSession(tso.sessionKey("keepSignedin")).orElse("true")).isEqualTo("false");
     }
 
     @Test

@@ -46,7 +46,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static messaging.common.FlashMessagingHelper.ERROR;
@@ -167,7 +169,7 @@ public abstract class SigninOidc extends Controller {
      * @throws AuthException      if an authentication-related error occurs
      */
     public final Result signin(String realHostUrl, boolean keepSignedin) throws URISyntaxException, ParseException {
-        oidcConfig.callbackUrl = HttpUtils.urlDecode(realHostUrl) + oidcConfig.callbackUrlPath;
+        String callbackUrl = HttpUtils.urlDecode(realHostUrl) + oidcConfig.callbackUrlPath;
         ClientID clientID = new ClientID(oidcConfig.clientId);
         URI callback = new URI(callbackUrl);
         State state = new State();
@@ -184,17 +186,18 @@ public abstract class SigninOidc extends Controller {
                 .codeChallenge(verifier, CodeChallengeMethod.S256)
                 .build();
 
-        Http.Session loginSession = new Http.Session(request.session().data());
+        Map<String, String> loginSession = new HashMap<>();
         loginSession.put(sessionKey("state"), state.getValue());
         loginSession.put(sessionKey("nonce"), nonce.getValue());
         loginSession.put(sessionKey("callback"), callbackUrl);
         loginSession.put(sessionKey("keepSignedin"), String.valueOf(keepSignedin));
         loginSession.put(sessionKey("pkce"), String.valueOf(verifier != null));
-        loginSession.remove(sessionKey("verifier"));
+        Context.current().response().removeSession(sessionKey("verifier"));
         if (verifier != null) {
             loginSession.put(sessionKey("verifier"), verifier.getValue());
         }
-        return ok(authRequest.toURI().toString()).withSession(loginSession);
+        Context.current().response().putSession(loginSession);
+        return ok(authRequest.toURI().toString());
     }
 
     /**
@@ -207,7 +210,7 @@ public abstract class SigninOidc extends Controller {
 
             OIDCTokens oidcTokens = requestToken(authorizationCode);
 
-            IDTokenClaimsSet idTokenClaims = verifyIdToken(request, oidcTokens.getIDToken(), getProviderInfo());
+            IDTokenClaimsSet idTokenClaims = verifyIdToken(oidcTokens.getIDToken(), getProviderInfo());
 
             BearerAccessToken bearerAccessToken = (BearerAccessToken) oidcTokens.getAccessToken();
             UserInfo userInfo = getUserInfo(bearerAccessToken);
@@ -235,7 +238,7 @@ public abstract class SigninOidc extends Controller {
             Context.current().response().putFlash(ERROR, "OIDC error - contact your admin and check the logs for more information.");
             return redirect(auth.gui.routes.Signin.signin());
         } finally {
-            clearLoginSession(session());
+            clearLoginSession();
         }
     }
 
@@ -308,7 +311,7 @@ public abstract class SigninOidc extends Controller {
 
     TokenRequest buildTokenRequest(AuthorizationCode authorizationCode)
             throws ParseException, URISyntaxException, AuthException {
-        URI callback = new URI(Context.current().response().getSession(sessionKey("callback")))
+        URI callback = new URI(Context.current().response().getSession(sessionKey("callback"))
                 .orElseThrow(() -> new AuthException("OIDC error - Missing login transaction")));
         String pkce = Context.current().response().getSession(sessionKey("pkce"))
                 .orElseThrow(() -> new AuthException("OIDC error - Missing PKCE transaction state"));
