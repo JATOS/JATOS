@@ -10,8 +10,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static http.common.Http.Context.current;
-
 /**
  * Provides a framework for handling HTTP requests and responses. It is primarily used for propagating HTTP-related
  * operations across threads and managing request-specific data in a thread-safe manner.
