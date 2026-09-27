@@ -125,7 +125,6 @@ public class UserApi extends Controller {
     public Result updateUser(Request request, Long id) {
         User user = userDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.checkAuthMethodIsDbOrLdap(user);
         authorizationService.checkAdminOrSelf(signedinUser, user);
 
         UserProperties props = userService.bindToProperties(user);

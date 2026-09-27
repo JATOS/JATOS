@@ -298,7 +298,7 @@ public class StudyApi extends Controller {
     public Result updateStudyProperties(play.mvc.Http.Request request, String id) throws IOException {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyService.getStudyFromIdOrUuid(id);
-        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.canUserAccessStudy(study, signedinUser, true, true);
 
         boolean isMemberOrSuperuser = authorizationService.isMemberOrSuperuser(study, signedinUser);
         boolean isAdminNonMember = signedinUser.isAdmin() && !isMemberOrSuperuser;
