@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({"unchecked"})
 public class ContextActionCreatorTest {
 
     @After
