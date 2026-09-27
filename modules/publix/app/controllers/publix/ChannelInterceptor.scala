@@ -1,9 +1,9 @@
 package controllers.publix
 
+import actions.common.ContextRunner
 import daos.common.StudyResultDao
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
 import executor.common.IOExecutor
-import http.common.Http.Context
 import jakarta.persistence.EntityManager
 import models.common.StudyResult
 import models.common.workers.WorkerType
@@ -12,7 +12,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 /**
  * This class intercepts a request before it gets to the BatchChannel or GroupChannel. It has
@@ -35,9 +35,10 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
                                    generalMultipleGroupChannel: GeneralMultipleGroupChannel,
                                    mTGroupChannel: MTGroupChannel,
                                    ioExecutor: IOExecutor)
-  extends AbstractController(components) {
+  extends AbstractController(components) with ContextRunner {
 
   private val logger: Logger = Logger(this.getClass)
+  private implicit val ec: ExecutionContext = ioExecutor
 
   /**
    * HTTP type: WebSocket
@@ -51,7 +52,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    */
   def openBatch(studyResultUuid: String): WebSocket =
     WebSocket.acceptOrResult[JsValue, JsValue] { request =>
-      inIOContext(request) {
+      withContext(request) {
         studyResultDao.withReadOnlyTransaction((_: EntityManager) => {
           try {
             val studyResult = fetchStudyResult(studyResultUuid)
@@ -97,7 +98,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    */
   def joinGroup(studyResultUuid: String): WebSocket =
     WebSocket.acceptOrResult[JsValue, JsValue] { request =>
-      inIOContext(request) {
+      withContext(request) {
         try {
           val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
           studyResult.getWorkerType match {
@@ -122,7 +123,8 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
             case WorkerType.MT =>
               mTGroupChannel.join(studyResult)
               Right(mTGroupChannel.open(studyResult))
-            case _ => Left(Results.BadRequest)
+            case _ =>
+              Left(Results.BadRequest)
           }
         } catch {
           // Due to returning a WebSocket, we can't throw a PublixExceptions like with other publix endpoints
@@ -154,7 +156,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @return Result
    */
   def reassignGroup(studyResultUuid: String): Action[AnyContent] = Action.async { request =>
-    inIOContext(request) {
+    withContext(request) {
       try {
         val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
         studyResult.getWorkerType match {
@@ -191,7 +193,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    * @return Result
    */
   def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action.async { request =>
-    inIOContext(request) {
+    withContext(request) {
       studyResultDao.withTransaction(_ => {
         try {
           val studyResult = fetchStudyResult(studyResultUuid)
@@ -218,25 +220,6 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
         }
       })
     }
-  }
-
-  /**
-   * Helper to run blocking channel setup logic on the IO executor with an HTTP Context bound
-   * to the worker thread.
-   *
-   * For normal HTTP requests, ContextFilter attaches the Context to the request. For WebSocket
-   * requests this is not guaranteed, so we create a fallback Context if none is attached.
-   *
-   * The Context is bound only while the block runs and is restored/cleared afterward by
-   * Context.withContext.
-   */
-  private def inIOContext[T](request: RequestHeader)(block: => T): Future[T] = {
-    val context = Context.currentOptional(request.asJava)
-      .orElseGet(() => new Context(request.asJava))
-
-    Future {
-      Context.withContext(context, () => block)
-    }(ioExecutor)
   }
 
   private def fetchStudyResult(uuid: String) = {
