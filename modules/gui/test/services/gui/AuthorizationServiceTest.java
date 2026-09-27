@@ -20,6 +20,7 @@ import org.mockito.MockedStatic;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 public class AuthorizationServiceTest {
@@ -117,36 +118,52 @@ public class AuthorizationServiceTest {
     }
 
     @Test
-    public void canUserAccessStudy_adminAllowed_respectsFlag() throws Exception {
-        Study study = newStudy(1L);
-        User admin = newUser("admin");
-        admin.updateRoles(User.Role.ADMIN);
+    public void canUserAccessStudy_allowsNonMemberAdmin_whenAdminAllowed() {
+        Study study = study(1L);
+        User admin = user("admin", Role.ADMIN);
+        when(studyDao.hasUser(study, admin)).thenReturn(false);
 
-        helpersMock = Mockito.mockStatic(Helpers.class);
-        helpersMock.when(() -> Helpers.isAllowedSuperuser(admin)).thenReturn(false);
-
-        // When adminAllowed is true, admin can access even if not a study member
         authorizationService.canUserAccessStudy(study, admin, false, true);
+    }
 
-        // When adminAllowed is false, access is forbidden
-        boolean threw = false;
-        try {
-            authorizationService.canUserAccessStudy(study, admin, false, false);
-        } catch (ForbiddenException e) {
-            threw = true;
-        }
-        assertThat(threw).isTrue();
+    @Test(expected = ForbiddenException.class)
+    public void canUserAccessStudy_forbidsNonMemberAdmin_whenAdminNotAllowed() {
+        Study study = study(1L);
+        User admin = user("admin", Role.ADMIN);
+        when(studyDao.hasUser(study, admin)).thenReturn(false);
 
-        // Non-admin user cannot access even if adminAllowed is true
-        User nonAdmin = newUser("user");
-        helpersMock.when(() -> Helpers.isAllowedSuperuser(nonAdmin)).thenReturn(false);
-        threw = false;
-        try {
-            authorizationService.canUserAccessStudy(study, nonAdmin, false, true);
-        } catch (ForbiddenException e) {
-            threw = true;
-        }
-        assertThat(threw).isTrue();
+        authorizationService.canUserAccessStudy(study, admin, false, false);
+    }
+
+    @Test(expected = ForbiddenException.class)
+    public void canUserAccessStudy_forbidsNonMemberNonAdmin_whenAdminAllowed() {
+        Study study = study(1L);
+        User user = user("user", Role.USER);
+        when(studyDao.hasUser(study, user)).thenReturn(false);
+
+        authorizationService.canUserAccessStudy(study, user, false, true);
+    }
+
+    @Test
+    public void canUserAccessStudy_allowsAdminMember_regardlessOfAdminAllowed() {
+        Study study = study(1L);
+        User admin = user("admin", Role.ADMIN);
+        when(studyDao.hasUser(study, admin)).thenReturn(true);
+
+        authorizationService.canUserAccessStudy(study, admin, false, false);
+        authorizationService.canUserAccessStudy(study, admin, false, true);
+    }
+
+    @Test
+    public void canUserAccessStudy_forbidsLockedStudy_whenAdminAllowedAndUnlockedStudyRequired() {
+        Study study = study(1L);
+        User admin = user("admin", Role.ADMIN);
+        when(studyDao.hasUser(study, admin)).thenReturn(false);
+        when(studyDao.isLocked(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> authorizationService.canUserAccessStudy(study, admin, true, true))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("Study locked");
     }
 
     @Test
@@ -230,6 +247,7 @@ public class AuthorizationServiceTest {
     @Test(expected = NotFoundException.class)
     public void checkAdminOrSelf_throwsNotFound_whenTargetUserIsNull() {
         User user = null;
+        //noinspection ConstantValue
         authorizationService.checkAdminOrSelf(user("signedin", Role.USER), user);
     }
 
@@ -258,10 +276,10 @@ public class AuthorizationServiceTest {
 
     @Test
     public void checkAuthMethodIsDbOrLdap_allowsDbUser() {
-        User user = user("db-user", Role.USER);
-        user.setAuthMethod(AuthMethod.DB);
+        NewUserProperties props = new NewUserProperties();
+        props.setAuthMethod(AuthMethod.DB);
 
-        authorizationService.checkAuthMethodIsDbOrLdap(user);
+        authorizationService.checkAuthMethodIsDbOrLdap(props);
     }
 
     @Test(expected = NotFoundException.class)
