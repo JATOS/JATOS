@@ -1,10 +1,8 @@
 package filters
 
 import org.apache.pekko.stream.Materializer
-import http.common.Http.Context
 import play.api.mvc._
 
-import java.util.function.Supplier
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -16,30 +14,26 @@ import scala.concurrent.ExecutionContext
 class NoCacheHtmlFilter @Inject()(implicit val mat: Materializer, ec: ExecutionContext) extends EssentialFilter {
 
   override def apply(next: EssentialAction): EssentialAction = EssentialAction { request =>
-    val context = Context.current()
-
     next(request).map { result =>
-      Context.withContext(context, () => {
-        val shouldApply = request.path.startsWith("/jatos")
-        val contentType = result.body.contentType.getOrElse("")
+      val shouldApply = request.path.startsWith("/jatos")
+      val contentType = result.body.contentType.getOrElse("")
 
-        if (shouldApply && contentType.startsWith("text/html")) {
-          val existingHeaders = result.header.headers
-          val noCacheHeaders = Map(
-            "Cache-Control" -> "no-cache, no-store, must-revalidate",
-            "Pragma" -> "no-cache",
-            "Expires" -> "0"
-          )
+      if (shouldApply && contentType.startsWith("text/html")) {
+        val existingHeaders = result.header.headers
+        val noCacheHeaders = Map(
+          "Cache-Control" -> "no-cache, no-store, must-revalidate",
+          "Pragma" -> "no-cache",
+          "Expires" -> "0"
+        )
 
-          val headersToAdd = noCacheHeaders.filterNot { case (name, _) =>
-            existingHeaders.keys.exists(_.equalsIgnoreCase(name))
-          }
-
-          result.withHeaders(headersToAdd.toSeq: _*)
-        } else {
-          result
+        val headersToAdd = noCacheHeaders.filterNot { case (name, _) =>
+          existingHeaders.keys.exists(_.equalsIgnoreCase(name))
         }
-      })
+
+        result.withHeaders(headersToAdd.toSeq: _*)
+      } else {
+        result
+      }
     }(ec)
   }
 }
