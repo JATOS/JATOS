@@ -593,29 +593,37 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         }
         openingBatchChannelDeferred = jatos.jQuery.Deferred();
 
-        batchChannel = new WebSocket(
+        const channel = new WebSocket(
             ((window.location.protocol === "https:") ? "wss://" : "ws://") +
             window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/batch/open");
-        batchChannel.onopen = function () {
-            batchChannel.send('{"action":"READY"}');
+        batchChannel = channel;
+        // Capture this attempt so delayed callbacks cannot affect a replacement channel or deferred.
+        const openingDeferred = openingBatchChannelDeferred;
+        channel.onopen = function () {
+            if (batchChannel !== channel) return;
+            channel.send('{"action":"READY"}');
             batchChannelHeartbeat();
             batchChannelClosedCheck();
             // The actual batch channel opening is done when we have the
             // current version of the batch session
         };
-        batchChannel.onmessage = function (event) {
+        channel.onmessage = function (event) {
+            if (batchChannel !== channel) return;
             handleBatchMsg(event.data);
         };
-        batchChannel.onerror = function () {
+        channel.onerror = function () {
+            if (batchChannel !== channel) return;
             console.error("Batch channel error");
-            openingBatchChannelDeferred.reject();
+            openingDeferred.reject();
         };
         // Some browsers call it with leaving/reloading the page
         // Called with closing the WebSocket intentionally
         // Called with network error, after ws.onerror
-        batchChannel.onclose = function () {
+        channel.onclose = function () {
+            if (batchChannel !== channel) return;
+            setBatchChannelDead();
             clearBatchChannel();
-            openingBatchChannelDeferred.reject();
+            openingDeferred.reject();
         };
 
         return openingBatchChannelDeferred.promise();
@@ -657,10 +665,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      */
     function handleBatchChannelHeartbeatFail() {
         console.warn("Batch channel heartbeat fail");
-        if (batchChannelAlive) {
-            batchChannelAlive = false;
-            window.dispatchEvent(batchChannelDeadEvent);
-        }
+        setBatchChannelDead();
         reopenBatchChannel();
     }
 
@@ -677,6 +682,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             if (batchChannel.readyState === batchChannel.CLOSED) {
                 console.info("Batch channel closed");
                 clearInterval(batchChannelClosedCheckTimer);
+                setBatchChannelDead();
                 reopenBatchChannel();
             }
         }, jatos.channelClosedCheckInterval);
@@ -773,6 +779,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
                 break;
             case "CLOSED":
                 clearInterval(batchChannelClosedCheckTimer);
+                setBatchChannelDead();
                 studyRunInvalid = true;
                 console.info("Batch channel closed by JATOS server");
                 jatos.showOverlay({ text: "This study run is invalid.", showImg: false });
@@ -790,6 +797,16 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         if (!batchChannelAlive) {
             batchChannelAlive = true;
             window.dispatchEvent(batchChannelAliveEvent);
+        }
+    }
+
+    /**
+     * Marks the batch channel as dead and fires the corresponding event once.
+     */
+    function setBatchChannelDead() {
+        if (batchChannelAlive) {
+            batchChannelAlive = false;
+            window.dispatchEvent(batchChannelDeadEvent);
         }
     }
 
