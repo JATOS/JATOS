@@ -92,7 +92,13 @@ rem ### Functions ###
     )
   )
 
-  set "JATOS_OPTS=-Dconfig.file="%JATOS_HOME%\conf\jatos.conf" -Dfile.encoding=UTF-8"
+  set "JATOS_OPTS=-Dfile.encoding=UTF-8"
+  if exist "%JATOS_HOME%\conf\jatos.conf" (
+    set "JATOS_OPTS=-Dconfig.file="%JATOS_HOME%\conf\jatos-wrapper.conf" !JATOS_OPTS!"
+  ) else if exist "%JATOS_HOME%\conf\production.conf" (
+    echo conf/production.conf is no longer supported. Rename it to conf/jatos.conf. >&2
+    exit /B 1
+  )
   if defined DOUBLECLICKED (
     set "JATOS_OPTS=-Dpidfile.path=NUL !JATOS_OPTS!"
   ) else (

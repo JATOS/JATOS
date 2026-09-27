@@ -81,7 +81,8 @@ lazy val jatos = (project in file("."))
       file(baseDirectory.value + "/loader.sh") -> "loader.sh",
       file(baseDirectory.value + "/loader.bat") -> "loader.bat",
       file(baseDirectory.value + "/VERSION") -> "VERSION",
-      file(baseDirectory.value + "/conf/jatos.conf") -> "conf/jatos.conf"
+      file(baseDirectory.value + "/conf/jatos.conf") -> "conf/jatos.conf",
+      file(baseDirectory.value + "/conf/jatos-wrapper.conf") -> "conf/jatos-wrapper.conf"
     ),
 
     // Filter out unwanted files from distribution

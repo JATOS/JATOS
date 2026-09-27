@@ -61,11 +61,11 @@ start() {
         start_args+=("-J--sun-misc-unsafe-memory-access=allow")
     fi
 
-    # Add config file, either jatos.conf or production.conf (jatos.conf has precedence)
+    # Load bundled defaults before user configuration.
     if [[ -f "$dir/conf/jatos.conf" ]]; then
-        start_args+=("-Dconfig.file=$dir/conf/jatos.conf")
+        start_args+=("-Dconfig.file=$dir/conf/jatos-wrapper.conf")
     elif [[ -f "$dir/conf/production.conf" ]]; then
-        start_args+=("-Dconfig.file=$dir/conf/production.conf")
+        die "$loader_log" "conf/production.conf is no longer supported. Rename it to conf/jatos.conf."
     fi
 
     printf "Starting JATOS... "
