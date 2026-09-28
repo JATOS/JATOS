@@ -54,6 +54,7 @@ import static scala.jdk.javaapi.CollectionConverters.asScala;
 /**
  * Unit tests for GroupDispatcher.
  */
+@SuppressWarnings("DataFlowIssue")
 public class GroupDispatcherTest {
 
     private static ActorSystem system;
@@ -85,6 +86,7 @@ public class GroupDispatcherTest {
     @BeforeClass
     public static void setupClass() {
         common = mockStatic(Common.class);
+        //noinspection ResultOfMethodCallIgnored
         common.when(Common::getGroupMessageAckTimeout).thenReturn(Duration.ofMillis(200));
         Config config = ConfigFactory.parseString(
                 "org.apache.pekko.loglevel=WARNING\norg.apache.pekko.log-dead-letters=off");
@@ -271,8 +273,8 @@ public class GroupDispatcherTest {
 
         assertTrue(out.isEmpty());
         assertEquals(1, publisher.groupOpenChannelsRequests.size());
-        assertFalse(publisher.groupMessages.get(0).json().contains("channels"));
-        GroupOpenChannelsRequest request = publisher.groupOpenChannelsRequests.get(0);
+        assertFalse(publisher.groupMessages.getFirst().json().contains("channels"));
+        GroupOpenChannelsRequest request = publisher.groupOpenChannelsRequests.getFirst();
         distributedDispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
                 "node-1", "node-1", request.requestId(), groupResultId,
                 asScala(Set.of("1")).toSet(), 2));
@@ -288,6 +290,86 @@ public class GroupDispatcherTest {
                     scala.jdk.javaapi.CollectionConverters.asJava(ids.get())
                             .forEach(id -> actual.add(((Number) id).longValue()));
                     return actual.equals(Set.of(1L, 2L, 3L));
+                }), eq(true), eq(GA_Opened()), eq(TW_SenderOnly()));
+    }
+
+    @Test
+    public void registerChannel_channelOpenedWhileCollectingOpenChannels_isIncludedInOpened() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        publisher.autoRespondOpenChannels = false;
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        BlockingQueue<Object> out = new LinkedBlockingQueue<>();
+        GroupChannelActor channel = mock(GroupChannelActor.class);
+        when(channel.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, out)));
+
+        when(msgBuilder.build(eq(groupResultId), eq(1L), any(), eq(false),
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js(
+                        "{\"action\":\"CHANNEL_OPENED\",\"memberId\":\"1\"}")));
+        when(msgBuilder.build(eq(groupResultId), eq(1L), any(), eq(true),
+                eq(GA_Opened()), eq(TW_SenderOnly())))
+                .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
+
+        distributedDispatcher.registerChannel(groupResultId, 1L, channel);
+        GroupOpenChannelsRequest request = publisher.groupOpenChannelsRequests.getFirst();
+
+        distributedDispatcher.deliverFromRemote(groupResultId, 2L,
+                js("{\"action\":\"CHANNEL_OPENED\",\"memberId\":\"2\"}"),
+                new GroupRecipients.Recipient(2L));
+        distributedDispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
+                "node-1", "node-1", request.requestId(), groupResultId,
+                asScala(Set.of("1")).toSet(), 2));
+        distributedDispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
+                "node-2", "node-1", request.requestId(), groupResultId,
+                asScala(Set.of("1")).toSet(), 2));
+
+        assertNotNull(poll(out));
+        verify(msgBuilder).build(eq(groupResultId), eq(1L), argThat(ids -> {
+                    if (ids.isEmpty()) return false;
+                    Set<Long> actual = new HashSet<>();
+                    scala.jdk.javaapi.CollectionConverters.asJava(ids.get())
+                            .forEach(id -> actual.add(((Number) id).longValue()));
+                    return actual.equals(Set.of(1L, 2L));
+                }), eq(true), eq(GA_Opened()), eq(TW_SenderOnly()));
+    }
+
+    @Test
+    public void registerChannel_channelClosedWhileCollectingOpenChannels_isExcludedFromOpened() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        publisher.autoRespondOpenChannels = false;
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        BlockingQueue<Object> out = new LinkedBlockingQueue<>();
+        GroupChannelActor channel = mock(GroupChannelActor.class);
+        when(channel.self()).thenReturn(system.actorOf(Props.create(CapturingActor.class, out)));
+
+        when(msgBuilder.build(eq(groupResultId), eq(1L), any(), eq(false),
+                eq(GA_ChannelOpened()), eq(TW_AllButSender())))
+                .thenReturn(actionMsgToAllButSender(js(
+                        "{\"action\":\"CHANNEL_OPENED\",\"memberId\":\"1\"}")));
+        when(msgBuilder.build(eq(groupResultId), eq(1L), any(), eq(true),
+                eq(GA_Opened()), eq(TW_SenderOnly())))
+                .thenReturn(actionMsgToSender(js("{\"action\":\"OPENED\"}")));
+
+        distributedDispatcher.registerChannel(groupResultId, 1L, channel);
+        GroupOpenChannelsRequest request = publisher.groupOpenChannelsRequests.getFirst();
+
+        distributedDispatcher.deliverFromRemote(groupResultId, 2L,
+                js("{\"action\":\"CHANNEL_CLOSED\",\"memberId\":\"2\"}"),
+                new GroupRecipients.Recipient(2L));
+        distributedDispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
+                "node-1", "node-1", request.requestId(), groupResultId,
+                asScala(Set.of("1")).toSet(), 2));
+        distributedDispatcher.receiveOpenChannelsResponse(new GroupOpenChannelsResponse(
+                "node-2", "node-1", request.requestId(), groupResultId,
+                asScala(Set.of("2")).toSet(), 2));
+
+        assertNotNull(poll(out));
+        verify(msgBuilder).build(eq(groupResultId), eq(1L), argThat(ids -> {
+                    if (ids.isEmpty()) return false;
+                    Set<Long> actual = new HashSet<>();
+                    scala.jdk.javaapi.CollectionConverters.asJava(ids.get())
+                            .forEach(id -> actual.add(((Number) id).longValue()));
+                    return actual.equals(Set.of(1L));
                 }), eq(true), eq(GA_Opened()), eq(TW_SenderOnly()));
     }
 
@@ -634,7 +716,7 @@ public class GroupDispatcherTest {
         distributedDispatcher.handleGroupMsg(directOrBroadcastMsg(json), groupResultId, 1L, ActorRef.noSender());
 
         assertEquals(1, publisher.groupDirectMessages.size());
-        GroupDirectMsgDeliveryRequest request = publisher.groupDirectMessages.get(0);
+        GroupDirectMsgDeliveryRequest request = publisher.groupDirectMessages.getFirst();
         assertEquals("node-1", request.originNodeId());
         assertEquals(groupResultId, request.groupResultId());
         assertEquals(1L, request.senderStudyResultId());
@@ -668,7 +750,7 @@ public class GroupDispatcherTest {
         Future<Object> result = distributedDispatcher.hasChannelInCluster(2L);
 
         assertEquals(1, publisher.groupChannelPresenceRequests.size());
-        GroupChannelPresenceRequest request = publisher.groupChannelPresenceRequests.get(0);
+        GroupChannelPresenceRequest request = publisher.groupChannelPresenceRequests.getFirst();
         distributedDispatcher.acknowledgeChannelPresence(request.requestId());
         assertEquals(true, Await.result(result, scala.concurrent.duration.Duration.create(1, "second")));
     }
