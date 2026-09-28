@@ -606,6 +606,28 @@ public class GroupDispatcherTest {
     }
 
     @Test
+    public void handleGroupMsg_fixedAction_publishesToAllClusterMembers() {
+        RecordingMessagePublisher publisher = new RecordingMessagePublisher();
+        GroupDispatcher distributedDispatcher = newDistributedDispatcher(publisher);
+        JsObject json = js("{\"action\":\"FIXED\",\"groupState\":\"FIXED\"}");
+        GroupMsg fixed = actionMsgToAll(json);
+        when(actionHandler.handleActionMsg(
+                any(GroupMsg.class),
+                eq(groupResultId),
+                eq(1L),
+                eq(GroupSessionWriteScope.SHARED)))
+                .thenReturn(asScala(List.of(fixed)).toList());
+
+        distributedDispatcher.handleGroupMsg(
+                new GroupMsg(js("{\"action\":\"FIXED\"}"), TW_Unknown()),
+                groupResultId, 1L, ActorRef.noSender());
+
+        assertEquals(List.of(new GroupClusterMessage(
+                "node-1", groupResultId, 1L, Json$.MODULE$.stringify(json),
+                new GroupRecipients.All())), publisher.groupMessages);
+    }
+
+    @Test
     public void handleGroupMsg_directMessage_goesToRecipientOnly_orErrors() {
         BlockingQueue<Object> out1 = new LinkedBlockingQueue<>();
         BlockingQueue<Object> out2 = new LinkedBlockingQueue<>();

@@ -197,7 +197,7 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)
         groupResultDao.merge(groupResult)
-        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, None, TellWhom.SenderOnly))
+        List(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, None, TellWhom.All))
       } else {
         val errorMsg = s"Couldn't find group result with ID $groupResultId in database."
         List(msgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly))

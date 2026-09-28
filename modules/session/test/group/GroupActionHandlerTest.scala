@@ -75,13 +75,14 @@ class GroupActionHandlerTest {
 
     val fixedMsg = GroupMsg(Json.obj("action" -> "FIXED"))
     val expectedResponse = GroupMsg(Json.obj("action" -> "FIXED"))
-    when(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, None, TellWhom.SenderOnly))
+    when(msgBuilder.buildSimple(groupResult, GroupAction.Fixed, None, None, TellWhom.All))
       .thenReturn(expectedResponse)
 
     val result = groupActionHandler.handleActionMsg(fixedMsg, groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
 
     assertEquals(GroupState.FIXED, groupResult.getGroupState)
     verify(groupResultDao).merge(groupResult)
+    verify(msgBuilder).buildSimple(groupResult, GroupAction.Fixed, None, None, TellWhom.All)
     assertEquals(List(expectedResponse), result)
   }
 
