@@ -1,13 +1,14 @@
 package general
 
 import com.typesafe.config.Config
-import org.apache.pekko.actor.ActorSystem
-import daos.common.LoginAttemptDao
+import daos.common.{LoginAttemptDao, UserDao}
 import general.common.{Common, JatosUpdater}
 import migrations.common.{ComponentResultMigration, MySQLCharsetFix, StudyLinkMigration}
+import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import services.publix.GroupCleaner
+import utils.common.HashUtils
 
 import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
@@ -45,6 +46,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             studyLinkMigration: StudyLinkMigration,
                             componentResultMigration: ComponentResultMigration,
                             loginAttemptDao: LoginAttemptDao,
+                            userDao: UserDao,
                             groupCleaner: GroupCleaner) {
 
   private val logger = Logger(this.getClass)
@@ -66,6 +68,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   createDirIfNotExist(Common.getTmpPath)
   studyLinkMigration.run()
   componentResultMigration.run()
+  initAdminPassword()
   scheduleLoginAttemptCleaning()
   groupCleaner.start()
 
@@ -144,6 +147,23 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
         logger.info(".createDirIfNotExist: Created " + path)
       } else {
         logger.error(".createDirIfNotExist: Could not create directory " + path)
+      }
+    }
+  }
+
+  /**
+   * Sets the initial admin password from the configuration
+   */
+  private def initAdminPassword(): Unit = {
+    if (Common.hasUserAdminPassword) {
+      val admin = userDao.findByUsername("admin")
+      if (admin != null) {
+        val newHash = HashUtils.getHashMD5(Common.getUserAdminPassword)
+        if (admin.getPasswordHash != newHash) {
+          admin.setPasswordHash(newHash)
+          userDao.merge(admin)
+          logger.info("Admin password updated from configuration")
+        }
       }
     }
   }

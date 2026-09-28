@@ -51,6 +51,7 @@ public class Common {
     private static String mac;
     private static int userPasswordLength;
     private static int userPasswordStrength;
+    private static String userAdminPassword;
     private static String jatosUrlBasePath;
     private static String jatosUpdateMsg;
     private static String jatosHttpAddress;
@@ -178,6 +179,9 @@ public class Common {
         if (userPasswordStrength > userPasswordStrengthRegexList.size()) {
             userPasswordStrength = 0;
         }
+        userAdminPassword = !config.getIsNull("jatos.user.admin.password")
+                ? config.getString("jatos.user.admin.password")
+                : null;
         jatosUrlBasePath = config.getString("play.http.context"); // Also jatos.urlBasePath
         jatosUpdateMsg = !config.getIsNull("jatos.update.msg") ? config.getString("jatos.update.msg") : null;
         jatosHttpAddress = config.getString("play.server.http.address"); // Also jatos.http.address
@@ -506,6 +510,17 @@ public class Common {
      */
     public static Pair<String, String> getUserPasswordStrengthRegex() {
         return userPasswordStrengthRegexList.get(userPasswordStrength);
+    }
+
+    /**
+     * Initial or forced admin password
+     */
+    public static String getUserAdminPassword() {
+        return userAdminPassword;
+    }
+
+    public static boolean hasUserAdminPassword() {
+        return !Strings.isNullOrEmpty(userAdminPassword);
     }
 
     /**
