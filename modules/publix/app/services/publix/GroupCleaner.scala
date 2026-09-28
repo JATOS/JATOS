@@ -69,7 +69,20 @@ object GroupCleaner {
 }
 
 /**
- * This class runs a scheduler that regularly checks for group members that are inactive
+ * Periodically detects and removes inactive group members across all group studies.
+ *
+ * A group member is considered a candidate for eviction when:
+ *  1. Its study result is attached to an active group result in the database.
+ *  2. Its `lastSeenDate` is older than the configured idle threshold (`jatos.groups.cleaning.memberIdleAfter`).
+ *  3. It has no open group communication channel (WebSocket) (if running in a cluster, it is verified via
+ *  [[group.GroupDispatcher.hasChannelInCluster]]).
+ *
+ * When an inactive member is confirmed, it is forced to leave its group, and its study run is finished with state
+ * `FAIL`.
+ *
+ * In a multi-node cluster (`jatos.multiNode = true`), `GroupCleaner` runs as an Apache Pekko '''Cluster Singleton'''.
+ * This guarantees that only one node in the cluster executes the periodic cleanup task at any time. In single-node
+ * deployments, a standard local actor is used.
  */
 @Singleton
 class GroupCleaner @Inject()(actorSystem: ActorSystem,
