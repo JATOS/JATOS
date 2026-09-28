@@ -19,6 +19,49 @@ public class ComponentResultDaoTest extends JatosTest {
     private ComponentDao componentDao;
 
     @Test
+    public void testNewResultsDoNotNeedDataSizeMigration() {
+        Component component = new Component();
+        componentDao.persist(component);
+
+        ComponentResult defaultResult = new ComponentResult();
+        defaultResult.setComponent(component);
+        for (ComponentResult cr : new ComponentResult[]{defaultResult, new ComponentResult(component)}) {
+            componentResultDao.persist(cr);
+
+            // Read the column directly: getDataSize() also returns zero for a database NULL.
+            Number storedSize = componentResultDao.withReadOnlyTransaction(em -> {
+                return (Number) em.createNativeQuery("SELECT dataSize FROM ComponentResult WHERE id = :id")
+                        .setParameter("id", cr.getId())
+                        .getSingleResult();
+            });
+            assertNotNull(storedSize);
+            assertEquals(0L, storedSize.longValue());
+            assertFalse(componentResultDao.findAllIdsWhereDataSizeIsNull().contains(cr.getId()));
+        }
+    }
+
+    @Test
+    public void testLegacyResultWithoutDataIsMigratedOnlyOnce() {
+        Component component = new Component();
+        componentDao.persist(component);
+        ComponentResult cr = new ComponentResult(component);
+        componentResultDao.persist(cr);
+        Long id = cr.getId();
+
+        componentResultDao.withTransaction(em -> {
+            em.createNativeQuery("UPDATE ComponentResult SET dataSize = NULL WHERE id = :id")
+                    .setParameter("id", id)
+                    .executeUpdate();
+        });
+        assertTrue(componentResultDao.findAllIdsWhereDataSizeIsNull().contains(id));
+
+        componentResultDao.setDataSizeAndDataShort(id);
+
+        assertFalse(componentResultDao.findAllIdsWhereDataSizeIsNull().contains(id));
+        assertEquals(Integer.valueOf(0), componentResultDao.findById(id).getDataSize());
+    }
+
+    @Test
     public void testReplaceDataAndGetData() {
         Component component = new Component();
         componentDao.persist(component);

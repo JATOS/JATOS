@@ -103,8 +103,8 @@ public class ComponentResult {
      * Database operations are done via extra methods in ComponentResultDao.
      */
     @JsonIgnore
-    @Column(insertable = false, updatable = false)
-    private Integer dataSize;
+    @Column(updatable = false)
+    private Integer dataSize = 0;
 
     /**
      * Flag that indicates whether the component run reached its quota (max result data/file size) at least once.
@@ -119,7 +119,6 @@ public class ComponentResult {
         this.startDate = new Timestamp(new Date().getTime());
         this.component = component;
         this.componentState = ComponentState.STARTED;
-        this.dataSize = 0;
     }
 
     @JsonProperty("workerId")
