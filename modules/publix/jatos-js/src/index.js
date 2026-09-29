@@ -23,7 +23,7 @@ import {createLegacyPromiseCompatibility, isDeferredPending} from "./legacy-prom
 jatos = {};
 window.jatos = jatos; // Make jatos available in the window object for backward compatibility
 
-const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility(() => jatos.jQuery);
+const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
 
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
 // or functions or variables)
