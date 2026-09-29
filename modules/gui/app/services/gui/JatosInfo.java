@@ -58,6 +58,8 @@ public class JatosInfo {
     public static Map<String, String> getJatosConfig() {
         Map<String, String> config = new LinkedHashMap<>();
         config.put("Multi node", String.valueOf(Common.isMultiNode()));
+        config.put("API allowed", String.valueOf(Common.isJatosApiAllowed()));
+        config.put("Locale", Common.getLocale());
         config.put("Local IP", getLocalIpAddress());
         config.put("Local basepath", Common.getBasepath());
         config.put("Logs path", Common.getLogsPath());
@@ -78,6 +80,7 @@ public class JatosInfo {
         config.put("DB driver", Common.getDbDriver());
         config.put("DB connection pool size", Common.getDbConnectionPoolSize());
         config.put("Thread pool size", Common.getThreadPoolSize());
+        config.put("Study assets thread pool size", Common.getStudyAssetsThreadPoolSize());
         config.put("Max results DB query size", String.valueOf(Common.getMaxResultsDbQuerySize()));
         config.put("Google OAuth allowed", String.valueOf(Common.isOauthGoogleAllowed()));
         if (Common.isOauthGoogleAllowed()) {

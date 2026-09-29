@@ -126,6 +126,7 @@ public class Common {
     private static boolean multiNode;
     private static Duration groupMessageAckTimeout;
     private static String threadPoolSize;
+    private static String studyAssetsThreadPoolSize;
     private static String studyArchiveSuffix;
     private static String resultsArchiveSuffix;
     private static boolean groupsCleaningAllowed;
@@ -265,6 +266,7 @@ public class Common {
                 : obtainPath(config, "jatos.tmpPath");
         LOGGER.info("Path to tmp directory is " + tmpPath);
         threadPoolSize = config.getString("jatos.threadPool.size");
+        studyAssetsThreadPoolSize = config.getString("jatos.studyAssets.threadPool.size");
         studyArchiveSuffix = config.getString("jatos.studyArchive.suffix");
         resultsArchiveSuffix = config.getString("jatos.resultsArchive.suffix");
         groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
@@ -1080,6 +1082,13 @@ public class Common {
      */
     public static String getThreadPoolSize() {
         return threadPoolSize;
+    }
+
+    /**
+     * Thread pool size for study assets I/O
+     */
+    public static String getStudyAssetsThreadPoolSize() {
+        return studyAssetsThreadPoolSize;
     }
 
     /**
