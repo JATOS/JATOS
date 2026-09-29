@@ -1,10 +1,14 @@
 # jatos.js build
 
 This directory contains the source and standalone esbuild configuration for
-the browser library served as `jatos.js` and `jatos.min.js`.
+the browser library and its HTTP worker.
 
-The authoritative source is `src/index.js`. Do not edit the generated files at
-`../public/javascripts/jatos.js` and `../public/javascripts/jatos.min.js` directly.
+The authoritative sources are `src/index.js` and
+`src/workers/http-loop-worker.js`. Do not edit the generated files directly:
+
+- `../public/javascripts/jatos.js`
+- `../public/javascripts/jatos.min.js`
+- `../public/javascripts/http-loop-worker.js`
 
 Install the pinned build dependency once:
 
@@ -24,6 +28,7 @@ Check that the committed bundle matches its source:
 npm run check
 ```
 
-Both generated files remain single classic scripts and preserve the global
+The generated browser-library files remain single classic scripts and preserve the global
 `var jatos` and `window.jatos` API used by existing studies. `jatos.min.js` is
-the minified production variant. This build is not yet integrated into sbt.
+the minified production variant. `http-loop-worker.js` remains a separately loaded
+classic Web Worker. This build is not yet integrated into sbt.

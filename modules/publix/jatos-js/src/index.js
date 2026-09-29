@@ -20,6 +20,7 @@ import {call, callMany, callWithArgs} from "./utils/callbacks.js";
 import {cloneJsonObj} from "./utils/clone-json.js";
 import {createLegacyPromiseCompatibility, isDeferredPending} from "./jatos-promise.js";
 import {installResultDataApi} from "./result-data.js";
+import {createHttpLoop} from "./http-loop.js";
 
 /**
  * An awaitable, jQuery-compatible promise facade returned by asynchronous
@@ -237,20 +238,6 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      */
     let heartbeatWorker;
     /**
-     * Web worker initialized in initJatos() that handles sending of result data,
-     * result files, study session data, and log messages.
-     */
-    let httpLoop;
-    /**
-     * Number of requests handled by the httpLoop worker so far.
-     */
-    let httpLoopCounter = 0;
-    /**
-     * All requests currently handled by the httpLoop worker are in here.
-     * Map of request IDs to jQuery.deferred objects.
-     */
-    const waitingRequests = {};
-    /**
      * State booleans (flags). If true jatos.js is in this state. Several states can be true
      * at the same time.
      */
@@ -270,7 +257,6 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
     let sendingGroupFixedDeferred;
     let reassigningGroupDeferred;
     let leavingGroupDeferred;
-    let httpLoopDeferred;
     /**
      * Event fired when jatos.js is initialized (e.g. init data loaded and channels opened)
      */
@@ -290,6 +276,11 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * broser (tab)
      */
     let showBeforeUnloadWarning = true;
+
+    const httpLoop = createHttpLoop({
+        createDeferred,
+        isInitialized: () => initialized
+    });
 
     // Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
     // a component's jQuery version. Afterwards call initJatos.
@@ -347,8 +338,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
                 heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
                 heartbeatWorker.postMessage([jatos.studyResultUuid]);
                 // Start httpLoop.js
-                httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
-                httpLoop.addEventListener('message', function (msg) { httpLoopListener(msg.data); }, false);
+                httpLoop.start();
             })
             .then(getInitData)
             .then(showIdOverlay)
@@ -357,55 +347,6 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
                 initialized = true;
                 readyForOnLoad();
             });
-    }
-
-    /**
-     * Sends the given request to the httpLoop.js background worker.
-     */
-    function sendToHttpLoop(request, onSuccess, onError) {
-        if (!initialized) {
-            console.error("jatos.js not yet initialized");
-            return createDeferred().reject();
-        }
-
-        const deferred = createDeferred();
-        deferred.done(function () {
-            call(onSuccess);
-        });
-        deferred.fail(function (err) {
-            callWithArgs(onError, err);
-        });
-
-        request.id = httpLoopCounter++;
-        waitingRequests[request.id] = deferred;
-        if (!isDeferredPending(httpLoopDeferred)) {
-            httpLoopDeferred = createDeferred();
-        }
-        httpLoop.postMessage(request);
-
-        return deferred;
-    }
-
-    /**
-     * Handles messages from the httpLoop.js background worker. Each message
-     * corresponds to a request send earlier to the worker.
-     */
-    function httpLoopListener(msg) {
-        // Handle request's deferred
-        const deferred = waitingRequests[msg.requestId];
-        delete waitingRequests[msg.requestId];
-        if (msg.status === 200) {
-            deferred.resolve();
-        } else {
-            const errMsg = [msg.status, msg.statusText, msg.error]
-                .filter(function (s) { return s; }).join(", ");
-            deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg, msg.status, msg.statusText, msg.error);
-        }
-
-        // Handle httpLoop's deferred (are all requests done?)
-        if (Object.keys(waitingRequests).length === 0 && isDeferredPending(httpLoopDeferred)) {
-            httpLoopDeferred.resolve();
-        }
     }
 
     /**
@@ -1104,7 +1045,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
         isInvalidComponentPosition,
         isStudyRunInvalid: () => studyRunInvalid,
         rejectedPromise,
-        sendToHttpLoop
+        sendToHttpLoop: httpLoop.send
     });
 
     /**
@@ -1135,7 +1076,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
             retry: jatos.httpRetry,
             retryWait: jatos.httpRetryWait
         };
-        return sendToHttpLoop(request, onSuccess, onFail).promise();
+        return httpLoop.send(request, onSuccess, onFail).promise();
     };
 
     /**
@@ -1212,12 +1153,10 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
         };
 
         // Wait for httpLoop.js to finish
-        if (isDeferredPending(httpLoopDeferred)) {
+        if (httpLoop.isBusy()) {
             setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-            httpLoopDeferred.always(start);
-        } else {
-            start();
         }
+        httpLoop.whenIdle(start);
     };
 
     /**
@@ -2226,9 +2165,9 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
             retryWait: jatos.httpRetryWait
         };
         jatos.showBeforeUnloadWarning(false);
-        var deferred = sendToHttpLoop(request, onSuccess, onError);
+        var deferred = httpLoop.send(request, onSuccess, onError);
         setTimeout(function () {
-            if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
+            if (httpLoop.isBusy() && isDeferredPending(deferred)) {
                 jatos.showOverlay(jatos.waitSendDataOverlayConfig);
             }
         }, 1000);
@@ -2309,12 +2248,10 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
         }
 
         // Wait for httpLoop.js to finish
-        if (isDeferredPending(httpLoopDeferred)) {
+        if (httpLoop.isBusy()) {
             setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-            httpLoopDeferred.always(abort);
-        } else {
-            abort();
         }
+        httpLoop.whenIdle(abort);
     };
 
     /**
@@ -2394,9 +2331,9 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
             retryWait: jatos.httpRetryWait
         };
         jatos.showBeforeUnloadWarning(false);
-        var deferred = sendToHttpLoop(request, onSuccess, onError);
+        var deferred = httpLoop.send(request, onSuccess, onError);
         setTimeout(function () {
-            if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
+            if (httpLoop.isBusy() && isDeferredPending(deferred)) {
                 jatos.showOverlay(jatos.waitSendDataOverlayConfig);
             }
         }, 1000);
@@ -2519,12 +2456,10 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
         }
 
         // Wait for httpLoop.js to finish
-        if (isDeferredPending(httpLoopDeferred)) {
+        if (httpLoop.isBusy()) {
             setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-            httpLoopDeferred.always(end);
-        } else {
-            end();
         }
+        httpLoop.whenIdle(end);
     };
 
     /**
@@ -2535,7 +2470,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
     }
 
     jatos.getHttpLoopCounter = function () {
-        return httpLoopCounter;
+        return httpLoop.getCounter();
     };
 
     /**
@@ -2562,7 +2497,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
             retry: jatos.httpRetry,
             retryWait: jatos.httpRetryWait
         };
-        sendToHttpLoop(request);
+        httpLoop.send(request);
     };
 
     /**

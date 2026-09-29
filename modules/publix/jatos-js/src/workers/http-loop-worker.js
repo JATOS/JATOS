@@ -1,4 +1,4 @@
-/**
+/*!
  * httpLoop.js
  *
  * Web worker used in jatos.js - Background queue for ajax requests

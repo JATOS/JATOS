@@ -339,6 +339,75 @@ var jatos;
     };
   }
 
+  // src/http-loop.js
+  function createHttpLoop({ createDeferred: createDeferred2, isInitialized }) {
+    let worker;
+    let counter = 0;
+    let idleDeferred;
+    const waitingRequests = {};
+    function start() {
+      worker = new Worker("jatos-publix/javascripts/http-loop-worker.js");
+      worker.addEventListener("message", (event) => handleMessage(event.data), false);
+    }
+    function send(request, onSuccess, onError) {
+      if (!isInitialized()) {
+        console.error("jatos.js not yet initialized");
+        return createDeferred2().reject();
+      }
+      const deferred = createDeferred2();
+      deferred.done(function() {
+        call(onSuccess);
+      });
+      deferred.fail(function(err) {
+        callWithArgs(onError, err);
+      });
+      request.id = counter++;
+      waitingRequests[request.id] = deferred;
+      if (!isDeferredPending(idleDeferred)) {
+        idleDeferred = createDeferred2();
+      }
+      worker.postMessage(request);
+      return deferred;
+    }
+    function handleMessage(msg) {
+      const deferred = waitingRequests[msg.requestId];
+      delete waitingRequests[msg.requestId];
+      if (msg.status === 200) {
+        deferred.resolve();
+      } else {
+        const errMsg = [msg.status, msg.statusText, msg.error].filter(function(s) {
+          return s;
+        }).join(", ");
+        deferred.reject(
+          msg.method + " to " + msg.url + " failed: " + errMsg,
+          msg.status,
+          msg.statusText,
+          msg.error
+        );
+      }
+      if (Object.keys(waitingRequests).length === 0 && isDeferredPending(idleDeferred)) {
+        idleDeferred.resolve();
+      }
+    }
+    function isBusy() {
+      return isDeferredPending(idleDeferred);
+    }
+    function whenIdle(callback) {
+      if (isBusy()) {
+        idleDeferred.always(callback);
+      } else {
+        callback();
+      }
+    }
+    function terminate() {
+      worker.terminate();
+    }
+    function getCounter() {
+      return counter;
+    }
+    return { getCounter, isBusy, send, start, terminate, whenIdle };
+  }
+
   // src/index.js
   /*!
    * jatos.js (JATOS JavaScript Library)
@@ -413,9 +482,6 @@ var jatos;
     let groupChannelCallbacks;
     const webSocketSupported = "WebSocket" in window;
     let heartbeatWorker;
-    let httpLoop;
-    let httpLoopCounter = 0;
-    const waitingRequests = {};
     let initialized = false;
     let jatosOnLoadEventFired = false;
     let batchChannelAlive = false;
@@ -429,12 +495,15 @@ var jatos;
     let sendingGroupFixedDeferred;
     let reassigningGroupDeferred;
     let leavingGroupDeferred;
-    let httpLoopDeferred;
     const jatosOnLoadEvent = new Event("jatosOnLoad");
     const batchChannelAliveEvent = new Event("batchChannelAlive");
     const batchChannelDeadEvent = new Event("batchChannelDead");
     let onJatosBatchSession;
     let showBeforeUnloadWarning = true;
+    const httpLoop = createHttpLoop({
+      createDeferred,
+      isInitialized: () => initialized
+    });
     jatos.jQuery = {};
     getScript("jatos-publix/javascripts/jquery-3.7.1.min.js", function() {
       jatos.jQuery = jQuery.noConflict(true);
@@ -469,49 +538,11 @@ var jatos;
         readIdCookie();
         heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
         heartbeatWorker.postMessage([jatos.studyResultUuid]);
-        httpLoop = new Worker("jatos-publix/javascripts/httpLoop.js");
-        httpLoop.addEventListener("message", function(msg) {
-          httpLoopListener(msg.data);
-        }, false);
+        httpLoop.start();
       }).then(getInitData).then(showIdOverlay).then(openBatchChannelWithRetry).always(function() {
         initialized = true;
         readyForOnLoad();
       });
-    }
-    function sendToHttpLoop(request, onSuccess, onError) {
-      if (!initialized) {
-        console.error("jatos.js not yet initialized");
-        return createDeferred().reject();
-      }
-      const deferred = createDeferred();
-      deferred.done(function() {
-        call(onSuccess);
-      });
-      deferred.fail(function(err) {
-        callWithArgs(onError, err);
-      });
-      request.id = httpLoopCounter++;
-      waitingRequests[request.id] = deferred;
-      if (!isDeferredPending(httpLoopDeferred)) {
-        httpLoopDeferred = createDeferred();
-      }
-      httpLoop.postMessage(request);
-      return deferred;
-    }
-    function httpLoopListener(msg) {
-      const deferred = waitingRequests[msg.requestId];
-      delete waitingRequests[msg.requestId];
-      if (msg.status === 200) {
-        deferred.resolve();
-      } else {
-        const errMsg = [msg.status, msg.statusText, msg.error].filter(function(s) {
-          return s;
-        }).join(", ");
-        deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg, msg.status, msg.statusText, msg.error);
-      }
-      if (Object.keys(waitingRequests).length === 0 && isDeferredPending(httpLoopDeferred)) {
-        httpLoopDeferred.resolve();
-      }
     }
     function readIdCookie() {
       const idCookieName = "JATOS_ID";
@@ -921,7 +952,7 @@ var jatos;
       isInvalidComponentPosition,
       isStudyRunInvalid: () => studyRunInvalid,
       rejectedPromise,
-      sendToHttpLoop
+      sendToHttpLoop: httpLoop.send
     });
     jatos.setStudySessionData = function(studySessionData, onSuccess, onFail) {
       jatos.studySessionData = studySessionData;
@@ -935,7 +966,7 @@ var jatos;
         retry: jatos.httpRetry,
         retryWait: jatos.httpRetryWait
       };
-      return sendToHttpLoop(request, onSuccess, onFail).promise();
+      return httpLoop.send(request, onSuccess, onFail).promise();
     };
     jatos.startComponent = function(componentIdOrUuid, resultData, param3, param4) {
       if (!initialized) {
@@ -984,12 +1015,10 @@ var jatos;
         if (message) url = url + "?" + jatos.jQuery.param({ "message": message });
         window.location.href = url;
       };
-      if (isDeferredPending(httpLoopDeferred)) {
+      if (httpLoop.isBusy()) {
         setTimeout(jatos.showOverlay, 1e3, jatos.waitSendDataOverlayConfig);
-        httpLoopDeferred.always(start);
-      } else {
-        start();
       }
+      httpLoop.whenIdle(start);
     };
     jatos.startComponentByPos = function(componentPos, resultData, param3, param4) {
       if (isInvalidComponentPosition(componentPos)) {
@@ -1601,9 +1630,9 @@ var jatos;
         retryWait: jatos.httpRetryWait
       };
       jatos.showBeforeUnloadWarning(false);
-      var deferred = sendToHttpLoop(request, onSuccess, onError);
+      var deferred = httpLoop.send(request, onSuccess, onError);
       setTimeout(function() {
-        if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
+        if (httpLoop.isBusy() && isDeferredPending(deferred)) {
           jatos.showOverlay(jatos.waitSendDataOverlayConfig);
         }
       }, 1e3);
@@ -1651,12 +1680,10 @@ var jatos;
           window.location.href = url + "?message=" + message;
         }
       }
-      if (isDeferredPending(httpLoopDeferred)) {
+      if (httpLoop.isBusy()) {
         setTimeout(jatos.showOverlay, 1e3, jatos.waitSendDataOverlayConfig);
-        httpLoopDeferred.always(abort);
-      } else {
-        abort();
       }
+      httpLoop.whenIdle(abort);
     };
     jatos.endStudyWithoutRedirect = function(param1, param2, param3, param4, param5) {
       if (!initialized) {
@@ -1712,9 +1739,9 @@ var jatos;
         retryWait: jatos.httpRetryWait
       };
       jatos.showBeforeUnloadWarning(false);
-      var deferred = sendToHttpLoop(request, onSuccess, onError);
+      var deferred = httpLoop.send(request, onSuccess, onError);
       setTimeout(function() {
-        if (isDeferredPending(httpLoopDeferred) && isDeferredPending(deferred)) {
+        if (httpLoop.isBusy() && isDeferredPending(deferred)) {
           jatos.showOverlay(jatos.waitSendDataOverlayConfig);
         }
       }, 1e3);
@@ -1800,18 +1827,16 @@ var jatos;
         }
         window.location.href = url;
       }
-      if (isDeferredPending(httpLoopDeferred)) {
+      if (httpLoop.isBusy()) {
         setTimeout(jatos.showOverlay, 1e3, jatos.waitSendDataOverlayConfig);
-        httpLoopDeferred.always(end);
-      } else {
-        end();
       }
+      httpLoop.whenIdle(end);
     };
     function getURL(path) {
       return new URL(path, window.location.href).toString();
     }
     jatos.getHttpLoopCounter = function() {
-      return httpLoopCounter;
+      return httpLoop.getCounter();
     };
     jatos.logError = function(logErrorMsg) {
       console.warn("jatos.logError is abolished - use jatos.log instead");
@@ -1827,7 +1852,7 @@ var jatos;
         retry: jatos.httpRetry,
         retryWait: jatos.httpRetryWait
       };
-      sendToHttpLoop(request);
+      httpLoop.send(request);
     };
     jatos.catchAndLogErrors = function() {
       window.addEventListener("error", function(e) {

@@ -6,22 +6,33 @@ import { fileURLToPath } from "node:url";
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const outputDirectory = join(projectDir, "../public/javascripts");
 const outputs = [
-    { filename: "jatos.js", minify: false },
-    { filename: "jatos.min.js", minify: true }
+    {
+        entryPoint: "src/index.js",
+        filename: "jatos.js",
+        minify: false,
+        banner: "var jatos;"
+    },
+    {
+        entryPoint: "src/index.js",
+        filename: "jatos.min.js",
+        minify: true,
+        banner: "var jatos;"
+    },
+    {
+        entryPoint: "src/workers/http-loop-worker.js",
+        filename: "http-loop-worker.js",
+        minify: false
+    }
 ];
 const checkOnly = process.argv.includes("--check");
 
 const commonOptions = {
-    entryPoints: [join(projectDir, "src/index.js")],
     bundle: true,
     format: "iife",
     platform: "browser",
     target: "es2020",
     charset: "utf8",
     legalComments: "inline",
-    banner: {
-        js: "var jatos;"
-    },
     logLevel: "info"
 };
 
@@ -30,8 +41,10 @@ if (!checkOnly) {
     for (const output of outputs) {
         await build({
             ...commonOptions,
+            entryPoints: [join(projectDir, output.entryPoint)],
             outfile: join(outputDirectory, output.filename),
-            minify: output.minify
+            minify: output.minify,
+            banner: output.banner ? { js: output.banner } : undefined
         });
     }
 } else {
@@ -39,8 +52,10 @@ if (!checkOnly) {
         const outputFile = join(outputDirectory, output.filename);
         const result = await build({
             ...commonOptions,
+            entryPoints: [join(projectDir, output.entryPoint)],
             outfile: outputFile,
             minify: output.minify,
+            banner: output.banner ? { js: output.banner } : undefined,
             write: false,
             logLevel: "silent"
         });
