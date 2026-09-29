@@ -32,7 +32,7 @@ var jatos;
     throw new Error("Unable to copy obj! Its type isn't supported.");
   }
 
-  // src/legacy-promise.js
+  // src/jatos-promise.js
   function createLegacyDeferred() {
     let currentState = "pending";
     let settledArgs = [];

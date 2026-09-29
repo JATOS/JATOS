@@ -18,7 +18,7 @@
 
 import {call, callMany, callWithArgs} from "./utils/callbacks.js";
 import {cloneJsonObj} from "./utils/clone-json.js";
-import {createLegacyPromiseCompatibility, isDeferredPending} from "./legacy-promise.js";
+import {createLegacyPromiseCompatibility, isDeferredPending} from "./jatos-promise.js";
 
 /**
  * An awaitable, jQuery-compatible promise facade returned by asynchronous

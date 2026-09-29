@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {createLegacyPromiseCompatibility} from "../src/legacy-promise.js";
+import {createLegacyPromiseCompatibility} from "../src/jatos-promise.js";
 
 const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
 
