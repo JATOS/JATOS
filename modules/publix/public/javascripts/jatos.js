@@ -1,5 +1,37 @@
 var jatos;
 (() => {
+  // src/utils/callbacks.js
+  var call = (f) => {
+    if (f && typeof f == "function") f();
+  };
+  var callWithArgs = (f, ...args) => {
+    if (f && typeof f == "function") args.length ? f(...args) : f();
+  };
+  var callMany = (arg, ...functions) => functions.forEach((f) => {
+    if (f && typeof f === "function") f(arg);
+  });
+
+  // src/utils/clone-json.js
+  function cloneJsonObj(obj) {
+    var copy;
+    if (null === obj || "object" != typeof obj) return obj;
+    if (obj instanceof Array) {
+      copy = [];
+      for (var i = 0, len = obj.length; i < len; i++) {
+        copy[i] = cloneJsonObj(obj[i]);
+      }
+      return copy;
+    }
+    if (obj instanceof Object) {
+      copy = {};
+      for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = cloneJsonObj(obj[attr]);
+      }
+      return copy;
+    }
+    throw new Error("Unable to copy obj! Its type isn't supported.");
+  }
+
   // src/index.js
   /*!
    * jatos.js (JATOS JavaScript Library)
@@ -1774,15 +1806,6 @@ var jatos;
         }
       }
     }
-    var call = (f) => {
-      if (f && typeof f == "function") f();
-    };
-    var callWithArgs = (f, ...args) => {
-      if (f && typeof f == "function") args.length ? f(...args) : f();
-    };
-    var callMany = (arg, ...functions) => functions.forEach((f) => {
-      if (f && typeof f === "function") f(arg);
-    });
     function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onFail) {
       var timeoutId = setTimeout(function() {
         callWithArgs(onFail, "Timeout sending session patch");
@@ -1814,25 +1837,6 @@ var jatos;
     }
     function isInvalidComponentPosition(pos) {
       return pos <= 0 || pos > jatos.componentList.length;
-    }
-    function cloneJsonObj(obj) {
-      var copy;
-      if (null === obj || "object" != typeof obj) return obj;
-      if (obj instanceof Array) {
-        copy = [];
-        for (var i = 0, len = obj.length; i < len; i++) {
-          copy[i] = cloneJsonObj(obj[i]);
-        }
-        return copy;
-      }
-      if (obj instanceof Object) {
-        copy = {};
-        for (var attr in obj) {
-          if (obj.hasOwnProperty(attr)) copy[attr] = cloneJsonObj(obj[attr]);
-        }
-        return copy;
-      }
-      throw new Error("Unable to copy obj! Its type isn't supported.");
     }
   })();
 })();

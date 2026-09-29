@@ -16,6 +16,9 @@
 
 /* global jsonpatch */
 
+import {call, callMany, callWithArgs} from "./utils/callbacks.js";
+import {cloneJsonObj} from "./utils/clone-json.js";
+
 jatos = {};
 window.jatos = jatos; // Make jatos available in the window object for backward compatibility
 
@@ -3030,36 +3033,6 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     }
 
     /**
-     * Checks if a function exists and calls it.
-     *
-     * @param {function} f Function to be called
-     */
-    var call = (f) => {
-        if (f && typeof f == 'function') f();
-    };
-
-    /**
-     * Calls one function with none, one or multiple arguments. Checks if the function exists.
-     *
-     * @param {function} f Function to be called
-     * @param  {...any} args Arguments to be used with the function
-     */
-    var callWithArgs = (f, ...args) => {
-        if (f && typeof f == 'function') args.length ? f(...args) : f();
-    };
-
-    /**
-     * Calls multiple functions with the given argument. Often used for logging to multiple destinations.
-     * Checks if the functions exists.
-     *
-     * @param {*} arg
-     * @param  {...function} functions
-     */
-    var callMany = (arg, ...functions) => functions.forEach((f) => {
-        if (f && typeof f === 'function') f(arg);
-    });
-
-    /**
      * Sets a timeout and puts an object with two functions, 'cancel' and 'trigger'
      * into the given sessionTimeouts
      */
@@ -3104,33 +3077,6 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
 
     function isInvalidComponentPosition(pos) {
         return pos <= 0 || pos > jatos.componentList.length;
-    }
-
-    function cloneJsonObj(obj) {
-        var copy;
-
-        // Handle the 3 simple types, and null or undefined
-        if (null === obj || "object" != typeof obj) return obj;
-
-        // Handle Array
-        if (obj instanceof Array) {
-            copy = [];
-            for (var i = 0, len = obj.length; i < len; i++) {
-                copy[i] = cloneJsonObj(obj[i]);
-            }
-            return copy;
-        }
-
-        // Handle object
-        if (obj instanceof Object) {
-            copy = {};
-            for (var attr in obj) {
-                if (obj.hasOwnProperty(attr)) copy[attr] = cloneJsonObj(obj[attr]);
-            }
-            return copy;
-        }
-
-        throw new Error("Unable to copy obj! Its type isn't supported.");
     }
 
 })();
