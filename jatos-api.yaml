@@ -10,8 +10,7 @@ externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
 servers:
-  - url: http://localhost:9000
-  - url: https://cortex.jatos.org
+  - url: /
 tags:
   - name: admin
     description: Status, user and token management
@@ -1958,6 +1957,7 @@ paths:
 
   /publix/api/v1/studyResults/{studyResultUuid}/openai:
     get:
+      security: []
       summary: Proxy GET request to OpenAI API
       description: >-
         Proxies a GET request to the OpenAI API for a running study.
@@ -1981,6 +1981,7 @@ paths:
         Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
+      security: []
       parameters:
         - $ref: '#/components/parameters/StudyResultUuidParameter'
       requestBody:
@@ -2003,6 +2004,7 @@ paths:
         Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
+      security: []
       parameters:
         - $ref: '#/components/parameters/StudyResultUuidParameter'
       responses:
@@ -2021,6 +2023,7 @@ paths:
         study. Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
+      security: []
       parameters:
         - $ref: '#/components/parameters/StudyResultUuidParameter'
         - $ref: '#/components/parameters/OpenAiPathParameter'
@@ -2039,6 +2042,7 @@ paths:
         study. Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
+      security: []
       parameters:
         - $ref: '#/components/parameters/StudyResultUuidParameter'
         - $ref: '#/components/parameters/OpenAiPathParameter'
@@ -2062,6 +2066,7 @@ paths:
         study. Does not need an JATOS API token / the OpenAi API token has to be set in `jatos.conf`.
       tags:
         - publix
+      security: []
       parameters:
         - $ref: '#/components/parameters/StudyResultUuidParameter'
         - $ref: '#/components/parameters/OpenAiPathParameter'
