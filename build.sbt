@@ -78,6 +78,7 @@ lazy val jatos = (project in file("."))
 
     // Add files to distribution
     Universal / mappings ++= Seq(
+      (baseDirectory.value / "jatos-api.yaml") -> "jatos-api.yaml",
       file(baseDirectory.value + "/loader.sh") -> "loader.sh",
       file(baseDirectory.value + "/loader.bat") -> "loader.bat",
       file(baseDirectory.value + "/VERSION") -> "VERSION",
