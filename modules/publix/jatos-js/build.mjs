@@ -4,12 +4,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
-const outputFile = join(projectDir, "../public/javascripts/jatos.js");
+const outputDirectory = join(projectDir, "../public/javascripts");
+const outputs = [
+    { filename: "jatos.js", minify: false },
+    { filename: "jatos.min.js", minify: true }
+];
 const checkOnly = process.argv.includes("--check");
 
-const options = {
+const commonOptions = {
     entryPoints: [join(projectDir, "src/index.js")],
-    outfile: outputFile,
     bundle: true,
     format: "iife",
     platform: "browser",
@@ -19,22 +22,36 @@ const options = {
     banner: {
         js: "var jatos;"
     },
-    logLevel: "info",
-    write: !checkOnly
+    logLevel: "info"
 };
 
 if (!checkOnly) {
-    await mkdir(dirname(outputFile), { recursive: true });
-    await build(options);
+    await mkdir(outputDirectory, { recursive: true });
+    for (const output of outputs) {
+        await build({
+            ...commonOptions,
+            outfile: join(outputDirectory, output.filename),
+            minify: output.minify
+        });
+    }
 } else {
-    const result = await build({ ...options, write: false, logLevel: "silent" });
-    const generated = result.outputFiles.find(file => file.path === outputFile)?.text;
-    const current = await readFile(outputFile, "utf8");
+    for (const output of outputs) {
+        const outputFile = join(outputDirectory, output.filename);
+        const result = await build({
+            ...commonOptions,
+            outfile: outputFile,
+            minify: output.minify,
+            write: false,
+            logLevel: "silent"
+        });
+        const generated = result.outputFiles[0].text;
+        const current = await readFile(outputFile, "utf8");
 
-    if (generated !== current) {
-        console.error("Generated jatos.js is stale. Run `npm run build`.");
-        process.exitCode = 1;
-    } else {
-        console.log("Generated jatos.js is up to date.");
+        if (generated !== current) {
+            console.error(`Generated ${output.filename} is stale. Run \`npm run build\`.`);
+            process.exitCode = 1;
+        } else {
+            console.log(`Generated ${output.filename} is up to date.`);
+        }
     }
 }

@@ -1,10 +1,10 @@
 # jatos.js build
 
 This directory contains the source and standalone esbuild configuration for
-the browser library served as `jatos.js`.
+the browser library served as `jatos.js` and `jatos.min.js`.
 
-The authoritative source is `src/index.js`. Do not edit the generated file at
-`../public/javascripts/jatos.js` directly.
+The authoritative source is `src/index.js`. Do not edit the generated files at
+`../public/javascripts/jatos.js` and `../public/javascripts/jatos.min.js` directly.
 
 Install the pinned build dependency once:
 
@@ -24,6 +24,6 @@ Check that the committed bundle matches its source:
 npm run check
 ```
 
-The generated file remains a single classic script and preserves the global
-`var jatos` and `window.jatos` API used by existing studies. This build is not
-yet integrated into sbt.
+Both generated files remain single classic scripts and preserve the global
+`var jatos` and `window.jatos` API used by existing studies. `jatos.min.js` is
+the minified production variant. This build is not yet integrated into sbt.
