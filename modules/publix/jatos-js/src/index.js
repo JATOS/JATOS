@@ -18,9 +18,12 @@
 
 import {call, callMany, callWithArgs} from "./utils/callbacks.js";
 import {cloneJsonObj} from "./utils/clone-json.js";
+import {createLegacyPromiseCompatibility, isDeferredPending} from "./legacy-promise.js";
 
 jatos = {};
 window.jatos = jatos; // Make jatos available in the window object for backward compatibility
+
+const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility(() => jatos.jQuery);
 
 // Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
 // or functions or variables)
@@ -342,10 +345,10 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     function sendToHttpLoop(request, onSuccess, onError) {
         if (!initialized) {
             console.error("jatos.js not yet initialized");
-            return jatos.jQuery.Deferred().reject();
+            return createDeferred().reject();
         }
 
-        const deferred = jatos.jQuery.Deferred();
+        const deferred = createDeferred();
         deferred.done(function () {
             call(onSuccess);
         });
@@ -356,7 +359,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         request.id = httpLoopCounter++;
         waitingRequests[request.id] = deferred;
         if (!isDeferredPending(httpLoopDeferred)) {
-            httpLoopDeferred = jatos.jQuery.Deferred();
+            httpLoopDeferred = createDeferred();
         }
         httpLoop.postMessage(request);
 
@@ -594,7 +597,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             console.warn(errorMsg);
             return rejectedPromise(errorMsg);
         }
-        openingBatchChannelDeferred = jatos.jQuery.Deferred();
+        openingBatchChannelDeferred = createDeferred();
 
         const channel = new WebSocket(
             ((window.location.protocol === "https:") ? "wss://" : "ws://") +
@@ -1023,7 +1026,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             return rejectedPromise(errorMsg);
         }
 
-        const deferred = jatos.jQuery.Deferred();
+        const deferred = createDeferred();
         if (jatos.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
 
         const sessionActionId = batchSessionCounter++;
@@ -1256,7 +1259,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             url += "?componentId=" + componentId;
         }
 
-        const deferred = jatos.jQuery.Deferred();
+        const deferred = createDeferred();
         // Use XMLHttpRequest instead of jQuery because jQuery cannot handle JSON within a Blob
         const xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
@@ -1617,7 +1620,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             return rejectedPromise(errorMsg);
         }
 
-        openingGroupChannelDeferred = jatos.jQuery.Deferred();
+        openingGroupChannelDeferred = createDeferred();
         groupChannel = new WebSocket(
             ((window.location.protocol === "https:") ? "wss://" : "ws://") +
             window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join");
@@ -2095,7 +2098,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             return rejectedPromise(errorMsg);
         }
 
-        const deferred = jatos.jQuery.Deferred();
+        const deferred = createDeferred();
         if (jatos.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
 
         const sessionActionId = groupSessionCounter++;
@@ -2140,7 +2143,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             return rejectedPromise(errorMsg);
         }
 
-        sendingGroupFixedDeferred = jatos.jQuery.Deferred();
+        sendingGroupFixedDeferred = createDeferred();
         const msgObj = {};
         msgObj.action = "FIXED";
         try {
@@ -2297,7 +2300,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             return rejectedPromise(errorMsg);
         }
 
-        reassigningGroupDeferred = jatos.jQuery.Deferred();
+        reassigningGroupDeferred = createDeferred();
         jatos.jQuery.ajax({
             url: getURL("../group/reassign"),
             processData: false,
@@ -2355,7 +2358,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             return rejectedPromise(errorMsg);
         }
 
-        leavingGroupDeferred = jatos.jQuery.Deferred();
+        leavingGroupDeferred = createDeferred();
         jatos.jQuery.ajax({
             url: getURL("../group/leave"),
             processData: false,
@@ -3060,19 +3063,6 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
 
         // Always clean up and delete the timeout obj after the deferred is resolved
         deferred.always(function () { delete sessionTimeouts[sessionActionId]; });
-    }
-
-    /**
-     * Checks if the given jQuery Deferred or Promise object exists and is not in state pending
-     */
-    function isDeferredPending(deferred) {
-        return typeof deferred != 'undefined' && deferred.state() === 'pending';
-    }
-
-    function rejectedPromise(errorMsg) {
-        var deferred = jatos.jQuery.Deferred();
-        deferred.reject(errorMsg);
-        return deferred.promise();
     }
 
     function isInvalidComponentPosition(pos) {

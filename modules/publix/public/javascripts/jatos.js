@@ -32,6 +32,23 @@ var jatos;
     throw new Error("Unable to copy obj! Its type isn't supported.");
   }
 
+  // src/legacy-promise.js
+  function createLegacyPromiseCompatibility(getJQuery) {
+    return {
+      createDeferred: function() {
+        return getJQuery().Deferred();
+      },
+      rejectedPromise: function(errorMsg) {
+        var deferred = getJQuery().Deferred();
+        deferred.reject(errorMsg);
+        return deferred.promise();
+      }
+    };
+  }
+  function isDeferredPending(deferred) {
+    return typeof deferred != "undefined" && deferred.state() === "pending";
+  }
+
   // src/index.js
   /*!
    * jatos.js (JATOS JavaScript Library)
@@ -50,6 +67,7 @@ var jatos;
    */
   jatos = {};
   window.jatos = jatos;
+  var { createDeferred, rejectedPromise } = createLegacyPromiseCompatibility(() => jatos.jQuery);
   (function() {
     "use strict";
     jatos.version = "3.11.3";
@@ -173,9 +191,9 @@ var jatos;
     function sendToHttpLoop(request, onSuccess, onError) {
       if (!initialized) {
         console.error("jatos.js not yet initialized");
-        return jatos.jQuery.Deferred().reject();
+        return createDeferred().reject();
       }
-      const deferred = jatos.jQuery.Deferred();
+      const deferred = createDeferred();
       deferred.done(function() {
         call(onSuccess);
       });
@@ -185,7 +203,7 @@ var jatos;
       request.id = httpLoopCounter++;
       waitingRequests[request.id] = deferred;
       if (!isDeferredPending(httpLoopDeferred)) {
-        httpLoopDeferred = jatos.jQuery.Deferred();
+        httpLoopDeferred = createDeferred();
       }
       httpLoop.postMessage(request);
       return deferred;
@@ -328,7 +346,7 @@ var jatos;
         console.warn(errorMsg);
         return rejectedPromise(errorMsg);
       }
-      openingBatchChannelDeferred = jatos.jQuery.Deferred();
+      openingBatchChannelDeferred = createDeferred();
       const channel = new WebSocket(
         (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/batch/open"
       );
@@ -571,7 +589,7 @@ var jatos;
         callMany(errorMsg, onFail, console.warn);
         return rejectedPromise(errorMsg);
       }
-      const deferred = jatos.jQuery.Deferred();
+      const deferred = createDeferred();
       if (jatos.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
       const sessionActionId = batchSessionCounter++;
       const msgObj = {};
@@ -720,7 +738,7 @@ var jatos;
         const componentId = jatos.componentList[componentPos - 1].id;
         url += "?componentId=" + componentId;
       }
-      const deferred = jatos.jQuery.Deferred();
+      const deferred = createDeferred();
       const xhr = new XMLHttpRequest();
       xhr.open("GET", url, true);
       xhr.responseType = "blob";
@@ -916,7 +934,7 @@ var jatos;
         callMany(errorMsg, console.error, groupChannelCallbacks.onError);
         return rejectedPromise(errorMsg);
       }
-      openingGroupChannelDeferred = jatos.jQuery.Deferred();
+      openingGroupChannelDeferred = createDeferred();
       groupChannel = new WebSocket(
         (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join"
       );
@@ -1201,7 +1219,7 @@ var jatos;
         callMany(errorMsg, onFail, console.warn);
         return rejectedPromise(errorMsg);
       }
-      const deferred = jatos.jQuery.Deferred();
+      const deferred = createDeferred();
       if (jatos.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
       const sessionActionId = groupSessionCounter++;
       const msgObj = {};
@@ -1241,7 +1259,7 @@ var jatos;
         callMany(errorMsg, onFail, console.warn);
         return rejectedPromise(errorMsg);
       }
-      sendingGroupFixedDeferred = jatos.jQuery.Deferred();
+      sendingGroupFixedDeferred = createDeferred();
       const msgObj = {};
       msgObj.action = "FIXED";
       try {
@@ -1341,7 +1359,7 @@ var jatos;
         callMany(errorMsg, console.warn, onFail);
         return rejectedPromise(errorMsg);
       }
-      reassigningGroupDeferred = jatos.jQuery.Deferred();
+      reassigningGroupDeferred = createDeferred();
       jatos.jQuery.ajax({
         url: getURL("../group/reassign"),
         processData: false,
@@ -1386,7 +1404,7 @@ var jatos;
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
       }
-      leavingGroupDeferred = jatos.jQuery.Deferred();
+      leavingGroupDeferred = createDeferred();
       jatos.jQuery.ajax({
         url: getURL("../group/leave"),
         processData: false,
@@ -1826,14 +1844,6 @@ var jatos;
       deferred.always(function() {
         delete sessionTimeouts[sessionActionId];
       });
-    }
-    function isDeferredPending(deferred) {
-      return typeof deferred != "undefined" && deferred.state() === "pending";
-    }
-    function rejectedPromise(errorMsg) {
-      var deferred = jatos.jQuery.Deferred();
-      deferred.reject(errorMsg);
-      return deferred.promise();
     }
     function isInvalidComponentPosition(pos) {
       return pos <= 0 || pos > jatos.componentList.length;
