@@ -20,6 +20,25 @@ import {call, callMany, callWithArgs} from "./utils/callbacks.js";
 import {cloneJsonObj} from "./utils/clone-json.js";
 import {createLegacyPromiseCompatibility, isDeferredPending} from "./legacy-promise.js";
 
+/**
+ * An awaitable, jQuery-compatible promise facade returned by asynchronous
+ * jatos.js functions. It is a thenable, but it is not a native `Promise`.
+ *
+ * `done`, `fail`, and `always` preserve the legacy synchronous behavior when
+ * registered after settlement. The facade does not expose `resolve` or `reject`.
+ *
+ * @typedef {Object} JatosPromise
+ * @property {function(...Function): JatosPromise} done Adds success handlers.
+ * @property {function(...Function): JatosPromise} fail Adds failure handlers.
+ * @property {function(...Function): JatosPromise} always Adds settlement handlers.
+ * @property {function(Function=, Function=): JatosPromise} then Returns a chained JatosPromise.
+ * @property {function(Function=): JatosPromise} catch Returns a chained JatosPromise.
+ * @property {function(Function=, Function=): JatosPromise} pipe Legacy alias for transformation.
+ * @property {function(...Function): JatosPromise} progress Adds progress handlers.
+ * @property {function(): JatosPromise} promise Returns this read-only facade.
+ * @property {function(): ("pending"|"resolved"|"rejected")} state Returns its settlement state.
+ */
+
 jatos = {};
 window.jatos = jatos; // Make jatos available in the window object for backward compatibility
 
@@ -891,7 +910,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be stored
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.add = function (path, value, onSuccess, onFail) {
         const patch = generatePatch("add", path, value, null);
@@ -906,7 +925,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be stored
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.set = function (name, value, onSuccess, onFail) {
         const patch = generatePatch("add", "/" + name, value, null);
@@ -918,7 +937,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be stored in the session
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.setAll = function (value, onSuccess, onFail) {
         return jatos.batchSession.replace("", value, onSuccess, onFail);
@@ -929,7 +948,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} path - JSON pointer path to the field that should be removed
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.remove = function (path, onSuccess, onFail) {
         const patch = generatePatch("remove", path, null, null);
@@ -940,7 +959,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * Clears the batch session data.
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.clear = function (onSuccess, onFail) {
         const patch = generatePatch("replace", "", {}, null);
@@ -953,7 +972,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be replaced with
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.replace = function (path, value, onSuccess, onFail) {
         const patch = generatePatch("replace", path, value, null);
@@ -966,7 +985,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} path - JSON pointer path to the target
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.copy = function (from, path, onSuccess, onFail) {
         const patch = generatePatch("copy", path, null, from);
@@ -979,7 +998,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} path - JSON pointer path to the target
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.batchSession.move = function (from, path, onSuccess, onFail) {
         const patch = generatePatch("move", path, null, from);
@@ -1086,7 +1105,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {(Object|string)} resultData - String or object to be submitted
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.submitResultData = function (resultData, onSuccess, onError) {
         return submitOrAppendResultData(resultData, false, onSuccess, onError);
@@ -1101,7 +1120,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {(Object|string)} resultData - String or object to be appended
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.appendResultData = function (resultData, onSuccess, onError) {
         return submitOrAppendResultData(resultData, true, onSuccess, onError);
@@ -1150,7 +1169,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} filename - Name of the uploaded file
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
         if (studyRunInvalid) {
@@ -1205,7 +1224,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} filename - Name of the uploaded file
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {Promise}
+     * @return {JatosPromise}
      *
      * Additionally one can specify the component ID (in case different components uploaded
      * files with the same filename):
@@ -1213,7 +1232,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} filename - Name of the uploaded file
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.downloadResultFile = function (param1, param2, param3, param4) {
         if (!initialized) {
@@ -1315,7 +1334,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} studySessionData - Object to be submitted
      * @param {Function} [onSuccess] - Called after this function is finished
      * @param {Function} [onFail] - Called if the request fails
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
         jatos.studySessionData = studySessionData;
@@ -1571,7 +1590,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      *		onUpdate(): Combines several other callbacks. It's called if one of the
      *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
      *			onMemberClose, or onGroupSession.
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.joinGroup = function (callbacks) {
         groupChannelCallbacks = callbacks ? callbacks : {};
@@ -1982,7 +2001,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be stored
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.add = function (path, value, onSuccess, onFail) {
         const patch = generatePatch("add", path, value, null);
@@ -1996,7 +2015,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be stored
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.set = function (name, value, onSuccess, onFail) {
         const patch = generatePatch("add", "/" + name, value, null);
@@ -2008,7 +2027,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be stored in the session
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.setAll = function (value, onSuccess, onFail) {
         return jatos.groupSession.replace("", value, onSuccess, onFail);
@@ -2019,7 +2038,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} path - JSON pointer path to the field that should be removed
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.remove = function (path, onSuccess, onFail) {
         const patch = generatePatch("remove", path, null, null);
@@ -2030,7 +2049,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * Clears the group session data.
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.clear = function (onSuccess, onFail) {
         const patch = generatePatch("replace", "", {}, null);
@@ -2043,7 +2062,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {object} value - value to be replaced with
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.replace = function (path, value, onSuccess, onFail) {
         const patch = generatePatch("replace", path, value, null);
@@ -2056,7 +2075,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} path - JSON pointer path to the target
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.copy = function (from, path, onSuccess, onFail) {
         const patch = generatePatch("copy", path, null, from);
@@ -2069,7 +2088,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} path - JSON pointer path to the target
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.groupSession.move = function (from, path, onSuccess, onFail) {
         const patch = generatePatch("move", path, null, from);
@@ -2124,7 +2143,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * Ask the JATOS server to fix this group.
      * @param {Function} [onSuccess] - Called if the fixing was successful
      * @param {Function} [onFail] - Called if the fixing failed
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.setGroupFixed = function (onSuccess, onFail) {
         if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
@@ -2271,7 +2290,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      *
      * @param {Function} [onSuccess] - Called if the reassignment was successful
      * @param {Function} [onFail] - Called if the reassignment was unsuccessful
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.reassignGroup = function (onSuccess, onFail) {
         if (isDeferredPending(openingGroupChannelDeferred)) {
@@ -2334,7 +2353,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      *
      * @param {Function} [onSuccess] - Called after the group is left
      * @param {Function} [onError] - Called in case of error
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.leaveGroup = function (onSuccess, onError) {
         if (isDeferredPending(openingGroupChannelDeferred)) {
@@ -2388,7 +2407,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {string} [message] - Message that should be logged
      * @param {Function} [onSuccess] - Called in case of successful submit
      * @param {Function} [onError] - Called in case of error
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.abortStudyWithoutRedirect = function (message, onSuccess, onError) {
         if (!initialized) {
@@ -2527,7 +2546,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
      * @param {Function} [onSuccess] - Called on successful request
      * @param {Function} [onError] - Called in case of error
      *
-     * @return {Promise}
+     * @return {JatosPromise}
      */
     jatos.endStudyWithoutRedirect = function (param1, param2, param3, param4, param5) {
         if (!initialized) {
