@@ -1,0 +1,13 @@
+{
+  "name": "@jatos/jatos-js",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9"
+  }
+}
