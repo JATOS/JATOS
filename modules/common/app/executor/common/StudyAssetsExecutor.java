@@ -13,6 +13,6 @@ public class StudyAssetsExecutor extends CustomExecutionContext {
 
     @Inject
     public StudyAssetsExecutor(ActorSystem actorSystem) {
-        super(actorSystem, "studyassets.dispatcher");
+        super(actorSystem, "threadpool.studyAssets.dispatcher");
     }
 }

@@ -13,6 +13,6 @@ public class IOExecutor extends CustomExecutionContext {
 
     @Inject
     public IOExecutor(ActorSystem actorSystem) {
-        super(actorSystem, "io.dispatcher");
+        super(actorSystem, "threadpool.io.dispatcher");
     }
 }
