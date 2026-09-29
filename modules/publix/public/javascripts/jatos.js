@@ -173,6 +173,172 @@ var jatos;
     return typeof deferred != "undefined" && deferred.state() === "pending";
   }
 
+  // src/result-data.js
+  function installResultDataApi(jatos2, dependencies) {
+    const {
+      createDeferred: createDeferred2,
+      getURL,
+      isInitialized,
+      isInvalidComponentPosition,
+      isStudyRunInvalid,
+      rejectedPromise: rejectedPromise2,
+      sendToHttpLoop
+    } = dependencies;
+    jatos2.submitResultData = function(resultData, onSuccess, onError) {
+      return submitOrAppendResultData(resultData, false, onSuccess, onError);
+    };
+    jatos2.appendResultData = function(resultData, onSuccess, onError) {
+      return submitOrAppendResultData(resultData, true, onSuccess, onError);
+    };
+    function submitOrAppendResultData(resultData, append, onSuccess, onError) {
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't send result data. This study run is invalid.";
+        callMany(errorMsg, onError, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      let httpMethod = append ? "POST" : "PUT";
+      if (resultData === Object(resultData)) {
+        resultData = JSON.stringify(resultData);
+      }
+      let request = {
+        url: getURL("resultData"),
+        data: resultData,
+        method: httpMethod,
+        contentType: "text/plain; charset=UTF-8",
+        timeout: jatos2.httpTimeout,
+        retry: jatos2.httpRetry,
+        retryWait: jatos2.httpRetryWait
+      };
+      let deferred = sendToHttpLoop(request, onSuccess, onError);
+      deferred.fail(function(err, status) {
+        if (status === 413) {
+          jatos2.showOverlay({ text: "Couldn't send result data: too large!", id: "result413", timeout: 8e3, showImg: false });
+        }
+      });
+      return deferred.promise();
+    }
+    jatos2.uploadResultFile = function(obj, filename, onSuccess, onError) {
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't upload file. This study run is invalid.";
+        callMany(errorMsg, onError, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      if (typeof filename !== "string" || 0 === filename.length) {
+        const errorMsg = "No filename specified.";
+        callMany(errorMsg, onError, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      let blob;
+      if (obj instanceof Blob) {
+        blob = obj;
+      } else if (typeof obj === "string") {
+        blob = new Blob([obj], { type: "text/plain" });
+      } else if (obj === Object(obj)) {
+        blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+      } else {
+        const errorMsg = "Only string, Object or Blob allowed.";
+        callMany(errorMsg, onError, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      let request = {
+        url: getURL("files/" + encodeURI(filename)),
+        blob,
+        filename,
+        method: "POST",
+        timeout: jatos2.httpTimeout,
+        retry: jatos2.httpRetry,
+        retryWait: jatos2.httpRetryWait
+      };
+      let deferred = sendToHttpLoop(request, onSuccess, onError);
+      deferred.fail(function(err, status) {
+        if (status === 413) {
+          jatos2.showOverlay({ text: "Couldn't send result file: too large!", id: "result413", timeout: 8e3, showImg: false });
+        }
+      });
+      return deferred.promise();
+    };
+    jatos2.downloadResultFile = function(param1, param2, param3, param4) {
+      if (!isInitialized()) {
+        const errorMsg = "jatos.js not yet initialized";
+        console.error(errorMsg);
+        return rejectedPromise2(errorMsg);
+      }
+      let componentPos, filename, onSuccess, onError;
+      if (typeof param1 === "number") {
+        componentPos = param1;
+        filename = param2;
+        onSuccess = param3;
+        onError = param4;
+      } else if (typeof param1 === "string") {
+        filename = param1;
+        onSuccess = param2;
+        onError = param3;
+      } else {
+        const errorMsg = "Unknown first parameter.";
+        console.error(errorMsg);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't download file. This study run is invalid.";
+        callMany(errorMsg, onError, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      if (typeof filename !== "string" || 0 === filename.length) {
+        const errorMsg = "No filename specified.";
+        callMany(errorMsg, onError, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      let url = getURL("../files/" + encodeURI(filename));
+      if (componentPos) {
+        if (isInvalidComponentPosition(componentPos)) {
+          const errorMsg = "Component position does not exist.";
+          callMany(errorMsg, onError, console.error);
+          return rejectedPromise2(errorMsg);
+        }
+        const componentId = jatos2.componentList[componentPos - 1].id;
+        url += "?componentId=" + componentId;
+      }
+      const deferred = createDeferred2();
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.responseType = "blob";
+      xhr.onload = function() {
+        if (this.status === 200) {
+          const blob = xhr.response;
+          if (blob.type === "application/json") {
+            const jsonReader = new FileReader();
+            jsonReader.addEventListener("loadend", function() {
+              const obj = JSON.parse(jsonReader.result);
+              callWithArgs(onSuccess, obj);
+              deferred.resolve(obj);
+            });
+            jsonReader.readAsText(blob);
+          } else if (blob.type === "text/plain") {
+            const textReader = new FileReader();
+            textReader.addEventListener("loadend", function() {
+              const text = textReader.result;
+              callWithArgs(onSuccess, text);
+              deferred.resolve(text);
+            });
+            textReader.readAsText(blob);
+          } else {
+            callWithArgs(onSuccess, blob);
+            deferred.resolve(blob);
+          }
+        } else {
+          xhr.onerror();
+        }
+      };
+      xhr.onerror = function() {
+        const error = "Download of " + filename + " returned " + xhr.statusText;
+        callMany(error, onError, console.error);
+        deferred.reject(error);
+      };
+      xhr.send(null);
+      return deferred.promise();
+    };
+  }
+
   // src/index.js
   /*!
    * jatos.js (JATOS JavaScript Library)
@@ -748,159 +914,15 @@ var jatos;
     jatos.onError = function(onError) {
       console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
     };
-    jatos.submitResultData = function(resultData, onSuccess, onError) {
-      return submitOrAppendResultData(resultData, false, onSuccess, onError);
-    };
-    jatos.appendResultData = function(resultData, onSuccess, onError) {
-      return submitOrAppendResultData(resultData, true, onSuccess, onError);
-    };
-    function submitOrAppendResultData(resultData, append, onSuccess, onError) {
-      if (studyRunInvalid) {
-        const errorMsg = "Can't send result data. This study run is invalid.";
-        callMany(errorMsg, onError, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      let httpMethod = append ? "POST" : "PUT";
-      if (resultData === Object(resultData)) {
-        resultData = JSON.stringify(resultData);
-      }
-      let request = {
-        url: getURL("resultData"),
-        data: resultData,
-        method: httpMethod,
-        contentType: "text/plain; charset=UTF-8",
-        timeout: jatos.httpTimeout,
-        retry: jatos.httpRetry,
-        retryWait: jatos.httpRetryWait
-      };
-      let deferred = sendToHttpLoop(request, onSuccess, onError);
-      deferred.fail(function(err, status) {
-        if (status === 413) {
-          jatos.showOverlay({ text: "Couldn't send result data: too large!", id: "result413", timeout: 8e3, showImg: false });
-        }
-      });
-      return deferred.promise();
-    }
-    jatos.uploadResultFile = function(obj, filename, onSuccess, onError) {
-      if (studyRunInvalid) {
-        const errorMsg = "Can't upload file. This study run is invalid.";
-        callMany(errorMsg, onError, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      if (typeof filename !== "string" || 0 === filename.length) {
-        const errorMsg = "No filename specified.";
-        callMany(errorMsg, onError, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      let blob;
-      if (obj instanceof Blob) {
-        blob = obj;
-      } else if (typeof obj === "string") {
-        blob = new Blob([obj], { type: "text/plain" });
-      } else if (obj === Object(obj)) {
-        blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
-      } else {
-        const errorMsg = "Only string, Object or Blob allowed.";
-        callMany(errorMsg, onError, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      let request = {
-        url: getURL("files/" + encodeURI(filename)),
-        blob,
-        filename,
-        method: "POST",
-        timeout: jatos.httpTimeout,
-        retry: jatos.httpRetry,
-        retryWait: jatos.httpRetryWait
-      };
-      let deferred = sendToHttpLoop(request, onSuccess, onError);
-      deferred.fail(function(err, status) {
-        if (status === 413) {
-          jatos.showOverlay({ text: "Couldn't send result file: too large!", id: "result413", timeout: 8e3, showImg: false });
-        }
-      });
-      return deferred.promise();
-    };
-    jatos.downloadResultFile = function(param1, param2, param3, param4) {
-      if (!initialized) {
-        const errorMsg = "jatos.js not yet initialized";
-        console.error(errorMsg);
-        return rejectedPromise(errorMsg);
-      }
-      let componentPos, filename, onSuccess, onError;
-      if (typeof param1 === "number") {
-        componentPos = param1;
-        filename = param2;
-        onSuccess = param3;
-        onError = param4;
-      } else if (typeof param1 === "string") {
-        filename = param1;
-        onSuccess = param2;
-        onError = param3;
-      } else {
-        const errorMsg = "Unknown first parameter.";
-        console.error(errorMsg);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = "Can't download file. This study run is invalid.";
-        callMany(errorMsg, onError, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      if (typeof filename !== "string" || 0 === filename.length) {
-        const errorMsg = "No filename specified.";
-        callMany(errorMsg, onError, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      let url = getURL("../files/" + encodeURI(filename));
-      if (componentPos) {
-        if (isInvalidComponentPosition(componentPos)) {
-          const errorMsg = "Component position does not exist.";
-          callMany(errorMsg, onError, console.error);
-          return rejectedPromise(errorMsg);
-        }
-        const componentId = jatos.componentList[componentPos - 1].id;
-        url += "?componentId=" + componentId;
-      }
-      const deferred = createDeferred();
-      const xhr = new XMLHttpRequest();
-      xhr.open("GET", url, true);
-      xhr.responseType = "blob";
-      xhr.onload = function() {
-        if (this.status === 200) {
-          const blob = xhr.response;
-          if (blob.type === "application/json") {
-            const jsonReader = new FileReader();
-            jsonReader.addEventListener("loadend", function() {
-              const obj = JSON.parse(jsonReader.result);
-              callWithArgs(onSuccess, obj);
-              deferred.resolve(obj);
-            });
-            jsonReader.readAsText(blob);
-          } else if (blob.type === "text/plain") {
-            const textReader = new FileReader();
-            textReader.addEventListener("loadend", function() {
-              const text = textReader.result;
-              callWithArgs(onSuccess, text);
-              deferred.resolve(text);
-            });
-            textReader.readAsText(blob);
-          } else {
-            callWithArgs(onSuccess, blob);
-            deferred.resolve(blob);
-          }
-        } else {
-          xhr.onerror();
-        }
-      };
-      xhr.onerror = function() {
-        const error = "Download of " + filename + " returned " + xhr.statusText;
-        callMany(error, onError, console.error);
-        deferred.reject(error);
-      };
-      xhr.send(null);
-      return deferred.promise();
-    };
+    installResultDataApi(jatos, {
+      createDeferred,
+      getURL,
+      isInitialized: () => initialized,
+      isInvalidComponentPosition,
+      isStudyRunInvalid: () => studyRunInvalid,
+      rejectedPromise,
+      sendToHttpLoop
+    });
     jatos.setStudySessionData = function(studySessionData, onSuccess, onFail) {
       jatos.studySessionData = studySessionData;
       const studySessionDataStr = JSON.stringify(studySessionData);
