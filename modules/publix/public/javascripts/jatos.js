@@ -339,6 +339,25 @@ var jatos;
     };
   }
 
+  // src/study-session.js
+  function installStudySessionApi(jatos2, dependencies) {
+    const { getURL, sendToHttpLoop } = dependencies;
+    jatos2.setStudySessionData = function(studySessionData, onSuccess, onFail) {
+      jatos2.studySessionData = studySessionData;
+      const studySessionDataStr = JSON.stringify(studySessionData);
+      const request = {
+        url: getURL("../studySessionData"),
+        data: studySessionDataStr,
+        method: "POST",
+        contentType: "text/plain; charset=UTF-8",
+        timeout: jatos2.httpTimeout,
+        retry: jatos2.httpRetry,
+        retryWait: jatos2.httpRetryWait
+      };
+      return sendToHttpLoop(request, onSuccess, onFail).promise();
+    };
+  }
+
   // src/http-loop.js
   function createHttpLoop({ createDeferred: createDeferred2, isInitialized }) {
     let worker;
@@ -1074,20 +1093,10 @@ var jatos;
       rejectedPromise,
       sendToHttpLoop: httpLoop.send
     });
-    jatos.setStudySessionData = function(studySessionData, onSuccess, onFail) {
-      jatos.studySessionData = studySessionData;
-      const studySessionDataStr = JSON.stringify(studySessionData);
-      const request = {
-        url: getURL("../studySessionData"),
-        data: studySessionDataStr,
-        method: "POST",
-        contentType: "text/plain; charset=UTF-8",
-        timeout: jatos.httpTimeout,
-        retry: jatos.httpRetry,
-        retryWait: jatos.httpRetryWait
-      };
-      return httpLoop.send(request, onSuccess, onFail).promise();
-    };
+    installStudySessionApi(jatos, {
+      getURL,
+      sendToHttpLoop: httpLoop.send
+    });
     installComponentNavigationApi(jatos, {
       beforeUnloadWarning,
       getURL,
