@@ -1,13 +1,12 @@
+import {createDeferred, rejectedPromise} from "./jatos-promise.js";
 import {callMany, callWithArgs} from "./utils/callbacks.js";
 
 export function installResultDataApi(jatos, dependencies) {
     const {
-        createDeferred,
         getURL,
         isInitialized,
         isInvalidComponentPosition,
         isStudyRunInvalid,
-        rejectedPromise,
         sendToHttpLoop
     } = dependencies;
 

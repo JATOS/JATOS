@@ -9,6 +9,7 @@
     "test": "node --test"
   },
   "devDependencies": {
-    "esbuild": "0.25.9"
+    "esbuild": "0.25.9",
+    "jsdom": "26.1.0"
   }
 }

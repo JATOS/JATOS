@@ -2,13 +2,11 @@
 
 import {call, callMany, callWithArgs} from "./utils/callbacks.js";
 import {cloneJsonObj} from "./utils/clone-json.js";
-import {isDeferredPending} from "./jatos-promise.js";
+import {createDeferred, rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
 /** Installs the batch and group APIs and owns their channel state. */
 export function createChannels(jatos, dependencies) {
     const {
-        createDeferred,
-        rejectedPromise,
         getURL,
         getAjaxErrorMsg,
         showIdOverlay,

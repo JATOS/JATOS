@@ -1,7 +1,7 @@
-import {isDeferredPending} from "./jatos-promise.js";
+import {createDeferred, isDeferredPending} from "./jatos-promise.js";
 import {call, callWithArgs} from "./utils/callbacks.js";
 
-export function createHttpLoop({createDeferred, isInitialized}) {
+export function createHttpLoop({isInitialized}) {
     let worker;
     let counter = 0;
     let idleDeferred;

@@ -1,144 +1,487 @@
 var jatos;
 (() => {
-  // src/jatos-promise.js
-  function createJatosDeferred() {
-    let currentState = "pending";
-    let settledArgs = [];
-    let settledContext;
-    const doneCallbacks = [];
-    const failCallbacks = [];
-    const progressCallbacks = [];
-    const promiseMethods = {
-      state: function() {
-        return currentState;
-      },
-      always: function(...callbacks) {
-        this.done(...callbacks);
-        this.fail(...callbacks);
-        return this;
-      },
-      catch: function(onRejected) {
-        return this.then(null, onRejected);
-      },
-      done: function(...callbacks) {
-        addCallbacks(doneCallbacks, callbacks);
-        if (currentState === "resolved") fireCallbacks(callbacks, settledContext, settledArgs);
-        return this;
-      },
-      fail: function(...callbacks) {
-        addCallbacks(failCallbacks, callbacks);
-        if (currentState === "rejected") fireCallbacks(callbacks, settledContext, settledArgs);
-        return this;
-      },
-      progress: function(...callbacks) {
-        if (currentState === "pending") addCallbacks(progressCallbacks, callbacks);
-        return this;
-      },
-      then: function(onFulfilled, onRejected) {
-        const chained = createJatosDeferred();
-        const chainedPromise = chained.promise();
-        this.done(function(...args) {
-          settleChained(chained, chainedPromise, onFulfilled, "resolve", this, args);
-        });
-        this.fail(function(...args) {
-          settleChained(chained, chainedPromise, onRejected, "reject", this, args);
-        });
-        return chainedPromise;
-      },
-      // jQuery retains pipe as an older name for promise transformation.
-      pipe: function(onFulfilled, onRejected) {
-        return this.then(onFulfilled, onRejected);
-      },
-      promise: function(target) {
-        if (target != null) return Object.assign(target, promiseMethods);
-        return promise;
-      }
-    };
-    const promise = Object.assign({}, promiseMethods);
-    const deferred = Object.assign({}, promiseMethods, {
-      notify: function(...args) {
-        return this.notifyWith(this === deferred ? void 0 : this, args);
-      },
-      notifyWith: function(context, args) {
-        if (currentState === "pending") fireCallbacks(progressCallbacks, context, toArray(args));
-        return this;
-      },
-      reject: function(...args) {
-        return this.rejectWith(this === deferred ? void 0 : this, args);
-      },
-      rejectWith: function(context, args) {
-        if (currentState !== "pending") return this;
-        currentState = "rejected";
-        settledContext = context;
-        settledArgs = toArray(args);
-        fireCallbacks(failCallbacks, settledContext, settledArgs);
-        return this;
-      },
-      resolve: function(...args) {
-        return this.resolveWith(this === deferred ? void 0 : this, args);
-      },
-      resolveWith: function(context, args) {
-        if (currentState !== "pending") return this;
-        currentState = "resolved";
-        settledContext = context;
-        settledArgs = toArray(args);
-        fireCallbacks(doneCallbacks, settledContext, settledArgs);
-        return this;
-      }
-    });
-    return deferred;
+  // src/vendor/jquery-deferred.js
+  /*!
+   * jQuery Deferred/Callbacks v3.7.1 extraction
+   * https://github.com/jquery/jquery/tree/3.7.1
+   * Vendored source and adaptations documented in vendor/README.md.
+   *
+   * Copyright OpenJS Foundation and other contributors, https://openjsf.org/
+   *
+   * Permission is hereby granted, free of charge, to any person obtaining
+   * a copy of this software and associated documentation files (the
+   * "Software"), to deal in the Software without restriction, including
+   * without limitation the rights to use, copy, modify, merge, publish,
+   * distribute, sublicense, and/or sell copies of the Software, and to
+   * permit persons to whom the Software is furnished to do so, subject to
+   * the following conditions:
+   *
+   * The above copyright notice and this permission notice shall be
+   * included in all copies or substantial portions of the Software.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+   * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+   * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+   * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   */
+  var jQuery2 = {};
+  var class2type = {};
+  var toString = class2type.toString;
+  var hasOwn = class2type.hasOwnProperty;
+  var fnToString = hasOwn.toString;
+  var ObjectFunctionString = fnToString.call(Object);
+  var getProto = Object.getPrototypeOf;
+  var indexOf = [].indexOf;
+  function isFunction(obj) {
+    return typeof obj === "function" && typeof obj.nodeType !== "number" && typeof obj.item !== "function";
   }
-  function addCallbacks(target, callbacks) {
-    callbacks.flat(Infinity).forEach((callback) => {
-      if (typeof callback === "function") target.push(callback);
-    });
+  function isWindow(obj) {
+    return obj != null && obj === obj.window;
   }
-  function fireCallbacks(callbacks, context, args) {
-    callbacks.flat(Infinity).forEach((callback) => {
-      if (typeof callback === "function") callback.apply(context, args);
-    });
-  }
-  function settleChained(chained, chainedPromise, handler, fallback, context, args) {
-    setTimeout(function() {
-      if (typeof handler !== "function") {
-        chained[fallback + "With"](context, args);
-        return;
-      }
-      try {
-        const result = handler.apply(context, args);
-        adoptResult(chained, chainedPromise, result);
-      } catch (error) {
-        chained.reject(error);
-      }
-    });
-  }
-  function adoptResult(chained, chainedPromise, result) {
-    if (result === chainedPromise) {
-      chained.reject(new TypeError("Thenable self-resolution"));
-    } else if (result && typeof result.then === "function") {
-      result.then(
-        (...args) => chained.resolve(...args),
-        (...args) => chained.reject(...args)
-      );
-    } else {
-      chained.resolve(result);
+  function toType(obj) {
+    if (obj == null) {
+      return obj + "";
     }
+    return typeof obj === "object" || typeof obj === "function" ? class2type[toString.call(obj)] || "object" : typeof obj;
   }
-  function toArray(args) {
-    return args == null ? [] : Array.from(args);
+  var rnothtmlwhite = /[^\x20\t\r\n\f]+/g;
+  jQuery2.extend = function() {
+    var options, name, src, copy, copyIsArray, clone, target = arguments[0] || {}, i = 1, length = arguments.length, deep = false;
+    if (typeof target === "boolean") {
+      deep = target;
+      target = arguments[i] || {};
+      i++;
+    }
+    if (typeof target !== "object" && !isFunction(target)) {
+      target = {};
+    }
+    if (i === length) {
+      target = this;
+      i--;
+    }
+    for (; i < length; i++) {
+      if ((options = arguments[i]) != null) {
+        for (name in options) {
+          copy = options[name];
+          if (name === "__proto__" || target === copy) {
+            continue;
+          }
+          if (deep && copy && (jQuery2.isPlainObject(copy) || (copyIsArray = Array.isArray(copy)))) {
+            src = target[name];
+            if (copyIsArray && !Array.isArray(src)) {
+              clone = [];
+            } else if (!copyIsArray && !jQuery2.isPlainObject(src)) {
+              clone = {};
+            } else {
+              clone = src;
+            }
+            copyIsArray = false;
+            target[name] = jQuery2.extend(deep, clone, copy);
+          } else if (copy !== void 0) {
+            target[name] = copy;
+          }
+        }
+      }
+    }
+    return target;
+  };
+  jQuery2.isPlainObject = function(obj) {
+    var proto, Ctor;
+    if (!obj || toString.call(obj) !== "[object Object]") {
+      return false;
+    }
+    proto = getProto(obj);
+    if (!proto) {
+      return true;
+    }
+    Ctor = hasOwn.call(proto, "constructor") && proto.constructor;
+    return typeof Ctor === "function" && fnToString.call(Ctor) === ObjectFunctionString;
+  };
+  jQuery2.each = function(obj, callback) {
+    var length, i = 0;
+    if (isArrayLike(obj)) {
+      length = obj.length;
+      for (; i < length; i++) {
+        if (callback.call(obj[i], i, obj[i]) === false) {
+          break;
+        }
+      }
+    } else {
+      for (i in obj) {
+        if (callback.call(obj[i], i, obj[i]) === false) {
+          break;
+        }
+      }
+    }
+    return obj;
+  }, // Retrieve the text value of an array of DOM nodes
+  jQuery2.inArray = function(elem, arr, i) {
+    return arr == null ? -1 : indexOf.call(arr, elem, i);
+  };
+  jQuery2.each(
+    "Boolean Number String Function Array Date RegExp Object Error Symbol".split(" "),
+    function(_i, name) {
+      class2type["[object " + name + "]"] = name.toLowerCase();
+    }
+  );
+  function isArrayLike(obj) {
+    var length = !!obj && "length" in obj && obj.length, type = toType(obj);
+    if (isFunction(obj) || isWindow(obj)) {
+      return false;
+    }
+    return type === "array" || length === 0 || typeof length === "number" && length > 0 && length - 1 in obj;
   }
-  function createJatosPromiseCompatibility() {
-    return {
-      createDeferred: createJatosDeferred,
-      rejectedPromise: function(errorMsg) {
-        const deferred = createJatosDeferred();
-        deferred.reject(errorMsg);
-        return deferred.promise();
+  function createOptions(options) {
+    var object = {};
+    jQuery2.each(options.match(rnothtmlwhite) || [], function(_, flag) {
+      object[flag] = true;
+    });
+    return object;
+  }
+  jQuery2.Callbacks = function(options) {
+    options = typeof options === "string" ? createOptions(options) : jQuery2.extend({}, options);
+    var firing, memory, fired, locked, list = [], queue = [], firingIndex = -1, fire = function() {
+      locked = locked || options.once;
+      fired = firing = true;
+      for (; queue.length; firingIndex = -1) {
+        memory = queue.shift();
+        while (++firingIndex < list.length) {
+          if (list[firingIndex].apply(memory[0], memory[1]) === false && options.stopOnFalse) {
+            firingIndex = list.length;
+            memory = false;
+          }
+        }
+      }
+      if (!options.memory) {
+        memory = false;
+      }
+      firing = false;
+      if (locked) {
+        if (memory) {
+          list = [];
+        } else {
+          list = "";
+        }
+      }
+    }, self = {
+      // Add a callback or a collection of callbacks to the list
+      add: function() {
+        if (list) {
+          if (memory && !firing) {
+            firingIndex = list.length - 1;
+            queue.push(memory);
+          }
+          (function add(args) {
+            jQuery2.each(args, function(_, arg) {
+              if (isFunction(arg)) {
+                if (!options.unique || !self.has(arg)) {
+                  list.push(arg);
+                }
+              } else if (arg && arg.length && toType(arg) !== "string") {
+                add(arg);
+              }
+            });
+          })(arguments);
+          if (memory && !firing) {
+            fire();
+          }
+        }
+        return this;
+      },
+      // Remove a callback from the list
+      remove: function() {
+        jQuery2.each(arguments, function(_, arg) {
+          var index;
+          while ((index = jQuery2.inArray(arg, list, index)) > -1) {
+            list.splice(index, 1);
+            if (index <= firingIndex) {
+              firingIndex--;
+            }
+          }
+        });
+        return this;
+      },
+      // Check if a given callback is in the list.
+      // If no argument is given, return whether or not list has callbacks attached.
+      has: function(fn) {
+        return fn ? jQuery2.inArray(fn, list) > -1 : list.length > 0;
+      },
+      // Remove all callbacks from the list
+      empty: function() {
+        if (list) {
+          list = [];
+        }
+        return this;
+      },
+      // Disable .fire and .add
+      // Abort any current/pending executions
+      // Clear all callbacks and values
+      disable: function() {
+        locked = queue = [];
+        list = memory = "";
+        return this;
+      },
+      disabled: function() {
+        return !list;
+      },
+      // Disable .fire
+      // Also disable .add unless we have memory (since it would have no effect)
+      // Abort any pending executions
+      lock: function() {
+        locked = queue = [];
+        if (!memory && !firing) {
+          list = memory = "";
+        }
+        return this;
+      },
+      locked: function() {
+        return !!locked;
+      },
+      // Call all callbacks with the given context and arguments
+      fireWith: function(context, args) {
+        if (!locked) {
+          args = args || [];
+          args = [context, args.slice ? args.slice() : args];
+          queue.push(args);
+          if (!firing) {
+            fire();
+          }
+        }
+        return this;
+      },
+      // Call all the callbacks with the given arguments
+      fire: function() {
+        self.fireWith(this, arguments);
+        return this;
+      },
+      // To know if the callbacks have already been called at least once
+      fired: function() {
+        return !!fired;
       }
     };
+    return self;
+  };
+  function Identity(v) {
+    return v;
+  }
+  function Thrower(ex) {
+    throw ex;
+  }
+  jQuery2.extend({
+    Deferred: function(func) {
+      var tuples = [
+        // action, add listener, callbacks,
+        // ... .then handlers, argument index, [final state]
+        [
+          "notify",
+          "progress",
+          jQuery2.Callbacks("memory"),
+          jQuery2.Callbacks("memory"),
+          2
+        ],
+        [
+          "resolve",
+          "done",
+          jQuery2.Callbacks("once memory"),
+          jQuery2.Callbacks("once memory"),
+          0,
+          "resolved"
+        ],
+        [
+          "reject",
+          "fail",
+          jQuery2.Callbacks("once memory"),
+          jQuery2.Callbacks("once memory"),
+          1,
+          "rejected"
+        ]
+      ], state = "pending", promise = {
+        state: function() {
+          return state;
+        },
+        always: function() {
+          deferred.done(arguments).fail(arguments);
+          return this;
+        },
+        "catch": function(fn) {
+          return promise.then(null, fn);
+        },
+        // Keep pipe for back-compat
+        pipe: function() {
+          var fns = arguments;
+          return jQuery2.Deferred(function(newDefer) {
+            jQuery2.each(tuples, function(_i, tuple) {
+              var fn = isFunction(fns[tuple[4]]) && fns[tuple[4]];
+              deferred[tuple[1]](function() {
+                var returned = fn && fn.apply(this, arguments);
+                if (returned && isFunction(returned.promise)) {
+                  returned.promise().progress(newDefer.notify).done(newDefer.resolve).fail(newDefer.reject);
+                } else {
+                  newDefer[tuple[0] + "With"](
+                    this,
+                    fn ? [returned] : arguments
+                  );
+                }
+              });
+            });
+            fns = null;
+          }).promise();
+        },
+        then: function(onFulfilled, onRejected, onProgress) {
+          var maxDepth = 0;
+          function resolve(depth, deferred2, handler, special) {
+            return function() {
+              var that = this, args = arguments, mightThrow = function() {
+                var returned, then;
+                if (depth < maxDepth) {
+                  return;
+                }
+                returned = handler.apply(that, args);
+                if (returned === deferred2.promise()) {
+                  throw new TypeError("Thenable self-resolution");
+                }
+                then = returned && // Support: Promises/A+ section 2.3.4
+                // https://promisesaplus.com/#point-64
+                // Only check objects and functions for thenability
+                (typeof returned === "object" || typeof returned === "function") && returned.then;
+                if (isFunction(then)) {
+                  if (special) {
+                    then.call(
+                      returned,
+                      resolve(maxDepth, deferred2, Identity, special),
+                      resolve(maxDepth, deferred2, Thrower, special)
+                    );
+                  } else {
+                    maxDepth++;
+                    then.call(
+                      returned,
+                      resolve(maxDepth, deferred2, Identity, special),
+                      resolve(maxDepth, deferred2, Thrower, special),
+                      resolve(
+                        maxDepth,
+                        deferred2,
+                        Identity,
+                        deferred2.notifyWith
+                      )
+                    );
+                  }
+                } else {
+                  if (handler !== Identity) {
+                    that = void 0;
+                    args = [returned];
+                  }
+                  (special || deferred2.resolveWith)(that, args);
+                }
+              }, process = special ? mightThrow : function() {
+                try {
+                  mightThrow();
+                } catch (e) {
+                  if (jQuery2.Deferred.exceptionHook) {
+                    jQuery2.Deferred.exceptionHook(
+                      e,
+                      process.error
+                    );
+                  }
+                  if (depth + 1 >= maxDepth) {
+                    if (handler !== Thrower) {
+                      that = void 0;
+                      args = [e];
+                    }
+                    deferred2.rejectWith(that, args);
+                  }
+                }
+              };
+              if (depth) {
+                process();
+              } else {
+                if (jQuery2.Deferred.getErrorHook) {
+                  process.error = jQuery2.Deferred.getErrorHook();
+                } else if (jQuery2.Deferred.getStackHook) {
+                  process.error = jQuery2.Deferred.getStackHook();
+                }
+                globalThis.setTimeout(process);
+              }
+            };
+          }
+          return jQuery2.Deferred(function(newDefer) {
+            tuples[0][3].add(
+              resolve(
+                0,
+                newDefer,
+                isFunction(onProgress) ? onProgress : Identity,
+                newDefer.notifyWith
+              )
+            );
+            tuples[1][3].add(
+              resolve(
+                0,
+                newDefer,
+                isFunction(onFulfilled) ? onFulfilled : Identity
+              )
+            );
+            tuples[2][3].add(
+              resolve(
+                0,
+                newDefer,
+                isFunction(onRejected) ? onRejected : Thrower
+              )
+            );
+          }).promise();
+        },
+        // Get a promise for this deferred
+        // If obj is provided, the promise aspect is added to the object
+        promise: function(obj) {
+          return obj != null ? jQuery2.extend(obj, promise) : promise;
+        }
+      }, deferred = {};
+      jQuery2.each(tuples, function(i, tuple) {
+        var list = tuple[2], stateString = tuple[5];
+        promise[tuple[1]] = list.add;
+        if (stateString) {
+          list.add(
+            function() {
+              state = stateString;
+            },
+            // rejected_callbacks.disable
+            // fulfilled_callbacks.disable
+            tuples[3 - i][2].disable,
+            // rejected_handlers.disable
+            // fulfilled_handlers.disable
+            tuples[3 - i][3].disable,
+            // progress_callbacks.lock
+            tuples[0][2].lock,
+            // progress_handlers.lock
+            tuples[0][3].lock
+          );
+        }
+        list.add(tuple[3].fire);
+        deferred[tuple[0]] = function() {
+          deferred[tuple[0] + "With"](this === deferred ? void 0 : this, arguments);
+          return this;
+        };
+        deferred[tuple[0] + "With"] = list.fireWith;
+      });
+      promise.promise(deferred);
+      if (func) {
+        func.call(deferred, deferred);
+      }
+      return deferred;
+    }
+  });
+  var Deferred = jQuery2.Deferred;
+
+  // src/jatos-promise.js
+  function createDeferred() {
+    return Deferred();
+  }
+  function rejectedPromise(error) {
+    return createDeferred().reject(error).promise();
   }
   function isDeferredPending(deferred) {
-    return typeof deferred != "undefined" && deferred.state() === "pending";
+    return deferred !== void 0 && deferred.state() === "pending";
   }
 
   // src/utils/callbacks.js
@@ -155,12 +498,10 @@ var jatos;
   // src/result-data.js
   function installResultDataApi(jatos2, dependencies) {
     const {
-      createDeferred: createDeferred2,
       getURL,
       isInitialized,
       isInvalidComponentPosition: isInvalidComponentPosition2,
       isStudyRunInvalid,
-      rejectedPromise: rejectedPromise2,
       sendToHttpLoop
     } = dependencies;
     jatos2.submitResultData = function(resultData, onSuccess, onError) {
@@ -173,7 +514,7 @@ var jatos;
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't send result data. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       let httpMethod = append ? "POST" : "PUT";
       if (resultData === Object(resultData)) {
@@ -200,12 +541,12 @@ var jatos;
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't upload file. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (typeof filename !== "string" || 0 === filename.length) {
         const errorMsg = "No filename specified.";
         callMany(errorMsg, onError, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       let blob;
       if (obj instanceof Blob) {
@@ -217,7 +558,7 @@ var jatos;
       } else {
         const errorMsg = "Only string, Object or Blob allowed.";
         callMany(errorMsg, onError, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       let request = {
         url: getURL("files/" + encodeURI(filename)),
@@ -240,7 +581,7 @@ var jatos;
       if (!isInitialized()) {
         const errorMsg = "jatos.js not yet initialized";
         console.error(errorMsg);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       let componentPos, filename, onSuccess, onError;
       if (typeof param1 === "number") {
@@ -255,29 +596,29 @@ var jatos;
       } else {
         const errorMsg = "Unknown first parameter.";
         console.error(errorMsg);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't download file. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (typeof filename !== "string" || 0 === filename.length) {
         const errorMsg = "No filename specified.";
         callMany(errorMsg, onError, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       let url = getURL("../files/" + encodeURI(filename));
       if (componentPos) {
         if (isInvalidComponentPosition2(componentPos)) {
           const errorMsg = "Component position does not exist.";
           callMany(errorMsg, onError, console.error);
-          return rejectedPromise2(errorMsg);
+          return rejectedPromise(errorMsg);
         }
         const componentId = jatos2.componentList[componentPos - 1].id;
         url += "?componentId=" + componentId;
       }
-      const deferred = createDeferred2();
+      const deferred = createDeferred();
       const xhr = new XMLHttpRequest();
       xhr.open("GET", url, true);
       xhr.responseType = "blob";
@@ -319,7 +660,7 @@ var jatos;
   }
 
   // src/http-loop.js
-  function createHttpLoop({ createDeferred: createDeferred2, isInitialized }) {
+  function createHttpLoop({ isInitialized }) {
     let worker;
     let counter = 0;
     let idleDeferred;
@@ -331,9 +672,9 @@ var jatos;
     function send(request, onSuccess, onError) {
       if (!isInitialized()) {
         console.error("jatos.js not yet initialized");
-        return createDeferred2().reject();
+        return createDeferred().reject();
       }
-      const deferred = createDeferred2();
+      const deferred = createDeferred();
       deferred.done(function() {
         call(onSuccess);
       });
@@ -343,7 +684,7 @@ var jatos;
       request.id = counter++;
       waitingRequests[request.id] = deferred;
       if (!isDeferredPending(idleDeferred)) {
-        idleDeferred = createDeferred2();
+        idleDeferred = createDeferred();
       }
       worker.postMessage(request);
       return deferred;
@@ -411,8 +752,6 @@ var jatos;
   // src/channels.js
   function createChannels(jatos2, dependencies) {
     const {
-      createDeferred: createDeferred2,
-      rejectedPromise: rejectedPromise2,
       getURL,
       getAjaxErrorMsg,
       showIdOverlay,
@@ -486,27 +825,27 @@ var jatos;
       if (!webSocketSupported) {
         const errorMsg = "This browser does not support WebSockets. Can't open batch channel.";
         console.warn(errorMsg);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (batchChannel && batchChannel.readyState !== batchChannel.CLOSED) {
-        return rejectedPromise2("Can't open a WebSocket that is not in readyState CLOSED.");
+        return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
       }
       if (isEndingStudy() || isStartingComponent()) {
         const errorMsg = "Won't open batch channel because study is about to move to the next component or finish.";
         console.info(errorMsg);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't open batch channel. This study run is invalid.";
         console.warn(errorMsg);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(openingBatchChannelDeferred)) {
         const errorMsg = "Can open only one batch channel.";
         console.warn(errorMsg);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
-      openingBatchChannelDeferred = createDeferred2();
+      openingBatchChannelDeferred = createDeferred();
       const channel = new WebSocket(
         (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos2.urlBasePath + "publix/" + jatos2.studyResultUuid + "/batch/open"
       );
@@ -737,19 +1076,19 @@ var jatos;
       if (!batchChannel || batchChannel.readyState !== batchChannel.OPEN) {
         const errorMsg = `Can't send batch session patch. No open batch channel. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (jatos2.batchSessionVersioning && isDeferredPending(sendingBatchSessionDeferred)) {
         const errorMsg = `Can send only one batch session patch at a time. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = `Can't send batch session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
-      const deferred = createDeferred2();
+      const deferred = createDeferred();
       if (jatos2.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
       const sessionActionId = batchSessionCounter++;
       const msgObj = {};
@@ -784,37 +1123,37 @@ var jatos;
       if (!webSocketSupported) {
         const errorMsg = "This browser does not support WebSockets.";
         callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
-        return rejectedPromise2("Can't open a WebSocket that is not in readyState CLOSED.");
+        return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
       }
       if (isEndingStudy() || isStartingComponent()) {
         const errorMsg = "Won't open group channel because study is about to move to the next component or finish.";
         callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't open group channel. This study run is invalid.";
         callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(openingGroupChannelDeferred)) {
         const errorMsg = "Can open only one group channel";
         callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(leavingGroupDeferred)) {
         const errorMsg = "Can't open group channel while leaving a group";
         callMany(errorMsg, console.error, groupChannelCallbacks.onError);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(reassigningGroupDeferred)) {
         const errorMsg = "Can't open group channel while reassigning a group";
         callMany(errorMsg, console.error, groupChannelCallbacks.onError);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
-      openingGroupChannelDeferred = createDeferred2();
+      openingGroupChannelDeferred = createDeferred();
       groupChannel = new WebSocket(
         (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos2.urlBasePath + "publix/" + jatos2.studyResultUuid + "/group/join"
       );
@@ -1087,19 +1426,19 @@ var jatos;
       if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
         const errorMsg = `Can't send group session patch. No open group channel. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (jatos2.groupSessionVersioning && isDeferredPending(sendingGroupSessionDeferred)) {
         const errorMsg = `Can send only one group session patch at a time. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = `Can't send group session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
-      const deferred = createDeferred2();
+      const deferred = createDeferred();
       if (jatos2.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
       const sessionActionId = groupSessionCounter++;
       const msgObj = {};
@@ -1127,19 +1466,19 @@ var jatos;
       if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
         const errorMsg = "Can't fix group. No open group channel.";
         callMany(errorMsg, onFail, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(sendingGroupFixedDeferred)) {
         const errorMsg = "Can fix group only once.";
         callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't fix group. This study run is invalid.";
         callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
-      sendingGroupFixedDeferred = createDeferred2();
+      sendingGroupFixedDeferred = createDeferred();
       const msgObj = {};
       msgObj.action = "FIXED";
       try {
@@ -1217,29 +1556,29 @@ var jatos;
       if (isDeferredPending(openingGroupChannelDeferred)) {
         const errorMsg = "Can't reassign a group if not joined yet.";
         callMany(errorMsg, console.error, onFail);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(leavingGroupDeferred)) {
         const errorMsg = "Can't reassign a group during leaving.";
         callMany(errorMsg, console.error, onFail);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(reassigningGroupDeferred)) {
         const errorMsg = "Can't reassign a group twice at the same time.";
         callMany(errorMsg, console.warn, onFail);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
         const errorMsg = "Can't reassign group. Group channel not open.";
         callMany(errorMsg, console.error, onFail);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't reassign group. This study run is invalid.";
         callMany(errorMsg, console.warn, onFail);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
-      reassigningGroupDeferred = createDeferred2();
+      reassigningGroupDeferred = createDeferred();
       jatos2.jQuery.ajax({
         url: getURL("../group/reassign"),
         processData: false,
@@ -1267,24 +1606,24 @@ var jatos;
       if (isDeferredPending(openingGroupChannelDeferred)) {
         const errorMsg = "Can't leave group if not joined yet.";
         callMany(errorMsg, onError, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(reassigningGroupDeferred)) {
         const errorMsg = "Can't leave group during reassigning.";
         callMany(errorMsg, onError, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isDeferredPending(leavingGroupDeferred)) {
         const errorMsg = "Can leave only once.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't leave group. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
-      leavingGroupDeferred = createDeferred2();
+      leavingGroupDeferred = createDeferred();
       jatos2.jQuery.ajax({
         url: getURL("../group/leave"),
         processData: false,
@@ -1337,6 +1676,148 @@ var jatos;
     };
   }
 
+  // src/initialization.js
+  function createInitialization(jatos2, dependencies) {
+    const { getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels } = dependencies;
+    let initialized = false;
+    let jatosOnLoadEventFired = false;
+    const jatosOnLoadEvent = new Event("jatosOnLoad");
+    let heartbeatWorker;
+    jatos2.jQuery = {};
+    function start() {
+      getScript("jatos-publix/javascripts/jquery-3.7.1.min.js", function() {
+        jatos2.jQuery = jQuery.noConflict(true);
+        jatos2.jQuery.ajaxSetup({
+          cache: true
+        });
+        initJatos();
+      });
+    }
+    function getScript(url, onSuccess) {
+      const script = document.createElement("script");
+      script.src = url;
+      const head = document.getElementsByTagName("head")[0];
+      let done = false;
+      script.onload = script.onreadystatechange = function() {
+        if (!done && (!this.readyState || this.readyState === "loaded" || this.readyState === "complete")) {
+          done = true;
+          onSuccess();
+          script.onload = script.onreadystatechange = null;
+          head.removeChild(script);
+        }
+      };
+      head.appendChild(script);
+    }
+    function initJatos() {
+      jatos2.jQuery.when(
+        // Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
+        jatos2.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
+        // Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
+        jatos2.jQuery.getScript("jatos-publix/javascripts/fast-json-patch.min.js")
+      ).then(function() {
+        jatos2.studyResultUuid = window.location.pathname.split("/").reverse()[2];
+        readIdCookie();
+        heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
+        heartbeatWorker.postMessage([jatos2.studyResultUuid]);
+        httpLoop.start();
+      }).then(getInitData).then(showIdOverlay).then(channels.openBatchChannelWithRetry).always(function() {
+        initialized = true;
+        readyForOnLoad();
+      });
+    }
+    function readIdCookie() {
+      const idCookieName = "JATOS_ID";
+      const cookieRow = document.cookie.split("; ").filter((row) => row.includes(idCookieName)).find((row) => row.includes(jatos2.studyResultUuid));
+      if (!cookieRow) {
+        console.error("readIdCookie: JATOS ID cookie for current studyResultUuid not found.");
+        return;
+      }
+      const equalsIndex = cookieRow.indexOf("=");
+      const idCookieValue = cookieRow.substring(equalsIndex + 1);
+      if (!idCookieValue) {
+        console.error(`readIdCookie: JATOS ID cookie value is empty for cookie "${cookieRow}".`);
+        return;
+      }
+      const cookieParams = new URLSearchParams(idCookieValue);
+      cookieParams.forEach((value, key) => jatos2[key] = value);
+      jatos2.componentPos = parseInt(jatos2.componentPos, 10);
+    }
+    function getInitData() {
+      return jatos2.jQuery.ajax({
+        url: getURL("initData"),
+        type: "GET",
+        dataType: "json",
+        timeout: jatos2.httpTimeout,
+        success: setInitData,
+        error: (err) => console.error(getAjaxErrorMsg(err))
+      }).retry({
+        times: jatos2.httpRetry,
+        timeout: jatos2.httpRetryWait
+      });
+    }
+    function setInitData(initData) {
+      jatos2.batchProperties = initData.batchProperties;
+      if (typeof jatos2.batchProperties.batchInput != "undefined" && jatos2.studyProperties.studyInput !== null) {
+        jatos2.batchJsonInput = jatos2.jQuery.parseJSON(jatos2.batchProperties.batchInput);
+      } else {
+        jatos2.batchJsonInput = {};
+      }
+      jatos2.batchInput = jatos2.batchJsonInput;
+      delete jatos2.batchProperties.batchInput;
+      try {
+        jatos2.studySessionData = JSON.parse(initData.studySessionData);
+      } catch (e) {
+        console.error(e.stack || e);
+      }
+      jatos2.studyProperties = initData.studyProperties;
+      if (typeof jatos2.studyProperties.studyInput != "undefined" && jatos2.studyProperties.studyInput !== null) {
+        jatos2.studyJsonInput = jatos2.jQuery.parseJSON(jatos2.studyProperties.studyInput);
+      } else {
+        jatos2.studyJsonInput = {};
+      }
+      jatos2.studyInput = jatos2.studyJsonInput;
+      delete jatos2.studyProperties.studyInput;
+      jatos2.componentList = initData.componentList;
+      jatos2.studyLength = initData.componentList.length;
+      jatos2.componentProperties = initData.componentProperties;
+      if (typeof jatos2.componentProperties.componentInput != "undefined" && jatos2.componentProperties.componentInput !== null) {
+        jatos2.componentJsonInput = jatos2.jQuery.parseJSON(jatos2.componentProperties.componentInput);
+      } else {
+        jatos2.componentJsonInput = {};
+      }
+      jatos2.componentInput = jatos2.componentJsonInput;
+      delete jatos2.componentProperties.componentInput;
+      jatos2.urlQueryParameters = initData.urlQueryParameters;
+      jatos2.frameId = jatos2.urlQueryParameters.frameId || void 0;
+      jatos2.studyCode = initData.studyCode;
+    }
+    jatos2.onLoad = function(callback) {
+      if (!jatosOnLoadEventFired) {
+        window.addEventListener("jatosOnLoad", callback);
+        readyForOnLoad();
+      } else {
+        callback();
+      }
+    };
+    jatos2.onload = jatos2.onLoad;
+    function readyForOnLoad() {
+      if (!jatosOnLoadEventFired && initialized) {
+        jatosOnLoadEventFired = true;
+        window.dispatchEvent(jatosOnLoadEvent);
+      }
+    }
+    jatos2.setHeartbeatPeriod = function(heartbeatPeriod) {
+      if (typeof heartbeatPeriod == "number" && heartbeatWorker) {
+        heartbeatWorker.postMessage([jatos2.studyResultUuid, heartbeatPeriod]);
+      }
+    };
+    return {
+      start,
+      isInitialized: () => initialized,
+      terminateHeartbeat: () => heartbeatWorker.terminate()
+    };
+  }
+
   // src/study-run.js
   function installStudyRunApi(jatos2, dependencies) {
     const {
@@ -1349,7 +1830,6 @@ var jatos;
       isStudyRunInvalid,
       setStartingComponent,
       setEndingStudy,
-      rejectedPromise: rejectedPromise2,
       stopStudyRun
     } = dependencies;
     jatos2.setStudySessionData = function(studySessionData, onSuccess, onFail) {
@@ -1473,17 +1953,17 @@ var jatos;
       if (!isInitialized()) {
         const errorMsg = "jatos.js not yet initialized.";
         callMany(errorMsg, onError, console.error);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't abort study. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isEndingStudy()) {
         const errorMsg = "Can end/abort study only once.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       setEndingStudy(true);
       var url = getURL("../abort");
@@ -1554,7 +2034,7 @@ var jatos;
       if (!isInitialized()) {
         const errorMsg = "jatos.js not yet initialized.";
         console.error(errorMsg);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       var resultData, successful, message, onSuccess, onError;
       if (typeof param1 === "string" || typeof param1 === "object") {
@@ -1572,12 +2052,12 @@ var jatos;
       if (isStudyRunInvalid()) {
         const errorMsg = "Can't end study. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       if (isEndingStudy()) {
         const errorMsg = "Can end/abort study only once.";
         callMany(errorMsg, onError, console.warn);
-        return rejectedPromise2(errorMsg);
+        return rejectedPromise(errorMsg);
       }
       setEndingStudy(true);
       if (resultData) jatos2.appendResultData(resultData);
@@ -1717,7 +2197,6 @@ var jatos;
    */
   jatos = {};
   window.jatos = jatos;
-  var { createDeferred, rejectedPromise } = createJatosPromiseCompatibility();
   (function() {
     "use strict";
     jatos.version = "3.11.3";
@@ -1740,21 +2219,14 @@ var jatos;
     jatos.waitSendDataOverlayConfig = {
       text: "Sending data. Please wait."
     };
-    let heartbeatWorker;
-    let initialized = false;
-    let jatosOnLoadEventFired = false;
     let startingComponent = false;
     let endingStudy = false;
     let studyRunInvalid = false;
-    const jatosOnLoadEvent = new Event("jatosOnLoad");
     let showBeforeUnloadWarning = true;
     const httpLoop = createHttpLoop({
-      createDeferred,
-      isInitialized: () => initialized
+      isInitialized: () => initialization.isInitialized()
     });
     const channels = createChannels(jatos, {
-      createDeferred,
-      rejectedPromise,
       getURL,
       getAjaxErrorMsg,
       showIdOverlay,
@@ -1765,142 +2237,22 @@ var jatos;
         studyRunInvalid = value;
       }
     });
-    jatos.jQuery = {};
-    getScript("jatos-publix/javascripts/jquery-3.7.1.min.js", function() {
-      jatos.jQuery = jQuery.noConflict(true);
-      jatos.jQuery.ajaxSetup({
-        cache: true
-      });
-      initJatos();
+    const initialization = createInitialization(jatos, {
+      getURL,
+      getAjaxErrorMsg,
+      showIdOverlay,
+      httpLoop,
+      channels
     });
-    function getScript(url, onSuccess) {
-      const script = document.createElement("script");
-      script.src = url;
-      const head = document.getElementsByTagName("head")[0];
-      let done = false;
-      script.onload = script.onreadystatechange = function() {
-        if (!done && (!this.readyState || this.readyState === "loaded" || this.readyState === "complete")) {
-          done = true;
-          onSuccess();
-          script.onload = script.onreadystatechange = null;
-          head.removeChild(script);
-        }
-      };
-      head.appendChild(script);
-    }
-    function initJatos() {
-      jatos.jQuery.when(
-        // Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
-        jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
-        // Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
-        jatos.jQuery.getScript("jatos-publix/javascripts/fast-json-patch.min.js")
-      ).then(function() {
-        jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
-        readIdCookie();
-        heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
-        heartbeatWorker.postMessage([jatos.studyResultUuid]);
-        httpLoop.start();
-      }).then(getInitData).then(showIdOverlay).then(channels.openBatchChannelWithRetry).always(function() {
-        initialized = true;
-        readyForOnLoad();
-      });
-    }
-    function readIdCookie() {
-      const idCookieName = "JATOS_ID";
-      const cookieRow = document.cookie.split("; ").filter((row) => row.includes(idCookieName)).find((row) => row.includes(jatos.studyResultUuid));
-      if (!cookieRow) {
-        console.error("readIdCookie: JATOS ID cookie for current studyResultUuid not found.");
-        return;
-      }
-      const equalsIndex = cookieRow.indexOf("=");
-      const idCookieValue = cookieRow.substring(equalsIndex + 1);
-      if (!idCookieValue) {
-        console.error(`readIdCookie: JATOS ID cookie value is empty for cookie "${cookieRow}".`);
-        return;
-      }
-      const cookieParams = new URLSearchParams(idCookieValue);
-      cookieParams.forEach((value, key) => jatos[key] = value);
-      jatos.componentPos = parseInt(jatos.componentPos, 10);
-    }
-    function getInitData() {
-      return jatos.jQuery.ajax({
-        url: getURL("initData"),
-        type: "GET",
-        dataType: "json",
-        timeout: jatos.httpTimeout,
-        success: setInitData,
-        error: (err) => console.error(getAjaxErrorMsg(err))
-      }).retry({
-        times: jatos.httpRetry,
-        timeout: jatos.httpRetryWait
-      });
-    }
-    function setInitData(initData) {
-      jatos.batchProperties = initData.batchProperties;
-      if (typeof jatos.batchProperties.batchInput != "undefined" && jatos.studyProperties.studyInput !== null) {
-        jatos.batchJsonInput = jatos.jQuery.parseJSON(jatos.batchProperties.batchInput);
-      } else {
-        jatos.batchJsonInput = {};
-      }
-      jatos.batchInput = jatos.batchJsonInput;
-      delete jatos.batchProperties.batchInput;
-      try {
-        jatos.studySessionData = JSON.parse(initData.studySessionData);
-      } catch (e) {
-        console.error(e.stack || e);
-      }
-      jatos.studyProperties = initData.studyProperties;
-      if (typeof jatos.studyProperties.studyInput != "undefined" && jatos.studyProperties.studyInput !== null) {
-        jatos.studyJsonInput = jatos.jQuery.parseJSON(jatos.studyProperties.studyInput);
-      } else {
-        jatos.studyJsonInput = {};
-      }
-      jatos.studyInput = jatos.studyJsonInput;
-      delete jatos.studyProperties.studyInput;
-      jatos.componentList = initData.componentList;
-      jatos.studyLength = initData.componentList.length;
-      jatos.componentProperties = initData.componentProperties;
-      if (typeof jatos.componentProperties.componentInput != "undefined" && jatos.componentProperties.componentInput !== null) {
-        jatos.componentJsonInput = jatos.jQuery.parseJSON(jatos.componentProperties.componentInput);
-      } else {
-        jatos.componentJsonInput = {};
-      }
-      jatos.componentInput = jatos.componentJsonInput;
-      delete jatos.componentProperties.componentInput;
-      jatos.urlQueryParameters = initData.urlQueryParameters;
-      jatos.frameId = jatos.urlQueryParameters.frameId || void 0;
-      jatos.studyCode = initData.studyCode;
-    }
-    jatos.onLoad = function(callback) {
-      if (!jatosOnLoadEventFired) {
-        window.addEventListener("jatosOnLoad", callback);
-        readyForOnLoad();
-      } else {
-        callback();
-      }
-    };
-    jatos.onload = jatos.onLoad;
-    function readyForOnLoad() {
-      if (!jatosOnLoadEventFired && initialized) {
-        jatosOnLoadEventFired = true;
-        window.dispatchEvent(jatosOnLoadEvent);
-      }
-    }
-    jatos.setHeartbeatPeriod = function(heartbeatPeriod) {
-      if (typeof heartbeatPeriod == "number" && heartbeatWorker) {
-        heartbeatWorker.postMessage([jatos.studyResultUuid, heartbeatPeriod]);
-      }
-    };
+    initialization.start();
     jatos.onError = function(onError) {
       console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
     };
     installResultDataApi(jatos, {
-      createDeferred,
       getURL,
-      isInitialized: () => initialized,
+      isInitialized: () => initialization.isInitialized(),
       isInvalidComponentPosition: (pos) => isInvalidComponentPosition(jatos.componentList, pos),
       isStudyRunInvalid: () => studyRunInvalid,
-      rejectedPromise,
       sendToHttpLoop: httpLoop.send
     });
     installStudyRunApi(jatos, {
@@ -1908,7 +2260,7 @@ var jatos;
       getURL,
       httpLoop,
       isEndingStudy: () => endingStudy,
-      isInitialized: () => initialized,
+      isInitialized: () => initialization.isInitialized(),
       isStartingComponent: () => startingComponent,
       isStudyRunInvalid: () => studyRunInvalid,
       setStartingComponent: (value) => {
@@ -1917,9 +2269,8 @@ var jatos;
       setEndingStudy: (value) => {
         endingStudy = value;
       },
-      rejectedPromise,
       stopStudyRun: () => {
-        heartbeatWorker.terminate();
+        initialization.terminateHeartbeat();
         httpLoop.terminate();
         channels.stopClosedChecks();
       }
@@ -1934,7 +2285,7 @@ var jatos;
       console.warn("jatos.logError is abolished - use jatos.log instead");
     };
     jatos.log = function(logMsg) {
-      if (!initialized) return;
+      if (!initialization.isInitialized()) return;
       var request = {
         url: getURL("log"),
         method: "POST",

@@ -6,9 +6,8 @@ import {
     isInvalidComponentPosition
 } from "../src/study-run.js";
 
-import {createJatosPromiseCompatibility} from "../src/jatos-promise.js";
+import {createDeferred} from "../src/jatos-promise.js";
 
-const {createDeferred, rejectedPromise} = createJatosPromiseCompatibility();
 
 // Component navigation
 
@@ -194,7 +193,6 @@ function createLifecycleApi(t) {
         isEndingStudy: () => state.ending,
         isStartingComponent: () => false,
         setEndingStudy: value => { state.ending = value; },
-        rejectedPromise,
         stopStudyRun: () => events.push("stop"),
         httpLoop: {
             isBusy: () => true,

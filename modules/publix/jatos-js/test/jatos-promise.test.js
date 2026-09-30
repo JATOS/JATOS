@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {createJatosPromiseCompatibility} from "../src/jatos-promise.js";
+import {createDeferred, rejectedPromise} from "../src/jatos-promise.js";
 
-const {createDeferred, rejectedPromise} = createJatosPromiseCompatibility();
 
 test("promise hides settlement methods and returns itself", () => {
     const deferred = createDeferred();
@@ -74,3 +73,23 @@ test("catch transforms rejection and thrown handlers reject", async () => {
 
     await assert.rejects(Promise.resolve(thrown), /boom/);
 });
+
+for (const settlement of ["resolve", "reject"]) {
+    test(`adopting a JatosPromise can ${settlement} without endlessly scheduling callbacks`, t => {
+        const tasks = [];
+        t.mock.method(globalThis, "setTimeout", callback => tasks.push(callback));
+        const source = createDeferred();
+        const adopted = createDeferred();
+        const chained = source.promise().then(() => adopted.promise());
+        let received;
+        chained[settlement === "resolve" ? "done" : "fail"]((...args) => { received = args; });
+        source.resolve();
+        adopted[settlement]("result", 42);
+
+        for (let count = 0; tasks.length && count < 20; count++) tasks.shift()();
+
+        assert.deepEqual(received, ["result", 42]);
+        assert.equal(chained.state(), settlement === "resolve" ? "resolved" : "rejected");
+        assert.equal(tasks.length, 0, "settled promise adoption must stop scheduling work");
+    });
+}

@@ -1,5 +1,5 @@
 import {callMany} from "./utils/callbacks.js";
-import {isDeferredPending} from "./jatos-promise.js";
+import {rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
 export function installStudyRunApi(jatos, dependencies) {
     const {
@@ -12,7 +12,6 @@ export function installStudyRunApi(jatos, dependencies) {
         isStudyRunInvalid,
         setStartingComponent,
         setEndingStudy,
-        rejectedPromise,
         stopStudyRun
     } = dependencies;
 

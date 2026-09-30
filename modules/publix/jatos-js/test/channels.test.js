@@ -4,9 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 import {createChannels} from "../src/channels.js";
-import {createJatosPromiseCompatibility} from "../src/jatos-promise.js";
 
-const {createDeferred, rejectedPromise} = createJatosPromiseCompatibility();
 const patchContext = {};
 vm.runInNewContext(readFileSync(new URL("../../public/javascripts/fast-json-patch.js", import.meta.url), "utf8"), patchContext);
 
@@ -60,7 +58,6 @@ function setup(t) {
         }}
     };
     const channels = createChannels(jatos, {
-        createDeferred, rejectedPromise,
         getURL: path => `https://example.test/${path}`,
         getAjaxErrorMsg: error => error.statusText,
         showIdOverlay: () => events.push("ids"),
