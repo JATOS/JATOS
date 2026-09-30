@@ -1,39 +1,7 @@
 var jatos;
 (() => {
-  // src/utils/callbacks.js
-  var call = (f) => {
-    if (f && typeof f == "function") f();
-  };
-  var callWithArgs = (f, ...args) => {
-    if (f && typeof f == "function") args.length ? f(...args) : f();
-  };
-  var callMany = (arg, ...functions) => functions.forEach((f) => {
-    if (f && typeof f === "function") f(arg);
-  });
-
-  // src/utils/clone-json.js
-  function cloneJsonObj(obj) {
-    var copy;
-    if (null === obj || "object" != typeof obj) return obj;
-    if (obj instanceof Array) {
-      copy = [];
-      for (var i = 0, len = obj.length; i < len; i++) {
-        copy[i] = cloneJsonObj(obj[i]);
-      }
-      return copy;
-    }
-    if (obj instanceof Object) {
-      copy = {};
-      for (var attr in obj) {
-        if (obj.hasOwnProperty(attr)) copy[attr] = cloneJsonObj(obj[attr]);
-      }
-      return copy;
-    }
-    throw new Error("Unable to copy obj! Its type isn't supported.");
-  }
-
   // src/jatos-promise.js
-  function createLegacyDeferred() {
+  function createJatosDeferred() {
     let currentState = "pending";
     let settledArgs = [];
     let settledContext;
@@ -67,7 +35,7 @@ var jatos;
         return this;
       },
       then: function(onFulfilled, onRejected) {
-        const chained = createLegacyDeferred();
+        const chained = createJatosDeferred();
         const chainedPromise = chained.promise();
         this.done(function(...args) {
           settleChained(chained, chainedPromise, onFulfilled, "resolve", this, args);
@@ -159,11 +127,11 @@ var jatos;
   function toArray(args) {
     return args == null ? [] : Array.from(args);
   }
-  function createLegacyPromiseCompatibility() {
+  function createJatosPromiseCompatibility() {
     return {
-      createDeferred: createLegacyDeferred,
+      createDeferred: createJatosDeferred,
       rejectedPromise: function(errorMsg) {
-        const deferred = createLegacyDeferred();
+        const deferred = createJatosDeferred();
         deferred.reject(errorMsg);
         return deferred.promise();
       }
@@ -172,6 +140,17 @@ var jatos;
   function isDeferredPending(deferred) {
     return typeof deferred != "undefined" && deferred.state() === "pending";
   }
+
+  // src/utils/callbacks.js
+  var call = (f) => {
+    if (f && typeof f == "function") f();
+  };
+  var callWithArgs = (f, ...args) => {
+    if (f && typeof f == "function") args.length ? f(...args) : f();
+  };
+  var callMany = (arg, ...functions) => functions.forEach((f) => {
+    if (f && typeof f === "function") f(arg);
+  });
 
   // src/result-data.js
   function installResultDataApi(jatos2, dependencies) {
@@ -406,6 +385,956 @@ var jatos;
       return counter;
     }
     return { getCounter, isBusy, send, start, terminate, whenIdle };
+  }
+
+  // src/utils/clone-json.js
+  function cloneJsonObj(obj) {
+    var copy;
+    if (null === obj || "object" != typeof obj) return obj;
+    if (obj instanceof Array) {
+      copy = [];
+      for (var i = 0, len = obj.length; i < len; i++) {
+        copy[i] = cloneJsonObj(obj[i]);
+      }
+      return copy;
+    }
+    if (obj instanceof Object) {
+      copy = {};
+      for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = cloneJsonObj(obj[attr]);
+      }
+      return copy;
+    }
+    throw new Error("Unable to copy obj! Its type isn't supported.");
+  }
+
+  // src/channels.js
+  function createChannels(jatos2, dependencies) {
+    const {
+      createDeferred: createDeferred2,
+      rejectedPromise: rejectedPromise2,
+      getURL,
+      getAjaxErrorMsg,
+      showIdOverlay,
+      isEndingStudy,
+      isStartingComponent,
+      isStudyRunInvalid,
+      setStudyRunInvalid
+    } = dependencies;
+    jatos2.groupMemberId = null;
+    jatos2.groupResultId = null;
+    jatos2.groupMembers = [];
+    jatos2.groupChannels = [];
+    let groupState = null;
+    let groupSessionData = {};
+    let batchSessionData = {};
+    jatos2.channelSendingTimeoutTime = 1e4;
+    jatos2.channelHeartbeatInterval = 1e4;
+    jatos2.channelHeartbeatTimeoutTime = 1e4;
+    jatos2.channelClosedCheckInterval = 2e3;
+    jatos2.channelOpeningBackoffTimeMin = 1e3;
+    jatos2.channelOpeningBackoffTimeMax = 12e4;
+    const batchSessionTimeouts = {};
+    const groupSessionTimeouts = {};
+    let groupFixedTimeout;
+    let batchChannelHeartbeatTimer;
+    let groupChannelHeartbeatTimer;
+    let batchChannelHeartbeatTimeoutTimers = [];
+    let groupChannelHeartbeatTimeoutTimers = [];
+    let batchChannelClosedCheckTimer;
+    let groupChannelClosedCheckTimer;
+    let batchSessionVersion;
+    let groupSessionVersion;
+    let batchSessionCounter = 0;
+    let groupSessionCounter = 0;
+    jatos2.batchSessionVersioning = true;
+    jatos2.groupSessionVersioning = true;
+    let batchChannel;
+    let groupChannel;
+    let groupChannelCallbacks;
+    const webSocketSupported = "WebSocket" in window;
+    let openingBatchChannelDeferred;
+    let sendingBatchSessionDeferred;
+    let openingGroupChannelDeferred;
+    let sendingGroupSessionDeferred;
+    let sendingGroupFixedDeferred;
+    let reassigningGroupDeferred;
+    let leavingGroupDeferred;
+    const batchChannelAliveEvent = new Event("batchChannelAlive");
+    const batchChannelDeadEvent = new Event("batchChannelDead");
+    let onJatosBatchSession;
+    let batchChannelAlive = false;
+    jatos2.onConnected = function(callback) {
+      window.addEventListener("batchChannelAlive", callback);
+    };
+    jatos2.onDisconnected = function(callback) {
+      window.addEventListener("batchChannelDead", callback);
+    };
+    jatos2.isConnected = function() {
+      return batchChannelAlive;
+    };
+    function openBatchChannelWithRetry(backoffTime) {
+      if (typeof backoffTime !== "number") backoffTime = jatos2.channelOpeningBackoffTimeMin;
+      return openBatchChannel().fail(function() {
+        if (backoffTime < jatos2.channelOpeningBackoffTimeMax) backoffTime *= 2;
+        setTimeout(function() {
+          openBatchChannelWithRetry(backoffTime);
+        }, backoffTime);
+      });
+    }
+    function openBatchChannel() {
+      if (!webSocketSupported) {
+        const errorMsg = "This browser does not support WebSockets. Can't open batch channel.";
+        console.warn(errorMsg);
+        return rejectedPromise2(errorMsg);
+      }
+      if (batchChannel && batchChannel.readyState !== batchChannel.CLOSED) {
+        return rejectedPromise2("Can't open a WebSocket that is not in readyState CLOSED.");
+      }
+      if (isEndingStudy() || isStartingComponent()) {
+        const errorMsg = "Won't open batch channel because study is about to move to the next component or finish.";
+        console.info(errorMsg);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't open batch channel. This study run is invalid.";
+        console.warn(errorMsg);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(openingBatchChannelDeferred)) {
+        const errorMsg = "Can open only one batch channel.";
+        console.warn(errorMsg);
+        return rejectedPromise2(errorMsg);
+      }
+      openingBatchChannelDeferred = createDeferred2();
+      const channel = new WebSocket(
+        (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos2.urlBasePath + "publix/" + jatos2.studyResultUuid + "/batch/open"
+      );
+      batchChannel = channel;
+      const openingDeferred = openingBatchChannelDeferred;
+      channel.onopen = function() {
+        if (batchChannel !== channel) return;
+        channel.send('{"action":"READY"}');
+        batchChannelHeartbeat();
+        batchChannelClosedCheck();
+      };
+      channel.onmessage = function(event) {
+        if (batchChannel !== channel) return;
+        handleBatchMsg(event.data);
+      };
+      channel.onerror = function() {
+        if (batchChannel !== channel) return;
+        console.error("Batch channel error");
+        openingDeferred.reject();
+      };
+      channel.onclose = function() {
+        if (batchChannel !== channel) return;
+        setBatchChannelDead();
+        clearBatchChannel();
+        openingDeferred.reject();
+      };
+      return openingBatchChannelDeferred.promise();
+    }
+    function reopenBatchChannel() {
+      if (isDeferredPending(openingBatchChannelDeferred)) return;
+      if (batchChannel instanceof WebSocket) batchChannel.close();
+      clearBatchChannel();
+      openBatchChannelWithRetry();
+    }
+    function batchChannelHeartbeat() {
+      clearInterval(batchChannelHeartbeatTimer);
+      batchChannelHeartbeatTimer = setInterval(function() {
+        if (batchChannel.readyState === batchChannel.OPEN) {
+          batchChannel.send('{"heartbeat":"ping"}');
+          const timeout = setTimeout(
+            handleBatchChannelHeartbeatFail,
+            jatos2.channelHeartbeatTimeoutTime
+          );
+          batchChannelHeartbeatTimeoutTimers.push(timeout);
+        }
+      }, jatos2.channelHeartbeatInterval);
+    }
+    function handleBatchChannelHeartbeatFail() {
+      console.warn("Batch channel heartbeat fail");
+      setBatchChannelDead();
+      reopenBatchChannel();
+    }
+    function batchChannelClosedCheck() {
+      clearInterval(batchChannelClosedCheckTimer);
+      batchChannelClosedCheckTimer = setInterval(function() {
+        if (batchChannel.readyState === batchChannel.CLOSED) {
+          console.info("Batch channel closed");
+          clearInterval(batchChannelClosedCheckTimer);
+          setBatchChannelDead();
+          reopenBatchChannel();
+        }
+      }, jatos2.channelClosedCheckInterval);
+    }
+    function clearBatchChannel() {
+      batchSessionData = {};
+      batchSessionVersion = null;
+      clearBatchChannelHeartbeatTimeoutTimers();
+      clearInterval(batchChannelHeartbeatTimer);
+    }
+    function clearBatchChannelHeartbeatTimeoutTimers() {
+      batchChannelHeartbeatTimeoutTimers.forEach(function(timeout) {
+        clearTimeout(timeout);
+      });
+      batchChannelHeartbeatTimeoutTimers = [];
+    }
+    function handleBatchMsg(msg) {
+      let batchMsg;
+      try {
+        batchMsg = JSON.parse(msg);
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+      if (typeof batchMsg.heartbeat != "undefined" && batchMsg.heartbeat === "pong") {
+        clearBatchChannelHeartbeatTimeoutTimers();
+        setBatchChannelAlive();
+        return;
+      }
+      if (typeof batchMsg.patches != "undefined") {
+        const patchResults = jsonpatch.applyPatch(batchSessionData, batchMsg.patches);
+        if (patchResults && patchResults.newDocument !== void 0) {
+          batchSessionData = patchResults.newDocument;
+        }
+      }
+      if (typeof batchMsg.data != "undefined") {
+        if (batchMsg.data === null) {
+          batchSessionData = {};
+        } else {
+          batchSessionData = batchMsg.data;
+        }
+      }
+      if (typeof batchMsg.version != "undefined") {
+        batchSessionVersion = batchMsg.version;
+        if (isDeferredPending(openingBatchChannelDeferred)) {
+          console.info("Batch channel opened");
+          openingBatchChannelDeferred.resolve();
+        }
+      }
+      if (typeof batchMsg.action != "undefined") {
+        handleBatchAction(batchMsg);
+      }
+    }
+    function handleBatchAction(batchMsg) {
+      switch (batchMsg.action) {
+        case "OPENED":
+          setBatchChannelAlive();
+          break;
+        case "SESSION":
+          batchMsg.patches.forEach(function(patch) {
+            callWithArgs(onJatosBatchSession, patch.path, patch.op);
+          });
+          break;
+        case "SESSION_ACK":
+          if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
+            batchSessionTimeouts[batchMsg.id].cancel("Batch session update successful");
+          } else {
+            console.error("Batch session got 'SESSION_ACK' with nonexistent ID " + batchMsg.id);
+          }
+          break;
+        case "SESSION_FAIL":
+          if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
+            const errorMsg = batchMsg.errorMsg || "Batch session update failed";
+            batchSessionTimeouts[batchMsg.id].trigger(errorMsg);
+          } else {
+            console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
+          }
+          break;
+        case "CLOSED":
+          clearInterval(batchChannelClosedCheckTimer);
+          setBatchChannelDead();
+          setStudyRunInvalid(true);
+          console.info("Batch channel closed by JATOS server");
+          jatos2.showOverlay({ text: "This study run is invalid.", showImg: false });
+          break;
+        case "ERROR":
+          console.error(batchMsg.errorMsg);
+          break;
+      }
+    }
+    function setBatchChannelAlive() {
+      if (!batchChannelAlive) {
+        batchChannelAlive = true;
+        window.dispatchEvent(batchChannelAliveEvent);
+      }
+    }
+    function setBatchChannelDead() {
+      if (batchChannelAlive) {
+        batchChannelAlive = false;
+        window.dispatchEvent(batchChannelDeadEvent);
+      }
+    }
+    jatos2.batchSession = {};
+    jatos2.batchSession.get = function(name) {
+      const obj = jsonpatch.getValueByPointer(batchSessionData, "/" + name);
+      return cloneJsonObj(obj);
+    };
+    jatos2.batchSession.getAll = function() {
+      const obj = jatos2.batchSession.find("");
+      return cloneJsonObj(obj);
+    };
+    jatos2.batchSession.find = function(path) {
+      const obj = jsonpatch.getValueByPointer(batchSessionData, path);
+      return cloneJsonObj(obj);
+    };
+    jatos2.batchSession.test = function(path, value) {
+      const obj = jsonpatch.getValueByPointer(batchSessionData, path);
+      return obj === value;
+    };
+    jatos2.batchSession.defined = function(path) {
+      return !jatos2.batchSession.test(path, void 0);
+    };
+    jatos2.batchSession.add = function(path, value, onSuccess, onFail) {
+      const patch = generatePatch("add", path, value, null);
+      return sendBatchSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.batchSession.set = function(name, value, onSuccess, onFail) {
+      const patch = generatePatch("add", "/" + name, value, null);
+      return sendBatchSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.batchSession.setAll = function(value, onSuccess, onFail) {
+      return jatos2.batchSession.replace("", value, onSuccess, onFail);
+    };
+    jatos2.batchSession.remove = function(path, onSuccess, onFail) {
+      const patch = generatePatch("remove", path, null, null);
+      return sendBatchSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.batchSession.clear = function(onSuccess, onFail) {
+      const patch = generatePatch("replace", "", {}, null);
+      return sendBatchSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.batchSession.replace = function(path, value, onSuccess, onFail) {
+      const patch = generatePatch("replace", path, value, null);
+      return sendBatchSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.batchSession.copy = function(from, path, onSuccess, onFail) {
+      const patch = generatePatch("copy", path, null, from);
+      return sendBatchSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.batchSession.move = function(from, path, onSuccess, onFail) {
+      const patch = generatePatch("move", path, null, from);
+      return sendBatchSessionPatch(patch, onSuccess, onFail);
+    };
+    function generatePatch(op, path, value, from) {
+      const patch = {};
+      patch.op = op;
+      if (path !== null) {
+        patch.path = path;
+      }
+      if (value !== null) {
+        patch.value = value;
+      }
+      if (from !== null) {
+        patch.from = from;
+      }
+      return patch;
+    }
+    function sendBatchSessionPatch(patches, onSuccess, onFail) {
+      if (!batchChannel || batchChannel.readyState !== batchChannel.OPEN) {
+        const errorMsg = `Can't send batch session patch. No open batch channel. Patch: ${patches.op} ${patches.path}.`;
+        callMany(errorMsg, onFail, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      if (jatos2.batchSessionVersioning && isDeferredPending(sendingBatchSessionDeferred)) {
+        const errorMsg = `Can send only one batch session patch at a time. Patch: ${patches.op} ${patches.path}.`;
+        callMany(errorMsg, onFail, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = `Can't send batch session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
+        callMany(errorMsg, onFail, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      const deferred = createDeferred2();
+      if (jatos2.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
+      const sessionActionId = batchSessionCounter++;
+      const msgObj = {};
+      msgObj.action = "SESSION";
+      msgObj.id = sessionActionId;
+      msgObj.patches = patches.constructor === Array ? patches : [patches];
+      msgObj.version = batchSessionVersion;
+      msgObj.versioning = !!jatos2.batchSessionVersioning;
+      try {
+        batchChannel.send(JSON.stringify(msgObj));
+        setChannelSendingTimeoutAndPromiseResolution(
+          deferred,
+          batchSessionTimeouts,
+          sessionActionId,
+          onSuccess,
+          onFail
+        );
+      } catch (error) {
+        callMany(error, onFail, console.error);
+        deferred.reject();
+      }
+      return deferred.promise();
+    }
+    jatos2.onBatchSession = function(onBatchSession) {
+      onJatosBatchSession = onBatchSession;
+    };
+    jatos2.joinGroup = function(callbacks) {
+      groupChannelCallbacks = callbacks ? callbacks : {};
+      return openGroupChannel();
+    };
+    function openGroupChannel() {
+      if (!webSocketSupported) {
+        const errorMsg = "This browser does not support WebSockets.";
+        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+        return rejectedPromise2(errorMsg);
+      }
+      if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
+        return rejectedPromise2("Can't open a WebSocket that is not in readyState CLOSED.");
+      }
+      if (isEndingStudy() || isStartingComponent()) {
+        const errorMsg = "Won't open group channel because study is about to move to the next component or finish.";
+        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't open group channel. This study run is invalid.";
+        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(openingGroupChannelDeferred)) {
+        const errorMsg = "Can open only one group channel";
+        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(leavingGroupDeferred)) {
+        const errorMsg = "Can't open group channel while leaving a group";
+        callMany(errorMsg, console.error, groupChannelCallbacks.onError);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(reassigningGroupDeferred)) {
+        const errorMsg = "Can't open group channel while reassigning a group";
+        callMany(errorMsg, console.error, groupChannelCallbacks.onError);
+        return rejectedPromise2(errorMsg);
+      }
+      openingGroupChannelDeferred = createDeferred2();
+      groupChannel = new WebSocket(
+        (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos2.urlBasePath + "publix/" + jatos2.studyResultUuid + "/group/join"
+      );
+      groupChannel.onopen = function() {
+        groupChannel.send('{"action":"READY"}');
+        groupChannelHeartbeat();
+        groupChannelClosedCheck();
+      };
+      groupChannel.onmessage = function(event) {
+        handleGroupMsg(event.data);
+      };
+      groupChannel.onerror = function() {
+        callMany("Group channel error", console.error, groupChannelCallbacks.onError);
+        openingGroupChannelDeferred.reject();
+      };
+      groupChannel.onclose = function() {
+        clearGroupChannel();
+        call(groupChannelCallbacks.onClose);
+        openingGroupChannelDeferred.reject();
+      };
+      return openingGroupChannelDeferred.promise();
+    }
+    function openGroupChannelWithRetry(backoffTime) {
+      if (typeof backoffTime !== "number") backoffTime = jatos2.channelOpeningBackoffTimeMin;
+      openGroupChannel().fail(function() {
+        if (backoffTime < jatos2.channelOpeningBackoffTimeMax) backoffTime *= 2;
+        setTimeout(function() {
+          openGroupChannelWithRetry(backoffTime);
+        }, backoffTime);
+      });
+    }
+    function reopenGroupChannel() {
+      if (isDeferredPending(openingGroupChannelDeferred) || isDeferredPending(reassigningGroupDeferred) || isDeferredPending(leavingGroupDeferred)) {
+        return;
+      }
+      if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
+        groupChannel.close();
+      }
+      clearGroupChannel();
+      openGroupChannelWithRetry();
+    }
+    function groupChannelHeartbeat() {
+      clearInterval(groupChannelHeartbeatTimer);
+      groupChannelHeartbeatTimer = setInterval(function() {
+        if (groupChannel.readyState === groupChannel.OPEN) {
+          groupChannel.send('{"heartbeat":"ping"}');
+          const timeout = setTimeout(function() {
+            callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
+            reopenGroupChannel();
+          }, jatos2.channelHeartbeatTimeoutTime);
+          groupChannelHeartbeatTimeoutTimers.push(timeout);
+        }
+      }, jatos2.channelHeartbeatInterval);
+    }
+    function groupChannelClosedCheck() {
+      clearInterval(groupChannelClosedCheckTimer);
+      groupChannelClosedCheckTimer = setInterval(function() {
+        if (groupChannel.readyState === groupChannel.CLOSED) {
+          callMany("Group channel closed", console.info, groupChannelCallbacks.onError);
+          clearInterval(groupChannelClosedCheckTimer);
+          reopenGroupChannel();
+        }
+      }, jatos2.channelClosedCheckInterval);
+    }
+    function clearGroupChannelHeartbeatTimeoutTimers() {
+      groupChannelHeartbeatTimeoutTimers.forEach(function(timeout) {
+        clearTimeout(timeout);
+      });
+      groupChannelHeartbeatTimeoutTimers = [];
+    }
+    function clearGroupChannel() {
+      jatos2.groupMemberId = null;
+      jatos2.groupResultId = null;
+      jatos2.groupMembers = [];
+      jatos2.groupChannels = [];
+      groupSessionData = {};
+      groupSessionVersion = null;
+      groupState = null;
+      clearGroupChannelHeartbeatTimeoutTimers();
+      clearInterval(groupChannelHeartbeatTimer);
+    }
+    function handleGroupMsg(msg) {
+      let groupMsg;
+      try {
+        groupMsg = JSON.parse(msg);
+      } catch (error) {
+        callMany(error, groupChannelCallbacks.onError, console.error);
+        return;
+      }
+      if (typeof groupMsg.heartbeat != "undefined") {
+        clearGroupChannelHeartbeatTimeoutTimers();
+        return;
+      }
+      updateGroupVars(groupMsg);
+      callGroupActionCallbacks(groupMsg);
+      if (groupMsg.msg && groupChannelCallbacks.onMessage) {
+        groupChannelCallbacks.onMessage(groupMsg.msg);
+      }
+    }
+    function updateGroupVars(groupMsg) {
+      if (typeof groupMsg.groupState != "undefined") {
+        groupState = groupMsg.groupState;
+      }
+      if (typeof groupMsg.groupResultId != "undefined") {
+        jatos2.groupResultId = groupMsg.groupResultId.toString();
+        showIdOverlay();
+        jatos2.groupMemberId = jatos2.studyResultId;
+      }
+      if (groupMsg.action === "OPENED" && typeof groupMsg.members != "undefined") {
+        jatos2.groupMembers = groupMsg.members;
+      } else if (typeof groupMsg.memberId != "undefined" && groupMsg.action === "JOINED" && !jatos2.groupMembers.includes(groupMsg.memberId)) {
+        jatos2.groupMembers.push(groupMsg.memberId);
+      } else if (typeof groupMsg.memberId != "undefined" && groupMsg.action === "LEFT") {
+        jatos2.groupMembers = jatos2.groupMembers.filter(function(memberId) {
+          return memberId !== groupMsg.memberId;
+        });
+      }
+      if (groupMsg.action === "OPENED" && typeof groupMsg.channels != "undefined") {
+        jatos2.groupChannels = groupMsg.channels;
+      } else if (typeof groupMsg.memberId != "undefined" && groupMsg.action === "CHANNEL_OPENED" && !jatos2.groupChannels.includes(groupMsg.memberId)) {
+        jatos2.groupChannels.push(groupMsg.memberId);
+      } else if (typeof groupMsg.memberId != "undefined" && (groupMsg.action === "CHANNEL_CLOSED" || groupMsg.action === "CLOSED")) {
+        jatos2.groupChannels = jatos2.groupChannels.filter(function(memberId) {
+          return memberId !== groupMsg.memberId;
+        });
+      }
+      if (typeof groupMsg.sessionPatches != "undefined") {
+        const patchResults = jsonpatch.applyPatch(groupSessionData, groupMsg.sessionPatches);
+        if (patchResults && patchResults.newDocument !== void 0) {
+          groupSessionData = patchResults.newDocument;
+        }
+      }
+      if (typeof groupMsg.sessionData != "undefined") {
+        if (groupMsg.sessionData === null) {
+          groupSessionData = {};
+        } else {
+          groupSessionData = groupMsg.sessionData;
+        }
+      }
+      if (typeof groupMsg.sessionVersion != "undefined") {
+        groupSessionVersion = groupMsg.sessionVersion;
+        if (isDeferredPending(openingGroupChannelDeferred)) {
+          console.info("Group channel opened");
+          openingGroupChannelDeferred.resolve();
+        }
+      }
+    }
+    function callGroupActionCallbacks(groupMsg) {
+      if (!groupMsg.action) {
+        return;
+      }
+      switch (groupMsg.action) {
+        case "OPENED":
+          callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
+          break;
+        case "CLOSED":
+          clearInterval(groupChannelClosedCheckTimer);
+          console.info("Group channel closed by JATOS server");
+          break;
+        case "CHANNEL_OPENED":
+          callWithArgs(groupChannelCallbacks.onMemberOpen, groupMsg.memberId);
+          call(groupChannelCallbacks.onUpdate);
+          break;
+        case "CHANNEL_CLOSED":
+          callWithArgs(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
+          call(groupChannelCallbacks.onUpdate);
+          break;
+        case "JOINED":
+          if (groupMsg.memberId !== jatos2.groupMemberId) {
+            callWithArgs(groupChannelCallbacks.onMemberJoin, groupMsg.memberId);
+            call(groupChannelCallbacks.onUpdate);
+          }
+          break;
+        case "LEFT":
+          if (groupMsg.memberId !== jatos2.groupMemberId) {
+            callWithArgs(groupChannelCallbacks.onMemberLeave, groupMsg.memberId);
+            call(groupChannelCallbacks.onUpdate);
+          }
+          break;
+        case "SESSION":
+          groupMsg.sessionPatches.forEach(function(patch) {
+            callWithArgs(groupChannelCallbacks.onGroupSession, patch.path, patch.op);
+          });
+          call(groupChannelCallbacks.onUpdate);
+          break;
+        case "FIXED":
+          if (groupFixedTimeout) {
+            groupFixedTimeout.cancel();
+          }
+          call(groupChannelCallbacks.onUpdate);
+          break;
+        case "SESSION_ACK":
+          if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
+            groupSessionTimeouts[groupMsg.sessionActionId].cancel("Group session update successful");
+          } else {
+            console.warn("Group session got 'SESSION_ACK' with nonexistent ID " + groupMsg.sessionActionId);
+          }
+          break;
+        case "SESSION_FAIL":
+          if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
+            const errorMsg = groupMsg.errorMsg || "Group session update failed";
+            groupSessionTimeouts[groupMsg.sessionActionId].trigger(errorMsg);
+          } else {
+            console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
+          }
+          break;
+        case "ERROR":
+          callMany(groupMsg.errorMsg, groupChannelCallbacks.onError, console.error);
+          break;
+      }
+    }
+    jatos2.getGroupState = function() {
+      return groupState;
+    };
+    jatos2.isGroupFixed = function() {
+      return groupState === "FIXED";
+    };
+    jatos2.groupSession = {};
+    jatos2.groupSession.get = function(name) {
+      const obj = jsonpatch.getValueByPointer(groupSessionData, "/" + name);
+      return cloneJsonObj(obj);
+    };
+    jatos2.groupSession.getAll = function() {
+      const obj = jatos2.groupSession.find("");
+      return cloneJsonObj(obj);
+    };
+    jatos2.groupSession.find = function(path) {
+      const obj = jsonpatch.getValueByPointer(groupSessionData, path);
+      return cloneJsonObj(obj);
+    };
+    jatos2.groupSession.test = function(path, value) {
+      const obj = jsonpatch.getValueByPointer(groupSessionData, path);
+      return obj === value;
+    };
+    jatos2.groupSession.defined = function(path) {
+      return !jatos2.groupSession.test(path, void 0);
+    };
+    jatos2.groupSession.add = function(path, value, onSuccess, onFail) {
+      const patch = generatePatch("add", path, value, null);
+      return sendGroupSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.groupSession.set = function(name, value, onSuccess, onFail) {
+      const patch = generatePatch("add", "/" + name, value, null);
+      return sendGroupSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.groupSession.setAll = function(value, onSuccess, onFail) {
+      return jatos2.groupSession.replace("", value, onSuccess, onFail);
+    };
+    jatos2.groupSession.remove = function(path, onSuccess, onFail) {
+      const patch = generatePatch("remove", path, null, null);
+      return sendGroupSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.groupSession.clear = function(onSuccess, onFail) {
+      const patch = generatePatch("replace", "", {}, null);
+      return sendGroupSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.groupSession.replace = function(path, value, onSuccess, onFail) {
+      const patch = generatePatch("replace", path, value, null);
+      return sendGroupSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.groupSession.copy = function(from, path, onSuccess, onFail) {
+      const patch = generatePatch("copy", path, null, from);
+      return sendGroupSessionPatch(patch, onSuccess, onFail);
+    };
+    jatos2.groupSession.move = function(from, path, onSuccess, onFail) {
+      const patch = generatePatch("move", path, null, from);
+      return sendGroupSessionPatch(patch, onSuccess, onFail);
+    };
+    function sendGroupSessionPatch(patches, onSuccess, onFail) {
+      if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
+        const errorMsg = `Can't send group session patch. No open group channel. Patch: ${patches.op} ${patches.path}.`;
+        callMany(errorMsg, onFail, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      if (jatos2.groupSessionVersioning && isDeferredPending(sendingGroupSessionDeferred)) {
+        const errorMsg = `Can send only one group session patch at a time. Patch: ${patches.op} ${patches.path}.`;
+        callMany(errorMsg, onFail, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = `Can't send group session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
+        callMany(errorMsg, onFail, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      const deferred = createDeferred2();
+      if (jatos2.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
+      const sessionActionId = groupSessionCounter++;
+      const msgObj = {};
+      msgObj.action = "SESSION";
+      msgObj.sessionActionId = sessionActionId;
+      msgObj.sessionPatches = patches.constructor === Array ? patches : [patches];
+      msgObj.sessionVersion = groupSessionVersion;
+      msgObj.sessionVersioning = !!jatos2.groupSessionVersioning;
+      try {
+        groupChannel.send(JSON.stringify(msgObj));
+        setChannelSendingTimeoutAndPromiseResolution(
+          deferred,
+          groupSessionTimeouts,
+          sessionActionId,
+          onSuccess,
+          onFail
+        );
+      } catch (error) {
+        callMany(error, onFail, console.error);
+        deferred.reject();
+      }
+      return deferred.promise();
+    }
+    jatos2.setGroupFixed = function(onSuccess, onFail) {
+      if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
+        const errorMsg = "Can't fix group. No open group channel.";
+        callMany(errorMsg, onFail, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(sendingGroupFixedDeferred)) {
+        const errorMsg = "Can fix group only once.";
+        callMany(errorMsg, onFail, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't fix group. This study run is invalid.";
+        callMany(errorMsg, onFail, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      sendingGroupFixedDeferred = createDeferred2();
+      const msgObj = {};
+      msgObj.action = "FIXED";
+      try {
+        groupChannel.send(JSON.stringify(msgObj));
+        setGroupFixedTimeoutAndPromiseResolution(
+          sendingGroupFixedDeferred,
+          onSuccess,
+          onFail
+        );
+      } catch (error) {
+        callMany(error, onFail, console.error);
+        sendingGroupFixedDeferred.reject();
+      }
+      return sendingGroupFixedDeferred.promise();
+    };
+    function setGroupFixedTimeoutAndPromiseResolution(deferred, onSuccess, onFail) {
+      const timeoutId = setTimeout(() => {
+        callWithArgs(onFail, "Timeout sending message");
+        deferred.reject("Timeout sending message");
+      }, jatos2.channelSendingTimeoutTime);
+      groupFixedTimeout = {
+        cancel: () => {
+          clearTimeout(timeoutId);
+          callWithArgs(onSuccess, "success");
+          deferred.resolve("success");
+        }
+      };
+      deferred.always(() => {
+        groupFixedTimeout = null;
+      });
+    }
+    jatos2.hasJoinedGroup = function() {
+      return jatos2.groupResultId !== null;
+    };
+    jatos2.hasOpenGroupChannel = function() {
+      return groupChannel && groupChannel.readyState === groupChannel.OPEN;
+    };
+    jatos2.isMaxActiveMemberReached = function() {
+      if (!jatos2.batchProperties || jatos2.batchProperties.maxActiveMembers === null) {
+        return false;
+      } else {
+        return jatos2.groupMembers.length >= jatos2.batchProperties.maxActiveMembers;
+      }
+    };
+    jatos2.isMaxActiveMemberOpen = function() {
+      if (!jatos2.batchProperties || jatos2.batchProperties.maxActiveMembers === null) {
+        return false;
+      } else {
+        return jatos2.groupChannels.length >= jatos2.batchProperties.maxActiveMembers;
+      }
+    };
+    jatos2.isGroupOpen = function() {
+      if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
+        return jatos2.groupMembers.length === jatos2.groupChannels.length;
+      } else {
+        return false;
+      }
+    };
+    jatos2.sendGroupMsg = function(msg) {
+      if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
+        const msgObj = {};
+        msgObj.msg = msg;
+        groupChannel.send(JSON.stringify(msgObj));
+      }
+    };
+    jatos2.sendGroupMsgTo = function(recipient, msg) {
+      if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
+        const msgObj = {};
+        msgObj.recipient = recipient;
+        msgObj.msg = msg;
+        groupChannel.send(JSON.stringify(msgObj));
+      }
+    };
+    jatos2.reassignGroup = function(onSuccess, onFail) {
+      if (isDeferredPending(openingGroupChannelDeferred)) {
+        const errorMsg = "Can't reassign a group if not joined yet.";
+        callMany(errorMsg, console.error, onFail);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(leavingGroupDeferred)) {
+        const errorMsg = "Can't reassign a group during leaving.";
+        callMany(errorMsg, console.error, onFail);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(reassigningGroupDeferred)) {
+        const errorMsg = "Can't reassign a group twice at the same time.";
+        callMany(errorMsg, console.warn, onFail);
+        return rejectedPromise2(errorMsg);
+      }
+      if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
+        const errorMsg = "Can't reassign group. Group channel not open.";
+        callMany(errorMsg, console.error, onFail);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't reassign group. This study run is invalid.";
+        callMany(errorMsg, console.warn, onFail);
+        return rejectedPromise2(errorMsg);
+      }
+      reassigningGroupDeferred = createDeferred2();
+      jatos2.jQuery.ajax({
+        url: getURL("../group/reassign"),
+        processData: false,
+        type: "GET",
+        timeout: jatos2.httpTimeout,
+        statusCode: {
+          200: function() {
+            call(onSuccess);
+            reassigningGroupDeferred.resolve();
+          },
+          204: function() {
+            call(onFail);
+            reassigningGroupDeferred.reject();
+          }
+        },
+        error: function(err) {
+          const errMsg = getAjaxErrorMsg(err);
+          callMany(errMsg, console.error, onFail);
+          reassigningGroupDeferred.reject(errMsg);
+        }
+      });
+      return reassigningGroupDeferred.promise();
+    };
+    jatos2.leaveGroup = function(onSuccess, onError) {
+      if (isDeferredPending(openingGroupChannelDeferred)) {
+        const errorMsg = "Can't leave group if not joined yet.";
+        callMany(errorMsg, onError, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(reassigningGroupDeferred)) {
+        const errorMsg = "Can't leave group during reassigning.";
+        callMany(errorMsg, onError, console.error);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isDeferredPending(leavingGroupDeferred)) {
+        const errorMsg = "Can leave only once.";
+        callMany(errorMsg, onError, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      if (isStudyRunInvalid()) {
+        const errorMsg = "Can't leave group. This study run is invalid.";
+        callMany(errorMsg, onError, console.warn);
+        return rejectedPromise2(errorMsg);
+      }
+      leavingGroupDeferred = createDeferred2();
+      jatos2.jQuery.ajax({
+        url: getURL("../group/leave"),
+        processData: false,
+        type: "GET",
+        timeout: jatos2.httpTimeout,
+        success: function(response) {
+          clearInterval(groupChannelClosedCheckTimer);
+          callWithArgs(onSuccess, response);
+          leavingGroupDeferred.resolve(response);
+        },
+        error: function(err) {
+          var errMsg = getAjaxErrorMsg(err);
+          callMany(errMsg, onError, console.error);
+          leavingGroupDeferred.reject(errMsg);
+        }
+      }).retry({
+        times: jatos2.httpRetry,
+        timeout: jatos2.httpRetryWait
+      });
+      return leavingGroupDeferred.promise();
+    };
+    function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onFail) {
+      var timeoutId = setTimeout(function() {
+        callWithArgs(onFail, "Timeout sending session patch");
+        deferred.reject("Timeout sending session patch");
+      }, jatos2.channelSendingTimeoutTime);
+      sessionTimeouts[sessionActionId] = {
+        cancel: function(msg) {
+          clearTimeout(timeoutId);
+          callWithArgs(onSuccess, msg);
+          deferred.resolve(msg);
+        },
+        trigger: function(msg) {
+          clearTimeout(timeoutId);
+          callWithArgs(onFail, msg);
+          deferred.reject(msg);
+        }
+      };
+      deferred.always(function() {
+        delete sessionTimeouts[sessionActionId];
+      });
+    }
+    return {
+      openBatchChannelWithRetry,
+      // Preserve the existing end/abort cleanup: only stop closed-channel checks.
+      stopClosedChecks: () => {
+        clearInterval(batchChannelClosedCheckTimer);
+        clearInterval(groupChannelClosedCheckTimer);
+      }
+    };
   }
 
   // src/study-run.js
@@ -788,7 +1717,7 @@ var jatos;
    */
   jatos = {};
   window.jatos = jatos;
-  var { createDeferred, rejectedPromise } = createLegacyPromiseCompatibility();
+  var { createDeferred, rejectedPromise } = createJatosPromiseCompatibility();
   (function() {
     "use strict";
     jatos.version = "3.11.3";
@@ -808,63 +1737,33 @@ var jatos;
     jatos.batchProperties = {};
     jatos.batchJsonInput = {};
     jatos.batchInput = {};
-    jatos.groupMemberId = null;
-    jatos.groupResultId = null;
-    jatos.groupMembers = [];
-    jatos.groupChannels = [];
-    let groupState = null;
-    let groupSessionData = {};
-    let batchSessionData = {};
-    jatos.channelSendingTimeoutTime = 1e4;
-    jatos.channelHeartbeatInterval = 1e4;
-    jatos.channelHeartbeatTimeoutTime = 1e4;
-    jatos.channelClosedCheckInterval = 2e3;
-    jatos.channelOpeningBackoffTimeMin = 1e3;
-    jatos.channelOpeningBackoffTimeMax = 12e4;
     jatos.waitSendDataOverlayConfig = {
       text: "Sending data. Please wait."
     };
-    const batchSessionTimeouts = {};
-    const groupSessionTimeouts = {};
-    let groupFixedTimeout;
-    let batchChannelHeartbeatTimer;
-    let groupChannelHeartbeatTimer;
-    let batchChannelHeartbeatTimeoutTimers = [];
-    let groupChannelHeartbeatTimeoutTimers = [];
-    let batchChannelClosedCheckTimer;
-    let groupChannelClosedCheckTimer;
-    let batchSessionVersion;
-    let groupSessionVersion;
-    let batchSessionCounter = 0;
-    let groupSessionCounter = 0;
-    jatos.batchSessionVersioning = true;
-    jatos.groupSessionVersioning = true;
-    let batchChannel;
-    let groupChannel;
-    let groupChannelCallbacks;
-    const webSocketSupported = "WebSocket" in window;
     let heartbeatWorker;
     let initialized = false;
     let jatosOnLoadEventFired = false;
-    let batchChannelAlive = false;
     let startingComponent = false;
     let endingStudy = false;
     let studyRunInvalid = false;
-    let openingBatchChannelDeferred;
-    let sendingBatchSessionDeferred;
-    let openingGroupChannelDeferred;
-    let sendingGroupSessionDeferred;
-    let sendingGroupFixedDeferred;
-    let reassigningGroupDeferred;
-    let leavingGroupDeferred;
     const jatosOnLoadEvent = new Event("jatosOnLoad");
-    const batchChannelAliveEvent = new Event("batchChannelAlive");
-    const batchChannelDeadEvent = new Event("batchChannelDead");
-    let onJatosBatchSession;
     let showBeforeUnloadWarning = true;
     const httpLoop = createHttpLoop({
       createDeferred,
       isInitialized: () => initialized
+    });
+    const channels = createChannels(jatos, {
+      createDeferred,
+      rejectedPromise,
+      getURL,
+      getAjaxErrorMsg,
+      showIdOverlay,
+      isEndingStudy: () => endingStudy,
+      isStartingComponent: () => startingComponent,
+      isStudyRunInvalid: () => studyRunInvalid,
+      setStudyRunInvalid: (value) => {
+        studyRunInvalid = value;
+      }
     });
     jatos.jQuery = {};
     getScript("jatos-publix/javascripts/jquery-3.7.1.min.js", function() {
@@ -901,7 +1800,7 @@ var jatos;
         heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
         heartbeatWorker.postMessage([jatos.studyResultUuid]);
         httpLoop.start();
-      }).then(getInitData).then(showIdOverlay).then(openBatchChannelWithRetry).always(function() {
+      }).then(getInitData).then(showIdOverlay).then(channels.openBatchChannelWithRetry).always(function() {
         initialized = true;
         readyForOnLoad();
       });
@@ -987,322 +1886,10 @@ var jatos;
         window.dispatchEvent(jatosOnLoadEvent);
       }
     }
-    jatos.onConnected = function(callback) {
-      window.addEventListener("batchChannelAlive", callback);
-    };
-    jatos.onDisconnected = function(callback) {
-      window.addEventListener("batchChannelDead", callback);
-    };
-    jatos.isConnected = function() {
-      return batchChannelAlive;
-    };
-    function openBatchChannelWithRetry(backoffTime) {
-      if (typeof backoffTime !== "number") backoffTime = jatos.channelOpeningBackoffTimeMin;
-      return openBatchChannel().fail(function() {
-        if (backoffTime < jatos.channelOpeningBackoffTimeMax) backoffTime *= 2;
-        setTimeout(function() {
-          openBatchChannelWithRetry(backoffTime);
-        }, backoffTime);
-      });
-    }
-    function openBatchChannel() {
-      if (!webSocketSupported) {
-        const errorMsg = "This browser does not support WebSockets. Can't open batch channel.";
-        console.warn(errorMsg);
-        return rejectedPromise(errorMsg);
-      }
-      if (batchChannel && batchChannel.readyState !== batchChannel.CLOSED) {
-        return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
-      }
-      if (endingStudy || startingComponent) {
-        const errorMsg = "Won't open batch channel because study is about to move to the next component or finish.";
-        console.info(errorMsg);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = "Can't open batch channel. This study run is invalid.";
-        console.warn(errorMsg);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(openingBatchChannelDeferred)) {
-        const errorMsg = "Can open only one batch channel.";
-        console.warn(errorMsg);
-        return rejectedPromise(errorMsg);
-      }
-      openingBatchChannelDeferred = createDeferred();
-      const channel = new WebSocket(
-        (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/batch/open"
-      );
-      batchChannel = channel;
-      const openingDeferred = openingBatchChannelDeferred;
-      channel.onopen = function() {
-        if (batchChannel !== channel) return;
-        channel.send('{"action":"READY"}');
-        batchChannelHeartbeat();
-        batchChannelClosedCheck();
-      };
-      channel.onmessage = function(event) {
-        if (batchChannel !== channel) return;
-        handleBatchMsg(event.data);
-      };
-      channel.onerror = function() {
-        if (batchChannel !== channel) return;
-        console.error("Batch channel error");
-        openingDeferred.reject();
-      };
-      channel.onclose = function() {
-        if (batchChannel !== channel) return;
-        setBatchChannelDead();
-        clearBatchChannel();
-        openingDeferred.reject();
-      };
-      return openingBatchChannelDeferred.promise();
-    }
-    function reopenBatchChannel() {
-      if (isDeferredPending(openingBatchChannelDeferred)) return;
-      if (batchChannel instanceof WebSocket) batchChannel.close();
-      clearBatchChannel();
-      openBatchChannelWithRetry();
-    }
-    function batchChannelHeartbeat() {
-      clearInterval(batchChannelHeartbeatTimer);
-      batchChannelHeartbeatTimer = setInterval(function() {
-        if (batchChannel.readyState === batchChannel.OPEN) {
-          batchChannel.send('{"heartbeat":"ping"}');
-          const timeout = setTimeout(
-            handleBatchChannelHeartbeatFail,
-            jatos.channelHeartbeatTimeoutTime
-          );
-          batchChannelHeartbeatTimeoutTimers.push(timeout);
-        }
-      }, jatos.channelHeartbeatInterval);
-    }
-    function handleBatchChannelHeartbeatFail() {
-      console.warn("Batch channel heartbeat fail");
-      setBatchChannelDead();
-      reopenBatchChannel();
-    }
-    function batchChannelClosedCheck() {
-      clearInterval(batchChannelClosedCheckTimer);
-      batchChannelClosedCheckTimer = setInterval(function() {
-        if (batchChannel.readyState === batchChannel.CLOSED) {
-          console.info("Batch channel closed");
-          clearInterval(batchChannelClosedCheckTimer);
-          setBatchChannelDead();
-          reopenBatchChannel();
-        }
-      }, jatos.channelClosedCheckInterval);
-    }
-    function clearBatchChannel() {
-      batchSessionData = {};
-      batchSessionVersion = null;
-      clearBatchChannelHeartbeatTimeoutTimers();
-      clearInterval(batchChannelHeartbeatTimer);
-    }
-    function clearBatchChannelHeartbeatTimeoutTimers() {
-      batchChannelHeartbeatTimeoutTimers.forEach(function(timeout) {
-        clearTimeout(timeout);
-      });
-      batchChannelHeartbeatTimeoutTimers = [];
-    }
-    function handleBatchMsg(msg) {
-      let batchMsg;
-      try {
-        batchMsg = JSON.parse(msg);
-      } catch (error) {
-        console.error(error);
-        return;
-      }
-      if (typeof batchMsg.heartbeat != "undefined" && batchMsg.heartbeat === "pong") {
-        clearBatchChannelHeartbeatTimeoutTimers();
-        setBatchChannelAlive();
-        return;
-      }
-      if (typeof batchMsg.patches != "undefined") {
-        const patchResults = jsonpatch.applyPatch(batchSessionData, batchMsg.patches);
-        if (patchResults && patchResults.newDocument !== void 0) {
-          batchSessionData = patchResults.newDocument;
-        }
-      }
-      if (typeof batchMsg.data != "undefined") {
-        if (batchMsg.data === null) {
-          batchSessionData = {};
-        } else {
-          batchSessionData = batchMsg.data;
-        }
-      }
-      if (typeof batchMsg.version != "undefined") {
-        batchSessionVersion = batchMsg.version;
-        if (isDeferredPending(openingBatchChannelDeferred)) {
-          console.info("Batch channel opened");
-          openingBatchChannelDeferred.resolve();
-        }
-      }
-      if (typeof batchMsg.action != "undefined") {
-        handleBatchAction(batchMsg);
-      }
-    }
-    function handleBatchAction(batchMsg) {
-      switch (batchMsg.action) {
-        case "OPENED":
-          setBatchChannelAlive();
-          break;
-        case "SESSION":
-          batchMsg.patches.forEach(function(patch) {
-            callWithArgs(onJatosBatchSession, patch.path, patch.op);
-          });
-          break;
-        case "SESSION_ACK":
-          if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-            batchSessionTimeouts[batchMsg.id].cancel("Batch session update successful");
-          } else {
-            console.error("Batch session got 'SESSION_ACK' with nonexistent ID " + batchMsg.id);
-          }
-          break;
-        case "SESSION_FAIL":
-          if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-            const errorMsg = batchMsg.errorMsg || "Batch session update failed";
-            batchSessionTimeouts[batchMsg.id].trigger(errorMsg);
-          } else {
-            console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
-          }
-          break;
-        case "CLOSED":
-          clearInterval(batchChannelClosedCheckTimer);
-          setBatchChannelDead();
-          studyRunInvalid = true;
-          console.info("Batch channel closed by JATOS server");
-          jatos.showOverlay({ text: "This study run is invalid.", showImg: false });
-          break;
-        case "ERROR":
-          console.error(batchMsg.errorMsg);
-          break;
-      }
-    }
-    function setBatchChannelAlive() {
-      if (!batchChannelAlive) {
-        batchChannelAlive = true;
-        window.dispatchEvent(batchChannelAliveEvent);
-      }
-    }
-    function setBatchChannelDead() {
-      if (batchChannelAlive) {
-        batchChannelAlive = false;
-        window.dispatchEvent(batchChannelDeadEvent);
-      }
-    }
-    jatos.batchSession = {};
-    jatos.batchSession.get = function(name) {
-      const obj = jsonpatch.getValueByPointer(batchSessionData, "/" + name);
-      return cloneJsonObj(obj);
-    };
-    jatos.batchSession.getAll = function() {
-      const obj = jatos.batchSession.find("");
-      return cloneJsonObj(obj);
-    };
-    jatos.batchSession.find = function(path) {
-      const obj = jsonpatch.getValueByPointer(batchSessionData, path);
-      return cloneJsonObj(obj);
-    };
-    jatos.batchSession.test = function(path, value) {
-      const obj = jsonpatch.getValueByPointer(batchSessionData, path);
-      return obj === value;
-    };
-    jatos.batchSession.defined = function(path) {
-      return !jatos.batchSession.test(path, void 0);
-    };
-    jatos.batchSession.add = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("add", path, value, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.batchSession.set = function(name, value, onSuccess, onFail) {
-      const patch = generatePatch("add", "/" + name, value, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.batchSession.setAll = function(value, onSuccess, onFail) {
-      return jatos.batchSession.replace("", value, onSuccess, onFail);
-    };
-    jatos.batchSession.remove = function(path, onSuccess, onFail) {
-      const patch = generatePatch("remove", path, null, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.batchSession.clear = function(onSuccess, onFail) {
-      const patch = generatePatch("replace", "", {}, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.batchSession.replace = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("replace", path, value, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.batchSession.copy = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("copy", path, null, from);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.batchSession.move = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("move", path, null, from);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    function generatePatch(op, path, value, from) {
-      const patch = {};
-      patch.op = op;
-      if (path !== null) {
-        patch.path = path;
-      }
-      if (value !== null) {
-        patch.value = value;
-      }
-      if (from !== null) {
-        patch.from = from;
-      }
-      return patch;
-    }
-    function sendBatchSessionPatch(patches, onSuccess, onFail) {
-      if (!batchChannel || batchChannel.readyState !== batchChannel.OPEN) {
-        const errorMsg = `Can't send batch session patch. No open batch channel. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (jatos.batchSessionVersioning && isDeferredPending(sendingBatchSessionDeferred)) {
-        const errorMsg = `Can send only one batch session patch at a time. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = `Can't send batch session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      const deferred = createDeferred();
-      if (jatos.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
-      const sessionActionId = batchSessionCounter++;
-      const msgObj = {};
-      msgObj.action = "SESSION";
-      msgObj.id = sessionActionId;
-      msgObj.patches = patches.constructor === Array ? patches : [patches];
-      msgObj.version = batchSessionVersion;
-      msgObj.versioning = !!jatos.batchSessionVersioning;
-      try {
-        batchChannel.send(JSON.stringify(msgObj));
-        setChannelSendingTimeoutAndPromiseResolution(
-          deferred,
-          batchSessionTimeouts,
-          sessionActionId,
-          onSuccess,
-          onFail
-        );
-      } catch (error) {
-        callMany(error, onFail, console.error);
-        deferred.reject();
-      }
-      return deferred.promise();
-    }
     jatos.setHeartbeatPeriod = function(heartbeatPeriod) {
       if (typeof heartbeatPeriod == "number" && heartbeatWorker) {
         heartbeatWorker.postMessage([jatos.studyResultUuid, heartbeatPeriod]);
       }
-    };
-    jatos.onBatchSession = function(onBatchSession) {
-      onJatosBatchSession = onBatchSession;
     };
     jatos.onError = function(onError) {
       console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
@@ -1334,540 +1921,9 @@ var jatos;
       stopStudyRun: () => {
         heartbeatWorker.terminate();
         httpLoop.terminate();
-        clearInterval(batchChannelClosedCheckTimer);
-        clearInterval(groupChannelClosedCheckTimer);
+        channels.stopClosedChecks();
       }
     });
-    jatos.joinGroup = function(callbacks) {
-      groupChannelCallbacks = callbacks ? callbacks : {};
-      return openGroupChannel();
-    };
-    function openGroupChannel() {
-      if (!webSocketSupported) {
-        const errorMsg = "This browser does not support WebSockets.";
-        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise(errorMsg);
-      }
-      if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
-        return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
-      }
-      if (endingStudy || startingComponent) {
-        const errorMsg = "Won't open group channel because study is about to move to the next component or finish.";
-        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = "Can't open group channel. This study run is invalid.";
-        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(openingGroupChannelDeferred)) {
-        const errorMsg = "Can open only one group channel";
-        callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(leavingGroupDeferred)) {
-        const errorMsg = "Can't open group channel while leaving a group";
-        callMany(errorMsg, console.error, groupChannelCallbacks.onError);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(reassigningGroupDeferred)) {
-        const errorMsg = "Can't open group channel while reassigning a group";
-        callMany(errorMsg, console.error, groupChannelCallbacks.onError);
-        return rejectedPromise(errorMsg);
-      }
-      openingGroupChannelDeferred = createDeferred();
-      groupChannel = new WebSocket(
-        (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join"
-      );
-      groupChannel.onopen = function() {
-        groupChannel.send('{"action":"READY"}');
-        groupChannelHeartbeat();
-        groupChannelClosedCheck();
-      };
-      groupChannel.onmessage = function(event) {
-        handleGroupMsg(event.data);
-      };
-      groupChannel.onerror = function() {
-        callMany("Group channel error", console.error, groupChannelCallbacks.onError);
-        openingGroupChannelDeferred.reject();
-      };
-      groupChannel.onclose = function() {
-        clearGroupChannel();
-        call(groupChannelCallbacks.onClose);
-        openingGroupChannelDeferred.reject();
-      };
-      return openingGroupChannelDeferred.promise();
-    }
-    function openGroupChannelWithRetry(backoffTime) {
-      if (typeof backoffTime !== "number") backoffTime = jatos.channelOpeningBackoffTimeMin;
-      openGroupChannel().fail(function() {
-        if (backoffTime < jatos.channelOpeningBackoffTimeMax) backoffTime *= 2;
-        setTimeout(function() {
-          openGroupChannelWithRetry(backoffTime);
-        }, backoffTime);
-      });
-    }
-    function reopenGroupChannel() {
-      if (isDeferredPending(openingGroupChannelDeferred) || isDeferredPending(reassigningGroupDeferred) || isDeferredPending(leavingGroupDeferred)) {
-        return;
-      }
-      if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
-        groupChannel.close();
-      }
-      clearGroupChannel();
-      openGroupChannelWithRetry();
-    }
-    function groupChannelHeartbeat() {
-      clearInterval(groupChannelHeartbeatTimer);
-      groupChannelHeartbeatTimer = setInterval(function() {
-        if (groupChannel.readyState === groupChannel.OPEN) {
-          groupChannel.send('{"heartbeat":"ping"}');
-          const timeout = setTimeout(function() {
-            callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
-            reopenGroupChannel();
-          }, jatos.channelHeartbeatTimeoutTime);
-          groupChannelHeartbeatTimeoutTimers.push(timeout);
-        }
-      }, jatos.channelHeartbeatInterval);
-    }
-    function groupChannelClosedCheck() {
-      clearInterval(groupChannelClosedCheckTimer);
-      groupChannelClosedCheckTimer = setInterval(function() {
-        if (groupChannel.readyState === groupChannel.CLOSED) {
-          callMany("Group channel closed", console.info, groupChannelCallbacks.onError);
-          clearInterval(groupChannelClosedCheckTimer);
-          reopenGroupChannel();
-        }
-      }, jatos.channelClosedCheckInterval);
-    }
-    function clearGroupChannelHeartbeatTimeoutTimers() {
-      groupChannelHeartbeatTimeoutTimers.forEach(function(timeout) {
-        clearTimeout(timeout);
-      });
-      groupChannelHeartbeatTimeoutTimers = [];
-    }
-    function clearGroupChannel() {
-      jatos.groupMemberId = null;
-      jatos.groupResultId = null;
-      jatos.groupMembers = [];
-      jatos.groupChannels = [];
-      groupSessionData = {};
-      groupSessionVersion = null;
-      groupState = null;
-      clearGroupChannelHeartbeatTimeoutTimers();
-      clearInterval(groupChannelHeartbeatTimer);
-    }
-    function handleGroupMsg(msg) {
-      let groupMsg;
-      try {
-        groupMsg = JSON.parse(msg);
-      } catch (error) {
-        callMany(error, groupChannelCallbacks.onError, console.error);
-        return;
-      }
-      if (typeof groupMsg.heartbeat != "undefined") {
-        clearGroupChannelHeartbeatTimeoutTimers();
-        return;
-      }
-      updateGroupVars(groupMsg);
-      callGroupActionCallbacks(groupMsg);
-      if (groupMsg.msg && groupChannelCallbacks.onMessage) {
-        groupChannelCallbacks.onMessage(groupMsg.msg);
-      }
-    }
-    function updateGroupVars(groupMsg) {
-      if (typeof groupMsg.groupState != "undefined") {
-        groupState = groupMsg.groupState;
-      }
-      if (typeof groupMsg.groupResultId != "undefined") {
-        jatos.groupResultId = groupMsg.groupResultId.toString();
-        showIdOverlay();
-        jatos.groupMemberId = jatos.studyResultId;
-      }
-      if (groupMsg.action === "OPENED" && typeof groupMsg.members != "undefined") {
-        jatos.groupMembers = groupMsg.members;
-      } else if (typeof groupMsg.memberId != "undefined" && groupMsg.action === "JOINED" && !jatos.groupMembers.includes(groupMsg.memberId)) {
-        jatos.groupMembers.push(groupMsg.memberId);
-      } else if (typeof groupMsg.memberId != "undefined" && groupMsg.action === "LEFT") {
-        jatos.groupMembers = jatos.groupMembers.filter(function(memberId) {
-          return memberId !== groupMsg.memberId;
-        });
-      }
-      if (groupMsg.action === "OPENED" && typeof groupMsg.channels != "undefined") {
-        jatos.groupChannels = groupMsg.channels;
-      } else if (typeof groupMsg.memberId != "undefined" && groupMsg.action === "CHANNEL_OPENED" && !jatos.groupChannels.includes(groupMsg.memberId)) {
-        jatos.groupChannels.push(groupMsg.memberId);
-      } else if (typeof groupMsg.memberId != "undefined" && (groupMsg.action === "CHANNEL_CLOSED" || groupMsg.action === "CLOSED")) {
-        jatos.groupChannels = jatos.groupChannels.filter(function(memberId) {
-          return memberId !== groupMsg.memberId;
-        });
-      }
-      if (typeof groupMsg.sessionPatches != "undefined") {
-        const patchResults = jsonpatch.applyPatch(groupSessionData, groupMsg.sessionPatches);
-        if (patchResults && patchResults.newDocument !== void 0) {
-          groupSessionData = patchResults.newDocument;
-        }
-      }
-      if (typeof groupMsg.sessionData != "undefined") {
-        if (groupMsg.sessionData === null) {
-          groupSessionData = {};
-        } else {
-          groupSessionData = groupMsg.sessionData;
-        }
-      }
-      if (typeof groupMsg.sessionVersion != "undefined") {
-        groupSessionVersion = groupMsg.sessionVersion;
-        if (isDeferredPending(openingGroupChannelDeferred)) {
-          console.info("Group channel opened");
-          openingGroupChannelDeferred.resolve();
-        }
-      }
-    }
-    function callGroupActionCallbacks(groupMsg) {
-      if (!groupMsg.action) {
-        return;
-      }
-      switch (groupMsg.action) {
-        case "OPENED":
-          callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
-          break;
-        case "CLOSED":
-          clearInterval(groupChannelClosedCheckTimer);
-          console.info("Group channel closed by JATOS server");
-          break;
-        case "CHANNEL_OPENED":
-          callWithArgs(groupChannelCallbacks.onMemberOpen, groupMsg.memberId);
-          call(groupChannelCallbacks.onUpdate);
-          break;
-        case "CHANNEL_CLOSED":
-          callWithArgs(groupChannelCallbacks.onMemberClose, groupMsg.memberId);
-          call(groupChannelCallbacks.onUpdate);
-          break;
-        case "JOINED":
-          if (groupMsg.memberId !== jatos.groupMemberId) {
-            callWithArgs(groupChannelCallbacks.onMemberJoin, groupMsg.memberId);
-            call(groupChannelCallbacks.onUpdate);
-          }
-          break;
-        case "LEFT":
-          if (groupMsg.memberId !== jatos.groupMemberId) {
-            callWithArgs(groupChannelCallbacks.onMemberLeave, groupMsg.memberId);
-            call(groupChannelCallbacks.onUpdate);
-          }
-          break;
-        case "SESSION":
-          groupMsg.sessionPatches.forEach(function(patch) {
-            callWithArgs(groupChannelCallbacks.onGroupSession, patch.path, patch.op);
-          });
-          call(groupChannelCallbacks.onUpdate);
-          break;
-        case "FIXED":
-          if (groupFixedTimeout) {
-            groupFixedTimeout.cancel();
-          }
-          call(groupChannelCallbacks.onUpdate);
-          break;
-        case "SESSION_ACK":
-          if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-            groupSessionTimeouts[groupMsg.sessionActionId].cancel("Group session update successful");
-          } else {
-            console.warn("Group session got 'SESSION_ACK' with nonexistent ID " + groupMsg.sessionActionId);
-          }
-          break;
-        case "SESSION_FAIL":
-          if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-            const errorMsg = groupMsg.errorMsg || "Group session update failed";
-            groupSessionTimeouts[groupMsg.sessionActionId].trigger(errorMsg);
-          } else {
-            console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
-          }
-          break;
-        case "ERROR":
-          callMany(groupMsg.errorMsg, groupChannelCallbacks.onError, console.error);
-          break;
-      }
-    }
-    jatos.getGroupState = function() {
-      return groupState;
-    };
-    jatos.isGroupFixed = function() {
-      return groupState === "FIXED";
-    };
-    jatos.groupSession = {};
-    jatos.groupSession.get = function(name) {
-      const obj = jsonpatch.getValueByPointer(groupSessionData, "/" + name);
-      return cloneJsonObj(obj);
-    };
-    jatos.groupSession.getAll = function() {
-      const obj = jatos.groupSession.find("");
-      return cloneJsonObj(obj);
-    };
-    jatos.groupSession.find = function(path) {
-      const obj = jsonpatch.getValueByPointer(groupSessionData, path);
-      return cloneJsonObj(obj);
-    };
-    jatos.groupSession.test = function(path, value) {
-      const obj = jsonpatch.getValueByPointer(groupSessionData, path);
-      return obj === value;
-    };
-    jatos.groupSession.defined = function(path) {
-      return !jatos.groupSession.test(path, void 0);
-    };
-    jatos.groupSession.add = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("add", path, value, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.groupSession.set = function(name, value, onSuccess, onFail) {
-      const patch = generatePatch("add", "/" + name, value, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.groupSession.setAll = function(value, onSuccess, onFail) {
-      return jatos.groupSession.replace("", value, onSuccess, onFail);
-    };
-    jatos.groupSession.remove = function(path, onSuccess, onFail) {
-      const patch = generatePatch("remove", path, null, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.groupSession.clear = function(onSuccess, onFail) {
-      const patch = generatePatch("replace", "", {}, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.groupSession.replace = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("replace", path, value, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.groupSession.copy = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("copy", path, null, from);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos.groupSession.move = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("move", path, null, from);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    function sendGroupSessionPatch(patches, onSuccess, onFail) {
-      if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
-        const errorMsg = `Can't send group session patch. No open group channel. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (jatos.groupSessionVersioning && isDeferredPending(sendingGroupSessionDeferred)) {
-        const errorMsg = `Can send only one group session patch at a time. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = `Can't send group session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      const deferred = createDeferred();
-      if (jatos.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
-      const sessionActionId = groupSessionCounter++;
-      const msgObj = {};
-      msgObj.action = "SESSION";
-      msgObj.sessionActionId = sessionActionId;
-      msgObj.sessionPatches = patches.constructor === Array ? patches : [patches];
-      msgObj.sessionVersion = groupSessionVersion;
-      msgObj.sessionVersioning = !!jatos.groupSessionVersioning;
-      try {
-        groupChannel.send(JSON.stringify(msgObj));
-        setChannelSendingTimeoutAndPromiseResolution(
-          deferred,
-          groupSessionTimeouts,
-          sessionActionId,
-          onSuccess,
-          onFail
-        );
-      } catch (error) {
-        callMany(error, onFail, console.error);
-        deferred.reject();
-      }
-      return deferred.promise();
-    }
-    jatos.setGroupFixed = function(onSuccess, onFail) {
-      if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
-        const errorMsg = "Can't fix group. No open group channel.";
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(sendingGroupFixedDeferred)) {
-        const errorMsg = "Can fix group only once.";
-        callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = "Can't fix group. This study run is invalid.";
-        callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      sendingGroupFixedDeferred = createDeferred();
-      const msgObj = {};
-      msgObj.action = "FIXED";
-      try {
-        groupChannel.send(JSON.stringify(msgObj));
-        setGroupFixedTimeoutAndPromiseResolution(
-          sendingGroupFixedDeferred,
-          onSuccess,
-          onFail
-        );
-      } catch (error) {
-        callMany(error, onFail, console.error);
-        sendingGroupFixedDeferred.reject();
-      }
-      return sendingGroupFixedDeferred.promise();
-    };
-    function setGroupFixedTimeoutAndPromiseResolution(deferred, onSuccess, onFail) {
-      const timeoutId = setTimeout(() => {
-        callWithArgs(onFail, "Timeout sending message");
-        deferred.reject("Timeout sending message");
-      }, jatos.channelSendingTimeoutTime);
-      groupFixedTimeout = {
-        cancel: () => {
-          clearTimeout(timeoutId);
-          callWithArgs(onSuccess, "success");
-          deferred.resolve("success");
-        }
-      };
-      deferred.always(() => {
-        groupFixedTimeout = null;
-      });
-    }
-    jatos.hasJoinedGroup = function() {
-      return jatos.groupResultId !== null;
-    };
-    jatos.hasOpenGroupChannel = function() {
-      return groupChannel && groupChannel.readyState === groupChannel.OPEN;
-    };
-    jatos.isMaxActiveMemberReached = function() {
-      if (!jatos.batchProperties || jatos.batchProperties.maxActiveMembers === null) {
-        return false;
-      } else {
-        return jatos.groupMembers.length >= jatos.batchProperties.maxActiveMembers;
-      }
-    };
-    jatos.isMaxActiveMemberOpen = function() {
-      if (!jatos.batchProperties || jatos.batchProperties.maxActiveMembers === null) {
-        return false;
-      } else {
-        return jatos.groupChannels.length >= jatos.batchProperties.maxActiveMembers;
-      }
-    };
-    jatos.isGroupOpen = function() {
-      if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
-        return jatos.groupMembers.length === jatos.groupChannels.length;
-      } else {
-        return false;
-      }
-    };
-    jatos.sendGroupMsg = function(msg) {
-      if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
-        const msgObj = {};
-        msgObj.msg = msg;
-        groupChannel.send(JSON.stringify(msgObj));
-      }
-    };
-    jatos.sendGroupMsgTo = function(recipient, msg) {
-      if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
-        const msgObj = {};
-        msgObj.recipient = recipient;
-        msgObj.msg = msg;
-        groupChannel.send(JSON.stringify(msgObj));
-      }
-    };
-    jatos.reassignGroup = function(onSuccess, onFail) {
-      if (isDeferredPending(openingGroupChannelDeferred)) {
-        const errorMsg = "Can't reassign a group if not joined yet.";
-        callMany(errorMsg, console.error, onFail);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(leavingGroupDeferred)) {
-        const errorMsg = "Can't reassign a group during leaving.";
-        callMany(errorMsg, console.error, onFail);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(reassigningGroupDeferred)) {
-        const errorMsg = "Can't reassign a group twice at the same time.";
-        callMany(errorMsg, console.warn, onFail);
-        return rejectedPromise(errorMsg);
-      }
-      if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
-        const errorMsg = "Can't reassign group. Group channel not open.";
-        callMany(errorMsg, console.error, onFail);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = "Can't reassign group. This study run is invalid.";
-        callMany(errorMsg, console.warn, onFail);
-        return rejectedPromise(errorMsg);
-      }
-      reassigningGroupDeferred = createDeferred();
-      jatos.jQuery.ajax({
-        url: getURL("../group/reassign"),
-        processData: false,
-        type: "GET",
-        timeout: jatos.httpTimeout,
-        statusCode: {
-          200: function() {
-            call(onSuccess);
-            reassigningGroupDeferred.resolve();
-          },
-          204: function() {
-            call(onFail);
-            reassigningGroupDeferred.reject();
-          }
-        },
-        error: function(err) {
-          const errMsg = getAjaxErrorMsg(err);
-          callMany(errMsg, console.error, onFail);
-          reassigningGroupDeferred.reject(errMsg);
-        }
-      });
-      return reassigningGroupDeferred.promise();
-    };
-    jatos.leaveGroup = function(onSuccess, onError) {
-      if (isDeferredPending(openingGroupChannelDeferred)) {
-        const errorMsg = "Can't leave group if not joined yet.";
-        callMany(errorMsg, onError, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(reassigningGroupDeferred)) {
-        const errorMsg = "Can't leave group during reassigning.";
-        callMany(errorMsg, onError, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (isDeferredPending(leavingGroupDeferred)) {
-        const errorMsg = "Can leave only once.";
-        callMany(errorMsg, onError, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunInvalid) {
-        const errorMsg = "Can't leave group. This study run is invalid.";
-        callMany(errorMsg, onError, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      leavingGroupDeferred = createDeferred();
-      jatos.jQuery.ajax({
-        url: getURL("../group/leave"),
-        processData: false,
-        type: "GET",
-        timeout: jatos.httpTimeout,
-        success: function(response) {
-          clearInterval(groupChannelClosedCheckTimer);
-          callWithArgs(onSuccess, response);
-          leavingGroupDeferred.resolve(response);
-        },
-        error: function(err) {
-          var errMsg = getAjaxErrorMsg(err);
-          callMany(errMsg, onError, console.error);
-          leavingGroupDeferred.reject(errMsg);
-        }
-      }).retry({
-        times: jatos.httpRetry,
-        timeout: jatos.httpRetryWait
-      });
-      return leavingGroupDeferred.promise();
-    };
     function getURL(path) {
       return new URL(path, window.location.href).toString();
     }
@@ -2030,27 +2086,6 @@ var jatos;
           return jqxhr.statusText + ": Error during Ajax call to JATOS server.";
         }
       }
-    }
-    function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onFail) {
-      var timeoutId = setTimeout(function() {
-        callWithArgs(onFail, "Timeout sending session patch");
-        deferred.reject("Timeout sending session patch");
-      }, jatos.channelSendingTimeoutTime);
-      sessionTimeouts[sessionActionId] = {
-        cancel: function(msg) {
-          clearTimeout(timeoutId);
-          callWithArgs(onSuccess, msg);
-          deferred.resolve(msg);
-        },
-        trigger: function(msg) {
-          clearTimeout(timeoutId);
-          callWithArgs(onFail, msg);
-          deferred.reject(msg);
-        }
-      };
-      deferred.always(function() {
-        delete sessionTimeouts[sessionActionId];
-      });
     }
   })();
 })();

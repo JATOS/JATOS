@@ -6,9 +6,9 @@ import {
     isInvalidComponentPosition
 } from "../src/study-run.js";
 
-import {createLegacyPromiseCompatibility} from "../src/jatos-promise.js";
+import {createJatosPromiseCompatibility} from "../src/jatos-promise.js";
 
-const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
+const {createDeferred, rejectedPromise} = createJatosPromiseCompatibility();
 
 // Component navigation
 

@@ -4,7 +4,7 @@
  * The promise is a standards-compatible thenable, but done, fail, and always
  * deliberately retain jQuery's synchronous late-handler behavior.
  */
-function createLegacyDeferred() {
+function createJatosDeferred() {
     let currentState = "pending";
     let settledArgs = [];
     let settledContext;
@@ -45,7 +45,7 @@ function createLegacyDeferred() {
         },
 
         then: function (onFulfilled, onRejected) {
-            const chained = createLegacyDeferred();
+            const chained = createJatosDeferred();
             const chainedPromise = chained.promise();
 
             this.done(function (...args) {
@@ -155,12 +155,12 @@ function toArray(args) {
     return args == null ? [] : Array.from(args);
 }
 
-export function createLegacyPromiseCompatibility() {
+export function createJatosPromiseCompatibility() {
     return {
-        createDeferred: createLegacyDeferred,
+        createDeferred: createJatosDeferred,
 
         rejectedPromise: function (errorMsg) {
-            const deferred = createLegacyDeferred();
+            const deferred = createJatosDeferred();
             deferred.reject(errorMsg);
             return deferred.promise();
         }
