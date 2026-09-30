@@ -20,12 +20,11 @@ import {call, callMany, callWithArgs} from "./utils/callbacks.js";
 import {cloneJsonObj} from "./utils/clone-json.js";
 import {createLegacyPromiseCompatibility, isDeferredPending} from "./jatos-promise.js";
 import {installResultDataApi} from "./result-data.js";
-import {installStudySessionApi} from "./study-session.js";
 import {createHttpLoop} from "./http-loop.js";
 import {
-    installComponentNavigationApi,
+    installStudyRunApi,
     isInvalidComponentPosition
-} from "./component-navigation.js";
+} from "./study-run.js";
 
 /**
  * An awaitable, jQuery-compatible promise facade returned by asynchronous
@@ -1053,12 +1052,7 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
         sendToHttpLoop: httpLoop.send
     });
 
-    installStudySessionApi(jatos, {
-        getURL,
-        sendToHttpLoop: httpLoop.send
-    });
-
-    installComponentNavigationApi(jatos, {
+    installStudyRunApi(jatos, {
         beforeUnloadWarning,
         getURL,
         httpLoop,
@@ -1066,7 +1060,15 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
         isInitialized: () => initialized,
         isStartingComponent: () => startingComponent,
         isStudyRunInvalid: () => studyRunInvalid,
-        setStartingComponent: value => { startingComponent = value; }
+        setStartingComponent: value => { startingComponent = value; },
+        setEndingStudy: value => { endingStudy = value; },
+        rejectedPromise,
+        stopStudyRun: () => {
+            heartbeatWorker.terminate();
+            httpLoop.terminate();
+            clearInterval(batchChannelClosedCheckTimer);
+            clearInterval(groupChannelClosedCheckTimer);
+        }
     });
 
     /**
@@ -1908,342 +1910,6 @@ const {createDeferred, rejectedPromise} = createLegacyPromiseCompatibility();
             timeout: jatos.httpRetryWait
         });
         return leavingGroupDeferred.promise();
-    };
-
-    /**
-     * Aborts study. All previously submitted data will be deleted. It does not
-     * redirect to another page.
-     *
-     * @param {string} [message] - Message that should be logged
-     * @param {Function} [onSuccess] - Called in case of successful submit
-     * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
-     */
-    jatos.abortStudyWithoutRedirect = function (message, onSuccess, onError) {
-        if (!initialized) {
-            const errorMsg = "jatos.js not yet initialized.";
-            callMany(errorMsg, onError, console.error);
-            return rejectedPromise(errorMsg);
-        }
-        if (studyRunInvalid) {
-            const errorMsg = "Can't abort study. This study run is invalid.";
-            callMany(errorMsg, onError, console.warn);
-            return rejectedPromise(errorMsg);
-        }
-        if (endingStudy) {
-            const errorMsg = "Can end/abort study only once.";
-            callMany(errorMsg, onError, console.warn);
-            return rejectedPromise(errorMsg);
-        }
-        endingStudy = true;
-
-        var url = getURL("../abort");
-        if (typeof message != 'undefined') {
-            url = url + "?message=" + message;
-        }
-        var request = {
-            url: url,
-            method: "GET",
-            timeout: jatos.httpTimeout,
-            retry: jatos.httpRetry,
-            retryWait: jatos.httpRetryWait
-        };
-        jatos.showBeforeUnloadWarning(false);
-        var deferred = httpLoop.send(request, onSuccess, onError);
-        setTimeout(function () {
-            if (httpLoop.isBusy() && isDeferredPending(deferred)) {
-                jatos.showOverlay(jatos.waitSendDataOverlayConfig);
-            }
-        }, 1000);
-        deferred.done(function () {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
-            heartbeatWorker.terminate();
-            httpLoop.terminate();
-            clearInterval(batchChannelClosedCheckTimer);
-            clearInterval(groupChannelClosedCheckTimer);
-        });
-        deferred.always(jatos.removeOverlays);
-
-        return deferred.promise();
-    };
-
-    /**
-     * DEPRECATED - Kept for backward compatibility. Use jatos.abortStudyWithoutRedirect instead.
-     */
-    jatos.abortStudyAjax = function (message, onSuccess, onError) {
-        return jatos.abortStudyWithoutRedirect(message, onSuccess, onError);
-    }
-
-    /**
-     * Aborts study and redirects to another URL. All previously submitted data
-     * will be deleted. The first parameter is the URL and the other up to 3 parameters
-     * are the same as in jatos.abortStudyWithoutRedirect.
-     */
-    jatos.abortStudyAndRedirect = function (url, message, onSuccess, onError) {
-        jatos.abortStudyWithoutRedirect(message, onSuccess, onError).done(function () {
-            window.location.href = url;
-        });
-    };
-
-    /**
-     * Aborts study and optionally redirects to an end page. All previously submitted data
-     * will be deleted.
-     *
-     * @param {string} [message] - Message that should be logged
-     * @param {boolean} [showEndPage=true] - If true it will redirect to an end page
-     *          (either the JATOS default one or the one that is configured in the
-     *          study properties) after the study is finished. If false it stays on the
-     *          current page. Alternatively jatos.abortStudyAndRedirect can be used to
-     *          redirect to another page.
-     */
-    jatos.abortStudy = function (message, showEndPage = true) {
-        if (studyRunInvalid) {
-            console.warn("Can't abort study. This study run is invalid.");
-            return;
-        }
-
-        if (!showEndPage) {
-            return jatos.abortStudyWithoutRedirect(message);
-        }
-
-        // In an iframe run initiated by the JATOS GUI (worker type 'Jatos'), end the run without
-        // redirecting and notify the parent frame.
-        const isInIframe = window.self !== window.top;
-        if (isInIframe && jatos.workerType === "Jatos" && parent.onIframeComplete) {
-            return jatos.abortStudyWithoutRedirect(message)
-                .done(() => parent.onIframeComplete(jatos.urlQueryParameters.frameId, jatos.studyId));
-        }
-
-        if (endingStudy) {
-            console.warn("Can end/abort study only once");
-            return;
-        }
-        endingStudy = true;
-
-        function abort() {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
-
-            var url = getURL("../abort");
-            if (typeof message == 'undefined') {
-                window.location.href = url;
-            } else {
-                window.location.href = url + "?message=" + message;
-            }
-        }
-
-        // Wait for httpLoop.js to finish
-        if (httpLoop.isBusy()) {
-            setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-        }
-        httpLoop.whenIdle(abort);
-    };
-
-    /**
-     * Ends study without redirecting to another page, e.g. the JATOS end page.
-     *
-     * Either without result data:
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {Function} [onSuccess] - Called on successful request
-     * @param {Function} [onError] - Called in case of error
-     *
-     * Or with result data:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to the JATOS server
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {Function} [onSuccess] - Called on successful request
-     * @param {Function} [onError] - Called in case of error
-     *
-     * @return {JatosPromise}
-     */
-    jatos.endStudyWithoutRedirect = function (param1, param2, param3, param4, param5) {
-        if (!initialized) {
-            const errorMsg = "jatos.js not yet initialized.";
-            console.error(errorMsg);
-            return rejectedPromise(errorMsg);
-        }
-
-        var resultData, successful, message, onSuccess, onError;
-        if (typeof param1 === 'string' || typeof param1 === 'object') {
-            resultData = param1;
-            successful = param2;
-            message = param3;
-            onSuccess = param4;
-            onError = param5;
-        } else if (typeof param1 === 'boolean') {
-            successful = param1;
-            message = param2;
-            onSuccess = param3;
-            onError = param4;
-        }
-
-        if (studyRunInvalid) {
-            const errorMsg = "Can't end study. This study run is invalid.";
-            callMany(errorMsg, onError, console.warn);
-            return rejectedPromise(errorMsg);
-        }
-        if (endingStudy) {
-            const errorMsg = "Can end/abort study only once.";
-            callMany(errorMsg, onError, console.warn);
-            return rejectedPromise(errorMsg);
-        }
-        endingStudy = true;
-
-        // Before finish send result data
-        if (resultData) jatos.appendResultData(resultData);
-
-        var url = getURL("../end");
-        if (typeof successful == 'boolean' && typeof message == 'string') {
-            url = url + "?" + jatos.jQuery.param({
-                "successful": successful,
-                "message": message
-            });
-        } else if (typeof successful == 'boolean' && typeof message != 'string') {
-            url = url + "?" + jatos.jQuery.param({
-                "successful": successful
-            });
-        } else if (typeof successful != 'boolean' && typeof message == 'string') {
-            url = url + "?" + jatos.jQuery.param({
-                "message": message
-            });
-        }
-        var request = {
-            url: url,
-            method: "GET",
-            timeout: jatos.httpTimeout,
-            retry: jatos.httpRetry,
-            retryWait: jatos.httpRetryWait
-        };
-        jatos.showBeforeUnloadWarning(false);
-        var deferred = httpLoop.send(request, onSuccess, onError);
-        setTimeout(function () {
-            if (httpLoop.isBusy() && isDeferredPending(deferred)) {
-                jatos.showOverlay(jatos.waitSendDataOverlayConfig);
-            }
-        }, 1000);
-        deferred.done(function () {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
-            heartbeatWorker.terminate();
-            httpLoop.terminate();
-            clearInterval(batchChannelClosedCheckTimer);
-            clearInterval(groupChannelClosedCheckTimer);
-        });
-        deferred.always(jatos.removeOverlays);
-
-        return deferred.promise();
-    };
-
-    /**
-     * DEPRECATED - Kept for backward compatibilty. Use jatos.endStudyWithoutRedirect instead.
-     */
-    jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
-        return jatos.endStudyWithoutRedirect(param1, param2, param3, param4, param5);
-    }
-
-    /**
-     * Ends study and redirects to another URL. The first parameter is the URL and the
-     * other up to 5 parameters are the same as in jatos.endStudyWithoutRedirect.
-     */
-    jatos.endStudyAndRedirect = function (url, param1, param2, param3, param4, param5) {
-        jatos.endStudyWithoutRedirect(param1, param2, param3, param4, param5).done(function () {
-            window.location.href = url;
-        });
-    };
-
-    /**
-     * Ends study and optionally redirects to an end page.
-     *
-     * Either without result data:
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {boolean} [showEndPage=true] - If true redirect to end page; if false stay on current page
-     *
-     * Or with result data:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to the JATOS server
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {boolean} [showEndPage=true] - If true redirect to end page; if false stay on current page
-     */
-    jatos.endStudy = function (param1, param2, param3, param4) {
-        if (!initialized) {
-            console.error("jatos.js not yet initialized");
-            return;
-        }
-        if (studyRunInvalid) {
-            console.warn("Can't end study. This study run is invalid.");
-            return;
-        }
-
-        var resultData, successful, message, showEndPage;
-        if (typeof param1 === 'string' || typeof param1 === 'object') {
-            resultData = param1;
-            successful = param2;
-            message = param3;
-            showEndPage = param4;
-        } else if (typeof param1 === 'boolean') {
-            successful = param1;
-            message = param2;
-            showEndPage = param3;
-        }
-
-        if (typeof showEndPage !== "undefined" && !showEndPage) {
-            if (resultData) {
-                return jatos.endStudyWithoutRedirect(resultData, successful, message);
-            } else {
-                return jatos.endStudyWithoutRedirect(successful, message);
-            }
-        }
-
-        // In an iframe run initiated by the JATOS GUI (worker type 'Jatos'), end the run without
-        // redirecting and notify the parent frame.
-        const isInIframe = window.self !== window.top;
-        if (isInIframe && jatos.workerType === "Jatos" && parent.onIframeComplete) {
-            const endIframe = () => {
-                parent.onIframeComplete(jatos.urlQueryParameters.frameId, jatos.studyId);
-            };
-            if (resultData) {
-                jatos.endStudyWithoutRedirect(resultData, successful, message).done(endIframe);
-            } else {
-                jatos.endStudyWithoutRedirect(successful, message).done(endIframe);
-            }
-            return;
-        }
-
-        if (endingStudy) {
-            console.warn("Can end/abort study only once");
-            return;
-        }
-        endingStudy = true;
-
-        // Before finish send result data
-        if (resultData) jatos.appendResultData(resultData);
-
-        function end() {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
-
-            var url = getURL("../end");
-            if (typeof successful == 'boolean' && typeof message == 'string') {
-                url = url + "?" + jatos.jQuery.param({
-                    "successful": successful,
-                    "message": message
-                });
-            } else if (typeof successful == 'boolean' && typeof message != 'string') {
-                url = url + "?" + jatos.jQuery.param({
-                    "successful": successful
-                });
-            } else if (typeof successful != 'boolean' && typeof message == 'string') {
-                url = url + "?" + jatos.jQuery.param({
-                    "message": message
-                });
-            }
-            window.location.href = url;
-        }
-
-        // Wait for httpLoop.js to finish
-        if (httpLoop.isBusy()) {
-            setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-        }
-        httpLoop.whenIdle(end);
     };
 
     /**
