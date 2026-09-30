@@ -179,7 +179,7 @@ var jatos;
       createDeferred: createDeferred2,
       getURL,
       isInitialized,
-      isInvalidComponentPosition,
+      isInvalidComponentPosition: isInvalidComponentPosition2,
       isStudyRunInvalid,
       rejectedPromise: rejectedPromise2,
       sendToHttpLoop
@@ -290,7 +290,7 @@ var jatos;
       }
       let url = getURL("../files/" + encodeURI(filename));
       if (componentPos) {
-        if (isInvalidComponentPosition(componentPos)) {
+        if (isInvalidComponentPosition2(componentPos)) {
           const errorMsg = "Component position does not exist.";
           callMany(errorMsg, onError, console.error);
           return rejectedPromise2(errorMsg);
@@ -406,6 +406,126 @@ var jatos;
       return counter;
     }
     return { getCounter, isBusy, send, start, terminate, whenIdle };
+  }
+
+  // src/component-navigation.js
+  function installComponentNavigationApi(jatos2, dependencies) {
+    const {
+      beforeUnloadWarning,
+      getURL,
+      httpLoop,
+      isEndingStudy,
+      isInitialized,
+      isStartingComponent,
+      isStudyRunInvalid,
+      setStartingComponent
+    } = dependencies;
+    jatos2.startComponent = function(componentIdOrUuid, resultData, param3, param4) {
+      if (!isInitialized()) {
+        console.error("jatos.js not yet initialized");
+        return;
+      }
+      let message, onError, componentUuid;
+      if (typeof componentIdOrUuid === "number") {
+        componentUuid = jatos2.componentList.find((c) => c.id === componentIdOrUuid).uuid;
+      } else {
+        componentUuid = componentIdOrUuid;
+      }
+      if (typeof param3 === "string") {
+        message = param3;
+        onError = param4;
+      } else if (typeof param3 === "function") {
+        onError = param3;
+      }
+      if (isStudyRunInvalid()) {
+        callMany("Can't start component. This study run is invalid.", onError, console.warn);
+        return;
+      }
+      if (isStartingComponent()) {
+        callMany("Can start only one component at the same time", onError, console.warn);
+        return;
+      }
+      if (isEndingStudy()) {
+        callMany("Can't start component if study already ended.", onError, console.warn);
+        return;
+      }
+      const isSingleComponentRun = jatos2.jatosRun === "RUN_COMPONENT_FINISHED";
+      if (isSingleComponentRun) {
+        if (resultData) {
+          jatos2.endStudy(resultData, true, message);
+        } else {
+          jatos2.endStudy(true, message);
+        }
+        return;
+      }
+      setStartingComponent(true);
+      if (resultData) jatos2.appendResultData(resultData);
+      jatos2.setStudySessionData(jatos2.studySessionData);
+      const start = function() {
+        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+        let url = getURL("../" + componentUuid + "/start");
+        if (message) url = url + "?" + jatos2.jQuery.param({ "message": message });
+        window.location.href = url;
+      };
+      if (httpLoop.isBusy()) {
+        setTimeout(jatos2.showOverlay, 1e3, jatos2.waitSendDataOverlayConfig);
+      }
+      httpLoop.whenIdle(start);
+    };
+    jatos2.startComponentByPos = function(componentPos, resultData, param3, param4) {
+      if (isInvalidComponentPosition(jatos2.componentList, componentPos)) {
+        let onError;
+        if (typeof param3 === "function") onError = param3;
+        else if (typeof param4 === "function") onError = param4;
+        callMany("Component position does not exist", onError, console.error);
+        return;
+      }
+      const componentUuid = jatos2.componentList[componentPos - 1].uuid;
+      jatos2.startComponent(componentUuid, resultData, param3, param4);
+    };
+    jatos2.startComponentByTitle = function(title, resultData, param3, param4) {
+      const component = jatos2.componentList.find((component2) => component2.title === title);
+      if (!component) {
+        let onError;
+        if (typeof param3 === "function") onError = param3;
+        else if (typeof param4 === "function") onError = param4;
+        callMany(`Component with title ${title} does not exist`, onError, console.error);
+        return;
+      }
+      const componentUuid = component.uuid;
+      jatos2.startComponent(componentUuid, resultData, param3, param4);
+    };
+    jatos2.startNextComponent = function(resultData, param2, param3) {
+      let message;
+      if (typeof param2 === "string") {
+        message = param2;
+      }
+      const lastActiveComponent = jatos2.componentList.slice().reverse().find(function(component) {
+        return component.active;
+      });
+      if (jatos2.componentPos >= lastActiveComponent.position) {
+        if (resultData) {
+          jatos2.endStudy(resultData, true, message);
+        } else {
+          jatos2.endStudy(true, message);
+        }
+        return;
+      }
+      for (let i = jatos2.componentPos; i < jatos2.componentList.length; i++) {
+        if (jatos2.componentList[i].active) {
+          const nextComponentUuid = jatos2.componentList[i].uuid;
+          jatos2.startComponent(nextComponentUuid, resultData, param2, param3);
+          break;
+        }
+      }
+    };
+    jatos2.startLastComponent = function(resultData, param2, param3) {
+      const lastActiveComponent = jatos2.componentList.reverse().find((c) => c.active);
+      jatos2.startComponent(lastActiveComponent.uuid, resultData, param2, param3);
+    };
+  }
+  function isInvalidComponentPosition(componentList, pos) {
+    return pos <= 0 || pos > componentList.length;
   }
 
   // src/index.js
@@ -949,7 +1069,7 @@ var jatos;
       createDeferred,
       getURL,
       isInitialized: () => initialized,
-      isInvalidComponentPosition,
+      isInvalidComponentPosition: (pos) => isInvalidComponentPosition(jatos.componentList, pos),
       isStudyRunInvalid: () => studyRunInvalid,
       rejectedPromise,
       sendToHttpLoop: httpLoop.send
@@ -968,109 +1088,18 @@ var jatos;
       };
       return httpLoop.send(request, onSuccess, onFail).promise();
     };
-    jatos.startComponent = function(componentIdOrUuid, resultData, param3, param4) {
-      if (!initialized) {
-        console.error("jatos.js not yet initialized");
-        return;
+    installComponentNavigationApi(jatos, {
+      beforeUnloadWarning,
+      getURL,
+      httpLoop,
+      isEndingStudy: () => endingStudy,
+      isInitialized: () => initialized,
+      isStartingComponent: () => startingComponent,
+      isStudyRunInvalid: () => studyRunInvalid,
+      setStartingComponent: (value) => {
+        startingComponent = value;
       }
-      let message, onError, componentUuid;
-      if (typeof componentIdOrUuid === "number") {
-        componentUuid = jatos.componentList.find((c) => c.id === componentIdOrUuid).uuid;
-      } else {
-        componentUuid = componentIdOrUuid;
-      }
-      if (typeof param3 === "string") {
-        message = param3;
-        onError = param4;
-      } else if (typeof param3 === "function") {
-        onError = param3;
-      }
-      if (studyRunInvalid) {
-        callMany("Can't start component. This study run is invalid.", onError, console.warn);
-        return;
-      }
-      if (startingComponent) {
-        callMany("Can start only one component at the same time", onError, console.warn);
-        return;
-      }
-      if (endingStudy) {
-        callMany("Can't start component if study already ended.", onError, console.warn);
-        return;
-      }
-      const isSingleComponentRun = jatos.jatosRun === "RUN_COMPONENT_FINISHED";
-      if (isSingleComponentRun) {
-        if (resultData) {
-          jatos.endStudy(resultData, true, message);
-        } else {
-          jatos.endStudy(true, message);
-        }
-        return;
-      }
-      startingComponent = true;
-      if (resultData) jatos.appendResultData(resultData);
-      jatos.setStudySessionData(jatos.studySessionData);
-      const start = function() {
-        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
-        let url = getURL("../" + componentUuid + "/start");
-        if (message) url = url + "?" + jatos.jQuery.param({ "message": message });
-        window.location.href = url;
-      };
-      if (httpLoop.isBusy()) {
-        setTimeout(jatos.showOverlay, 1e3, jatos.waitSendDataOverlayConfig);
-      }
-      httpLoop.whenIdle(start);
-    };
-    jatos.startComponentByPos = function(componentPos, resultData, param3, param4) {
-      if (isInvalidComponentPosition(componentPos)) {
-        let onError;
-        if (typeof param3 === "function") onError = param3;
-        else if (typeof param4 === "function") onError = param4;
-        callMany("Component position does not exist", onError, console.error);
-        return;
-      }
-      const componentUuid = jatos.componentList[componentPos - 1].uuid;
-      jatos.startComponent(componentUuid, resultData, param3, param4);
-    };
-    jatos.startComponentByTitle = function(title, resultData, param3, param4) {
-      const component = jatos.componentList.find((component2) => component2.title === title);
-      if (!component) {
-        let onError;
-        if (typeof param3 === "function") onError = param3;
-        else if (typeof param4 === "function") onError = param4;
-        callMany(`Component with title ${title} does not exist`, onError, console.error);
-        return;
-      }
-      const componentUuid = component.uuid;
-      jatos.startComponent(componentUuid, resultData, param3, param4);
-    };
-    jatos.startNextComponent = function(resultData, param2, param3) {
-      let message;
-      if (typeof param2 === "string") {
-        message = param2;
-      }
-      const lastActiveComponent = jatos.componentList.slice().reverse().find(function(component) {
-        return component.active;
-      });
-      if (jatos.componentPos >= lastActiveComponent.position) {
-        if (resultData) {
-          jatos.endStudy(resultData, true, message);
-        } else {
-          jatos.endStudy(true, message);
-        }
-        return;
-      }
-      for (let i = jatos.componentPos; i < jatos.componentList.length; i++) {
-        if (jatos.componentList[i].active) {
-          const nextComponentUuid = jatos.componentList[i].uuid;
-          jatos.startComponent(nextComponentUuid, resultData, param2, param3);
-          break;
-        }
-      }
-    };
-    jatos.startLastComponent = function(resultData, param2, param3) {
-      const lastActiveComponent = jatos.componentList.reverse().find((c) => c.active);
-      jatos.startComponent(lastActiveComponent.uuid, resultData, param2, param3);
-    };
+    });
     jatos.joinGroup = function(callbacks) {
       groupChannelCallbacks = callbacks ? callbacks : {};
       return openGroupChannel();
@@ -2015,9 +2044,6 @@ var jatos;
       deferred.always(function() {
         delete sessionTimeouts[sessionActionId];
       });
-    }
-    function isInvalidComponentPosition(pos) {
-      return pos <= 0 || pos > jatos.componentList.length;
     }
   })();
 })();
