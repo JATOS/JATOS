@@ -1,5 +1,46 @@
 var jatos;
 (() => {
+  // src/logging.js
+  function installLoggingApi(jatos2, { getURL, isInitialized, sendToHttpLoop }) {
+    jatos2.onError = function(onError) {
+      console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
+    };
+    jatos2.logError = function(logErrorMsg) {
+      console.warn("jatos.logError is abolished - use jatos.log instead");
+    };
+    jatos2.log = function(logMsg) {
+      if (!isInitialized()) return;
+      var request = {
+        url: getURL("log"),
+        method: "POST",
+        data: logMsg,
+        contentType: "text/plain; charset=UTF-8",
+        timeout: jatos2.httpTimeout,
+        retry: jatos2.httpRetry,
+        retryWait: jatos2.httpRetryWait
+      };
+      sendToHttpLoop(request);
+    };
+    jatos2.catchAndLogErrors = function() {
+      window.addEventListener("error", function(e) {
+        jatos2.log(`Via 'error' event in ${e.filename}:${e.lineno} - ${e.message}`);
+      });
+      window.addEventListener("unhandledrejection", function(e) {
+        jatos2.log(`Via 'unhandledrejection' event in ${e.filename}:${e.lineno} - ${e.message}`);
+      });
+      var errorLog = console.error;
+      var warnLog = console.warn;
+      console.error = function(message) {
+        jatos2.log("Via console.error - " + message);
+        errorLog.apply(this, arguments);
+      };
+      console.warn = function(message) {
+        jatos2.log("Via console.warn - " + message);
+        warnLog.apply(this, arguments);
+      };
+    };
+  }
+
   // src/vendor/jquery-deferred.js
   /*!
    * jQuery Deferred/Callbacks v3.7.1 extraction
@@ -2351,9 +2392,6 @@ var jatos;
     });
     jatos.onLoad(browserUi.onLoad);
     initialization.start();
-    jatos.onError = function(onError) {
-      console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
-    };
     installResultDataApi(jatos, {
       getURL,
       isInitialized: () => initialization.isInitialized(),
@@ -2387,40 +2425,11 @@ var jatos;
     jatos.getHttpLoopCounter = function() {
       return httpLoop.getCounter();
     };
-    jatos.logError = function(logErrorMsg) {
-      console.warn("jatos.logError is abolished - use jatos.log instead");
-    };
-    jatos.log = function(logMsg) {
-      if (!initialization.isInitialized()) return;
-      var request = {
-        url: getURL("log"),
-        method: "POST",
-        data: logMsg,
-        contentType: "text/plain; charset=UTF-8",
-        timeout: jatos.httpTimeout,
-        retry: jatos.httpRetry,
-        retryWait: jatos.httpRetryWait
-      };
-      httpLoop.send(request);
-    };
-    jatos.catchAndLogErrors = function() {
-      window.addEventListener("error", function(e) {
-        jatos.log(`Via 'error' event in ${e.filename}:${e.lineno} - ${e.message}`);
-      });
-      window.addEventListener("unhandledrejection", function(e) {
-        jatos.log(`Via 'unhandledrejection' event in ${e.filename}:${e.lineno} - ${e.message}`);
-      });
-      var errorLog = console.error;
-      var warnLog = console.warn;
-      console.error = function(message) {
-        jatos.log("Via console.error - " + message);
-        errorLog.apply(this, arguments);
-      };
-      console.warn = function(message) {
-        jatos.log("Via console.warn - " + message);
-        warnLog.apply(this, arguments);
-      };
-    };
+    installLoggingApi(jatos, {
+      getURL,
+      isInitialized: () => initialization.isInitialized(),
+      sendToHttpLoop: httpLoop.send
+    });
     jatos.addJatosIds = function(obj = {}) {
       obj.studyCode = jatos.studyCode;
       obj.studyId = jatos.studyId;
