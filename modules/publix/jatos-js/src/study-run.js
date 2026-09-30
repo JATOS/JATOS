@@ -3,7 +3,7 @@ import {rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
 export function installStudyRunApi(jatos, dependencies) {
     const {
-        beforeUnloadWarning,
+        removeBeforeUnloadWarning,
         getURL,
         httpLoop,
         isEndingStudy,
@@ -112,7 +112,7 @@ export function installStudyRunApi(jatos, dependencies) {
         jatos.setStudySessionData(jatos.studySessionData);
 
         const start = function () {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+            removeBeforeUnloadWarning();
 
             let url = getURL("../" + componentUuid + "/start");
             if (message) url = url + "?" + jatos.jQuery.param({ "message": message });
@@ -298,7 +298,7 @@ export function installStudyRunApi(jatos, dependencies) {
             }
         }, 1000);
         deferred.done(function () {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+            removeBeforeUnloadWarning();
             stopStudyRun();
         });
         deferred.always(jatos.removeOverlays);
@@ -360,7 +360,7 @@ export function installStudyRunApi(jatos, dependencies) {
         setEndingStudy(true);
 
         function abort() {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+            removeBeforeUnloadWarning();
 
             var url = getURL("../abort");
             if (typeof message == 'undefined') {
@@ -461,7 +461,7 @@ export function installStudyRunApi(jatos, dependencies) {
             }
         }, 1000);
         deferred.done(function () {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+            removeBeforeUnloadWarning();
             stopStudyRun();
         });
         deferred.always(jatos.removeOverlays);
@@ -555,7 +555,7 @@ export function installStudyRunApi(jatos, dependencies) {
         if (resultData) jatos.appendResultData(resultData);
 
         function end() {
-            window.removeEventListener('beforeunload', beforeUnloadWarning, { capture: true });
+            removeBeforeUnloadWarning();
 
             var url = getURL("../end");
             if (typeof successful == 'boolean' && typeof message == 'string') {

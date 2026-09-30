@@ -94,7 +94,7 @@ function createNavigationApi(t, overrides = {}) {
         waitSendDataOverlayConfig: {}
     };
     const dependencies = {
-        beforeUnloadWarning: () => {},
+        removeBeforeUnloadWarning: () => {},
         getURL: path => `https://example.test/${path}`,
         httpLoop: {isBusy: () => false, whenIdle: callback => callback()},
         isEndingStudy: () => false,
@@ -193,6 +193,7 @@ function createLifecycleApi(t) {
         isEndingStudy: () => state.ending,
         isStartingComponent: () => false,
         setEndingStudy: value => { state.ending = value; },
+        removeBeforeUnloadWarning: () => events.push("remove-listener"),
         stopStudyRun: () => events.push("stop"),
         httpLoop: {
             isBusy: () => true,

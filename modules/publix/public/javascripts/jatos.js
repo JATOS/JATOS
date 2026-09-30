@@ -1676,6 +1676,114 @@ var jatos;
     };
   }
 
+  // src/browser-ui.js
+  function createBrowserUi(jatos2) {
+    jatos2.waitSendDataOverlayConfig = {
+      text: "Sending data. Please wait."
+    };
+    let showBeforeUnloadWarning = true;
+    function onLoad() {
+      if (showBeforeUnloadWarning && !jatos2.componentProperties.reloadable) {
+        window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+      }
+    }
+    function beforeUnloadWarning(event) {
+      event.preventDefault();
+      event.returnValue = "Are you sure you want to leave?";
+    }
+    function removeBeforeUnloadWarning() {
+      window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+    }
+    jatos2.showBeforeUnloadWarning = function(show) {
+      showBeforeUnloadWarning = show;
+      if (show) {
+        window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+      } else {
+        removeBeforeUnloadWarning();
+      }
+    };
+    jatos2.showOverlay = function(config) {
+      if (config && typeof config.show == "boolean" && !config.show) return;
+      if (config && typeof config.id == "string") {
+        const el = document.getElementById(config.id);
+        if (el) {
+          if (config && config.text) el.textContent = config.text;
+          return el;
+        }
+      }
+      const div = document.createElement("div");
+      let divStyle = "color: black;font-family: Sans-Serif;font-size: 30px;letter-spacing: 2px;opacity: 0.6;text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;z-index: 9999;position: absolute;left: 50%;top: 50%;transform: translate(-50%, -50%);display: flex;align-items: center;justify-content: center;flex-direction: column;";
+      if (config && typeof config.style == "string") divStyle += ";" + config.style;
+      div.style.cssText = divStyle;
+      if (config && typeof config.id == "string") div.id = config.id;
+      div.classList.add("jatosOverlay");
+      if (config && typeof config.className == "string") div.classList.add(config.className);
+      div.textContent = config ? config.text : "Please wait";
+      const showImg = config && typeof config.showImg == "boolean" ? config.showImg : true;
+      if (showImg) {
+        var imgUrl = config && typeof config.imgUrl == "string" ? config.imgUrl : "jatos-publix/images/waiting.gif";
+        var waitingImg = document.createElement("img");
+        waitingImg.src = imgUrl;
+        waitingImg.style.marginTop = "10px";
+        div.appendChild(waitingImg);
+      }
+      const keep = config && typeof config.keep == "boolean" ? config.keep : false;
+      div.setAttribute("data-keep", keep);
+      if (config && typeof config.timeout == "number") {
+        setTimeout(() => div.remove(), config.timeout);
+      }
+      document.body.appendChild(div);
+      return div;
+    };
+    jatos2.removeOverlay = () => jatos2.removeOverlays();
+    jatos2.removeOverlays = function(force) {
+      document.querySelectorAll(".jatosOverlay").forEach((el) => {
+        if (el.dataset.keep === "false" || force) el.remove();
+      });
+    };
+    function showIdOverlay() {
+      if (jatos2.workerType !== "Jatos") return;
+      const idObj = {};
+      if (jatos2.frameId) idObj["frame"] = jatos2.frameId;
+      if (jatos2.workerId) idObj["worker"] = jatos2.workerId;
+      if (jatos2.studyResultId) idObj["study result"] = jatos2.studyResultId;
+      if (jatos2.groupResultId) idObj["group"] = jatos2.groupResultId;
+      const text = Object.entries(idObj).map(([key, value]) => `${key}: ${value}`).join("\n");
+      jatos2.showOverlay({
+        id: "idOverlay",
+        text,
+        style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;line-height:normal;letter-spacing:normal;word-spacing:normal;text-align:left;",
+        keep: true,
+        showImg: false
+      });
+    }
+    jatos2.addAbortButton = function(config) {
+      var buttonText = config && typeof config.text == "string" ? config.text : "Cancel";
+      var confirm = config && typeof config.confirm == "boolean" ? config.confirm : true;
+      var confirmText = config && typeof config.confirmText == "string" ? config.confirmText : "Do you really want to cancel this study?";
+      var tooltip = config && typeof config.tooltip == "string" ? config.tooltip : "Cancels this study and deletes all already submitted data";
+      var msg = config && typeof config.msg == "string" ? config.msg : "Worker decided to abort";
+      var style = "color:black;font-family:Sans-Serif;font-size:20px;letter-spacing:2px;position:fixed;margin:2em 0 0 2em;bottom:1em;right:1em;opacity:0.6;z-index:9999;cursor:pointer;text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;";
+      if (config && typeof config.style == "string") style += ";" + config.style;
+      var text = document.createTextNode(buttonText);
+      var buttonDiv = document.createElement("div");
+      buttonDiv.appendChild(text);
+      buttonDiv.style.cssText = style;
+      buttonDiv.setAttribute("title", tooltip);
+      buttonDiv.addEventListener("click", function() {
+        if (!confirm || window.confirm(confirmText)) {
+          if (config && typeof config.action == "function") {
+            config.action(msg);
+          } else {
+            jatos2.abortStudy(msg);
+          }
+        }
+      });
+      document.body.appendChild(buttonDiv);
+    };
+    return { onLoad, showIdOverlay, removeBeforeUnloadWarning };
+  }
+
   // src/initialization.js
   function createInitialization(jatos2, dependencies) {
     const { getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels } = dependencies;
@@ -1821,7 +1929,7 @@ var jatos;
   // src/study-run.js
   function installStudyRunApi(jatos2, dependencies) {
     const {
-      beforeUnloadWarning,
+      removeBeforeUnloadWarning,
       getURL,
       httpLoop,
       isEndingStudy,
@@ -1888,7 +1996,7 @@ var jatos;
       if (resultData) jatos2.appendResultData(resultData);
       jatos2.setStudySessionData(jatos2.studySessionData);
       const start = function() {
-        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+        removeBeforeUnloadWarning();
         let url = getURL("../" + componentUuid + "/start");
         if (message) url = url + "?" + jatos2.jQuery.param({ "message": message });
         window.location.href = url;
@@ -1985,7 +2093,7 @@ var jatos;
         }
       }, 1e3);
       deferred.done(function() {
-        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+        removeBeforeUnloadWarning();
         stopStudyRun();
       });
       deferred.always(jatos2.removeOverlays);
@@ -2017,7 +2125,7 @@ var jatos;
       }
       setEndingStudy(true);
       function abort() {
-        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+        removeBeforeUnloadWarning();
         var url = getURL("../abort");
         if (typeof message == "undefined") {
           window.location.href = url;
@@ -2091,7 +2199,7 @@ var jatos;
         }
       }, 1e3);
       deferred.done(function() {
-        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+        removeBeforeUnloadWarning();
         stopStudyRun();
       });
       deferred.always(jatos2.removeOverlays);
@@ -2151,7 +2259,7 @@ var jatos;
       setEndingStudy(true);
       if (resultData) jatos2.appendResultData(resultData);
       function end() {
-        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
+        removeBeforeUnloadWarning();
         var url = getURL("../end");
         if (typeof successful == "boolean" && typeof message == "string") {
           url = url + "?" + jatos2.jQuery.param({
@@ -2216,20 +2324,17 @@ var jatos;
     jatos.batchProperties = {};
     jatos.batchJsonInput = {};
     jatos.batchInput = {};
-    jatos.waitSendDataOverlayConfig = {
-      text: "Sending data. Please wait."
-    };
     let startingComponent = false;
     let endingStudy = false;
     let studyRunInvalid = false;
-    let showBeforeUnloadWarning = true;
+    const browserUi = createBrowserUi(jatos);
     const httpLoop = createHttpLoop({
       isInitialized: () => initialization.isInitialized()
     });
     const channels = createChannels(jatos, {
       getURL,
       getAjaxErrorMsg,
-      showIdOverlay,
+      showIdOverlay: browserUi.showIdOverlay,
       isEndingStudy: () => endingStudy,
       isStartingComponent: () => startingComponent,
       isStudyRunInvalid: () => studyRunInvalid,
@@ -2240,10 +2345,11 @@ var jatos;
     const initialization = createInitialization(jatos, {
       getURL,
       getAjaxErrorMsg,
-      showIdOverlay,
+      showIdOverlay: browserUi.showIdOverlay,
       httpLoop,
       channels
     });
+    jatos.onLoad(browserUi.onLoad);
     initialization.start();
     jatos.onError = function(onError) {
       console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
@@ -2256,7 +2362,7 @@ var jatos;
       sendToHttpLoop: httpLoop.send
     });
     installStudyRunApi(jatos, {
-      beforeUnloadWarning,
+      removeBeforeUnloadWarning: browserUi.removeBeforeUnloadWarning,
       getURL,
       httpLoop,
       isEndingStudy: () => endingStudy,
@@ -2330,102 +2436,6 @@ var jatos;
       obj.groupResultId = jatos.groupResultId;
       obj.groupMemberId = jatos.groupMemberId;
       return obj;
-    };
-    jatos.onLoad(function() {
-      if (showBeforeUnloadWarning && !jatos.componentProperties.reloadable) {
-        window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
-      }
-    });
-    var beforeUnloadWarning = function(event) {
-      event.preventDefault();
-      event.returnValue = "Are you sure you want to leave?";
-    };
-    jatos.showBeforeUnloadWarning = function(show) {
-      showBeforeUnloadWarning = show;
-      if (show) {
-        window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
-      } else {
-        window.removeEventListener("beforeunload", beforeUnloadWarning, { capture: true });
-      }
-    };
-    jatos.showOverlay = function(config) {
-      if (config && typeof config.show == "boolean" && !config.show) return;
-      if (config && typeof config.id == "string") {
-        const el = document.getElementById(config.id);
-        if (el) {
-          if (config && config.text) el.textContent = config.text;
-          return el;
-        }
-      }
-      const div = document.createElement("div");
-      let divStyle = "color: black;font-family: Sans-Serif;font-size: 30px;letter-spacing: 2px;opacity: 0.6;text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;z-index: 9999;position: absolute;left: 50%;top: 50%;transform: translate(-50%, -50%);display: flex;align-items: center;justify-content: center;flex-direction: column;";
-      if (config && typeof config.style == "string") divStyle += ";" + config.style;
-      div.style.cssText = divStyle;
-      if (config && typeof config.id == "string") div.id = config.id;
-      div.classList.add("jatosOverlay");
-      if (config && typeof config.className == "string") div.classList.add(config.className);
-      div.textContent = config ? config.text : "Please wait";
-      const showImg = config && typeof config.showImg == "boolean" ? config.showImg : true;
-      if (showImg) {
-        var imgUrl = config && typeof config.imgUrl == "string" ? config.imgUrl : "jatos-publix/images/waiting.gif";
-        var waitingImg = document.createElement("img");
-        waitingImg.src = imgUrl;
-        waitingImg.style.marginTop = "10px";
-        div.appendChild(waitingImg);
-      }
-      const keep = config && typeof config.keep == "boolean" ? config.keep : false;
-      div.setAttribute("data-keep", keep);
-      if (config && typeof config.timeout == "number") {
-        setTimeout(() => div.remove(), config.timeout);
-      }
-      document.body.appendChild(div);
-      return div;
-    };
-    jatos.removeOverlay = () => jatos.removeOverlays();
-    jatos.removeOverlays = function(force) {
-      document.querySelectorAll(".jatosOverlay").forEach((el) => {
-        if (el.dataset.keep === "false" || force) el.remove();
-      });
-    };
-    function showIdOverlay() {
-      if (jatos.workerType !== "Jatos") return;
-      const idObj = {};
-      if (jatos.frameId) idObj["frame"] = jatos.frameId;
-      if (jatos.workerId) idObj["worker"] = jatos.workerId;
-      if (jatos.studyResultId) idObj["study result"] = jatos.studyResultId;
-      if (jatos.groupResultId) idObj["group"] = jatos.groupResultId;
-      const text = Object.entries(idObj).map(([key, value]) => `${key}: ${value}`).join("\n");
-      jatos.showOverlay({
-        id: "idOverlay",
-        text,
-        style: "position:fixed;top:unset;left:4px;bottom:4px;transform:unset;font-size:10px;letter-spacing:0px;white-space:pre;line-height:normal;letter-spacing:normal;word-spacing:normal;text-align:left;",
-        keep: true,
-        showImg: false
-      });
-    }
-    jatos.addAbortButton = function(config) {
-      var buttonText = config && typeof config.text == "string" ? config.text : "Cancel";
-      var confirm = config && typeof config.confirm == "boolean" ? config.confirm : true;
-      var confirmText = config && typeof config.confirmText == "string" ? config.confirmText : "Do you really want to cancel this study?";
-      var tooltip = config && typeof config.tooltip == "string" ? config.tooltip : "Cancels this study and deletes all already submitted data";
-      var msg = config && typeof config.msg == "string" ? config.msg : "Worker decided to abort";
-      var style = "color:black;font-family:Sans-Serif;font-size:20px;letter-spacing:2px;position:fixed;margin:2em 0 0 2em;bottom:1em;right:1em;opacity:0.6;z-index:9999;cursor:pointer;text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;";
-      if (config && typeof config.style == "string") style += ";" + config.style;
-      var text = document.createTextNode(buttonText);
-      var buttonDiv = document.createElement("div");
-      buttonDiv.appendChild(text);
-      buttonDiv.style.cssText = style;
-      buttonDiv.setAttribute("title", tooltip);
-      buttonDiv.addEventListener("click", function() {
-        if (!confirm || window.confirm(confirmText)) {
-          if (config && typeof config.action == "function") {
-            config.action(msg);
-          } else {
-            jatos.abortStudy(msg);
-          }
-        }
-      });
-      document.body.appendChild(buttonDiv);
     };
     function getAjaxErrorMsg(jqxhr) {
       if (jqxhr.statusText === "timeout") {

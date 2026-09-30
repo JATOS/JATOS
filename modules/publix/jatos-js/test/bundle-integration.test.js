@@ -93,13 +93,16 @@ async function startBundle(t, minify) {
     assert.equal(jatos.studySessionData.score, 1);
     const httpWorker = workers.find(worker => worker.url.endsWith("http-loop-worker.js"));
     assert.ok(httpWorker);
-    return {jatos, workers, sockets, httpWorker};
+    return {jatos, workers, sockets, httpWorker, window};
 }
 
 for (const minify of [false, true]) {
     for (const ending of ["end", "abort"]) {
         test(`${minify ? "minified" : "readable"} bundle: initialization, HTTP, channel acknowledgements and ${ending} cleanup`, {timeout: 5000}, async t => {
-            const {jatos, workers, sockets, httpWorker} = await startBundle(t, minify);
+            const {jatos, workers, sockets, httpWorker, window} = await startBundle(t, minify);
+            const warns = () => !window.dispatchEvent(new window.Event("beforeunload", {cancelable: true}));
+            jatos.showBeforeUnloadWarning(true);
+            assert.equal(warns(), true);
             const submitted = jatos.submitResultData({score: 2});
             assert.equal(submitted.resolve, undefined);
             assert.equal(submitted.state(), "pending");
@@ -147,6 +150,7 @@ for (const minify of [false, true]) {
             await finished;
             assert.equal(workers.every(worker => worker.terminated), true);
             assert.equal(finished.state(), "resolved");
+            assert.equal(warns(), false);
         });
     }
 }

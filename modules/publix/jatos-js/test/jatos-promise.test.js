@@ -19,23 +19,31 @@ test("resolve preserves arguments, callback order, and first settlement", () => 
     const deferred = createDeferred();
     const events = [];
     let args;
+    const context = {};
+    let receivedContext;
 
-    deferred.done((...values) => {
+    deferred.done(function (...values) {
+        receivedContext = this;
         args = values;
         events.push("done-1");
     });
     deferred.always(() => events.push("always"));
     deferred.done(() => events.push("done-2"));
-    deferred.resolve("one", "two");
+    deferred.resolveWith(context, ["one", "two"]);
     deferred.reject("ignored");
     deferred.resolve("ignored");
 
     assert.equal(deferred.state(), "resolved");
     assert.deepEqual(args, ["one", "two"]);
+    assert.equal(receivedContext, context);
     assert.deepEqual(events, ["done-1", "always", "done-2"]);
 
     let late = false;
-    deferred.done(() => { late = true; });
+    deferred.done(function (...values) {
+        late = true;
+        assert.equal(this, context);
+        assert.deepEqual(values, ["one", "two"]);
+    });
     assert.equal(late, true);
 });
 
@@ -93,3 +101,51 @@ for (const settlement of ["resolve", "reject"]) {
         assert.equal(tasks.length, 0, "settled promise adoption must stop scheduling work");
     });
 }
+
+test("callbacks remain callbacks synchronous and then asynchronous", async () => {
+    const deferred = createDeferred();
+    const events = [];
+    deferred.done(() => events.push("done"));
+    const chained = deferred.then(() => events.push("then"));
+
+    deferred.resolve();
+    events.push("returned");
+    assert.deepEqual(events, ["done", "returned"]);
+    await chained;
+    assert.deepEqual(events, ["done", "returned", "then"]);
+});
+
+test("progress callbacks remember notifications and lock on settlement", () => {
+    const deferred = createDeferred();
+    const context = {};
+    const events = [];
+    deferred.notifyWith(context, ["upload", 50]);
+    deferred.progress(function (...args) { events.push({context: this, args}); });
+    assert.equal(deferred.state(), "pending");
+    deferred.resolve();
+    deferred.notify("ignored");
+
+    assert.equal(events.length, 1);
+    assert.equal(events[0].context, context);
+    assert.deepEqual(events[0].args, ["upload", 50]);
+});
+
+test("pipe filters synchronously and adopts Deferred results", () => {
+    const source = createDeferred();
+    const adopted = createDeferred();
+    const events = [];
+    const piped = source.pipe(value => {
+        events.push(value);
+        return adopted.promise();
+    });
+    piped.progress(value => events.push(value));
+    piped.done(value => events.push(value));
+
+    source.resolve("filter");
+    assert.deepEqual(events, ["filter"]);
+    assert.equal(piped.state(), "pending");
+    adopted.notify("progress");
+    adopted.resolve("result");
+    assert.deepEqual(events, ["filter", "progress", "result"]);
+    assert.equal(piped.state(), "resolved");
+});
