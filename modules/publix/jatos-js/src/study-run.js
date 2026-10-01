@@ -3,17 +3,23 @@
 import {callMany} from "./utils/callbacks.js";
 import {rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
+/**
+ * Creates internal state for one study run; never exposed on the public jatos API.
+ * Study-run operations set starting/ending, channels set invalid, and result-data
+ * only reads invalid. Flags can overlap and remain set after request failure.
+ * Initialization owns readiness separately.
+ */
+export function createStudyRunState() {
+    return {starting: false, ending: false, invalid: false};
+}
+
 export function installStudyRunApi(jatos, dependencies) {
     const {
+        studyRunState,
         removeBeforeUnloadWarning,
         getURL,
         httpLoop,
-        isEndingStudy,
         isInitialized,
-        isStartingComponent,
-        isStudyRunInvalid,
-        setStartingComponent,
-        setEndingStudy,
         stopStudyRun
     } = dependencies;
 
@@ -84,15 +90,15 @@ export function installStudyRunApi(jatos, dependencies) {
             onError = param3;
         }
 
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             callMany("Can't start component. This study run is invalid.", onError, console.warn);
             return;
         }
-        if (isStartingComponent()) {
+        if (studyRunState.starting) {
             callMany("Can start only one component at the same time", onError, console.warn);
             return;
         }
-        if (isEndingStudy()) {
+        if (studyRunState.ending) {
             callMany("Can't start component if study already ended.", onError, console.warn);
             return;
         }
@@ -107,7 +113,7 @@ export function installStudyRunApi(jatos, dependencies) {
             return;
         }
 
-        setStartingComponent(true);
+        studyRunState.starting = true;
 
         // Send result data and study session data before starting next component
         if (resultData) jatos.appendResultData(resultData);
@@ -269,17 +275,17 @@ export function installStudyRunApi(jatos, dependencies) {
             callMany(errorMsg, onError, console.error);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't abort study. This study run is invalid.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);
         }
-        if (isEndingStudy()) {
+        if (studyRunState.ending) {
             const errorMsg = "Can end/abort study only once.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);
         }
-        setEndingStudy(true);
+        studyRunState.ending = true;
 
         var url = getURL("../abort");
         if (typeof message != 'undefined') {
@@ -338,7 +344,7 @@ export function installStudyRunApi(jatos, dependencies) {
      *          redirect to another page.
      */
     jatos.abortStudy = function (message, showEndPage = true) {
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             console.warn("Can't abort study. This study run is invalid.");
             return;
         }
@@ -355,11 +361,11 @@ export function installStudyRunApi(jatos, dependencies) {
                 .done(() => parent.onIframeComplete(jatos.urlQueryParameters.frameId, jatos.studyId));
         }
 
-        if (isEndingStudy()) {
+        if (studyRunState.ending) {
             console.warn("Can end/abort study only once");
             return;
         }
-        setEndingStudy(true);
+        studyRunState.ending = true;
 
         function abort() {
             removeBeforeUnloadWarning();
@@ -418,17 +424,17 @@ export function installStudyRunApi(jatos, dependencies) {
             onError = param4;
         }
 
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't end study. This study run is invalid.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);
         }
-        if (isEndingStudy()) {
+        if (studyRunState.ending) {
             const errorMsg = "Can end/abort study only once.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);
         }
-        setEndingStudy(true);
+        studyRunState.ending = true;
 
         // Before finish send result data
         if (resultData) jatos.appendResultData(resultData);
@@ -507,7 +513,7 @@ export function installStudyRunApi(jatos, dependencies) {
             console.error("jatos.js not yet initialized");
             return;
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             console.warn("Can't end study. This study run is invalid.");
             return;
         }
@@ -547,11 +553,11 @@ export function installStudyRunApi(jatos, dependencies) {
             return;
         }
 
-        if (isEndingStudy()) {
+        if (studyRunState.ending) {
             console.warn("Can end/abort study only once");
             return;
         }
-        setEndingStudy(true);
+        studyRunState.ending = true;
 
         // Before finish send result data
         if (resultData) jatos.appendResultData(resultData);

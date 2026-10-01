@@ -7,13 +7,10 @@ import {createDeferred, rejectedPromise, isDeferredPending} from "./jatos-promis
 /** Installs the batch and group APIs and owns their channel state. */
 export function createChannels(jatos, dependencies) {
     const {
+        studyRunState,
         getURL,
         getAjaxErrorMsg,
-        showIdOverlay,
-        isEndingStudy,
-        isStartingComponent,
-        isStudyRunInvalid,
-        setStudyRunInvalid
+        showIdOverlay
     } = dependencies;
 
     /**
@@ -201,12 +198,12 @@ export function createChannels(jatos, dependencies) {
         if (batchChannel && batchChannel.readyState !== batchChannel.CLOSED) {
             return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
         }
-        if (isEndingStudy() || isStartingComponent()) {
+        if (studyRunState.ending || studyRunState.starting) {
             const errorMsg = "Won't open batch channel because study is about to move to the next component or finish.";
             console.info(errorMsg);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't open batch channel. This study run is invalid.";
             console.warn(errorMsg);
             return rejectedPromise(errorMsg);
@@ -393,7 +390,7 @@ export function createChannels(jatos, dependencies) {
             case "CLOSED":
                 clearInterval(batchChannelClosedCheckTimer);
                 setBatchChannelDead();
-                setStudyRunInvalid(true);
+                studyRunState.invalid = true;
                 console.info("Batch channel closed by JATOS server");
                 jatos.showOverlay({ text: "This study run is invalid.", showImg: false });
                 break;
@@ -441,7 +438,7 @@ export function createChannels(jatos, dependencies) {
             callMany(errorMsg, onFail, console.error);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = `Can't send batch session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
             callMany(errorMsg, onFail, console.warn);
             return rejectedPromise(errorMsg);
@@ -530,12 +527,12 @@ export function createChannels(jatos, dependencies) {
         if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
             return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
         }
-        if (isEndingStudy() || isStartingComponent()) {
+        if (studyRunState.ending || studyRunState.starting) {
             const errorMsg = "Won't open group channel because study is about to move to the next component or finish.";
             callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't open group channel. This study run is invalid.";
             callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
             return rejectedPromise(errorMsg);
@@ -852,7 +849,7 @@ export function createChannels(jatos, dependencies) {
             callMany(errorMsg, onFail, console.error);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = `Can't send group session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
             callMany(errorMsg, onFail, console.warn);
             return rejectedPromise(errorMsg);
@@ -897,7 +894,7 @@ export function createChannels(jatos, dependencies) {
             callMany(errorMsg, onFail, console.warn);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't fix group. This study run is invalid.";
             callMany(errorMsg, onFail, console.warn);
             return rejectedPromise(errorMsg);
@@ -1054,7 +1051,7 @@ export function createChannels(jatos, dependencies) {
             callMany(errorMsg, console.error, onFail);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't reassign group. This study run is invalid.";
             callMany(errorMsg, console.warn, onFail);
             return rejectedPromise(errorMsg);
@@ -1112,7 +1109,7 @@ export function createChannels(jatos, dependencies) {
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't leave group. This study run is invalid.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);

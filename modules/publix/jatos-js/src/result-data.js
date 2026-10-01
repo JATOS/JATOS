@@ -5,10 +5,10 @@ import {callMany, callWithArgs} from "./utils/callbacks.js";
 
 export function installResultDataApi(jatos, dependencies) {
     const {
+        studyRunState,
         getURL,
         isInitialized,
         isInvalidComponentPosition,
-        isStudyRunInvalid,
         sendToHttpLoop
     } = dependencies;
 
@@ -47,7 +47,7 @@ export function installResultDataApi(jatos, dependencies) {
      * POST for appendResultData.
      */
     function submitOrAppendResultData(resultData, append, onSuccess, onError) {
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't send result data. This study run is invalid.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);
@@ -88,7 +88,7 @@ export function installResultDataApi(jatos, dependencies) {
      * @return {JatosPromise}
      */
     jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't upload file. This study run is invalid.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);
@@ -172,7 +172,7 @@ export function installResultDataApi(jatos, dependencies) {
             console.error(errorMsg);
             return rejectedPromise(errorMsg);
         }
-        if (isStudyRunInvalid()) {
+        if (studyRunState.invalid) {
             const errorMsg = "Can't download file. This study run is invalid.";
             callMany(errorMsg, onError, console.warn);
             return rejectedPromise(errorMsg);

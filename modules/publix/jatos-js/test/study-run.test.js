@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+    createStudyRunState,
     installStudyRunApi,
     isInvalidComponentPosition
 } from "../src/study-run.js";
@@ -39,13 +40,12 @@ test("position and title helpers delegate to startComponent", t => {
 
 test("startComponent reads live guards and waits for pending HTTP work", t => {
     let initialized = false;
-    let starting = false;
+    const studyRunState = createStudyRunState();
     let waitCallback;
     const errors = [];
     const {jatos, dependencies, location} = createNavigationApi(t, {
+        studyRunState,
         isInitialized: () => initialized,
-        isStartingComponent: () => starting,
-        setStartingComponent: value => { starting = value; },
         httpLoop: {
             isBusy: () => true,
             whenIdle: callback => { waitCallback = callback; }
@@ -53,11 +53,11 @@ test("startComponent reads live guards and waits for pending HTTP work", t => {
     });
 
     jatos.startComponent("second-uuid", "data", error => errors.push(error));
-    assert.equal(starting, false);
+    assert.equal(studyRunState.starting, false);
 
     initialized = true;
     jatos.startComponent("second-uuid", "data", error => errors.push(error));
-    assert.equal(starting, true);
+    assert.equal(studyRunState.starting, true);
     assert.equal(location.href, "unchanged");
 
     waitCallback();
@@ -94,14 +94,11 @@ function createNavigationApi(t, overrides = {}) {
         waitSendDataOverlayConfig: {}
     };
     const dependencies = {
+        studyRunState: createStudyRunState(),
         removeBeforeUnloadWarning: () => {},
         getURL: path => `https://example.test/${path}`,
         httpLoop: {isBusy: () => false, whenIdle: callback => callback()},
-        isEndingStudy: () => false,
         isInitialized: () => true,
-        isStartingComponent: () => false,
-        isStudyRunInvalid: () => false,
-        setStartingComponent: () => {},
         ...overrides
     };
 
@@ -166,7 +163,7 @@ function createLifecycleApi(t) {
     const events = [];
     const requests = [];
     const timers = [];
-    const state = {initialized: true, invalid: false, ending: false};
+    const state = {...createStudyRunState(), initialized: true};
     const window = {location: {href: "unchanged"}, removeEventListener: () => events.push("remove-listener")};
     window.self = window.top = window;
     const previousWindow = globalThis.window;
@@ -188,11 +185,8 @@ function createLifecycleApi(t) {
     };
     installStudyRunApi(jatos, {
         getURL: path => `https://example.test/${path}`,
+        studyRunState: state,
         isInitialized: () => state.initialized,
-        isStudyRunInvalid: () => state.invalid,
-        isEndingStudy: () => state.ending,
-        isStartingComponent: () => false,
-        setEndingStudy: value => { state.ending = value; },
         removeBeforeUnloadWarning: () => events.push("remove-listener"),
         stopStudyRun: () => events.push("stop"),
         httpLoop: {

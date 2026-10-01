@@ -21,6 +21,7 @@ import {createChannels} from "./channels.js";
 import {createBrowserUi} from "./browser-ui.js";
 import {createInitialization} from "./initialization.js";
 import {
+    createStudyRunState,
     installStudyRunApi,
     isInvalidComponentPosition
 } from "./study-run.js";
@@ -97,13 +98,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      */
     jatos.batchJsonInput = {};
     jatos.batchInput = {};
-    /**
-     * State booleans (flags). If true jatos.js is in this state. Several states can be true
-     * at the same time.
-     */
-    let startingComponent = false;
-    let endingStudy = false;
-    let studyRunInvalid = false;
+    const studyRunState = createStudyRunState();
     const browserUi = createBrowserUi(jatos);
 
     const httpLoop = createHttpLoop({
@@ -111,13 +106,10 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     });
 
     const channels = createChannels(jatos, {
+        studyRunState,
         getURL,
         getAjaxErrorMsg,
         showIdOverlay: browserUi.showIdOverlay,
-        isEndingStudy: () => endingStudy,
-        isStartingComponent: () => startingComponent,
-        isStudyRunInvalid: () => studyRunInvalid,
-        setStudyRunInvalid: value => { studyRunInvalid = value; }
     });
 
     const initialization = createInitialization(jatos, {
@@ -131,23 +123,19 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     initialization.start();
 
     installResultDataApi(jatos, {
+        studyRunState,
         getURL,
         isInitialized: () => initialization.isInitialized(),
         isInvalidComponentPosition: pos => isInvalidComponentPosition(jatos.componentList, pos),
-        isStudyRunInvalid: () => studyRunInvalid,
         sendToHttpLoop: httpLoop.send
     });
 
     installStudyRunApi(jatos, {
+        studyRunState,
         removeBeforeUnloadWarning: browserUi.removeBeforeUnloadWarning,
         getURL,
         httpLoop,
-        isEndingStudy: () => endingStudy,
         isInitialized: () => initialization.isInitialized(),
-        isStartingComponent: () => startingComponent,
-        isStudyRunInvalid: () => studyRunInvalid,
-        setStartingComponent: value => { startingComponent = value; },
-        setEndingStudy: value => { endingStudy = value; },
         stopStudyRun: () => {
             initialization.terminateHeartbeat();
             httpLoop.terminate();

@@ -542,10 +542,10 @@ var jatos;
   // src/result-data.js
   function installResultDataApi(jatos2, dependencies) {
     const {
+      studyRunState,
       getURL,
       isInitialized,
       isInvalidComponentPosition: isInvalidComponentPosition2,
-      isStudyRunInvalid,
       sendToHttpLoop
     } = dependencies;
     jatos2.submitResultData = function(resultData, onSuccess, onError) {
@@ -555,7 +555,7 @@ var jatos;
       return submitOrAppendResultData(resultData, true, onSuccess, onError);
     };
     function submitOrAppendResultData(resultData, append, onSuccess, onError) {
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't send result data. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
@@ -582,7 +582,7 @@ var jatos;
       return deferred.promise();
     }
     jatos2.uploadResultFile = function(obj, filename, onSuccess, onError) {
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't upload file. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
@@ -642,7 +642,7 @@ var jatos;
         console.error(errorMsg);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't download file. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
@@ -878,13 +878,10 @@ var jatos;
   // src/channels.js
   function createChannels(jatos2, dependencies) {
     const {
+      studyRunState,
       getURL,
       getAjaxErrorMsg,
-      showIdOverlay,
-      isEndingStudy,
-      isStartingComponent,
-      isStudyRunInvalid,
-      setStudyRunInvalid
+      showIdOverlay
     } = dependencies;
     jatos2.groupMemberId = null;
     jatos2.groupResultId = null;
@@ -956,12 +953,12 @@ var jatos;
       if (batchChannel && batchChannel.readyState !== batchChannel.CLOSED) {
         return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
       }
-      if (isEndingStudy() || isStartingComponent()) {
+      if (studyRunState.ending || studyRunState.starting) {
         const errorMsg = "Won't open batch channel because study is about to move to the next component or finish.";
         console.info(errorMsg);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't open batch channel. This study run is invalid.";
         console.warn(errorMsg);
         return rejectedPromise(errorMsg);
@@ -1100,7 +1097,7 @@ var jatos;
         case "CLOSED":
           clearInterval(batchChannelClosedCheckTimer);
           setBatchChannelDead();
-          setStudyRunInvalid(true);
+          studyRunState.invalid = true;
           console.info("Batch channel closed by JATOS server");
           jatos2.showOverlay({ text: "This study run is invalid.", showImg: false });
           break;
@@ -1133,7 +1130,7 @@ var jatos;
         callMany(errorMsg, onFail, console.error);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = `Can't send batch session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.warn);
         return rejectedPromise(errorMsg);
@@ -1178,12 +1175,12 @@ var jatos;
       if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
         return rejectedPromise("Can't open a WebSocket that is not in readyState CLOSED.");
       }
-      if (isEndingStudy() || isStartingComponent()) {
+      if (studyRunState.ending || studyRunState.starting) {
         const errorMsg = "Won't open group channel because study is about to move to the next component or finish.";
         callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't open group channel. This study run is invalid.";
         callMany(errorMsg, console.warn, groupChannelCallbacks.onError);
         return rejectedPromise(errorMsg);
@@ -1421,7 +1418,7 @@ var jatos;
         callMany(errorMsg, onFail, console.error);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = `Can't send group session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
         callMany(errorMsg, onFail, console.warn);
         return rejectedPromise(errorMsg);
@@ -1461,7 +1458,7 @@ var jatos;
         callMany(errorMsg, onFail, console.warn);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't fix group. This study run is invalid.";
         callMany(errorMsg, onFail, console.warn);
         return rejectedPromise(errorMsg);
@@ -1561,7 +1558,7 @@ var jatos;
         callMany(errorMsg, console.error, onFail);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't reassign group. This study run is invalid.";
         callMany(errorMsg, console.warn, onFail);
         return rejectedPromise(errorMsg);
@@ -1606,7 +1603,7 @@ var jatos;
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't leave group. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
@@ -1915,17 +1912,16 @@ var jatos;
   }
 
   // src/study-run.js
+  function createStudyRunState() {
+    return { starting: false, ending: false, invalid: false };
+  }
   function installStudyRunApi(jatos2, dependencies) {
     const {
+      studyRunState,
       removeBeforeUnloadWarning,
       getURL,
       httpLoop,
-      isEndingStudy,
       isInitialized,
-      isStartingComponent,
-      isStudyRunInvalid,
-      setStartingComponent,
-      setEndingStudy,
       stopStudyRun
     } = dependencies;
     jatos2.setStudySessionData = function(studySessionData, onSuccess, onFail) {
@@ -1959,15 +1955,15 @@ var jatos;
       } else if (typeof param3 === "function") {
         onError = param3;
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         callMany("Can't start component. This study run is invalid.", onError, console.warn);
         return;
       }
-      if (isStartingComponent()) {
+      if (studyRunState.starting) {
         callMany("Can start only one component at the same time", onError, console.warn);
         return;
       }
-      if (isEndingStudy()) {
+      if (studyRunState.ending) {
         callMany("Can't start component if study already ended.", onError, console.warn);
         return;
       }
@@ -1980,7 +1976,7 @@ var jatos;
         }
         return;
       }
-      setStartingComponent(true);
+      studyRunState.starting = true;
       if (resultData) jatos2.appendResultData(resultData);
       jatos2.setStudySessionData(jatos2.studySessionData);
       const start = function() {
@@ -2051,17 +2047,17 @@ var jatos;
         callMany(errorMsg, onError, console.error);
         return rejectedPromise(errorMsg);
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't abort study. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
       }
-      if (isEndingStudy()) {
+      if (studyRunState.ending) {
         const errorMsg = "Can end/abort study only once.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
       }
-      setEndingStudy(true);
+      studyRunState.ending = true;
       var url = getURL("../abort");
       if (typeof message != "undefined") {
         url = url + "?message=" + message;
@@ -2096,7 +2092,7 @@ var jatos;
       });
     };
     jatos2.abortStudy = function(message, showEndPage = true) {
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         console.warn("Can't abort study. This study run is invalid.");
         return;
       }
@@ -2107,11 +2103,11 @@ var jatos;
       if (isInIframe && jatos2.workerType === "Jatos" && parent.onIframeComplete) {
         return jatos2.abortStudyWithoutRedirect(message).done(() => parent.onIframeComplete(jatos2.urlQueryParameters.frameId, jatos2.studyId));
       }
-      if (isEndingStudy()) {
+      if (studyRunState.ending) {
         console.warn("Can end/abort study only once");
         return;
       }
-      setEndingStudy(true);
+      studyRunState.ending = true;
       function abort() {
         removeBeforeUnloadWarning();
         var url = getURL("../abort");
@@ -2145,17 +2141,17 @@ var jatos;
         onSuccess = param3;
         onError = param4;
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         const errorMsg = "Can't end study. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
       }
-      if (isEndingStudy()) {
+      if (studyRunState.ending) {
         const errorMsg = "Can end/abort study only once.";
         callMany(errorMsg, onError, console.warn);
         return rejectedPromise(errorMsg);
       }
-      setEndingStudy(true);
+      studyRunState.ending = true;
       if (resultData) jatos2.appendResultData(resultData);
       var url = getURL("../end");
       if (typeof successful == "boolean" && typeof message == "string") {
@@ -2206,7 +2202,7 @@ var jatos;
         console.error("jatos.js not yet initialized");
         return;
       }
-      if (isStudyRunInvalid()) {
+      if (studyRunState.invalid) {
         console.warn("Can't end study. This study run is invalid.");
         return;
       }
@@ -2240,11 +2236,11 @@ var jatos;
         }
         return;
       }
-      if (isEndingStudy()) {
+      if (studyRunState.ending) {
         console.warn("Can end/abort study only once");
         return;
       }
-      setEndingStudy(true);
+      studyRunState.ending = true;
       if (resultData) jatos2.appendResultData(resultData);
       function end() {
         removeBeforeUnloadWarning();
@@ -2312,23 +2308,16 @@ var jatos;
     jatos.batchProperties = {};
     jatos.batchJsonInput = {};
     jatos.batchInput = {};
-    let startingComponent = false;
-    let endingStudy = false;
-    let studyRunInvalid = false;
+    const studyRunState = createStudyRunState();
     const browserUi = createBrowserUi(jatos);
     const httpLoop = createHttpLoop({
       isInitialized: () => initialization.isInitialized()
     });
     const channels = createChannels(jatos, {
+      studyRunState,
       getURL,
       getAjaxErrorMsg,
-      showIdOverlay: browserUi.showIdOverlay,
-      isEndingStudy: () => endingStudy,
-      isStartingComponent: () => startingComponent,
-      isStudyRunInvalid: () => studyRunInvalid,
-      setStudyRunInvalid: (value) => {
-        studyRunInvalid = value;
-      }
+      showIdOverlay: browserUi.showIdOverlay
     });
     const initialization = createInitialization(jatos, {
       getURL,
@@ -2340,26 +2329,18 @@ var jatos;
     jatos.onLoad(browserUi.onLoad);
     initialization.start();
     installResultDataApi(jatos, {
+      studyRunState,
       getURL,
       isInitialized: () => initialization.isInitialized(),
       isInvalidComponentPosition: (pos) => isInvalidComponentPosition(jatos.componentList, pos),
-      isStudyRunInvalid: () => studyRunInvalid,
       sendToHttpLoop: httpLoop.send
     });
     installStudyRunApi(jatos, {
+      studyRunState,
       removeBeforeUnloadWarning: browserUi.removeBeforeUnloadWarning,
       getURL,
       httpLoop,
-      isEndingStudy: () => endingStudy,
       isInitialized: () => initialization.isInitialized(),
-      isStartingComponent: () => startingComponent,
-      isStudyRunInvalid: () => studyRunInvalid,
-      setStartingComponent: (value) => {
-        startingComponent = value;
-      },
-      setEndingStudy: (value) => {
-        endingStudy = value;
-      },
       stopStudyRun: () => {
         initialization.terminateHeartbeat();
         httpLoop.terminate();

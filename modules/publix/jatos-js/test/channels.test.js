@@ -3,6 +3,8 @@ import {readFileSync} from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 
+import {installResultDataApi} from "../src/result-data.js";
+import {createStudyRunState, installStudyRunApi} from "../src/study-run.js";
 import {createChannels} from "../src/channels.js";
 
 const patchContext = {};
@@ -13,7 +15,7 @@ function setup(t) {
     const timers = new Map();
     const requests = [];
     const events = [];
-    const state = {ending: false, starting: false, invalid: false};
+    const state = createStudyRunState();
     let timerId = 0;
     class FakeWebSocket {
         OPEN = 1;
@@ -58,13 +60,10 @@ function setup(t) {
         }}
     };
     const channels = createChannels(jatos, {
+        studyRunState: state,
         getURL: path => `https://example.test/${path}`,
         getAjaxErrorMsg: error => error.statusText,
         showIdOverlay: () => events.push("ids"),
-        isEndingStudy: () => state.ending,
-        isStartingComponent: () => state.starting,
-        isStudyRunInvalid: () => state.invalid,
-        setStudyRunInvalid: value => { state.invalid = value; }
     });
     function fire(id) {
         const timer = timers.get(id);
@@ -349,3 +348,21 @@ for (const kind of ["batch", "group"]) {
         assert.deepEqual(session.getAll(), {restored: true});
     });
 }
+
+
+test("server invalidation reaches result-data and navigation through the shared run state", t => {
+    const {jatos, open, state} = setup(t);
+    installResultDataApi(jatos, {
+        studyRunState: state,
+        sendToHttpLoop: () => assert.fail("invalid run must not send result data")
+    });
+    installStudyRunApi(jatos, {studyRunState: state, isInitialized: () => true});
+    const socket = open("batch");
+    socket.receive({action: "CLOSED"});
+    const errors = [];
+    assert.equal(jatos.submitResultData("data", undefined, error => errors.push(error)).state(), "rejected");
+    jatos.startComponent("next-uuid", undefined, error => errors.push(error));
+    assert.equal(errors.length, 2);
+    assert.ok(errors.every(error => error.includes("This study run is invalid")));
+    assert.equal(createStudyRunState().invalid, false, "new runs do not inherit invalidation");
+});
