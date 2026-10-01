@@ -105,14 +105,12 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         requestHttp,
         studyRunState,
         getURL,
-        getAjaxErrorMsg,
         showIdOverlay: browserUi.showIdOverlay,
     });
 
     const initialization = createInitialization(jatos, {
         requestHttp,
         getURL,
-        getAjaxErrorMsg,
         showIdOverlay: browserUi.showIdOverlay,
         httpLoop,
         channels
@@ -183,21 +181,5 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         obj.groupMemberId = jatos.groupMemberId;
         return obj;
     };
-
-    /**
-     * Takes a jQuery Ajax response and returns an error message.
-     */
-    function getAjaxErrorMsg(jqxhr) {
-        if (jqxhr.statusText === 'timeout') {
-            return "JATOS server not responding";
-        } else {
-            if (jqxhr.responseText) {
-                return jqxhr.statusText + ": " + jqxhr.responseText;
-            } else {
-                return jqxhr.statusText + ": " + "Error during Ajax call to JATOS server.";
-            }
-        }
-    }
-
 
 })();

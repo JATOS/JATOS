@@ -1,3 +1,5 @@
+import {getHttpErrorMessage} from "./http-transport.js";
+
 /** @typedef {import("./jatos-promise.js").JatosPromise} JatosPromise */
 
 import {call, callMany, callWithArgs} from "./utils/callbacks.js";
@@ -10,7 +12,6 @@ export function createChannels(jatos, dependencies) {
         requestHttp,
         studyRunState,
         getURL,
-        getAjaxErrorMsg,
         showIdOverlay
     } = dependencies;
 
@@ -1062,7 +1063,7 @@ export function createChannels(jatos, dependencies) {
                 }
             },
             error: function (err) {
-                const errMsg = getAjaxErrorMsg(err);
+                const errMsg = getHttpErrorMessage(err);
                 callMany(errMsg, console.error, onFail);
                 reassigningGroupDeferred.reject(errMsg);
             }
@@ -1113,7 +1114,7 @@ export function createChannels(jatos, dependencies) {
                 leavingGroupDeferred.resolve(response);
             },
             error: function (err) {
-                const errMsg = getAjaxErrorMsg(err);
+                const errMsg = getHttpErrorMessage(err);
                 callMany(errMsg, onError, console.error);
                 leavingGroupDeferred.reject(errMsg);
             }

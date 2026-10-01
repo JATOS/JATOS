@@ -63,7 +63,6 @@ function setup(t, cookie = "other=value; JATOS_ID_old=studyResultUuid=other&comp
         },
 
         getURL: path => `https://example.test/${path}`,
-        getAjaxErrorMsg: error => `Request failed: ${error.statusText}`,
         showIdOverlay: () => { events.push("ids"); },
         httpLoop: {start: () => events.push("http-start")},
         channels: {openBatchChannelWithRetry: () => { events.push("batch-open"); return batch.promise(); }}
@@ -158,7 +157,7 @@ for (const stage of ["init-data", "batch"]) {
         flush();
         if (stage === "init-data") {
             requests[0].deferred.reject({statusText: "timeout"});
-            assert.deepEqual(errors, ["Request failed: timeout"]);
+            assert.deepEqual(errors, ["JATOS server not responding"]);
             assert.equal(events.includes("batch-open"), false);
         } else {
             requests[0].deferred.resolve(initData());

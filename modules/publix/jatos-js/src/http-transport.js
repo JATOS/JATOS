@@ -70,3 +70,12 @@ export function requestHttp(options) {
     attempt();
     return deferred.promise();
 }
+
+/** Formats transport failures while preserving the existing public error messages. */
+export function getHttpErrorMessage(response) {
+    if (response.statusText === "timeout") {
+        return "JATOS server not responding";
+    }
+    return response.statusText + ": " +
+        (response.responseText || "Error during Ajax call to JATOS server.");
+}

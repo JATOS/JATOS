@@ -1,8 +1,10 @@
+import {getHttpErrorMessage} from "./http-transport.js";
+
 import {createDeferred} from "./jatos-promise.js";
 
 /** Owns startup, readiness callbacks, and the study-run heartbeat worker. */
 export function createInitialization(jatos, dependencies) {
-    const {requestHttp, getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels} = dependencies;
+    const {requestHttp, getURL, showIdOverlay, httpLoop, channels} = dependencies;
 
     let initialized = false;
     let jatosOnLoadEventFired = false;
@@ -74,7 +76,7 @@ export function createInitialization(jatos, dependencies) {
             dataType: 'json',
             timeout: jatos.httpTimeout,
             success: setInitData,
-            error: (err) => console.error(getAjaxErrorMsg(err))
+            error: (err) => console.error(getHttpErrorMessage(err))
         });
     }
 

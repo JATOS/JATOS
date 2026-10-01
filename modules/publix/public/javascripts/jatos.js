@@ -6939,6 +6939,12 @@ var jatos;
     attempt();
     return deferred.promise();
   }
+  function getHttpErrorMessage(response) {
+    if (response.statusText === "timeout") {
+      return "JATOS server not responding";
+    }
+    return response.statusText + ": " + (response.responseText || "Error during Ajax call to JATOS server.");
+  }
 
   // src/logging.js
   function installLoggingApi(jatos2, { getURL, isInitialized, sendToHttpLoop }) {
@@ -7797,7 +7803,6 @@ var jatos;
       requestHttp: requestHttp2,
       studyRunState,
       getURL,
-      getAjaxErrorMsg,
       showIdOverlay
     } = dependencies;
     jatos2.groupMemberId = null;
@@ -8480,7 +8485,7 @@ var jatos;
           }
         },
         error: function(err) {
-          const errMsg = getAjaxErrorMsg(err);
+          const errMsg = getHttpErrorMessage(err);
           callMany(errMsg, console.error, onFail);
           reassigningGroupDeferred.reject(errMsg);
         }
@@ -8520,7 +8525,7 @@ var jatos;
           leavingGroupDeferred.resolve(response);
         },
         error: function(err) {
-          const errMsg = getAjaxErrorMsg(err);
+          const errMsg = getHttpErrorMessage(err);
           callMany(errMsg, onError, console.error);
           leavingGroupDeferred.reject(errMsg);
         }
@@ -8668,7 +8673,7 @@ var jatos;
 
   // src/initialization.js
   function createInitialization(jatos2, dependencies) {
-    const { requestHttp: requestHttp2, getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels } = dependencies;
+    const { requestHttp: requestHttp2, getURL, showIdOverlay, httpLoop, channels } = dependencies;
     let initialized = false;
     let jatosOnLoadEventFired = false;
     const jatosOnLoadEvent = new Event("jatosOnLoad");
@@ -8710,7 +8715,7 @@ var jatos;
         dataType: "json",
         timeout: jatos2.httpTimeout,
         success: setInitData,
-        error: (err) => console.error(getAjaxErrorMsg(err))
+        error: (err) => console.error(getHttpErrorMessage(err))
       });
     }
     function setInitData(initData) {
@@ -9214,13 +9219,11 @@ var jatos;
       requestHttp,
       studyRunState,
       getURL,
-      getAjaxErrorMsg,
       showIdOverlay: browserUi.showIdOverlay
     });
     const initialization = createInitialization(jatos, {
       requestHttp,
       getURL,
-      getAjaxErrorMsg,
       showIdOverlay: browserUi.showIdOverlay,
       httpLoop,
       channels
@@ -9273,17 +9276,6 @@ var jatos;
       obj.groupMemberId = jatos.groupMemberId;
       return obj;
     };
-    function getAjaxErrorMsg(jqxhr) {
-      if (jqxhr.statusText === "timeout") {
-        return "JATOS server not responding";
-      } else {
-        if (jqxhr.responseText) {
-          return jqxhr.statusText + ": " + jqxhr.responseText;
-        } else {
-          return jqxhr.statusText + ": Error during Ajax call to JATOS server.";
-        }
-      }
-    }
   })();
 
   // src/with-jquery.js

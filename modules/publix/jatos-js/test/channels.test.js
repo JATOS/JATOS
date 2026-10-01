@@ -54,7 +54,6 @@ function setup(t) {
         requestHttp: options => { requests.push({options}); },
         studyRunState: state,
         getURL: path => `https://example.test/${path}`,
-        getAjaxErrorMsg: error => error.statusText,
         showIdOverlay: () => events.push("ids"),
     });
     function fire(id) {

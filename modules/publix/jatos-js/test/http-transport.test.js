@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {requestHttp} from "../src/http-transport.js";
+import {requestHttp, getHttpErrorMessage} from "../src/http-transport.js";
 
 function setup(t) {
     const requests = [], timers = [];
@@ -107,4 +107,14 @@ test("retry success infers JSON while ordinary responses stay text", t => {
     requestHttp({url: "/leave"}).done(data => { value = data; });
     requests[2].respond(200, "left", {"Content-Type": "text/plain"});
     assert.equal(value, "left");
+});
+
+
+test("HTTP error messages preserve timeout, server detail, and fallback wording", () => {
+    assert.equal(getHttpErrorMessage({statusText: "timeout", responseText: "ignored"}),
+        "JATOS server not responding");
+    assert.equal(getHttpErrorMessage({statusText: "Forbidden", responseText: "Access denied"}),
+        "Forbidden: Access denied");
+    assert.equal(getHttpErrorMessage({statusText: "error", responseText: ""}),
+        "error: Error during Ajax call to JATOS server.");
 });
