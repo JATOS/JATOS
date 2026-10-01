@@ -1042,6 +1042,40 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     jatos.onError = function (onError) {
         console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
     };
+    
+    /**
+     * Custom function to convert JSON array with mismatched keys to a CSV format,
+     * Specially useful to convert PsychoPy JSON data to CSV
+     *
+     * @param {Object[]} dataArray - JSON data array to be converted, where each
+     * element is an object representing one row (entries may have differing keys)
+     * @param {string} [csvSeparator=','] - the delimiter to use between fields
+     *    (e.g. ',' for CSV, '\t' for TSV)
+     * @return {string} csvData - the resulting CSV-formatted string, with a header
+     *   row containing all keys found across the input objects
+     */
+    jatos.convertToCSV = function(dataArray, csvSeparator = ",") {
+    	if (dataArray.length === 0) return '';      
+    	// Collect all unique keys across every row
+    	const headersSet = new Set();
+    	dataArray.forEach(row => Object.keys(row).forEach(key => headersSet.add(key)));
+    	const headers = Array.from(headersSet);
+        const csvRows = [];
+        
+    	const escape = (val) => {
+    		val = (val === undefined || val === null) ? '' : String(val);
+    		if (val.includes(csvSeparator) || val.includes('"') || val.includes('\n')) {
+    			return `"${val.replace(/"/g, '""')}"`;
+    		}
+    		return val;
+    	};
+    	csvRows.push(headers.map(escape).join(csvSeparator));
+    
+    	for (const row of dataArray) {
+    		csvRows.push(headers.map(header => escape(row[header])).join(csvSeparator));
+    	}
+    	return csvRows.join('\n');
+    };
 
     /**
      * Posts result data for the currently running component back to the JATOS
