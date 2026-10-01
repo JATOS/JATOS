@@ -53,13 +53,10 @@ function setup(t) {
         urlBasePath: "/jatos/", studyResultUuid: "run-uuid", studyResultId: "self",
         httpTimeout: 123, httpRetry: 2, httpRetryWait: 456,
         showOverlay: config => events.push(config.text),
-        jQuery: {ajax: options => {
-            const request = {options};
-            requests.push(request);
-            return {retry: options => { request.retry = options; }};
-        }}
+
     };
     const channels = createChannels(jatos, {
+        requestHttp: options => { requests.push({options}); },
         studyRunState: state,
         getURL: path => `https://example.test/${path}`,
         getAjaxErrorMsg: error => error.statusText,
@@ -242,9 +239,9 @@ test("group reassignment and leaving keep HTTP options, guards and completion be
     assert.equal(reassignment.state(), "resolved");
     const leave = jatos.leaveGroup();
     assert.equal(requests[1].options.url, "https://example.test/../group/leave");
-    assert.equal(requests[1].options.type, "GET");
+    assert.equal(requests[1].options.method, "GET");
     assert.equal(requests[1].options.timeout, 123);
-    assert.deepEqual(requests[1].retry, {times: 2, timeout: 456});
+    assert.deepEqual(requests[1].options.retry, {times: 2, timeout: 456});
     requests[1].options.success("left");
     assert.equal(leave.state(), "resolved");
     assert.equal([...timers.values()].some(timer => timer.delay === jatos.channelClosedCheckInterval), false);
@@ -419,4 +416,16 @@ test("batch and group heartbeat timers remain independent and retain response ru
     fire(intervals[1][0]);
     assert.equal(group.sent.length, count);
     assert.equal(pending().length, 0);
+});
+
+
+test("group reassignment treats HTTP 204 as unsuccessful without retries", t => {
+    const {jatos, open, requests} = setup(t);
+    open("group");
+    const calls = [];
+    const result = jatos.reassignGroup(() => calls.push("success"), () => calls.push("failure"));
+    assert.equal(requests[0].options.retry, undefined);
+    requests[0].options.statusCode[204]();
+    assert.equal(result.state(), "rejected");
+    assert.deepEqual(calls, ["failure"]);
 });

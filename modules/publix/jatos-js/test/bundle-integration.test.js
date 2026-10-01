@@ -74,15 +74,19 @@ async function startBundle(t, minify) {
         if (url.endsWith("fast-json-patch.min.js")) window.eval(patchSource);
         return jquery.Deferred().resolve().promise();
     };
-    jquery.ajax = options => {
-        assert.ok(options.url.endsWith("/initData"));
-        const deferred = jquery.Deferred().done(options.success).fail(options.error);
-        window.setTimeout(() => deferred.resolve({
+    jquery.ajax = () => assert.fail("internal HTTP must not use jQuery.ajax");
+    window.XMLHttpRequest = class {
+        status = 200;
+        statusText = "OK";
+        responseText = JSON.stringify({
             batchProperties: {}, studySessionData: '{"score":1}', studyProperties: {},
             componentList: [{id: 1, uuid: "component-uuid", position: 1, active: true}],
             componentProperties: {reloadable: true}, urlQueryParameters: {}, studyCode: "code"
-        }));
-        return {retry: () => deferred.promise()};
+        });
+        open(method, url) { assert.equal(method, "GET"); assert.ok(url.endsWith("/initData")); }
+        setRequestHeader() {}
+        getResponseHeader() { return "application/json"; }
+        send() { window.setTimeout(() => this.onload()); }
     };
     bootstrap.onload();
     await loaded;

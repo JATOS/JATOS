@@ -7,6 +7,7 @@ import {createDeferred, rejectedPromise, isDeferredPending} from "./jatos-promis
 /** Installs the batch and group APIs and owns their channel state. */
 export function createChannels(jatos, dependencies) {
     const {
+        requestHttp,
         studyRunState,
         getURL,
         getAjaxErrorMsg,
@@ -1044,10 +1045,9 @@ export function createChannels(jatos, dependencies) {
         }
 
         reassigningGroupDeferred = createDeferred();
-        jatos.jQuery.ajax({
+        requestHttp({
             url: getURL("../group/reassign"),
-            processData: false,
-            type: "GET",
+            method: "GET",
             timeout: jatos.httpTimeout,
             statusCode: {
                 200: function () {
@@ -1102,10 +1102,10 @@ export function createChannels(jatos, dependencies) {
         }
 
         leavingGroupDeferred = createDeferred();
-        jatos.jQuery.ajax({
+        requestHttp({
             url: getURL("../group/leave"),
-            processData: false,
-            type: "GET",
+            retry: {times: jatos.httpRetry, timeout: jatos.httpRetryWait},
+            method: "GET",
             timeout: jatos.httpTimeout,
             success: function (response) {
                 clearInterval(groupChannelClosedCheckTimer);
@@ -1117,9 +1117,6 @@ export function createChannels(jatos, dependencies) {
                 callMany(errMsg, onError, console.error);
                 leavingGroupDeferred.reject(errMsg);
             }
-        }).retry({
-            times: jatos.httpRetry,
-            timeout: jatos.httpRetryWait
         });
         return leavingGroupDeferred.promise();
     };

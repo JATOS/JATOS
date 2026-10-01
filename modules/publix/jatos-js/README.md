@@ -46,3 +46,8 @@ JatosPromise uses a private, pinned jQuery Deferred module. Its source, license,
 and maintenance instructions are documented in
 [src/vendor/README.md](src/vendor/README.md). The module is bundled into both
 browser variants; it does not install another global jQuery.
+
+`jatos.jQuery` remains available for existing studies but is deprecated; new study
+code should load its own jQuery if needed. Internal initialization and group HTTP
+requests use `http-transport.js`. Startup script loading and other utilities still
+use jQuery pending subsequent migration. GUI jQuery is unaffected.

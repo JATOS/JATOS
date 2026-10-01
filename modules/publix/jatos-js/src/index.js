@@ -3,17 +3,13 @@
  * http://www.jatos.org
  * Licensed under Apache License 2.0
  *
- * Uses plugin jquery.ajax-retry:
- * https://github.com/johnkpaul/jquery-ajax-retry
- * Copyright (c) 2012 John Paul
- * Licensed under the MIT license.
- *
  * Uses Starcounter-Jack/JSON-Patch:
  * https://github.com/Starcounter-Jack/JSON-Patch
  * Copyright (c) 2017-2022 Joachim Wester
  * Licensed under the MIT license.
  */
 
+import {requestHttp} from "./http-transport.js";
 import {installLoggingApi} from "./logging.js";
 import {installResultDataApi} from "./result-data.js";
 import {createHttpLoop} from "./http-loop.js";
@@ -106,6 +102,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     });
 
     const channels = createChannels(jatos, {
+        requestHttp,
         studyRunState,
         getURL,
         getAjaxErrorMsg,
@@ -113,6 +110,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     });
 
     const initialization = createInitialization(jatos, {
+        requestHttp,
         getURL,
         getAjaxErrorMsg,
         showIdOverlay: browserUi.showIdOverlay,

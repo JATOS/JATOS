@@ -1,46 +1,5 @@
 var jatos;
 (() => {
-  // src/logging.js
-  function installLoggingApi(jatos2, { getURL, isInitialized, sendToHttpLoop }) {
-    jatos2.onError = function(onError) {
-      console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
-    };
-    jatos2.logError = function(logErrorMsg) {
-      console.warn("jatos.logError is abolished - use jatos.log instead");
-    };
-    jatos2.log = function(logMsg) {
-      if (!isInitialized()) return;
-      const request = {
-        url: getURL("log"),
-        method: "POST",
-        data: logMsg,
-        contentType: "text/plain; charset=UTF-8",
-        timeout: jatos2.httpTimeout,
-        retry: jatos2.httpRetry,
-        retryWait: jatos2.httpRetryWait
-      };
-      sendToHttpLoop(request);
-    };
-    jatos2.catchAndLogErrors = function() {
-      window.addEventListener("error", function(e) {
-        jatos2.log(`Via 'error' event in ${e.filename}:${e.lineno} - ${e.message}`);
-      });
-      window.addEventListener("unhandledrejection", function(e) {
-        jatos2.log(`Via 'unhandledrejection' event in ${e.filename}:${e.lineno} - ${e.message}`);
-      });
-      const errorLog = console.error;
-      const warnLog = console.warn;
-      console.error = function(message) {
-        jatos2.log("Via console.error - " + message);
-        errorLog.apply(this, arguments);
-      };
-      console.warn = function(message) {
-        jatos2.log("Via console.warn - " + message);
-        warnLog.apply(this, arguments);
-      };
-    };
-  }
-
   // src/vendor/jquery-deferred.js
   /*!
    * jQuery Deferred/Callbacks v3.7.1 extraction
@@ -528,6 +487,111 @@ var jatos;
     return deferred !== void 0 && deferred.state() === "pending";
   }
 
+  // src/http-transport.js
+  function requestHttp(options) {
+    const deferred = createDeferred();
+    let attemptsLeft = options.retry?.times ?? 1;
+    function attempt() {
+      const xhr = new XMLHttpRequest();
+      xhr.open(options.method || "GET", options.url, true);
+      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+      xhr.setRequestHeader("Accept", options.dataType === "json" ? "application/json, text/javascript, */*; q=0.01" : "*/*");
+      xhr.timeout = options.timeout || 0;
+      function fail(textStatus, error = textStatus) {
+        const response = {
+          status: xhr.status,
+          statusText: textStatus === "timeout" ? "timeout" : xhr.statusText || textStatus,
+          responseText: xhr.responseText
+        };
+        options.error?.(response, textStatus, error);
+        options.statusCode?.[xhr.status]?.(response, textStatus, error);
+        if (attemptsLeft > 1) {
+          attemptsLeft--;
+          let delay = options.retry?.timeout;
+          const retryAfter = xhr.getResponseHeader("Retry-After");
+          if (retryAfter) {
+            const parsed = isNaN(retryAfter) ? Date.parse(retryAfter) - Date.now() : parseInt(retryAfter, 10) * 1e3;
+            if (!isNaN(parsed) && parsed >= 0) delay = parsed;
+          }
+          if (delay) setTimeout(attempt, delay);
+          else attempt();
+        } else {
+          deferred.reject(response, textStatus, error);
+        }
+      }
+      xhr.onload = () => {
+        if (!(xhr.status >= 200 && xhr.status < 300) && xhr.status !== 304) {
+          fail("error", xhr.statusText);
+          return;
+        }
+        let data;
+        const textStatus = xhr.status === 204 ? "nocontent" : xhr.status === 304 ? "notmodified" : "success";
+        if (xhr.status !== 204 && xhr.status !== 304) {
+          data = xhr.responseText;
+          const json = options.dataType === "json" || !options.dataType && /\bjson\b/i.test(xhr.getResponseHeader("Content-Type") || "");
+          if (json) {
+            try {
+              data = JSON.parse(data);
+            } catch (error) {
+              fail("parsererror", error);
+              return;
+            }
+          }
+        }
+        options.success?.(data, textStatus, xhr);
+        options.statusCode?.[xhr.status]?.(data, textStatus, xhr);
+        deferred.resolve(data, textStatus, xhr);
+      };
+      xhr.onerror = () => fail("error");
+      xhr.ontimeout = () => fail("timeout");
+      xhr.onabort = () => fail("abort");
+      xhr.send(null);
+    }
+    attempt();
+    return deferred.promise();
+  }
+
+  // src/logging.js
+  function installLoggingApi(jatos2, { getURL, isInitialized, sendToHttpLoop }) {
+    jatos2.onError = function(onError) {
+      console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
+    };
+    jatos2.logError = function(logErrorMsg) {
+      console.warn("jatos.logError is abolished - use jatos.log instead");
+    };
+    jatos2.log = function(logMsg) {
+      if (!isInitialized()) return;
+      const request = {
+        url: getURL("log"),
+        method: "POST",
+        data: logMsg,
+        contentType: "text/plain; charset=UTF-8",
+        timeout: jatos2.httpTimeout,
+        retry: jatos2.httpRetry,
+        retryWait: jatos2.httpRetryWait
+      };
+      sendToHttpLoop(request);
+    };
+    jatos2.catchAndLogErrors = function() {
+      window.addEventListener("error", function(e) {
+        jatos2.log(`Via 'error' event in ${e.filename}:${e.lineno} - ${e.message}`);
+      });
+      window.addEventListener("unhandledrejection", function(e) {
+        jatos2.log(`Via 'unhandledrejection' event in ${e.filename}:${e.lineno} - ${e.message}`);
+      });
+      const errorLog = console.error;
+      const warnLog = console.warn;
+      console.error = function(message) {
+        jatos2.log("Via console.error - " + message);
+        errorLog.apply(this, arguments);
+      };
+      console.warn = function(message) {
+        jatos2.log("Via console.warn - " + message);
+        warnLog.apply(this, arguments);
+      };
+    };
+  }
+
   // src/utils/callbacks.js
   var call = (f) => {
     if (f && typeof f == "function") f();
@@ -878,6 +942,7 @@ var jatos;
   // src/channels.js
   function createChannels(jatos2, dependencies) {
     const {
+      requestHttp: requestHttp2,
       studyRunState,
       getURL,
       getAjaxErrorMsg,
@@ -1548,10 +1613,9 @@ var jatos;
         return rejectedPromise(errorMsg);
       }
       reassigningGroupDeferred = createDeferred();
-      jatos2.jQuery.ajax({
+      requestHttp2({
         url: getURL("../group/reassign"),
-        processData: false,
-        type: "GET",
+        method: "GET",
         timeout: jatos2.httpTimeout,
         statusCode: {
           200: function() {
@@ -1593,10 +1657,10 @@ var jatos;
         return rejectedPromise(errorMsg);
       }
       leavingGroupDeferred = createDeferred();
-      jatos2.jQuery.ajax({
+      requestHttp2({
         url: getURL("../group/leave"),
-        processData: false,
-        type: "GET",
+        retry: { times: jatos2.httpRetry, timeout: jatos2.httpRetryWait },
+        method: "GET",
         timeout: jatos2.httpTimeout,
         success: function(response) {
           clearInterval(groupChannelClosedCheckTimer);
@@ -1608,9 +1672,6 @@ var jatos;
           callMany(errMsg, onError, console.error);
           leavingGroupDeferred.reject(errMsg);
         }
-      }).retry({
-        times: jatos2.httpRetry,
-        timeout: jatos2.httpRetryWait
       });
       return leavingGroupDeferred.promise();
     };
@@ -1755,7 +1816,7 @@ var jatos;
 
   // src/initialization.js
   function createInitialization(jatos2, dependencies) {
-    const { getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels } = dependencies;
+    const { requestHttp: requestHttp2, getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels } = dependencies;
     let initialized = false;
     let jatosOnLoadEventFired = false;
     const jatosOnLoadEvent = new Event("jatosOnLoad");
@@ -1787,8 +1848,6 @@ var jatos;
     }
     function initJatos() {
       jatos2.jQuery.when(
-        // Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
-        jatos2.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
         // Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
         jatos2.jQuery.getScript("jatos-publix/javascripts/fast-json-patch.min.js")
       ).then(function() {
@@ -1820,16 +1879,14 @@ var jatos;
       jatos2.componentPos = parseInt(jatos2.componentPos, 10);
     }
     function getInitData() {
-      return jatos2.jQuery.ajax({
+      return requestHttp2({
         url: getURL("initData"),
-        type: "GET",
+        retry: { times: jatos2.httpRetry, timeout: jatos2.httpRetryWait },
+        method: "GET",
         dataType: "json",
         timeout: jatos2.httpTimeout,
         success: setInitData,
         error: (err) => console.error(getAjaxErrorMsg(err))
-      }).retry({
-        times: jatos2.httpRetry,
-        timeout: jatos2.httpRetryWait
       });
     }
     function setInitData(initData) {
@@ -2291,11 +2348,6 @@ var jatos;
    * http://www.jatos.org
    * Licensed under Apache License 2.0
    *
-   * Uses plugin jquery.ajax-retry:
-   * https://github.com/johnkpaul/jquery-ajax-retry
-   * Copyright (c) 2012 John Paul
-   * Licensed under the MIT license.
-   *
    * Uses Starcounter-Jack/JSON-Patch:
    * https://github.com/Starcounter-Jack/JSON-Patch
    * Copyright (c) 2017-2022 Joachim Wester
@@ -2328,12 +2380,14 @@ var jatos;
       isInitialized: () => initialization.isInitialized()
     });
     const channels = createChannels(jatos, {
+      requestHttp,
       studyRunState,
       getURL,
       getAjaxErrorMsg,
       showIdOverlay: browserUi.showIdOverlay
     });
     const initialization = createInitialization(jatos, {
+      requestHttp,
       getURL,
       getAjaxErrorMsg,
       showIdOverlay: browserUi.showIdOverlay,

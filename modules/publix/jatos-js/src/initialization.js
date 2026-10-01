@@ -2,13 +2,14 @@
 
 /** Owns startup, readiness callbacks, and the study-run heartbeat worker. */
 export function createInitialization(jatos, dependencies) {
-    const {getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels} = dependencies;
+    const {requestHttp, getURL, getAjaxErrorMsg, showIdOverlay, httpLoop, channels} = dependencies;
 
     let initialized = false;
     let jatosOnLoadEventFired = false;
     const jatosOnLoadEvent = new Event("jatosOnLoad");
     // The study-run heartbeat is separate from batch/group channel heartbeats.
     let heartbeatWorker;
+    /** @deprecated Compatibility access for existing studies; load your own jQuery for new code. */
     jatos.jQuery = {};
 
     function start() {
@@ -55,8 +56,6 @@ export function createInitialization(jatos, dependencies) {
         // 4) Try to open the batch channel
         // 5) Call readyForOnLoad
         jatos.jQuery.when(
-            // Load jQuery plugin to retry ajax calls: https://github.com/johnkpaul/jquery-ajax-retry
-            jatos.jQuery.getScript("jatos-publix/javascripts/jquery.ajax-retry.min.js"),
             // Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
             jatos.jQuery.getScript("jatos-publix/javascripts/fast-json-patch.min.js")
         )
@@ -114,16 +113,14 @@ export function createInitialization(jatos, dependencies) {
      * jatos.studyInput, and jatos.componentInput.
      */
     function getInitData() {
-        return jatos.jQuery.ajax({
+        return requestHttp({
             url: getURL("initData"),
-            type: "GET",
+            retry: {times: jatos.httpRetry, timeout: jatos.httpRetryWait},
+            method: "GET",
             dataType: 'json',
             timeout: jatos.httpTimeout,
             success: setInitData,
             error: (err) => console.error(getAjaxErrorMsg(err))
-        }).retry({
-            times: jatos.httpRetry,
-            timeout: jatos.httpRetryWait
         });
     }
 

@@ -71,14 +71,6 @@ function setup(t, cookie = "other=value; JATOS_ID_old=studyResultUuid=other&comp
             }
             return combined.promise();
         },
-        ajax: options => {
-            events.push("init-data");
-            const deferred = createDeferred();
-            deferred.done(options.success).fail(options.error);
-            const request = {options, deferred};
-            requests.push(request);
-            return {retry: options => { request.retry = options; return deferred.promise(); }};
-        },
         parseJSON: JSON.parse
     };
     for (const [name, value] of Object.entries({window, document, Worker, jQuery: jquery})) {
@@ -92,6 +84,15 @@ function setup(t, cookie = "other=value; JATOS_ID_old=studyResultUuid=other&comp
     t.mock.method(console, "error", error => errors.push(error));
     const jatos = {studyProperties: {}, studySessionData: {}, httpTimeout: 123, httpRetry: 2, httpRetryWait: 456};
     const initialization = createInitialization(jatos, {
+        requestHttp: options => {
+            events.push("init-data");
+            const deferred = createDeferred();
+            deferred.done(options.success).fail(options.error);
+            const request = {options, deferred};
+            requests.push(request);
+            return deferred.promise();
+        },
+
         getURL: path => `https://example.test/${path}`,
         getAjaxErrorMsg: error => `Request failed: ${error.statusText}`,
         showIdOverlay: () => { events.push("ids"); },
@@ -119,13 +120,10 @@ test("startup loads dependencies, starts workers, reads init data, and waits for
     scripts[0].onload();
     assert.equal(jatos.jQuery, jquery);
     assert.deepEqual(plugins.map(plugin => plugin.url), [
-        "jatos-publix/javascripts/jquery.ajax-retry.min.js",
         "jatos-publix/javascripts/fast-json-patch.min.js"
     ]);
-    plugins[0].deferred.resolve();
-    flush();
     assert.equal(workers.length, 0);
-    plugins[1].deferred.resolve();
+    plugins[0].deferred.resolve();
     flush();
     assert.equal(jatos.studyResultUuid, "run-uuid");
     assert.equal(jatos.componentPos, 2);
@@ -134,10 +132,10 @@ test("startup loads dependencies, starts workers, reads init data, and waits for
     assert.equal(workers[0].url, "jatos-publix/javascripts/heartbeat.js");
     assert.deepEqual(workers[0].messages, [["run-uuid"]]);
     assert.equal(requests[0].options.url, "https://example.test/initData");
-    assert.equal(requests[0].options.type, "GET");
+    assert.equal(requests[0].options.method, "GET");
     assert.equal(requests[0].options.dataType, "json");
     assert.equal(requests[0].options.timeout, 123);
-    assert.deepEqual(requests[0].retry, {times: 2, timeout: 456});
+    assert.deepEqual(requests[0].options.retry, {times: 2, timeout: 456});
     requests[0].deferred.resolve(initData());
     flush();
     assert.deepEqual(events, ["no-conflict", "ajax-setup", "remove-script", "worker", "heartbeat", "http-start", "init-data", "ids", "batch-open"]);
@@ -165,7 +163,7 @@ test("script loading accepts readyState and processes duplicate load events only
     handler.call(script);
     script.readyState = "complete";
     handler.call(script);
-    assert.equal(plugins.length, 2);
+    assert.equal(plugins.length, 1);
     assert.equal(script.onload, null);
     assert.equal(script.onreadystatechange, null);
     assert.equal(events.filter(event => event === "remove-script").length, 1);
