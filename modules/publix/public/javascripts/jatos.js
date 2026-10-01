@@ -516,7 +516,10 @@ var jatos;
 
   // src/jatos-promise.js
   function createDeferred() {
-    return Deferred();
+    return (
+      /** @type {JatosDeferred} */
+      Deferred()
+    );
   }
   function rejectedPromise(error) {
     return createDeferred().reject(error).promise();
@@ -790,6 +793,76 @@ var jatos;
     throw new Error("Unable to copy obj! Its type isn't supported.");
   }
 
+  // src/channel-session.js
+  function createSessionApi(getData, sendPatch) {
+    const session = {};
+    session.get = function(name) {
+      const obj = jsonpatch.getValueByPointer(getData(), "/" + name);
+      return cloneJsonObj(obj);
+    };
+    session.getAll = function() {
+      const obj = session.find("");
+      return cloneJsonObj(obj);
+    };
+    session.find = function(path) {
+      const obj = jsonpatch.getValueByPointer(getData(), path);
+      return cloneJsonObj(obj);
+    };
+    session.test = function(path, value) {
+      const obj = jsonpatch.getValueByPointer(getData(), path);
+      return obj === value;
+    };
+    session.defined = function(path) {
+      return !session.test(path, void 0);
+    };
+    session.add = function(path, value, onSuccess, onFail) {
+      const patch = generatePatch("add", path, value, null);
+      return sendPatch(patch, onSuccess, onFail);
+    };
+    session.set = function(name, value, onSuccess, onFail) {
+      const patch = generatePatch("add", "/" + name, value, null);
+      return sendPatch(patch, onSuccess, onFail);
+    };
+    session.setAll = function(value, onSuccess, onFail) {
+      return session.replace("", value, onSuccess, onFail);
+    };
+    session.remove = function(path, onSuccess, onFail) {
+      const patch = generatePatch("remove", path, null, null);
+      return sendPatch(patch, onSuccess, onFail);
+    };
+    session.clear = function(onSuccess, onFail) {
+      const patch = generatePatch("replace", "", {}, null);
+      return sendPatch(patch, onSuccess, onFail);
+    };
+    session.replace = function(path, value, onSuccess, onFail) {
+      const patch = generatePatch("replace", path, value, null);
+      return sendPatch(patch, onSuccess, onFail);
+    };
+    session.copy = function(from, path, onSuccess, onFail) {
+      const patch = generatePatch("copy", path, null, from);
+      return sendPatch(patch, onSuccess, onFail);
+    };
+    session.move = function(from, path, onSuccess, onFail) {
+      const patch = generatePatch("move", path, null, from);
+      return sendPatch(patch, onSuccess, onFail);
+    };
+    return session;
+  }
+  function generatePatch(op, path, value, from) {
+    const patch = {};
+    patch.op = op;
+    if (path !== null) {
+      patch.path = path;
+    }
+    if (value !== null) {
+      patch.value = value;
+    }
+    if (from !== null) {
+      patch.from = from;
+    }
+    return patch;
+  }
+
   // src/channels.js
   function createChannels(jatos2, dependencies) {
     const {
@@ -1048,71 +1121,7 @@ var jatos;
         window.dispatchEvent(batchChannelDeadEvent);
       }
     }
-    jatos2.batchSession = {};
-    jatos2.batchSession.get = function(name) {
-      const obj = jsonpatch.getValueByPointer(batchSessionData, "/" + name);
-      return cloneJsonObj(obj);
-    };
-    jatos2.batchSession.getAll = function() {
-      const obj = jatos2.batchSession.find("");
-      return cloneJsonObj(obj);
-    };
-    jatos2.batchSession.find = function(path) {
-      const obj = jsonpatch.getValueByPointer(batchSessionData, path);
-      return cloneJsonObj(obj);
-    };
-    jatos2.batchSession.test = function(path, value) {
-      const obj = jsonpatch.getValueByPointer(batchSessionData, path);
-      return obj === value;
-    };
-    jatos2.batchSession.defined = function(path) {
-      return !jatos2.batchSession.test(path, void 0);
-    };
-    jatos2.batchSession.add = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("add", path, value, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.batchSession.set = function(name, value, onSuccess, onFail) {
-      const patch = generatePatch("add", "/" + name, value, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.batchSession.setAll = function(value, onSuccess, onFail) {
-      return jatos2.batchSession.replace("", value, onSuccess, onFail);
-    };
-    jatos2.batchSession.remove = function(path, onSuccess, onFail) {
-      const patch = generatePatch("remove", path, null, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.batchSession.clear = function(onSuccess, onFail) {
-      const patch = generatePatch("replace", "", {}, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.batchSession.replace = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("replace", path, value, null);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.batchSession.copy = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("copy", path, null, from);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.batchSession.move = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("move", path, null, from);
-      return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-    function generatePatch(op, path, value, from) {
-      const patch = {};
-      patch.op = op;
-      if (path !== null) {
-        patch.path = path;
-      }
-      if (value !== null) {
-        patch.value = value;
-      }
-      if (from !== null) {
-        patch.from = from;
-      }
-      return patch;
-    }
+    jatos2.batchSession = createSessionApi(() => batchSessionData, sendBatchSessionPatch);
     function sendBatchSessionPatch(patches, onSuccess, onFail) {
       if (!batchChannel || batchChannel.readyState !== batchChannel.OPEN) {
         const errorMsg = `Can't send batch session patch. No open batch channel. Patch: ${patches.op} ${patches.path}.`;
@@ -1412,57 +1421,7 @@ var jatos;
     jatos2.isGroupFixed = function() {
       return groupState === "FIXED";
     };
-    jatos2.groupSession = {};
-    jatos2.groupSession.get = function(name) {
-      const obj = jsonpatch.getValueByPointer(groupSessionData, "/" + name);
-      return cloneJsonObj(obj);
-    };
-    jatos2.groupSession.getAll = function() {
-      const obj = jatos2.groupSession.find("");
-      return cloneJsonObj(obj);
-    };
-    jatos2.groupSession.find = function(path) {
-      const obj = jsonpatch.getValueByPointer(groupSessionData, path);
-      return cloneJsonObj(obj);
-    };
-    jatos2.groupSession.test = function(path, value) {
-      const obj = jsonpatch.getValueByPointer(groupSessionData, path);
-      return obj === value;
-    };
-    jatos2.groupSession.defined = function(path) {
-      return !jatos2.groupSession.test(path, void 0);
-    };
-    jatos2.groupSession.add = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("add", path, value, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.groupSession.set = function(name, value, onSuccess, onFail) {
-      const patch = generatePatch("add", "/" + name, value, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.groupSession.setAll = function(value, onSuccess, onFail) {
-      return jatos2.groupSession.replace("", value, onSuccess, onFail);
-    };
-    jatos2.groupSession.remove = function(path, onSuccess, onFail) {
-      const patch = generatePatch("remove", path, null, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.groupSession.clear = function(onSuccess, onFail) {
-      const patch = generatePatch("replace", "", {}, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.groupSession.replace = function(path, value, onSuccess, onFail) {
-      const patch = generatePatch("replace", path, value, null);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.groupSession.copy = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("copy", path, null, from);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-    jatos2.groupSession.move = function(from, path, onSuccess, onFail) {
-      const patch = generatePatch("move", path, null, from);
-      return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
+    jatos2.groupSession = createSessionApi(() => groupSessionData, sendGroupSessionPatch);
     function sendGroupSessionPatch(patches, onSuccess, onFail) {
       if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
         const errorMsg = `Can't send group session patch. No open group channel. Patch: ${patches.op} ${patches.path}.`;
@@ -1676,7 +1635,7 @@ var jatos;
           leavingGroupDeferred.resolve(response);
         },
         error: function(err) {
-          var errMsg = getAjaxErrorMsg(err);
+          const errMsg = getAjaxErrorMsg(err);
           callMany(errMsg, onError, console.error);
           leavingGroupDeferred.reject(errMsg);
         }
@@ -1687,7 +1646,7 @@ var jatos;
       return leavingGroupDeferred.promise();
     };
     function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onFail) {
-      var timeoutId = setTimeout(function() {
+      const timeoutId = setTimeout(function() {
         callWithArgs(onFail, "Timeout sending session patch");
         deferred.reject("Timeout sending session patch");
       }, jatos2.channelSendingTimeoutTime);

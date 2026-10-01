@@ -1,3 +1,5 @@
+/** @typedef {import("./jatos-promise.js").JatosPromise} JatosPromise */
+
 import {callMany} from "./utils/callbacks.js";
 import {rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 

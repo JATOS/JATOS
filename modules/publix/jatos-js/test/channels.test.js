@@ -262,3 +262,64 @@ test("lifecycle cleanup stops only closed-channel checks", t => {
     assert.equal(batch.readyState, batch.OPEN);
     assert.equal(group.readyState, group.OPEN);
 });
+
+for (const kind of ["batch", "group"]) {
+    test(`${kind} shared session API sends every patch operation through its own protocol`, t => {
+        const {jatos, open} = setup(t);
+        const socket = open(kind);
+        const session = jatos[`${kind}Session`];
+        const operations = [
+            ["add", ["/nested/value", 2], {op: "add", path: "/nested/value", value: 2}],
+            ["set", ["score", 3], {op: "add", path: "/score", value: 3}],
+            ["setAll", [{score: 4}], {op: "replace", path: "", value: {score: 4}}],
+            ["remove", ["/score"], {op: "remove", path: "/score"}],
+            ["clear", [], {op: "replace", path: "", value: {}}],
+            ["replace", ["/score", 5], {op: "replace", path: "/score", value: 5}],
+            ["copy", ["/score", "/copy"], {op: "copy", path: "/copy", from: "/score"}],
+            ["move", ["/score", "/moved"], {op: "move", path: "/moved", from: "/score"}]
+        ];
+        for (const [method, args, patch] of operations) {
+            const successes = [];
+            const failures = [];
+            const pending = session[method](...args, msg => successes.push(msg), msg => failures.push(msg));
+            const message = socket.sent.at(-1);
+            const idKey = kind === "batch" ? "id" : "sessionActionId";
+            assert.deepEqual(message[kind === "batch" ? "patches" : "sessionPatches"], [patch]);
+            assert.equal(pending.state(), "pending");
+            socket.receive({action: "SESSION_ACK", [idKey]: message[idKey]});
+            assert.equal(pending.state(), "resolved");
+            assert.equal(successes.length, 1);
+            assert.deepEqual(failures, []);
+
+            const rejected = session[method](...args, undefined, msg => failures.push(msg));
+            const failedMessage = socket.sent.at(-1);
+            socket.receive({action: "SESSION_FAIL", [idKey]: failedMessage[idKey], errorMsg: "conflict"});
+            assert.equal(rejected.state(), "rejected");
+            assert.deepEqual(failures, ["conflict"]);
+        }
+    });
+}
+
+test("shared session APIs keep batch and group data independent and read live replacements", t => {
+    const {jatos, open} = setup(t);
+    const batch = open("batch");
+    const group = open("group");
+    assert.notEqual(jatos.batchSession, jatos.groupSession);
+    batch.receive({data: {nested: {score: 2}, zero: 0, nil: null}, version: 5});
+    group.receive({sessionData: {nested: {score: 3}}, sessionVersion: 5});
+    for (const [session, score] of [[jatos.batchSession, 2], [jatos.groupSession, 3]]) {
+        assert.equal(session.find("/nested/score"), score);
+        assert.equal(session.test("/nested/score", score), true);
+        assert.equal(session.defined("/nested/score"), true);
+        assert.equal(session.defined("/missing"), false);
+        session.get("nested").score = 100;
+        session.find("/nested").score = 100;
+        session.getAll().nested.score = 100;
+        assert.equal(session.find("/nested/score"), score);
+    }
+    assert.equal(jatos.batchSession.defined("/zero"), true);
+    assert.equal(jatos.batchSession.defined("/nil"), true);
+    batch.receive({data: {replacement: true}, version: 6});
+    assert.deepEqual(jatos.batchSession.getAll(), {replacement: true});
+    assert.equal(jatos.groupSession.find("/nested/score"), 3);
+});

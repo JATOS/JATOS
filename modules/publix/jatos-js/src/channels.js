@@ -1,7 +1,9 @@
+/** @typedef {import("./jatos-promise.js").JatosPromise} JatosPromise */
+
 /* global jsonpatch */
 
 import {call, callMany, callWithArgs} from "./utils/callbacks.js";
-import {cloneJsonObj} from "./utils/clone-json.js";
+import {createSessionApi} from "./channel-session.js";
 import {createDeferred, rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
 /** Installs the batch and group APIs and owns their channel state. */
@@ -435,193 +437,7 @@ export function createChannels(jatos, dependencies) {
         }
     }
 
-    /**
-     * Object contains all batch session functions
-     */
-    jatos.batchSession = {};
-
-    /**
-     * Getter for a field in the batch session data. Takes a name
-     * and returns the matching value, or undefined if the name does not
-     * correspond to an existing field. Works only on the first
-     * level of the object tree. For all other levels use
-     * jatos.batchSession.find. Gets the object from the
-     * locally stored copy of the session and does not call
-     * the server.
-     * @param {string} name - name of the field
-     * @return {object}
-     */
-    jatos.batchSession.get = function (name) {
-        const obj = jsonpatch.getValueByPointer(batchSessionData, "/" + name);
-        return cloneJsonObj(obj);
-    };
-
-    /**
-     * Returns the complete batch session data (might be bad performance-wise)
-     * Gets the object from the locally stored copy of the session
-     * and does not call the server.
-     * @return {object}
-     */
-    jatos.batchSession.getAll = function () {
-        const obj = jatos.batchSession.find("");
-        return cloneJsonObj(obj);
-    };
-
-    /**
-     * Getter for a field in the batch session data. Takes a
-     * JSON Pointer and returns the matching value, or undefined if
-     * the pointer does not correspond to an existing field. Gets the
-     * object from the locally stored copy of the session
-     * and does not call the server.
-     * @param {string} path - JSON pointer path
-     * @return {object}
-     */
-    jatos.batchSession.find = function (path) {
-        const obj = jsonpatch.getValueByPointer(batchSessionData, path);
-        return cloneJsonObj(obj);
-    };
-
-    /**
-     * This function defines the JSON Patch test operation but it
-     * does not use the 'test' operation of the JSON patch
-     * implementation, but uses the JSON pointer implementation
-     * instead.
-     * @param {string} path - JSON pointer path to be tested
-     * @param {object} value - value to be tested
-     * @return {boolean}
-     */
-    jatos.batchSession.test = function (path, value) {
-        const obj = jsonpatch.getValueByPointer(batchSessionData, path);
-        return obj === value;
-    };
-
-    /**
-     * Check if the field under the given path exists.
-     * @param {string} path - JSON pointer path
-     * @return {boolean}
-     */
-    jatos.batchSession.defined = function (path) {
-        return !jatos.batchSession.test(path, undefined);
-    };
-
-    /**
-     * JSON Patch add operation
-     * @param {string} path - JSON pointer path
-     * @param {object} value - value to be stored
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.add = function (path, value, onSuccess, onFail) {
-        const patch = generatePatch("add", path, value, null);
-        return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * Like JSON Patch add operation, but instead of a path accepts
-     * a name of the field to be stored. Works only on the first level
-     * of the object tree.
-     * @param {string} name - name of the field
-     * @param {object} value - value to be stored
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.set = function (name, value, onSuccess, onFail) {
-        const patch = generatePatch("add", "/" + name, value, null);
-        return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * Replaces the whole session data (might be bad performance-wise)
-     * @param {object} value - value to be stored in the session
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.setAll = function (value, onSuccess, onFail) {
-        return jatos.batchSession.replace("", value, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch remove operation
-     * @param {string} path - JSON pointer path to the field that should be removed
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.remove = function (path, onSuccess, onFail) {
-        const patch = generatePatch("remove", path, null, null);
-        return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * Clears the batch session data.
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.clear = function (onSuccess, onFail) {
-        const patch = generatePatch("replace", "", {}, null);
-        return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch replace operation
-     * @param {string} path - JSON pointer path
-     * @param {object} value - value to be replaced with
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.replace = function (path, value, onSuccess, onFail) {
-        const patch = generatePatch("replace", path, value, null);
-        return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch copy operation
-     * @param {string} from - JSON pointer path to the origin
-     * @param {string} path - JSON pointer path to the target
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.copy = function (from, path, onSuccess, onFail) {
-        const patch = generatePatch("copy", path, null, from);
-        return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch move operation
-     * @param {string} from - JSON pointer path to the origin
-     * @param {string} path - JSON pointer path to the target
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.batchSession.move = function (from, path, onSuccess, onFail) {
-        const patch = generatePatch("move", path, null, from);
-        return sendBatchSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * Generates an abstract JSON Patch
-     */
-    function generatePatch(op, path, value, from) {
-        const patch = {};
-        patch.op = op;
-        if (path !== null) {
-            patch.path = path;
-        }
-        if (value !== null) {
-            patch.value = value;
-        }
-        if (from !== null) {
-            patch.from = from;
-        }
-        return patch;
-    }
+    jatos.batchSession = createSessionApi(() => batchSessionData, sendBatchSessionPatch);
 
     /**
      * Sends JSON Patch(es) via the batch channel to JATOS and subsequently to all
@@ -1044,171 +860,7 @@ export function createChannels(jatos, dependencies) {
         return groupState === "FIXED";
     };
 
-    /**
-     * Object contains all group session functions
-     */
-    jatos.groupSession = {};
-
-    /**
-     * Getter for a field in the group session data. Takes a name
-     * and returns the matching value, or undefined if the name does not
-     * correspond to an existing field. Works only on the first
-     * level of the object tree. For all other levels use
-     * jatos.groupSession.find. Gets the object from the
-     * locally stored copy of the group session and does not call
-     * the server.
-     * @return {object}
-     */
-    jatos.groupSession.get = function (name) {
-        const obj = jsonpatch.getValueByPointer(groupSessionData, "/" + name);
-        return cloneJsonObj(obj);
-    };
-
-    /**
-     * Returns the complete group session data (might be bad performance-wise)
-     * Gets the object from the locally stored copy of the group session and
-     * does not call the server.
-     * @return {object}
-     */
-    jatos.groupSession.getAll = function () {
-        const obj = jatos.groupSession.find("");
-        return cloneJsonObj(obj);
-    };
-
-    /**
-     * Getter for a field in the group session data. Takes a
-     * JSON Pointer and returns the matching value, or undefined if the pointer
-     * does not correspond to an existing field. Gets the object from the
-     * locally stored copy of the group session and does not call the server.
-     * @return {object}
-     */
-    jatos.groupSession.find = function (path) {
-        const obj = jsonpatch.getValueByPointer(groupSessionData, path);
-        return cloneJsonObj(obj);
-    };
-
-    /**
-     * This function defines the JSON Patch test operation but it
-     * does not use the 'test' operation of the JSON patch
-     * implementation but uses the JSON pointer implementation
-     * instead.
-     * @param {string} path - JSON pointer path to be tested
-     * @param {object} value - value to be tested
-     * @return {boolean}
-     */
-    jatos.groupSession.test = function (path, value) {
-        const obj = jsonpatch.getValueByPointer(groupSessionData, path);
-        return obj === value;
-    };
-
-    /**
-     * Check if the field under the given path is exists.
-     * @param {string} path - JSON pointer path
-     * @return {boolean}
-     */
-    jatos.groupSession.defined = function (path) {
-        return !jatos.groupSession.test(path, undefined);
-    };
-
-    /**
-     * JSON Patch add operation
-     * @param {string} path - JSON pointer path
-     * @param {object} value - value to be stored
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.add = function (path, value, onSuccess, onFail) {
-        const patch = generatePatch("add", path, value, null);
-        return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * Like JSON Patch add operation, but instead of a path accepts
-     * a name, thus works only on the first level of the object tree.
-     * @param {string} name - name of the field
-     * @param {object} value - value to be stored
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.set = function (name, value, onSuccess, onFail) {
-        const patch = generatePatch("add", "/" + name, value, null);
-        return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * Replaces the whole session data (might be bad performance-wise)
-     * @param {object} value - value to be stored in the session
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.setAll = function (value, onSuccess, onFail) {
-        return jatos.groupSession.replace("", value, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch remove operation
-     * @param {string} path - JSON pointer path to the field that should be removed
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.remove = function (path, onSuccess, onFail) {
-        const patch = generatePatch("remove", path, null, null);
-        return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * Clears the group session data.
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.clear = function (onSuccess, onFail) {
-        const patch = generatePatch("replace", "", {}, null);
-        return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch replace operation
-     * @param {string} path - JSON pointer path
-     * @param {object} value - value to be replaced with
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.replace = function (path, value, onSuccess, onFail) {
-        const patch = generatePatch("replace", path, value, null);
-        return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch copy operation
-     * @param {string} from - JSON pointer path to the origin
-     * @param {string} path - JSON pointer path to the target
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.copy = function (from, path, onSuccess, onFail) {
-        const patch = generatePatch("copy", path, null, from);
-        return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
-
-    /**
-     * JSON Patch move operation
-     * @param {string} from - JSON pointer path to the origin
-     * @param {string} path - JSON pointer path to the target
-     * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
-     * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
-     */
-    jatos.groupSession.move = function (from, path, onSuccess, onFail) {
-        const patch = generatePatch("move", path, null, from);
-        return sendGroupSessionPatch(patch, onSuccess, onFail);
-    };
+    jatos.groupSession = createSessionApi(() => groupSessionData, sendGroupSessionPatch);
 
     /**
      * Sends a JSON Patch via the group channel to JATOS and subsequently to all
@@ -1504,7 +1156,7 @@ export function createChannels(jatos, dependencies) {
                 leavingGroupDeferred.resolve(response);
             },
             error: function (err) {
-                var errMsg = getAjaxErrorMsg(err);
+                const errMsg = getAjaxErrorMsg(err);
                 callMany(errMsg, onError, console.error);
                 leavingGroupDeferred.reject(errMsg);
             }
@@ -1521,7 +1173,7 @@ export function createChannels(jatos, dependencies) {
      */
     function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts,
                                                           sessionActionId, onSuccess, onFail) {
-        var timeoutId = setTimeout(function () {
+        const timeoutId = setTimeout(function () {
             callWithArgs(onFail, "Timeout sending session patch");
             deferred.reject("Timeout sending session patch");
         }, jatos.channelSendingTimeoutTime);
