@@ -193,3 +193,21 @@ function generatePatch(op, path, value, from) {
     }
     return patch;
 }
+
+/**
+ * Applies incoming patches before an optional full snapshot. A null snapshot
+ * clears the session; a root patch retains JSON Patch's replacement document.
+ * Version tracking and callbacks remain the channel's responsibility.
+ */
+export function applySessionUpdate(data, patches, snapshot) {
+    if (patches !== undefined) {
+        const results = jsonpatch.applyPatch(data, patches);
+        if (results && results.newDocument !== undefined) {
+            data = results.newDocument;
+        }
+    }
+    if (snapshot !== undefined) {
+        data = snapshot === null ? {} : snapshot;
+    }
+    return data;
+}

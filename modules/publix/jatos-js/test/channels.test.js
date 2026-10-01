@@ -323,3 +323,29 @@ test("shared session APIs keep batch and group data independent and read live re
     assert.deepEqual(jatos.batchSession.getAll(), {replacement: true});
     assert.equal(jatos.groupSession.find("/nested/score"), 3);
 });
+
+for (const kind of ["batch", "group"]) {
+    test(`${kind} incoming updates preserve root replacements and snapshot precedence`, t => {
+        const {jatos, open} = setup(t);
+        const socket = open(kind);
+        const session = jatos[`${kind}Session`];
+        const patchKey = kind === "batch" ? "patches" : "sessionPatches";
+        const dataKey = kind === "batch" ? "data" : "sessionData";
+        socket.receive({[patchKey]: [
+            {op: "replace", path: "", value: {nested: {score: 2}}},
+            {op: "replace", path: "/nested/score", value: 3}
+        ]});
+        assert.deepEqual(session.getAll(), {nested: {score: 3}});
+        socket.receive({[patchKey]: [{op: "replace", path: "/nested/score", value: 4}],
+            [dataKey]: {snapshot: true}});
+        assert.deepEqual(session.getAll(), {snapshot: true});
+        socket.receive({heartbeat: "pong"});
+        assert.deepEqual(session.getAll(), {snapshot: true});
+        socket.receive({[dataKey]: null});
+        assert.deepEqual(session.getAll(), {});
+        socket.receive({[patchKey]: [{op: "replace", path: "", value: null}]});
+        assert.equal(session.getAll(), null);
+        socket.receive({[dataKey]: {restored: true}});
+        assert.deepEqual(session.getAll(), {restored: true});
+    });
+}

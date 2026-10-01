@@ -862,6 +862,18 @@ var jatos;
     }
     return patch;
   }
+  function applySessionUpdate(data, patches, snapshot) {
+    if (patches !== void 0) {
+      const results = jsonpatch.applyPatch(data, patches);
+      if (results && results.newDocument !== void 0) {
+        data = results.newDocument;
+      }
+    }
+    if (snapshot !== void 0) {
+      data = snapshot === null ? {} : snapshot;
+    }
+    return data;
+  }
 
   // src/channels.js
   function createChannels(jatos2, dependencies) {
@@ -1048,19 +1060,7 @@ var jatos;
         setBatchChannelAlive();
         return;
       }
-      if (typeof batchMsg.patches != "undefined") {
-        const patchResults = jsonpatch.applyPatch(batchSessionData, batchMsg.patches);
-        if (patchResults && patchResults.newDocument !== void 0) {
-          batchSessionData = patchResults.newDocument;
-        }
-      }
-      if (typeof batchMsg.data != "undefined") {
-        if (batchMsg.data === null) {
-          batchSessionData = {};
-        } else {
-          batchSessionData = batchMsg.data;
-        }
-      }
+      batchSessionData = applySessionUpdate(batchSessionData, batchMsg.patches, batchMsg.data);
       if (typeof batchMsg.version != "undefined") {
         batchSessionVersion = batchMsg.version;
         if (isDeferredPending(openingBatchChannelDeferred)) {
@@ -1330,19 +1330,7 @@ var jatos;
           return memberId !== groupMsg.memberId;
         });
       }
-      if (typeof groupMsg.sessionPatches != "undefined") {
-        const patchResults = jsonpatch.applyPatch(groupSessionData, groupMsg.sessionPatches);
-        if (patchResults && patchResults.newDocument !== void 0) {
-          groupSessionData = patchResults.newDocument;
-        }
-      }
-      if (typeof groupMsg.sessionData != "undefined") {
-        if (groupMsg.sessionData === null) {
-          groupSessionData = {};
-        } else {
-          groupSessionData = groupMsg.sessionData;
-        }
-      }
+      groupSessionData = applySessionUpdate(groupSessionData, groupMsg.sessionPatches, groupMsg.sessionData);
       if (typeof groupMsg.sessionVersion != "undefined") {
         groupSessionVersion = groupMsg.sessionVersion;
         if (isDeferredPending(openingGroupChannelDeferred)) {

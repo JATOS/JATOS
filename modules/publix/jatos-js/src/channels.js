@@ -1,9 +1,7 @@
 /** @typedef {import("./jatos-promise.js").JatosPromise} JatosPromise */
 
-/* global jsonpatch */
-
 import {call, callMany, callWithArgs} from "./utils/callbacks.js";
-import {createSessionApi} from "./channel-session.js";
+import {createSessionApi, applySessionUpdate} from "./channel-session.js";
 import {createDeferred, rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
 /** Installs the batch and group APIs and owns their channel state. */
@@ -348,19 +346,7 @@ export function createChannels(jatos, dependencies) {
             setBatchChannelAlive();
             return;
         }
-        if (typeof batchMsg.patches != 'undefined') {
-            const patchResults = jsonpatch.applyPatch(batchSessionData, batchMsg.patches);
-            if (patchResults && patchResults.newDocument !== undefined) {
-                batchSessionData = patchResults.newDocument;
-            }
-        }
-        if (typeof batchMsg.data != 'undefined') {
-            if (batchMsg.data === null) {
-                batchSessionData = {};
-            } else {
-                batchSessionData = batchMsg.data;
-            }
-        }
+        batchSessionData = applySessionUpdate(batchSessionData, batchMsg.patches, batchMsg.data);
         if (typeof batchMsg.version != 'undefined') {
             batchSessionVersion = batchMsg.version;
             if (isDeferredPending(openingBatchChannelDeferred)) {
@@ -752,19 +738,7 @@ export function createChannels(jatos, dependencies) {
                 return memberId !== groupMsg.memberId;
             });
         }
-        if (typeof groupMsg.sessionPatches != 'undefined') {
-            const patchResults = jsonpatch.applyPatch(groupSessionData, groupMsg.sessionPatches);
-            if (patchResults && patchResults.newDocument !== undefined) {
-                groupSessionData = patchResults.newDocument;
-            }
-        }
-        if (typeof groupMsg.sessionData != 'undefined') {
-            if (groupMsg.sessionData === null) {
-                groupSessionData = {};
-            } else {
-                groupSessionData = groupMsg.sessionData;
-            }
-        }
+        groupSessionData = applySessionUpdate(groupSessionData, groupMsg.sessionPatches, groupMsg.sessionData);
         if (typeof groupMsg.sessionVersion != 'undefined') {
             groupSessionVersion = groupMsg.sessionVersion;
             if (isDeferredPending(openingGroupChannelDeferred)) {
