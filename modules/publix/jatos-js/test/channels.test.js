@@ -1,14 +1,9 @@
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
 import test from "node:test";
-import vm from "node:vm";
 
 import {installResultDataApi} from "../src/result-data.js";
 import {createStudyRunState, installStudyRunApi} from "../src/study-run.js";
 import {createChannels} from "../src/channels.js";
-
-const patchContext = {};
-vm.runInNewContext(readFileSync(new URL("../../public/javascripts/fast-json-patch.js", import.meta.url), "utf8"), patchContext);
 
 function setup(t) {
     const sockets = [];
@@ -31,7 +26,7 @@ function setup(t) {
     const window = new EventTarget();
     window.location = {protocol: "https:", host: "example.test"};
     window.WebSocket = FakeWebSocket;
-    for (const [name, value] of Object.entries({window, WebSocket: FakeWebSocket, jsonpatch: patchContext.jsonpatch})) {
+    for (const [name, value] of Object.entries({window, WebSocket: FakeWebSocket})) {
         const descriptor = Object.getOwnPropertyDescriptor(globalThis, name);
         Object.defineProperty(globalThis, name, {value, configurable: true, writable: true});
         t.after(() => {

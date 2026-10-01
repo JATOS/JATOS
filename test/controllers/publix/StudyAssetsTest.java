@@ -40,15 +40,15 @@ public class StudyAssetsTest extends JatosTest {
 
     @Test
     public void viaStudyPath_withJatosJs_servesBundledJatosJs() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method(GET)
-                .uri("/publix/anyStudyResultUuid/anyComponentUuid/jatos.js");
-
-        Result result = route(application, request);
         Materializer materializer = application.injector().instanceOf(Materializer.class);
-
-        assertThat(result.status()).isEqualTo(OK);
-        assertThat(contentAsString(result, materializer)).contains("jatos");
+        for (String filename : new String[]{"jatos.js", "jatos.min.js", "jatos-slim.js", "jatos-slim.min.js"}) {
+            for (String prefix : new String[]{"/publix/anyStudyResultUuid/anyComponentUuid/", "/assets/javascripts/"}) {
+                Http.RequestBuilder request = new Http.RequestBuilder().method(GET).uri(prefix + filename);
+                Result result = route(application, request);
+                assertThat(result.status()).as(prefix + filename).isEqualTo(OK);
+                assertThat(contentAsString(result, materializer)).contains("jatos");
+            }
+        }
     }
 
     @Test

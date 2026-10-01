@@ -1,4 +1,4 @@
-/* global jQuery */
+import {createDeferred} from "./jatos-promise.js";
 
 /** Owns startup, readiness callbacks, and the study-run heartbeat worker. */
 export function createInitialization(jatos, dependencies) {
@@ -9,56 +9,10 @@ export function createInitialization(jatos, dependencies) {
     const jatosOnLoadEvent = new Event("jatosOnLoad");
     // The study-run heartbeat is separate from batch/group channel heartbeats.
     let heartbeatWorker;
-    /** @deprecated Compatibility access for existing studies; load your own jQuery for new code. */
-    jatos.jQuery = {};
-
-    function start() {
-        // Load jatos.js's jQuery and put it in jatos.jQuery to avoid conflicts with
-        // a component's jQuery version. Afterward call initJatos.
-        getScript('jatos-publix/javascripts/jquery-3.7.1.min.js', function () {
-            jatos.jQuery = jQuery.noConflict(true);
-            jatos.jQuery.ajaxSetup({
-                cache: true
-            });
-            initJatos();
-        });
-    }
-
-    /**
-     * Adds a <script> element into HTML's head and call success function when loaded
-     */
-    function getScript(url, onSuccess) {
-        const script = document.createElement('script');
-        script.src = url;
-        const head = document.getElementsByTagName('head')[0];
-        let done = false;
-        script.onload = script.onreadystatechange = function () {
-            if (!done && (!this.readyState || this.readyState === 'loaded' ||
-                this.readyState === 'complete')) {
-                done = true;
-                onSuccess();
-                script.onload = script.onreadystatechange = null;
-                head.removeChild(script);
-            }
-        };
-        head.appendChild(script);
-    }
-
-    /**
-     * Initialising jatos.js
-     */
     function initJatos() {
 
-        // "There is a natural order to this world, and those who try to upend it do not fare well."
-        // 1) Load additional scripts
-        // 2) Do more init stuff that doesn't involve HTTP requests
-        // 3) Get init data from JATOS server
-        // 4) Try to open the batch channel
-        // 5) Call readyForOnLoad
-        jatos.jQuery.when(
-            // Load JSON Patch library https://github.com/Starcounter-Jack/JSON-Patch
-            jatos.jQuery.getScript("jatos-publix/javascripts/fast-json-patch.min.js")
-        )
+        // Use our private Deferred to preserve startup scheduling and failure behavior.
+        createDeferred().resolve().promise()
             .then(function () {
                 // Get studyResultUuid from URL path
                 jatos.studyResultUuid = window.location.pathname.split("/").reverse()[2];
@@ -132,8 +86,7 @@ export function createInitialization(jatos, dependencies) {
         jatos.batchProperties = initData.batchProperties;
         if (typeof jatos.batchProperties.batchInput != 'undefined' &&
             jatos.studyProperties.studyInput !== null) {
-            jatos.batchJsonInput = jatos.jQuery
-                .parseJSON(jatos.batchProperties.batchInput);
+            jatos.batchJsonInput = JSON.parse(jatos.batchProperties.batchInput);
         } else {
             jatos.batchJsonInput = {};
         }
@@ -151,8 +104,7 @@ export function createInitialization(jatos, dependencies) {
         jatos.studyProperties = initData.studyProperties;
         if (typeof jatos.studyProperties.studyInput != 'undefined' &&
             jatos.studyProperties.studyInput !== null) {
-            jatos.studyJsonInput = jatos.jQuery
-                .parseJSON(jatos.studyProperties.studyInput);
+            jatos.studyJsonInput = JSON.parse(jatos.studyProperties.studyInput);
         } else {
             jatos.studyJsonInput = {};
         }
@@ -167,8 +119,7 @@ export function createInitialization(jatos, dependencies) {
         jatos.componentProperties = initData.componentProperties;
         if (typeof jatos.componentProperties.componentInput != 'undefined' &&
             jatos.componentProperties.componentInput !== null) {
-            jatos.componentJsonInput = jatos.jQuery
-                .parseJSON(jatos.componentProperties.componentInput);
+            jatos.componentJsonInput = JSON.parse(jatos.componentProperties.componentInput);
         } else {
             jatos.componentJsonInput = {};
         }
@@ -206,7 +157,7 @@ export function createInitialization(jatos, dependencies) {
 
     /**
      * Calls onLoadCallback if it already exists and jatos.js is initialised.
-     * We can't use Deferred since jQuery might not be defined yet.
+     * Uses the existing DOM event to preserve onLoad callback timing.
      */
     function readyForOnLoad() {
         if (!jatosOnLoadEventFired && initialized) {
@@ -229,7 +180,7 @@ export function createInitialization(jatos, dependencies) {
     };
 
     return {
-        start,
+        start: initJatos,
         isInitialized: () => initialized,
         terminateHeartbeat: () => heartbeatWorker.terminate()
     };

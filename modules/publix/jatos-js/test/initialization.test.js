@@ -29,51 +29,20 @@ function setup(t, cookie = "other=value; JATOS_ID_old=studyResultUuid=other&comp
     }
     t.after(flush);
     const events = [];
-    const scripts = [];
-    const plugins = [];
     const workers = [];
     const requests = [];
     const errors = [];
     const batch = createDeferred();
     const window = new EventTarget();
     window.location = {pathname: "/publix/run-uuid/component-uuid/start"};
-    const document = {
-        cookie,
-        createElement: tag => { assert.equal(tag, "script"); return {}; },
-        getElementsByTagName: tag => {
-            assert.equal(tag, "head");
-            return [{appendChild: script => scripts.push(script), removeChild: script => {
-                assert.equal(script, scripts[0]);
-                events.push("remove-script");
-            }}];
-        }
-    };
+    const document = {cookie};
     class Worker {
         messages = [];
         constructor(url) { this.url = url; workers.push(this); events.push("worker"); }
         postMessage(message) { this.messages.push(message); events.push("heartbeat"); }
         terminate() { events.push("terminate-heartbeat"); }
     }
-    const jquery = {
-        noConflict: removeAll => { assert.equal(removeAll, true); events.push("no-conflict"); return jquery; },
-        ajaxSetup: options => { assert.deepEqual(options, {cache: true}); events.push("ajax-setup"); },
-        getScript: url => {
-            const deferred = createDeferred();
-            plugins.push({url, deferred});
-            return deferred.promise();
-        },
-        when: (...promises) => {
-            const combined = createDeferred();
-            let remaining = promises.length;
-            for (const promise of promises) {
-                promise.done(() => { if (--remaining === 0) combined.resolve(); });
-                promise.fail(error => combined.reject(error));
-            }
-            return combined.promise();
-        },
-        parseJSON: JSON.parse
-    };
-    for (const [name, value] of Object.entries({window, document, Worker, jQuery: jquery})) {
+    for (const [name, value] of Object.entries({window, document, Worker})) {
         const descriptor = Object.getOwnPropertyDescriptor(globalThis, name);
         Object.defineProperty(globalThis, name, {value, writable: true, configurable: true});
         t.after(() => {
@@ -99,31 +68,22 @@ function setup(t, cookie = "other=value; JATOS_ID_old=studyResultUuid=other&comp
         httpLoop: {start: () => events.push("http-start")},
         channels: {openBatchChannelWithRetry: () => { events.push("batch-open"); return batch.promise(); }}
     });
-    function loadPlugins() {
+    function start() {
         initialization.start();
-        scripts[0].onload();
-        for (const plugin of plugins) plugin.deferred.resolve();
         flush();
     }
-    return {jatos, initialization, scripts, plugins, workers, requests, batch, events, errors, jquery, loadPlugins, flush};
+    return {jatos, initialization, workers, requests, batch, events, errors, start, flush};
 }
 
 test("startup loads dependencies, starts workers, reads init data, and waits for the batch channel", t => {
-    const {jatos, initialization, scripts, plugins, workers, requests, batch, events, jquery, flush} = setup(t);
+    const {jatos, initialization, workers, requests, batch, events, flush} = setup(t);
     const callbacks = [];
     jatos.onLoad(event => callbacks.push(["first", event.type, initialization.isInitialized()]));
     jatos.onload(() => callbacks.push(["second"]));
     assert.equal(jatos.onload, jatos.onLoad);
     assert.equal(initialization.isInitialized(), false);
     initialization.start();
-    assert.equal(scripts[0].src, "jatos-publix/javascripts/jquery-3.7.1.min.js");
-    scripts[0].onload();
-    assert.equal(jatos.jQuery, jquery);
-    assert.deepEqual(plugins.map(plugin => plugin.url), [
-        "jatos-publix/javascripts/fast-json-patch.min.js"
-    ]);
     assert.equal(workers.length, 0);
-    plugins[0].deferred.resolve();
     flush();
     assert.equal(jatos.studyResultUuid, "run-uuid");
     assert.equal(jatos.componentPos, 2);
@@ -138,7 +98,7 @@ test("startup loads dependencies, starts workers, reads init data, and waits for
     assert.deepEqual(requests[0].options.retry, {times: 2, timeout: 456});
     requests[0].deferred.resolve(initData());
     flush();
-    assert.deepEqual(events, ["no-conflict", "ajax-setup", "remove-script", "worker", "heartbeat", "http-start", "init-data", "ids", "batch-open"]);
+    assert.deepEqual(events, ["worker", "heartbeat", "http-start", "init-data", "ids", "batch-open"]);
     assert.equal(initialization.isInitialized(), false);
     assert.deepEqual(callbacks, []);
     batch.resolve();
@@ -151,27 +111,9 @@ test("startup loads dependencies, starts workers, reads init data, and waits for
     assert.equal(callbacks.length, 3);
 });
 
-test("script loading accepts readyState and processes duplicate load events only once", t => {
-    const {initialization, scripts, plugins, events} = setup(t);
-    initialization.start();
-    const script = scripts[0];
-    const handler = script.onreadystatechange;
-    script.readyState = "loading";
-    handler.call(script);
-    assert.equal(plugins.length, 0);
-    script.readyState = "loaded";
-    handler.call(script);
-    script.readyState = "complete";
-    handler.call(script);
-    assert.equal(plugins.length, 1);
-    assert.equal(script.onload, null);
-    assert.equal(script.onreadystatechange, null);
-    assert.equal(events.filter(event => event === "remove-script").length, 1);
-});
-
 test("init data populates properties, input aliases, session, components and query parameters", t => {
-    const {jatos, loadPlugins, requests} = setup(t);
-    loadPlugins();
+    const {jatos, start, requests} = setup(t);
+    start();
     const data = initData();
     requests[0].deferred.resolve(data);
     for (const kind of ["batch", "study", "component"]) {
@@ -190,8 +132,8 @@ test("init data populates properties, input aliases, session, components and que
 });
 
 test("missing inputs and invalid session JSON retain the existing fallback behavior", t => {
-    const {jatos, loadPlugins, requests, errors} = setup(t);
-    loadPlugins();
+    const {jatos, start, requests, errors} = setup(t);
+    start();
     const data = initData();
     delete data.batchProperties.batchInput;
     data.studyProperties.studyInput = null;
@@ -207,28 +149,20 @@ test("missing inputs and invalid session JSON retain the existing fallback behav
     assert.equal(errors.length, 1);
 });
 
-for (const stage of ["plugins", "init-data", "batch"]) {
+for (const stage of ["init-data", "batch"]) {
     test(`${stage} failure still marks initialization complete and notifies onLoad`, t => {
-        const {jatos, initialization, scripts, plugins, workers, requests, batch, events, errors, flush} = setup(t);
+        const {jatos, initialization, workers, requests, batch, events, errors, flush} = setup(t);
         let calls = 0;
         jatos.onLoad(() => { calls++; });
         initialization.start();
-        scripts[0].onload();
-        if (stage === "plugins") {
-            plugins[0].deferred.reject("script failed");
-            assert.equal(workers.length, 0);
-            assert.equal(requests.length, 0);
+        flush();
+        if (stage === "init-data") {
+            requests[0].deferred.reject({statusText: "timeout"});
+            assert.deepEqual(errors, ["Request failed: timeout"]);
+            assert.equal(events.includes("batch-open"), false);
         } else {
-            plugins.forEach(plugin => plugin.deferred.resolve());
-            flush();
-            if (stage === "init-data") {
-                requests[0].deferred.reject({statusText: "timeout"});
-                assert.deepEqual(errors, ["Request failed: timeout"]);
-                assert.equal(events.includes("batch-open"), false);
-            } else {
-                requests[0].deferred.resolve(initData());
-                batch.reject("channel failed");
-            }
+            requests[0].deferred.resolve(initData());
+            batch.reject("channel failed");
         }
         flush();
         assert.equal(initialization.isInitialized(), true);
@@ -239,17 +173,17 @@ for (const stage of ["plugins", "init-data", "batch"]) {
 }
 
 test("missing ID cookie logs an error but does not stop startup", t => {
-    const {jatos, loadPlugins, requests, errors} = setup(t, "unrelated=value");
-    loadPlugins();
+    const {jatos, start, requests, errors} = setup(t, "unrelated=value");
+    start();
     assert.equal(jatos.studyResultUuid, "run-uuid");
     assert.equal(requests.length, 1);
     assert.match(errors[0], /cookie for current studyResultUuid not found/);
 });
 
 test("heartbeat period changes and lifecycle termination reach the current worker", t => {
-    const {jatos, initialization, loadPlugins, workers, events} = setup(t);
+    const {jatos, initialization, start, workers, events} = setup(t);
     jatos.setHeartbeatPeriod(500);
-    loadPlugins();
+    start();
     jatos.setHeartbeatPeriod("ignored");
     jatos.setHeartbeatPeriod(750);
     assert.deepEqual(workers[0].messages, [["run-uuid"], ["run-uuid", 750]]);

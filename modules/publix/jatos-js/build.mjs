@@ -7,14 +7,26 @@ const projectDir = dirname(fileURLToPath(import.meta.url));
 const outputDirectory = join(projectDir, "../public/javascripts");
 const outputs = [
     {
-        entryPoint: "src/index.js",
+        entryPoint: "src/with-jquery.js",
         filename: "jatos.js",
         minify: false,
         banner: "var jatos;"
     },
     {
-        entryPoint: "src/index.js",
+        entryPoint: "src/with-jquery.js",
         filename: "jatos.min.js",
+        minify: true,
+        banner: "var jatos;"
+    },
+    {
+        entryPoint: "src/index.js",
+        filename: "jatos-slim.js",
+        minify: false,
+        banner: "var jatos;"
+    },
+    {
+        entryPoint: "src/index.js",
+        filename: "jatos-slim.min.js",
         minify: true,
         banner: "var jatos;"
     },

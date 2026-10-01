@@ -87,7 +87,6 @@ function createNavigationApi(t, overrides = {}) {
             {id: 2, uuid: "second-uuid", title: "Second", position: 2, active: true}
         ],
         componentPos: 1,
-        jQuery: {param: () => ""},
         jatosRun: "GENERAL_MULTIPLE",
         showOverlay: () => {},
         studySessionData: {},
@@ -177,7 +176,6 @@ function createLifecycleApi(t) {
     let idleCallback;
     const jatos = {
         httpTimeout: 1000, httpRetry: 2, httpRetryWait: 500,
-        jQuery: {param: obj => new URLSearchParams(obj).toString()},
         appendResultData: data => events.push(["append", data]),
         showBeforeUnloadWarning: value => events.push(["warning", value]),
         showOverlay: () => events.push("overlay"),
@@ -217,7 +215,7 @@ for (const operation of ["end", "abort"]) {
             ? [["append", {score: 7}], ["warning", false], "send"]
             : [["warning", false], "send"]);
         assert.deepEqual(requests[0].request, {
-            url: operation === "end" ? "https://example.test/../end?successful=true&message=all+done"
+            url: operation === "end" ? "https://example.test/../end?successful=true&message=all%20done"
                 : "https://example.test/../abort?message=stop",
             method: "GET", timeout: 1000, retry: 2, retryWait: 500
         });

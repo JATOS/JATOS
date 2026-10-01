@@ -11,6 +11,8 @@ GET     /favicon-32x32.png                 controllers.Assets.at(path="/public",
 GET     /favicon-96x96.png                 controllers.Assets.at(path="/public", file="favicon-96x96.png")
 GET     /assets/javascripts/jatos.js       controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.js")
 GET     /assets/javascripts/jatos.min.js   controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos.min.js")
+GET     /assets/javascripts/jatos-slim.js       controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos-slim.js")
+GET     /assets/javascripts/jatos-slim.min.js   controllers.Assets.at(path="/public/lib/jatos-publix/javascripts", file = "jatos-slim.min.js")
 # Versioned assets
 GET     /assets/*file                      controllers.Assets.versioned(path="/public", file: Asset)
 # Non-versioned assets

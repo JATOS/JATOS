@@ -1,4 +1,29 @@
-/* global jsonpatch */
+/*! fast-json-patch 3.1.1
+ * (The MIT License)
+ *
+ * Copyright (c) 2013, 2014, 2020 Joachim Wester
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * 'Software'), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+import {applyPatch, getValueByPointer} from "fast-json-patch/module/core.mjs";
 
 import {cloneJsonObj} from "./utils/clone-json.js";
 
@@ -20,7 +45,7 @@ export function createSessionApi(getData, sendPatch) {
      * @return {object}
      */
     session.get = function (name) {
-        const obj = jsonpatch.getValueByPointer(getData(), "/" + name);
+        const obj = getValueByPointer(getData(), "/" + name);
         return cloneJsonObj(obj);
     };
 
@@ -45,7 +70,7 @@ export function createSessionApi(getData, sendPatch) {
      * @return {object}
      */
     session.find = function (path) {
-        const obj = jsonpatch.getValueByPointer(getData(), path);
+        const obj = getValueByPointer(getData(), path);
         return cloneJsonObj(obj);
     };
 
@@ -59,7 +84,7 @@ export function createSessionApi(getData, sendPatch) {
      * @return {boolean}
      */
     session.test = function (path, value) {
-        const obj = jsonpatch.getValueByPointer(getData(), path);
+        const obj = getValueByPointer(getData(), path);
         return obj === value;
     };
 
@@ -201,7 +226,7 @@ function generatePatch(op, path, value, from) {
  */
 export function applySessionUpdate(data, patches, snapshot) {
     if (patches !== undefined) {
-        const results = jsonpatch.applyPatch(data, patches);
+        const results = applyPatch(data, patches);
         if (results && results.newDocument !== undefined) {
             data = results.newDocument;
         }

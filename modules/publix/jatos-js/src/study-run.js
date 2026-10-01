@@ -1,3 +1,5 @@
+import {encodeQuery} from "./utils/query.js";
+
 /** @typedef {import("./jatos-promise.js").JatosPromise} JatosPromise */
 
 import {callMany} from "./utils/callbacks.js";
@@ -113,7 +115,7 @@ export function installStudyRunApi(jatos, dependencies) {
             removeBeforeUnloadWarning();
 
             let url = getURL("../" + componentUuid + "/start");
-            if (message) url = url + "?" + jatos.jQuery.param({ "message": message });
+            if (message) url = url + "?" + encodeQuery({ "message": message });
             window.location.href = url;
         };
 
@@ -385,16 +387,16 @@ export function installStudyRunApi(jatos, dependencies) {
 
         let url = getURL("../end");
         if (typeof successful == 'boolean' && typeof message == 'string') {
-            url = url + "?" + jatos.jQuery.param({
+            url = url + "?" + encodeQuery({
                 "successful": successful,
                 "message": message
             });
         } else if (typeof successful == 'boolean' && typeof message != 'string') {
-            url = url + "?" + jatos.jQuery.param({
+            url = url + "?" + encodeQuery({
                 "successful": successful
             });
         } else if (typeof successful != 'boolean' && typeof message == 'string') {
-            url = url + "?" + jatos.jQuery.param({
+            url = url + "?" + encodeQuery({
                 "message": message
             });
         }
@@ -498,16 +500,16 @@ export function installStudyRunApi(jatos, dependencies) {
 
             let url = getURL("../end");
             if (typeof successful == 'boolean' && typeof message == 'string') {
-                url = url + "?" + jatos.jQuery.param({
+                url = url + "?" + encodeQuery({
                     "successful": successful,
                     "message": message
                 });
             } else if (typeof successful == 'boolean' && typeof message != 'string') {
-                url = url + "?" + jatos.jQuery.param({
+                url = url + "?" + encodeQuery({
                     "successful": successful
                 });
             } else if (typeof successful != 'boolean' && typeof message == 'string') {
-                url = url + "?" + jatos.jQuery.param({
+                url = url + "?" + encodeQuery({
                     "message": message
                 });
             }

@@ -1,16 +1,13 @@
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
 import test from "node:test";
 import {fileURLToPath} from "node:url";
 import {build} from "esbuild";
 import {JSDOM} from "jsdom";
 
-const jquerySource = readFileSync(new URL("../../public/javascripts/jquery-3.7.1.min.js", import.meta.url), "utf8");
-const patchSource = readFileSync(new URL("../../public/javascripts/fast-json-patch.min.js", import.meta.url), "utf8");
 
-async function startBundle(t, minify) {
+async function startBundle(t, minify, slim) {
     const result = await build({
-        entryPoints: [fileURLToPath(new URL("../src/index.js", import.meta.url))],
+        entryPoints: [fileURLToPath(new URL(slim ? "../src/index.js" : "../src/with-jquery.js", import.meta.url))],
         bundle: true, format: "iife", platform: "browser", target: "es2020",
         minify, write: false, banner: {js: "var jatos;"}, logLevel: "silent"
     });
@@ -64,17 +61,17 @@ async function startBundle(t, minify) {
     assert.equal(window.Deferred, undefined);
     const {jatos} = window;
     const loaded = new Promise(resolve => jatos.onLoad(resolve));
-    const bootstrap = window.document.querySelector("script");
-    assert.ok(bootstrap.src.endsWith("/jatos-publix/javascripts/jquery-3.7.1.min.js"));
-
-    // Load the real shipped jQuery. Stub only script transport, HTTP, and workers.
-    window.eval(jquerySource);
-    const jquery = window.jQuery;
-    jquery.getScript = url => {
-        if (url.endsWith("fast-json-patch.min.js")) window.eval(patchSource);
-        return jquery.Deferred().resolve().promise();
-    };
-    jquery.ajax = () => assert.fail("internal HTTP must not use jQuery.ajax");
+    const jquery = jatos.jQuery;
+    if (slim) {
+        assert.equal(Object.hasOwn(jatos, "jQuery"), false);
+    } else {
+        assert.equal(jquery.fn.jquery, "3.7.1");
+        assert.equal(jquery.ajaxSettings.cache, true);
+        assert.notEqual(jquery, pageJquery);
+        for (const method of ["getScript", "when", "parseJSON", "param", "ajax"]) {
+            jquery[method] = () => assert.fail(`internal code must not use jQuery.${method}`);
+        }
+    }
     window.XMLHttpRequest = class {
         status = 200;
         statusText = "OK";
@@ -88,11 +85,12 @@ async function startBundle(t, minify) {
         getResponseHeader() { return "application/json"; }
         send() { window.setTimeout(() => this.onload()); }
     };
-    bootstrap.onload();
     await loaded;
     assert.equal(window.jQuery, pageJquery);
     assert.equal(window.$, pageJquery);
     assert.equal(jatos.jQuery, jquery);
+    assert.equal(window.jsonpatch, undefined);
+    assert.equal(window.document.querySelectorAll("script").length, 0);
     assert.equal(jatos.isConnected(), true);
     assert.equal(jatos.studySessionData.score, 1);
     const httpWorker = workers.find(worker => worker.url.endsWith("http-loop-worker.js"));
@@ -100,10 +98,11 @@ async function startBundle(t, minify) {
     return {jatos, workers, sockets, httpWorker, window};
 }
 
+for (const slim of [false, true]) {
 for (const minify of [false, true]) {
     for (const ending of ["end", "abort"]) {
-        test(`${minify ? "minified" : "readable"} bundle: initialization, HTTP, channel acknowledgements and ${ending} cleanup`, {timeout: 5000}, async t => {
-            const {jatos, workers, sockets, httpWorker, window} = await startBundle(t, minify);
+        test(`${slim ? "slim" : "standard"} ${minify ? "minified" : "readable"} bundle: initialization, HTTP, channel acknowledgements and ${ending} cleanup`, {timeout: 5000}, async t => {
+            const {jatos, workers, sockets, httpWorker, window} = await startBundle(t, minify, slim);
             const warns = () => !window.dispatchEvent(new window.Event("beforeunload", {cancelable: true}));
             jatos.showBeforeUnloadWarning(true);
             assert.equal(warns(), true);
@@ -157,4 +156,6 @@ for (const minify of [false, true]) {
             assert.equal(warns(), false);
         });
     }
+}
+
 }
