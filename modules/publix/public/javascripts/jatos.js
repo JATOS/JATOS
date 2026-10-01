@@ -899,10 +899,6 @@ var jatos;
     const batchSessionTimeouts = {};
     const groupSessionTimeouts = {};
     let groupFixedTimeout;
-    let batchChannelHeartbeatTimer;
-    let groupChannelHeartbeatTimer;
-    let batchChannelHeartbeatTimeoutTimers = [];
-    let groupChannelHeartbeatTimeoutTimers = [];
     let batchChannelClosedCheckTimer;
     let groupChannelClosedCheckTimer;
     let batchSessionVersion;
@@ -914,6 +910,11 @@ var jatos;
     let batchChannel;
     let groupChannel;
     let groupChannelCallbacks;
+    const batchHeartbeat = createHeartbeat(() => batchChannel, handleBatchChannelHeartbeatFail);
+    const groupHeartbeat = createHeartbeat(() => groupChannel, () => {
+      callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
+      reopenGroupChannel();
+    });
     const webSocketSupported = "WebSocket" in window;
     let openingBatchChannelDeferred;
     let sendingBatchSessionDeferred;
@@ -977,7 +978,7 @@ var jatos;
       channel.onopen = function() {
         if (batchChannel !== channel) return;
         channel.send('{"action":"READY"}');
-        batchChannelHeartbeat();
+        batchHeartbeat.start();
         batchChannelClosedCheck();
       };
       channel.onmessage = function(event) {
@@ -1003,18 +1004,28 @@ var jatos;
       clearBatchChannel();
       openBatchChannelWithRetry();
     }
-    function batchChannelHeartbeat() {
-      clearInterval(batchChannelHeartbeatTimer);
-      batchChannelHeartbeatTimer = setInterval(function() {
-        if (batchChannel.readyState === batchChannel.OPEN) {
-          batchChannel.send('{"heartbeat":"ping"}');
-          const timeout = setTimeout(
-            handleBatchChannelHeartbeatFail,
-            jatos2.channelHeartbeatTimeoutTime
-          );
-          batchChannelHeartbeatTimeoutTimers.push(timeout);
-        }
-      }, jatos2.channelHeartbeatInterval);
+    function createHeartbeat(getChannel, onFailure) {
+      let interval;
+      let timeouts = [];
+      function start() {
+        clearInterval(interval);
+        interval = setInterval(() => {
+          const channel = getChannel();
+          if (channel.readyState === channel.OPEN) {
+            channel.send('{"heartbeat":"ping"}');
+            timeouts.push(setTimeout(onFailure, jatos2.channelHeartbeatTimeoutTime));
+          }
+        }, jatos2.channelHeartbeatInterval);
+      }
+      function acknowledge() {
+        timeouts.forEach((timeout) => clearTimeout(timeout));
+        timeouts = [];
+      }
+      function stop() {
+        acknowledge();
+        clearInterval(interval);
+      }
+      return { start, acknowledge, stop };
     }
     function handleBatchChannelHeartbeatFail() {
       console.warn("Batch channel heartbeat fail");
@@ -1035,14 +1046,7 @@ var jatos;
     function clearBatchChannel() {
       batchSessionData = {};
       batchSessionVersion = null;
-      clearBatchChannelHeartbeatTimeoutTimers();
-      clearInterval(batchChannelHeartbeatTimer);
-    }
-    function clearBatchChannelHeartbeatTimeoutTimers() {
-      batchChannelHeartbeatTimeoutTimers.forEach(function(timeout) {
-        clearTimeout(timeout);
-      });
-      batchChannelHeartbeatTimeoutTimers = [];
+      batchHeartbeat.stop();
     }
     function handleBatchMsg(msg) {
       let batchMsg;
@@ -1053,7 +1057,7 @@ var jatos;
         return;
       }
       if (typeof batchMsg.heartbeat != "undefined" && batchMsg.heartbeat === "pong") {
-        clearBatchChannelHeartbeatTimeoutTimers();
+        batchHeartbeat.acknowledge();
         setBatchChannelAlive();
         return;
       }
@@ -1206,7 +1210,7 @@ var jatos;
       );
       groupChannel.onopen = function() {
         groupChannel.send('{"action":"READY"}');
-        groupChannelHeartbeat();
+        groupHeartbeat.start();
         groupChannelClosedCheck();
       };
       groupChannel.onmessage = function(event) {
@@ -1242,19 +1246,6 @@ var jatos;
       clearGroupChannel();
       openGroupChannelWithRetry();
     }
-    function groupChannelHeartbeat() {
-      clearInterval(groupChannelHeartbeatTimer);
-      groupChannelHeartbeatTimer = setInterval(function() {
-        if (groupChannel.readyState === groupChannel.OPEN) {
-          groupChannel.send('{"heartbeat":"ping"}');
-          const timeout = setTimeout(function() {
-            callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
-            reopenGroupChannel();
-          }, jatos2.channelHeartbeatTimeoutTime);
-          groupChannelHeartbeatTimeoutTimers.push(timeout);
-        }
-      }, jatos2.channelHeartbeatInterval);
-    }
     function groupChannelClosedCheck() {
       clearInterval(groupChannelClosedCheckTimer);
       groupChannelClosedCheckTimer = setInterval(function() {
@@ -1265,12 +1256,6 @@ var jatos;
         }
       }, jatos2.channelClosedCheckInterval);
     }
-    function clearGroupChannelHeartbeatTimeoutTimers() {
-      groupChannelHeartbeatTimeoutTimers.forEach(function(timeout) {
-        clearTimeout(timeout);
-      });
-      groupChannelHeartbeatTimeoutTimers = [];
-    }
     function clearGroupChannel() {
       jatos2.groupMemberId = null;
       jatos2.groupResultId = null;
@@ -1279,8 +1264,7 @@ var jatos;
       groupSessionData = {};
       groupSessionVersion = null;
       groupState = null;
-      clearGroupChannelHeartbeatTimeoutTimers();
-      clearInterval(groupChannelHeartbeatTimer);
+      groupHeartbeat.stop();
     }
     function handleGroupMsg(msg) {
       let groupMsg;
@@ -1291,7 +1275,7 @@ var jatos;
         return;
       }
       if (typeof groupMsg.heartbeat != "undefined") {
-        clearGroupChannelHeartbeatTimeoutTimers();
+        groupHeartbeat.acknowledge();
         return;
       }
       updateGroupVars(groupMsg);

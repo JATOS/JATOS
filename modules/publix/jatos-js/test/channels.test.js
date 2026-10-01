@@ -366,3 +366,57 @@ test("server invalidation reaches result-data and navigation through the shared 
     assert.ok(errors.every(error => error.includes("This study run is invalid")));
     assert.equal(createStudyRunState().invalid, false, "new runs do not inherit invalidation");
 });
+
+for (const kind of ["batch", "group"]) {
+    test(`${kind} heartbeat failure clears old timers and reconnects with its own notifications`, t => {
+        const {jatos, open, sockets, timers, fire} = setup(t);
+        const errors = [];
+        const disconnected = [];
+        jatos.onDisconnected(() => disconnected.push(true));
+        const socket = open(kind, {onError: error => errors.push(error)});
+        const heartbeat = [...timers].find(([, timer]) => timer.delay === jatos.channelHeartbeatInterval)[0];
+        fire(heartbeat);
+        fire(heartbeat);
+        const pending = [...timers].filter(([, timer]) => !timer.interval).map(([id]) => id);
+        assert.equal(pending.length, 2);
+        fire(pending[0]);
+        assert.equal(socket.readyState, socket.CLOSED);
+        assert.equal(sockets.length, 2);
+        assert.equal(timers.has(heartbeat), false);
+        assert.equal(timers.has(pending[1]), false);
+        assert.deepEqual(errors, kind === "group" ? ["Group channel heartbeat fail"] : []);
+        assert.equal(disconnected.length, kind === "batch" ? 1 : 0);
+        const replacement = sockets[1];
+        replacement.open();
+        replacement.receive(kind === "batch" ? {version: 5} : {sessionVersion: 5});
+        const restarted = [...timers].find(([, timer]) => timer.delay === jatos.channelHeartbeatInterval)[0];
+        fire(restarted);
+        assert.deepEqual(replacement.sent.at(-1), {heartbeat: "ping"});
+    });
+}
+
+test("batch and group heartbeat timers remain independent and retain response rules", t => {
+    const {jatos, open, timers, fire} = setup(t);
+    const batch = open("batch");
+    const group = open("group");
+    const intervals = [...timers].filter(([, timer]) => timer.delay === jatos.channelHeartbeatInterval);
+    jatos.channelHeartbeatTimeoutTime = 1234;
+    for (const [id] of intervals) {
+        fire(id);
+        fire(id);
+    }
+    const pending = () => [...timers.values()].filter(timer => !timer.interval);
+    assert.equal(pending().length, 4);
+    assert.ok(pending().every(timer => timer.delay === 1234));
+    batch.receive({heartbeat: "other"});
+    assert.equal(pending().length, 4);
+    group.receive({heartbeat: "other"});
+    assert.equal(pending().length, 2);
+    batch.receive({heartbeat: "pong"});
+    assert.equal(pending().length, 0);
+    group.readyState = group.CLOSED;
+    const count = group.sent.length;
+    fire(intervals[1][0]);
+    assert.equal(group.sent.length, count);
+    assert.equal(pending().length, 0);
+});

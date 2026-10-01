@@ -75,10 +75,6 @@ export function createChannels(jatos, dependencies) {
      * Channel timeout and interval objects
      */
     let groupFixedTimeout;
-    let batchChannelHeartbeatTimer;
-    let groupChannelHeartbeatTimer;
-    let batchChannelHeartbeatTimeoutTimers = [];
-    let groupChannelHeartbeatTimeoutTimers = [];
     let batchChannelClosedCheckTimer;
     let groupChannelClosedCheckTimer;
     /**
@@ -118,6 +114,20 @@ export function createChannels(jatos, dependencies) {
      * Object with group channel callbacks (details in jatos.joinGroup)
      */
     let groupChannelCallbacks;
+    /**
+     * Batch heartbeat timers. A missed heartbeat marks the connection dead and
+     * reopens the batch channel.
+     */
+    const batchHeartbeat = createHeartbeat(() => batchChannel, handleBatchChannelHeartbeatFail);
+    /**
+     * Group heartbeat timers. A missed heartbeat notifies the group's error
+     * callback and reopens the group channel.
+     */
+    const groupHeartbeat = createHeartbeat(() => groupChannel, () => {
+        callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
+        reopenGroupChannel();
+    });
+
     /**
      * WebSocket support by the browser is needed for group channel.
      */
@@ -224,7 +234,7 @@ export function createChannels(jatos, dependencies) {
         channel.onopen = function () {
             if (batchChannel !== channel) return;
             channel.send('{"action":"READY"}');
-            batchChannelHeartbeat();
+            batchHeartbeat.start();
             batchChannelClosedCheck();
             // The actual batch channel opening is done when we have the
             // current version of the batch session
@@ -263,22 +273,35 @@ export function createChannels(jatos, dependencies) {
     }
 
     /**
-     * Periodically sends a heartbeat in the batch channel. This is supposed
-     * to keep the WebSocket open in routers. This heartbeat is additional
-     * to the ping/pong heartbeat of the underlying WebSocket. For each
-     * heartbeat ping we set a timeout until when the pong has to be received.
-     * If no pong arrived the batch channel will be closed and reopened.
+     * Schedules application-level pings and tracks all unanswered ping timeouts.
+     * Each channel owns an instance; failure handling stays channel-specific.
      */
-    function batchChannelHeartbeat() {
-        clearInterval(batchChannelHeartbeatTimer);
-        batchChannelHeartbeatTimer = setInterval(function () {
-            if (batchChannel.readyState === batchChannel.OPEN) {
-                batchChannel.send('{"heartbeat":"ping"}');
-                const timeout = setTimeout(handleBatchChannelHeartbeatFail,
-                    jatos.channelHeartbeatTimeoutTime);
-                batchChannelHeartbeatTimeoutTimers.push(timeout);
-            }
-        }, jatos.channelHeartbeatInterval);
+    function createHeartbeat(getChannel, onFailure) {
+        let interval;
+        let timeouts = [];
+
+        function start() {
+            clearInterval(interval);
+            interval = setInterval(() => {
+                const channel = getChannel();
+                if (channel.readyState === channel.OPEN) {
+                    channel.send('{"heartbeat":"ping"}');
+                    timeouts.push(setTimeout(onFailure, jatos.channelHeartbeatTimeoutTime));
+                }
+            }, jatos.channelHeartbeatInterval);
+        }
+
+        function acknowledge() {
+            timeouts.forEach(timeout => clearTimeout(timeout));
+            timeouts = [];
+        }
+
+        function stop() {
+            acknowledge();
+            clearInterval(interval);
+        }
+
+        return {start, acknowledge, stop};
     }
 
     /**
@@ -313,16 +336,8 @@ export function createChannels(jatos, dependencies) {
     function clearBatchChannel() {
         batchSessionData = {};
         batchSessionVersion = null;
-        clearBatchChannelHeartbeatTimeoutTimers();
-        clearInterval(batchChannelHeartbeatTimer);
+        batchHeartbeat.stop();
         // Don't clear batchChannelClosedCheckTimer here
-    }
-
-    function clearBatchChannelHeartbeatTimeoutTimers() {
-        batchChannelHeartbeatTimeoutTimers.forEach(function (timeout) {
-            clearTimeout(timeout);
-        });
-        batchChannelHeartbeatTimeoutTimers = [];
     }
 
     /**
@@ -339,7 +354,7 @@ export function createChannels(jatos, dependencies) {
         if (typeof batchMsg.heartbeat != 'undefined' && batchMsg.heartbeat === 'pong') {
             // Batch channel is alive:  clear all heartbeat timeouts
             // and set batchChannelAlive flag and fire batchChannelAliveEvent
-            clearBatchChannelHeartbeatTimeoutTimers();
+            batchHeartbeat.acknowledge();
             setBatchChannelAlive();
             return;
         }
@@ -559,7 +574,7 @@ export function createChannels(jatos, dependencies) {
             window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join");
         groupChannel.onopen = function () {
             groupChannel.send('{"action":"READY"}');
-            groupChannelHeartbeat();
+            groupHeartbeat.start();
             groupChannelClosedCheck();
             // The actual group channel opening is done when we have the current
             // version of the group session
@@ -611,27 +626,6 @@ export function createChannels(jatos, dependencies) {
     }
 
     /**
-     * Periodically sends a heartbeat in the group channel. This is supposed
-     * to keep the WebSocket open in routers. This heartbeat is additional
-     * to the ping/pong heartbeat of the underlying WebSocket. For each
-     * heartbeat ping we set a timeout until when the pong has to be received.
-     * If no pong arrived the group channel will be closed and reopened.
-     */
-    function groupChannelHeartbeat() {
-        clearInterval(groupChannelHeartbeatTimer);
-        groupChannelHeartbeatTimer = setInterval(function () {
-            if (groupChannel.readyState === groupChannel.OPEN) {
-                groupChannel.send('{"heartbeat":"ping"}');
-                const timeout = setTimeout(function () {
-                    callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
-                    reopenGroupChannel();
-                }, jatos.channelHeartbeatTimeoutTime);
-                groupChannelHeartbeatTimeoutTimers.push(timeout);
-            }
-        }, jatos.channelHeartbeatInterval);
-    }
-
-    /**
      * Periodically checks whether the group channel is closed and if yes
      * reopens it. We don't rely on WebSocket's onClose callback (we could
      * just put reopenGroupChannel() in there) because it's not always called
@@ -649,13 +643,6 @@ export function createChannels(jatos, dependencies) {
         }, jatos.channelClosedCheckInterval);
     }
 
-    function clearGroupChannelHeartbeatTimeoutTimers() {
-        groupChannelHeartbeatTimeoutTimers.forEach(function (timeout) {
-            clearTimeout(timeout);
-        });
-        groupChannelHeartbeatTimeoutTimers = [];
-    }
-
     function clearGroupChannel() {
         jatos.groupMemberId = null;
         jatos.groupResultId = null;
@@ -664,8 +651,7 @@ export function createChannels(jatos, dependencies) {
         groupSessionData = {};
         groupSessionVersion = null;
         groupState = null;
-        clearGroupChannelHeartbeatTimeoutTimers();
-        clearInterval(groupChannelHeartbeatTimer);
+        groupHeartbeat.stop();
         // Don't clear groupChannelClosedCheckTimer here
     }
 
@@ -685,7 +671,7 @@ export function createChannels(jatos, dependencies) {
         }
         if (typeof groupMsg.heartbeat != 'undefined') {
             // Group channel is alive - clear all heartbeat timeouts
-            clearGroupChannelHeartbeatTimeoutTimers();
+            groupHeartbeat.acknowledge();
             return;
         }
         updateGroupVars(groupMsg);
