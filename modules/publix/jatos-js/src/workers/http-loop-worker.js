@@ -22,8 +22,8 @@
 
 "use strict";
 
-var requests = [];
-var running = false;
+const requests = [];
+let running = false;
 
 /**
  * Message listener. Accepts the request object that will be sent to the JATOS server.
@@ -57,9 +57,9 @@ function run() {
 		return;
 	}
 
-	var request = requests.shift();
+	const request = requests.shift();
 
-	var xhr = new XMLHttpRequest();
+	const xhr = new XMLHttpRequest();
 	xhr.open(request.method, request.url);
 	if (request.contentType) xhr.setRequestHeader("Content-Type", request.contentType);
 	if (request.timeout) xhr.timeout = request.timeout;
@@ -90,7 +90,7 @@ function run() {
 			|| (xhr.status && xhr.status == 413)
 			|| "retry" in request === false
 			|| request.retry <= 0) {
-			var msg = {
+			const msg = {
 				requestId: request.id,
 				url: request.url,
 				method: request.method
@@ -114,7 +114,7 @@ function run() {
 	}
 
 	// Actual sending of data
-	var data;
+	let data;
 	if ("data" in request) {
 		data = request.data;
 	} else if ("blob" in request) {

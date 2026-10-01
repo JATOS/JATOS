@@ -294,3 +294,83 @@ for (const operation of ["end", "abort"]) {
         assert.equal(window.location.href, "unchanged");
     });
 }
+
+for (const [label, prefix] of [
+    ["without data", [false, "done"]],
+    ["object data", [{score: 1}, false, "done"]],
+    ["string data", ["data", false, "done"]],
+    ["null data", [null, false, "done"]],
+    ["empty data", ["", false, "done"]]
+]) {
+    for (const outcome of ["resolve", "reject"]) {
+        test(`endStudyWithoutRedirect ${label} routes ${outcome} to the correct callback`, t => {
+            const {jatos, requests, events} = createLifecycleApi(t);
+            const calls = [];
+            const promise = jatos.endStudyWithoutRedirect(...prefix,
+                value => calls.push(["success", value]), value => calls.push(["error", value]));
+            assert.equal(requests[0].request.url, "https://example.test/../end?successful=false&message=done");
+            const data = prefix.length === 3 ? prefix[0] : undefined;
+            assert.deepEqual(events.filter(event => Array.isArray(event) && event[0] === "append"),
+                data ? [["append", data]] : []);
+            requests[0].deferred[outcome]("response");
+            assert.equal(promise.state(), outcome === "resolve" ? "resolved" : "rejected");
+            assert.deepEqual(calls, [[outcome === "resolve" ? "success" : "error", "response"]]);
+        });
+    }
+    test(`endStudy ${label} honors the no-redirect argument`, t => {
+        const {jatos, requests, window} = createLifecycleApi(t);
+        const promise = jatos.endStudy(...prefix, false);
+        assert.equal(promise.state(), "pending");
+        assert.equal(requests[0].request.url, "https://example.test/../end?successful=false&message=done");
+        assert.equal(window.location.href, "unchanged");
+    });
+}
+
+test("navigation callback overloads preserve priority and ignored placeholders", t => {
+    const {jatos} = createNavigationApi(t, {studyRunState: {invalid: true}});
+    t.mock.method(console, "warn", () => {});
+    const calls = [];
+    const first = () => calls.push("first");
+    const second = () => calls.push("second");
+    jatos.startComponent("next", undefined, first, second);
+    jatos.startComponent("next", undefined, "message", second);
+    jatos.startComponent("next", undefined, undefined, second);
+    assert.deepEqual(calls, ["first", "second"]);
+    for (const [method, target] of [["startComponentByPos", 99], ["startComponentByTitle", "missing"]]) {
+        calls.length = 0;
+        jatos[method](target, undefined, first, second);
+        jatos[method](target, undefined, undefined, second);
+        assert.deepEqual(calls, ["first", "second"]);
+    }
+});
+
+test("next and last component helpers forward both navigation signatures", t => {
+    const {jatos} = createNavigationApi(t);
+    const calls = [];
+    const onError = () => {};
+    jatos.startComponent = (...args) => calls.push(args);
+    jatos.startNextComponent("data", onError);
+    jatos.startNextComponent("data", "message", onError);
+    jatos.startLastComponent("data", "message", onError);
+    assert.deepEqual(calls, [
+        ["second-uuid", "data", onError, undefined],
+        ["second-uuid", "data", "message", onError],
+        ["second-uuid", "data", "message", onError]
+    ]);
+});
+
+test("endStudyAjax and endStudyAndRedirect forward all arguments unchanged", t => {
+    const {jatos, window} = createLifecycleApi(t);
+    const calls = [];
+    const deferred = createDeferred();
+    jatos.endStudyWithoutRedirect = (...args) => { calls.push(args); return deferred.promise(); };
+    const onSuccess = () => {};
+    const onError = () => {};
+    const args = [{score: 1}, true, "done", onSuccess, onError];
+    assert.equal(jatos.endStudyAjax(...args), deferred.promise());
+    jatos.endStudyAndRedirect("https://example.test/finished", ...args);
+    assert.deepEqual(calls, [args, args]);
+    assert.equal(window.location.href, "unchanged");
+    deferred.resolve();
+    assert.equal(window.location.href, "https://example.test/finished");
+});

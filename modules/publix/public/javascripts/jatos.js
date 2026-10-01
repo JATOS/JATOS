@@ -10,7 +10,7 @@ var jatos;
     };
     jatos2.log = function(logMsg) {
       if (!isInitialized()) return;
-      var request = {
+      const request = {
         url: getURL("log"),
         method: "POST",
         data: logMsg,
@@ -28,8 +28,8 @@ var jatos;
       window.addEventListener("unhandledrejection", function(e) {
         jatos2.log(`Via 'unhandledrejection' event in ${e.filename}:${e.lineno} - ${e.message}`);
       });
-      var errorLog = console.error;
-      var warnLog = console.warn;
+      const errorLog = console.error;
+      const warnLog = console.warn;
       console.error = function(message) {
         jatos2.log("Via console.error - " + message);
         errorLog.apply(this, arguments);
@@ -774,18 +774,18 @@ var jatos;
 
   // src/utils/clone-json.js
   function cloneJsonObj(obj) {
-    var copy;
     if (null === obj || "object" != typeof obj) return obj;
     if (obj instanceof Array) {
-      copy = [];
-      for (var i = 0, len = obj.length; i < len; i++) {
+      const copy = [];
+      const len = obj.length;
+      for (let i = 0; i < len; i++) {
         copy[i] = cloneJsonObj(obj[i]);
       }
       return copy;
     }
     if (obj instanceof Object) {
-      copy = {};
-      for (var attr in obj) {
+      const copy = {};
+      for (const attr in obj) {
         if (obj.hasOwnProperty(attr)) copy[attr] = cloneJsonObj(obj[attr]);
       }
       return copy;
@@ -1706,8 +1706,8 @@ var jatos;
       div.textContent = config ? config.text : "Please wait";
       const showImg = config && typeof config.showImg == "boolean" ? config.showImg : true;
       if (showImg) {
-        var imgUrl = config && typeof config.imgUrl == "string" ? config.imgUrl : "jatos-publix/images/waiting.gif";
-        var waitingImg = document.createElement("img");
+        const imgUrl = config && typeof config.imgUrl == "string" ? config.imgUrl : "jatos-publix/images/waiting.gif";
+        const waitingImg = document.createElement("img");
         waitingImg.src = imgUrl;
         waitingImg.style.marginTop = "10px";
         div.appendChild(waitingImg);
@@ -1743,15 +1743,15 @@ var jatos;
       });
     }
     jatos2.addAbortButton = function(config) {
-      var buttonText = config && typeof config.text == "string" ? config.text : "Cancel";
-      var confirm = config && typeof config.confirm == "boolean" ? config.confirm : true;
-      var confirmText = config && typeof config.confirmText == "string" ? config.confirmText : "Do you really want to cancel this study?";
-      var tooltip = config && typeof config.tooltip == "string" ? config.tooltip : "Cancels this study and deletes all already submitted data";
-      var msg = config && typeof config.msg == "string" ? config.msg : "Worker decided to abort";
-      var style = "color:black;font-family:Sans-Serif;font-size:20px;letter-spacing:2px;position:fixed;margin:2em 0 0 2em;bottom:1em;right:1em;opacity:0.6;z-index:9999;cursor:pointer;text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;";
+      const buttonText = config && typeof config.text == "string" ? config.text : "Cancel";
+      const confirm = config && typeof config.confirm == "boolean" ? config.confirm : true;
+      const confirmText = config && typeof config.confirmText == "string" ? config.confirmText : "Do you really want to cancel this study?";
+      const tooltip = config && typeof config.tooltip == "string" ? config.tooltip : "Cancels this study and deletes all already submitted data";
+      const msg = config && typeof config.msg == "string" ? config.msg : "Worker decided to abort";
+      let style = "color:black;font-family:Sans-Serif;font-size:20px;letter-spacing:2px;position:fixed;margin:2em 0 0 2em;bottom:1em;right:1em;opacity:0.6;z-index:9999;cursor:pointer;text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;";
       if (config && typeof config.style == "string") style += ";" + config.style;
-      var text = document.createTextNode(buttonText);
-      var buttonDiv = document.createElement("div");
+      const text = document.createTextNode(buttonText);
+      const buttonDiv = document.createElement("div");
       buttonDiv.appendChild(text);
       buttonDiv.style.cssText = style;
       buttonDiv.setAttribute("title", tooltip);
@@ -1924,7 +1924,7 @@ var jatos;
       isInitialized,
       stopStudyRun
     } = dependencies;
-    jatos2.setStudySessionData = function(studySessionData, onSuccess, onFail) {
+    jatos2.setStudySessionData = function(studySessionData, onSuccess, onError) {
       jatos2.studySessionData = studySessionData;
       const studySessionDataStr = JSON.stringify(studySessionData);
       const request = {
@@ -1936,25 +1936,21 @@ var jatos;
         retry: jatos2.httpRetry,
         retryWait: jatos2.httpRetryWait
       };
-      return httpLoop.send(request, onSuccess, onFail).promise();
+      return httpLoop.send(request, onSuccess, onError).promise();
     };
-    jatos2.startComponent = function(componentIdOrUuid, resultData, param3, param4) {
+    jatos2.startComponent = function(componentIdOrUuid, resultData, messageOrOnError, onError) {
       if (!isInitialized()) {
         console.error("jatos.js not yet initialized");
         return;
       }
-      let message, onError, componentUuid;
+      let componentUuid;
+      let message;
       if (typeof componentIdOrUuid === "number") {
         componentUuid = jatos2.componentList.find((c) => c.id === componentIdOrUuid).uuid;
       } else {
         componentUuid = componentIdOrUuid;
       }
-      if (typeof param3 === "string") {
-        message = param3;
-        onError = param4;
-      } else if (typeof param3 === "function") {
-        onError = param3;
-      }
+      ({ message, onError } = normalizeStartComponentArguments(messageOrOnError, onError));
       if (studyRunState.invalid) {
         callMany("Can't start component. This study run is invalid.", onError, console.warn);
         return;
@@ -1990,34 +1986,27 @@ var jatos;
       }
       httpLoop.whenIdle(start);
     };
-    jatos2.startComponentByPos = function(componentPos, resultData, param3, param4) {
+    jatos2.startComponentByPos = function(componentPos, resultData, messageOrOnError, onError) {
       if (isInvalidComponentPosition(jatos2.componentList, componentPos)) {
-        let onError;
-        if (typeof param3 === "function") onError = param3;
-        else if (typeof param4 === "function") onError = param4;
+        onError = parseLookupErrorCallback(messageOrOnError, onError);
         callMany("Component position does not exist", onError, console.error);
         return;
       }
       const componentUuid = jatos2.componentList[componentPos - 1].uuid;
-      jatos2.startComponent(componentUuid, resultData, param3, param4);
+      jatos2.startComponent(componentUuid, resultData, messageOrOnError, onError);
     };
-    jatos2.startComponentByTitle = function(title, resultData, param3, param4) {
+    jatos2.startComponentByTitle = function(title, resultData, messageOrOnError, onError) {
       const component = jatos2.componentList.find((component2) => component2.title === title);
       if (!component) {
-        let onError;
-        if (typeof param3 === "function") onError = param3;
-        else if (typeof param4 === "function") onError = param4;
+        onError = parseLookupErrorCallback(messageOrOnError, onError);
         callMany(`Component with title ${title} does not exist`, onError, console.error);
         return;
       }
       const componentUuid = component.uuid;
-      jatos2.startComponent(componentUuid, resultData, param3, param4);
+      jatos2.startComponent(componentUuid, resultData, messageOrOnError, onError);
     };
-    jatos2.startNextComponent = function(resultData, param2, param3) {
-      let message;
-      if (typeof param2 === "string") {
-        message = param2;
-      }
+    jatos2.startNextComponent = function(resultData, messageOrOnError, onError) {
+      const { message } = normalizeStartComponentArguments(messageOrOnError, onError);
       const lastActiveComponent = jatos2.componentList.slice().reverse().find(function(component) {
         return component.active;
       });
@@ -2032,14 +2021,14 @@ var jatos;
       for (let i = jatos2.componentPos; i < jatos2.componentList.length; i++) {
         if (jatos2.componentList[i].active) {
           const nextComponentUuid = jatos2.componentList[i].uuid;
-          jatos2.startComponent(nextComponentUuid, resultData, param2, param3);
+          jatos2.startComponent(nextComponentUuid, resultData, messageOrOnError, onError);
           break;
         }
       }
     };
-    jatos2.startLastComponent = function(resultData, param2, param3) {
+    jatos2.startLastComponent = function(resultData, messageOrOnError, onError) {
       const lastActiveComponent = jatos2.componentList.reverse().find((c) => c.active);
-      jatos2.startComponent(lastActiveComponent.uuid, resultData, param2, param3);
+      jatos2.startComponent(lastActiveComponent.uuid, resultData, messageOrOnError, onError);
     };
     jatos2.abortStudyWithoutRedirect = function(message, onSuccess, onError) {
       if (!isInitialized()) {
@@ -2058,11 +2047,11 @@ var jatos;
         return rejectedPromise(errorMsg);
       }
       studyRunState.ending = true;
-      var url = getURL("../abort");
+      let url = getURL("../abort");
       if (typeof message != "undefined") {
         url = url + "?message=" + message;
       }
-      var request = {
+      const request = {
         url,
         method: "GET",
         timeout: jatos2.httpTimeout,
@@ -2070,7 +2059,7 @@ var jatos;
         retryWait: jatos2.httpRetryWait
       };
       jatos2.showBeforeUnloadWarning(false);
-      var deferred = httpLoop.send(request, onSuccess, onError);
+      const deferred = httpLoop.send(request, onSuccess, onError);
       setTimeout(function() {
         if (httpLoop.isBusy() && isDeferredPending(deferred)) {
           jatos2.showOverlay(jatos2.waitSendDataOverlayConfig);
@@ -2110,7 +2099,7 @@ var jatos;
       studyRunState.ending = true;
       function abort() {
         removeBeforeUnloadWarning();
-        var url = getURL("../abort");
+        const url = getURL("../abort");
         if (typeof message == "undefined") {
           window.location.href = url;
         } else {
@@ -2122,25 +2111,20 @@ var jatos;
       }
       httpLoop.whenIdle(abort);
     };
-    jatos2.endStudyWithoutRedirect = function(param1, param2, param3, param4, param5) {
+    jatos2.endStudyWithoutRedirect = function(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
       if (!isInitialized()) {
         const errorMsg = "jatos.js not yet initialized.";
         console.error(errorMsg);
         return rejectedPromise(errorMsg);
       }
-      var resultData, successful, message, onSuccess, onError;
-      if (typeof param1 === "string" || typeof param1 === "object") {
-        resultData = param1;
-        successful = param2;
-        message = param3;
-        onSuccess = param4;
-        onError = param5;
-      } else if (typeof param1 === "boolean") {
-        successful = param1;
-        message = param2;
-        onSuccess = param3;
-        onError = param4;
-      }
+      let resultData, successful, message, onSuccess;
+      ({ resultData, successful, message, onSuccess, onError } = normalizeEndStudyArguments(
+        resultDataOrSuccessful,
+        successfulOrMessage,
+        messageOrOnSuccess,
+        onSuccessOrOnError,
+        onError
+      ));
       if (studyRunState.invalid) {
         const errorMsg = "Can't end study. This study run is invalid.";
         callMany(errorMsg, onError, console.warn);
@@ -2153,7 +2137,7 @@ var jatos;
       }
       studyRunState.ending = true;
       if (resultData) jatos2.appendResultData(resultData);
-      var url = getURL("../end");
+      let url = getURL("../end");
       if (typeof successful == "boolean" && typeof message == "string") {
         url = url + "?" + jatos2.jQuery.param({
           "successful": successful,
@@ -2168,7 +2152,7 @@ var jatos;
           "message": message
         });
       }
-      var request = {
+      const request = {
         url,
         method: "GET",
         timeout: jatos2.httpTimeout,
@@ -2176,7 +2160,7 @@ var jatos;
         retryWait: jatos2.httpRetryWait
       };
       jatos2.showBeforeUnloadWarning(false);
-      var deferred = httpLoop.send(request, onSuccess, onError);
+      const deferred = httpLoop.send(request, onSuccess, onError);
       setTimeout(function() {
         if (httpLoop.isBusy() && isDeferredPending(deferred)) {
           jatos2.showOverlay(jatos2.waitSendDataOverlayConfig);
@@ -2189,15 +2173,15 @@ var jatos;
       deferred.always(jatos2.removeOverlays);
       return deferred.promise();
     };
-    jatos2.endStudyAjax = function(param1, param2, param3, param4, param5) {
-      return jatos2.endStudyWithoutRedirect(param1, param2, param3, param4, param5);
+    jatos2.endStudyAjax = function(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+      return jatos2.endStudyWithoutRedirect(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError);
     };
-    jatos2.endStudyAndRedirect = function(url, param1, param2, param3, param4, param5) {
-      jatos2.endStudyWithoutRedirect(param1, param2, param3, param4, param5).done(function() {
+    jatos2.endStudyAndRedirect = function(url, resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+      jatos2.endStudyWithoutRedirect(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError).done(function() {
         window.location.href = url;
       });
     };
-    jatos2.endStudy = function(param1, param2, param3, param4) {
+    jatos2.endStudy = function(resultDataOrSuccessful, successfulOrMessage, messageOrShowEndPage, showEndPage) {
       if (!isInitialized()) {
         console.error("jatos.js not yet initialized");
         return;
@@ -2206,17 +2190,13 @@ var jatos;
         console.warn("Can't end study. This study run is invalid.");
         return;
       }
-      var resultData, successful, message, showEndPage;
-      if (typeof param1 === "string" || typeof param1 === "object") {
-        resultData = param1;
-        successful = param2;
-        message = param3;
-        showEndPage = param4;
-      } else if (typeof param1 === "boolean") {
-        successful = param1;
-        message = param2;
-        showEndPage = param3;
-      }
+      let resultData, successful, message;
+      ({ resultData, successful, message, showEndPage } = normalizeEndStudyPageArguments(
+        resultDataOrSuccessful,
+        successfulOrMessage,
+        messageOrShowEndPage,
+        showEndPage
+      ));
       if (typeof showEndPage !== "undefined" && !showEndPage) {
         if (resultData) {
           return jatos2.endStudyWithoutRedirect(resultData, successful, message);
@@ -2244,7 +2224,7 @@ var jatos;
       if (resultData) jatos2.appendResultData(resultData);
       function end() {
         removeBeforeUnloadWarning();
-        var url = getURL("../end");
+        let url = getURL("../end");
         if (typeof successful == "boolean" && typeof message == "string") {
           url = url + "?" + jatos2.jQuery.param({
             "successful": successful,
@@ -2269,6 +2249,56 @@ var jatos;
   }
   function isInvalidComponentPosition(componentList, pos) {
     return pos <= 0 || pos > componentList.length;
+  }
+  function normalizeStartComponentArguments(messageOrOnError, onError) {
+    if (typeof messageOrOnError === "string") return { message: messageOrOnError, onError };
+    if (typeof messageOrOnError === "function") return { onError: messageOrOnError };
+    return {};
+  }
+  function parseLookupErrorCallback(messageOrOnError, onError) {
+    if (typeof messageOrOnError === "function") return messageOrOnError;
+    if (typeof onError === "function") return onError;
+  }
+  function hasResultDataArgument(value) {
+    return typeof value === "string" || typeof value === "object";
+  }
+  function normalizeEndStudyArguments(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+    if (hasResultDataArgument(resultDataOrSuccessful)) {
+      return {
+        resultData: resultDataOrSuccessful,
+        successful: successfulOrMessage,
+        message: messageOrOnSuccess,
+        onSuccess: onSuccessOrOnError,
+        onError
+      };
+    }
+    if (typeof resultDataOrSuccessful === "boolean") {
+      return {
+        successful: resultDataOrSuccessful,
+        message: successfulOrMessage,
+        onSuccess: messageOrOnSuccess,
+        onError: onSuccessOrOnError
+      };
+    }
+    return {};
+  }
+  function normalizeEndStudyPageArguments(resultDataOrSuccessful, successfulOrMessage, messageOrShowEndPage, showEndPage) {
+    if (hasResultDataArgument(resultDataOrSuccessful)) {
+      return {
+        resultData: resultDataOrSuccessful,
+        successful: successfulOrMessage,
+        message: messageOrShowEndPage,
+        showEndPage
+      };
+    }
+    if (typeof resultDataOrSuccessful === "boolean") {
+      return {
+        successful: resultDataOrSuccessful,
+        message: successfulOrMessage,
+        showEndPage: messageOrShowEndPage
+      };
+    }
+    return {};
   }
 
   // src/index.js

@@ -24,7 +24,7 @@ export function installLoggingApi(jatos, {getURL, isInitialized, sendToHttpLoop}
     jatos.log = function (logMsg) {
         if (!isInitialized()) return;
 
-        var request = {
+        const request = {
             url: getURL("log"),
             method: "POST",
             data: logMsg,
@@ -48,8 +48,8 @@ export function installLoggingApi(jatos, {getURL, isInitialized, sendToHttpLoop}
             jatos.log(`Via 'unhandledrejection' event in ${e.filename}:${e.lineno} - ${e.message}`);
         });
 
-        var errorLog = console.error;
-        var warnLog = console.warn;
+        const errorLog = console.error;
+        const warnLog = console.warn;
         console.error = function (message) {
             jatos.log("Via console.error - " + message);
             errorLog.apply(this, arguments);

@@ -3,7 +3,7 @@
  *
  * @param {function} f Function to be called
  */
-export var call = (f) => {
+export const call = (f) => {
     if (f && typeof f == 'function') f();
 };
 
@@ -13,7 +13,7 @@ export var call = (f) => {
  * @param {function} f Function to be called
  * @param  {...any} args Arguments to be used with the function
  */
-export var callWithArgs = (f, ...args) => {
+export const callWithArgs = (f, ...args) => {
     if (f && typeof f == 'function') args.length ? f(...args) : f();
 };
 
@@ -24,6 +24,6 @@ export var callWithArgs = (f, ...args) => {
  * @param {*} arg
  * @param  {...function} functions
  */
-export var callMany = (arg, ...functions) => functions.forEach((f) => {
+export const callMany = (arg, ...functions) => functions.forEach((f) => {
     if (f && typeof f === 'function') f(arg);
 });

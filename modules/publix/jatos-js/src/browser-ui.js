@@ -115,9 +115,9 @@ export function createBrowserUi(jatos) {
         // Add image
         const showImg = (config && typeof config.showImg == "boolean") ? config.showImg : true;
         if (showImg) {
-            var imgUrl = (config && typeof config.imgUrl == "string") ? config.imgUrl
+            const imgUrl = (config && typeof config.imgUrl == "string") ? config.imgUrl
                 : "jatos-publix/images/waiting.gif";
-            var waitingImg = document.createElement('img');
+            const waitingImg = document.createElement('img');
             waitingImg.src = imgUrl;
             waitingImg.style.marginTop = "10px";
             div.appendChild(waitingImg);
@@ -188,17 +188,17 @@ export function createBrowserUi(jatos) {
      * @param {Function} [config.action] - Function to call instead of `jatos.abortStudy`
      */
     jatos.addAbortButton = function (config) {
-        var buttonText = (config && typeof config.text == "string") ?
+        const buttonText = (config && typeof config.text == "string") ?
             config.text : "Cancel";
-        var confirm = (config && typeof config.confirm == "boolean") ?
+        const confirm = (config && typeof config.confirm == "boolean") ?
             config.confirm : true;
-        var confirmText = (config && typeof config.confirmText == "string") ?
+        const confirmText = (config && typeof config.confirmText == "string") ?
             config.confirmText : "Do you really want to cancel this study?";
-        var tooltip = (config && typeof config.tooltip == "string") ?
+        const tooltip = (config && typeof config.tooltip == "string") ?
             config.tooltip : "Cancels this study and deletes all already submitted data";
-        var msg = (config && typeof config.msg == "string") ?
+        const msg = (config && typeof config.msg == "string") ?
             config.msg : "Worker decided to abort";
-        var style = 'color:black;' +
+        let style = 'color:black;' +
             'font-family:Sans-Serif;' +
             'font-size:20px;' +
             'letter-spacing:2px;' +
@@ -212,8 +212,8 @@ export function createBrowserUi(jatos) {
             'text-shadow:-1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;';
         if (config && typeof config.style == "string") style += ";" + config.style;
 
-        var text = document.createTextNode(buttonText);
-        var buttonDiv = document.createElement('div');
+        const text = document.createTextNode(buttonText);
+        const buttonDiv = document.createElement('div');
         buttonDiv.appendChild(text);
         buttonDiv.style.cssText = style;
         buttonDiv.setAttribute("title", tooltip);

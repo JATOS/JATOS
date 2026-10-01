@@ -36,10 +36,10 @@ export function installStudyRunApi(jatos, dependencies) {
      *
      * @param {object} studySessionData - Object to be submitted
      * @param {Function} [onSuccess] - Called after this function is finished
-     * @param {Function} [onFail] - Called if the request fails
+     * @param {Function} [onError] - Called if the request fails
      * @return {JatosPromise}
      */
-    jatos.setStudySessionData = function (studySessionData, onSuccess, onFail) {
+    jatos.setStudySessionData = function (studySessionData, onSuccess, onError) {
         jatos.studySessionData = studySessionData;
         const studySessionDataStr = JSON.stringify(studySessionData);
         const request = {
@@ -51,7 +51,7 @@ export function installStudyRunApi(jatos, dependencies) {
             retry: jatos.httpRetry,
             retryWait: jatos.httpRetryWait
         };
-        return httpLoop.send(request, onSuccess, onFail).promise();
+        return httpLoop.send(request, onSuccess, onError).promise();
     };
 
     /**
@@ -60,35 +60,25 @@ export function installStudyRunApi(jatos, dependencies) {
      * appends them to the already existing ones for this component) and
      * jatos.setStudySessionData (syncs study session data with the JATOS server).
      *
-     * Either without message:
      * @param {string|number} componentIdOrUuid - ID or UUID of the component to start
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {Function} [onError] - Called if starting fails
-     *
-     * Or with message:
-     * @param {string|number} componentIdOrUuid - ID or UUID of the component to start
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {string} [message] - Message that should be logged (max 255 chars)
-     * @param {Function} [onError] - Called if starting fails
+     * @param {Object|string} [resultData] - Result data to be sent back to JATOS
+     * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
+     * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startComponent = function (componentIdOrUuid, resultData, param3, param4) {
+    jatos.startComponent = function (componentIdOrUuid, resultData, messageOrOnError, onError) {
         if (!isInitialized()) {
             console.error("jatos.js not yet initialized");
             return;
         }
 
-        let message, onError, componentUuid;
+        let componentUuid;
+        let message;
         if (typeof componentIdOrUuid === 'number') {
             componentUuid = jatos.componentList.find(c => c.id === componentIdOrUuid).uuid;
         } else {
             componentUuid = componentIdOrUuid;
         }
-        if (typeof param3 === 'string') {
-            message = param3;
-            onError = param4;
-        } else if (typeof param3 === 'function') {
-            onError = param3;
-        }
+        ({message, onError} = normalizeStartComponentArguments(messageOrOnError, onError));
 
         if (studyRunState.invalid) {
             callMany("Can't start component. This study run is invalid.", onError, console.warn);
@@ -141,58 +131,42 @@ export function installStudyRunApi(jatos, dependencies) {
      * appends them to the already existing ones for this component) and
      * jatos.setStudySessionData (syncs study session data with the JATOS server).
      *
-     * Either without message:
      * @param {number} componentPos - Position of the component to start
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {Function} [onError] - Called if starting fails
-     *
-     * Or with message:
-     * @param {number} componentPos - Position of the component to start
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {string} [message] - Message that should be logged (max 255 chars)
-     * @param {Function} [onError] - Called if starting fails
+     * @param {Object|string} [resultData] - Result data to be sent back to JATOS
+     * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
+     * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startComponentByPos = function (componentPos, resultData, param3, param4) {
+    jatos.startComponentByPos = function (componentPos, resultData, messageOrOnError, onError) {
         if (isInvalidComponentPosition(jatos.componentList, componentPos)) {
-            let onError;
-            if (typeof param3 === 'function') onError = param3;
-            else if (typeof param4 === 'function') onError = param4;
+            onError = parseLookupErrorCallback(messageOrOnError, onError);
             callMany("Component position does not exist", onError, console.error);
             return;
         }
         const componentUuid = jatos.componentList[componentPos - 1].uuid;
-        jatos.startComponent(componentUuid, resultData, param3, param4);
+        jatos.startComponent(componentUuid, resultData, messageOrOnError, onError);
     };
 
     /**
      * Starts the component with the given title. If there are multiple components with an
-     * identical title it starts the one with the lowest position. Before this it calls
+     * identical title, it starts the one with the lowest position. Before this it calls
      * jatos.appendResultData (sends result data to the JATOS server and
      * appends them to the already existing ones for this component) and
      * jatos.setStudySessionData (syncs study session data with the JATOS server).
      *
-     * Either without message:
      * @param {string} title - Title of the component to start
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {Function} [onError] - Called if starting fails
-     *
-     * Or with message:
-     * @param {string} title - Title of the component to start
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {string} [message] - Message that should be logged (max 255 chars)
-     * @param {Function} [onError] - Called if starting fails
+     * @param {Object|string} [resultData] - Result data to be sent back to JATOS
+     * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
+     * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startComponentByTitle = function (title, resultData, param3, param4) {
+    jatos.startComponentByTitle = function (title, resultData, messageOrOnError, onError) {
         const component = jatos.componentList.find(component => component.title === title);
         if (!component) {
-            let onError;
-            if (typeof param3 === 'function') onError = param3;
-            else if (typeof param4 === 'function') onError = param4;
+            onError = parseLookupErrorCallback(messageOrOnError, onError);
             callMany(`Component with title ${title} does not exist`, onError, console.error);
             return;
         }
         const componentUuid = component.uuid;
-        jatos.startComponent(componentUuid, resultData, param3, param4);
+        jatos.startComponent(componentUuid, resultData, messageOrOnError, onError);
     };
 
     /**
@@ -203,22 +177,14 @@ export function installStudyRunApi(jatos, dependencies) {
      * appends them to the already existing ones for this component) and
      * jatos.setStudySessionData (syncs study session data with the JATOS server).
      *
-     * Either without message:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {Function} [onError] - Called if starting fails
-     *
-     * Or with message:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {string} [message] - Message that should be logged (max 255 chars)
-     * @param {Function} [onError] - Called if starting fails
+     * @param {Object|string} [resultData] - Result data to be sent back to JATOS
+     * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
+     * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startNextComponent = function (resultData, param2, param3) {
-        let message;
-        if (typeof param2 === 'string') {
-            message = param2;
-        }
+    jatos.startNextComponent = function (resultData, messageOrOnError, onError) {
+        const {message} = normalizeStartComponentArguments(messageOrOnError, onError);
 
-        // If this is the last component end study
+        // If this is the last component, end study
         const lastActiveComponent = jatos.componentList.slice().reverse()
             .find(function (component) { return component.active; });
         if (jatos.componentPos >= lastActiveComponent.position) {
@@ -233,7 +199,7 @@ export function installStudyRunApi(jatos, dependencies) {
         for (let i = jatos.componentPos; i < jatos.componentList.length; i++) {
             if (jatos.componentList[i].active) {
                 const nextComponentUuid = jatos.componentList[i].uuid;
-                jatos.startComponent(nextComponentUuid, resultData, param2, param3);
+                jatos.startComponent(nextComponentUuid, resultData, messageOrOnError, onError);
                 break;
             }
         }
@@ -246,18 +212,13 @@ export function installStudyRunApi(jatos, dependencies) {
      * appends them to the already existing ones for this component) and
      * jatos.setStudySessionData (syncs study session data with the JATOS server).
      *
-     * Either without message:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {Function} [onError] - Called if starting fails
-     *
-     * Or with message:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to JATOS
-     * @param {string} [message] - Message that should be logged (max 255 chars)
-     * @param {Function} [onError] - Called if starting fails
+     * @param {Object|string} [resultData] - Result data to be sent back to JATOS
+     * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
+     * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startLastComponent = function (resultData, param2, param3) {
+    jatos.startLastComponent = function (resultData, messageOrOnError, onError) {
         const lastActiveComponent = jatos.componentList.reverse().find(c => c.active);
-        jatos.startComponent(lastActiveComponent.uuid, resultData, param2, param3);
+        jatos.startComponent(lastActiveComponent.uuid, resultData, messageOrOnError, onError);
     };
 
     /**
@@ -287,11 +248,11 @@ export function installStudyRunApi(jatos, dependencies) {
         }
         studyRunState.ending = true;
 
-        var url = getURL("../abort");
+        let url = getURL("../abort");
         if (typeof message != 'undefined') {
             url = url + "?message=" + message;
         }
-        var request = {
+        const request = {
             url: url,
             method: "GET",
             timeout: jatos.httpTimeout,
@@ -299,7 +260,7 @@ export function installStudyRunApi(jatos, dependencies) {
             retryWait: jatos.httpRetryWait
         };
         jatos.showBeforeUnloadWarning(false);
-        var deferred = httpLoop.send(request, onSuccess, onError);
+        const deferred = httpLoop.send(request, onSuccess, onError);
         setTimeout(function () {
             if (httpLoop.isBusy() && isDeferredPending(deferred)) {
                 jatos.showOverlay(jatos.waitSendDataOverlayConfig);
@@ -370,7 +331,7 @@ export function installStudyRunApi(jatos, dependencies) {
         function abort() {
             removeBeforeUnloadWarning();
 
-            var url = getURL("../abort");
+            const url = getURL("../abort");
             if (typeof message == 'undefined') {
                 window.location.href = url;
             } else {
@@ -388,41 +349,24 @@ export function installStudyRunApi(jatos, dependencies) {
     /**
      * Ends study without redirecting to another page, e.g. the JATOS end page.
      *
-     * Either without result data:
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {Function} [onSuccess] - Called on successful request
-     * @param {Function} [onError] - Called in case of error
-     *
-     * Or with result data:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to the JATOS server
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {Function} [onSuccess] - Called on successful request
-     * @param {Function} [onError] - Called in case of error
-     *
+     * Pass (successful, message, ...) or (resultData, successful, message, ...).
+     * @param {Object|string|boolean} [resultDataOrSuccessful] - Result data or success flag
+     * @param {boolean|string} [successfulOrMessage] - Success flag with data; otherwise log message
+     * @param {string|Function} [messageOrOnSuccess] - Log message with data; otherwise success callback
+     * @param {Function} [onSuccessOrOnError] - Success callback with data; otherwise error callback
+     * @param {Function} [onError] - Error callback when result data is supplied
      * @return {JatosPromise}
      */
-    jatos.endStudyWithoutRedirect = function (param1, param2, param3, param4, param5) {
+    jatos.endStudyWithoutRedirect = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
         if (!isInitialized()) {
             const errorMsg = "jatos.js not yet initialized.";
             console.error(errorMsg);
             return rejectedPromise(errorMsg);
         }
 
-        var resultData, successful, message, onSuccess, onError;
-        if (typeof param1 === 'string' || typeof param1 === 'object') {
-            resultData = param1;
-            successful = param2;
-            message = param3;
-            onSuccess = param4;
-            onError = param5;
-        } else if (typeof param1 === 'boolean') {
-            successful = param1;
-            message = param2;
-            onSuccess = param3;
-            onError = param4;
-        }
+        let resultData, successful, message, onSuccess;
+        ({resultData, successful, message, onSuccess, onError} = normalizeEndStudyArguments(
+            resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError));
 
         if (studyRunState.invalid) {
             const errorMsg = "Can't end study. This study run is invalid.";
@@ -439,7 +383,7 @@ export function installStudyRunApi(jatos, dependencies) {
         // Before finish send result data
         if (resultData) jatos.appendResultData(resultData);
 
-        var url = getURL("../end");
+        let url = getURL("../end");
         if (typeof successful == 'boolean' && typeof message == 'string') {
             url = url + "?" + jatos.jQuery.param({
                 "successful": successful,
@@ -454,7 +398,7 @@ export function installStudyRunApi(jatos, dependencies) {
                 "message": message
             });
         }
-        var request = {
+        const request = {
             url: url,
             method: "GET",
             timeout: jatos.httpTimeout,
@@ -462,7 +406,7 @@ export function installStudyRunApi(jatos, dependencies) {
             retryWait: jatos.httpRetryWait
         };
         jatos.showBeforeUnloadWarning(false);
-        var deferred = httpLoop.send(request, onSuccess, onError);
+        const deferred = httpLoop.send(request, onSuccess, onError);
         setTimeout(function () {
             if (httpLoop.isBusy() && isDeferredPending(deferred)) {
                 jatos.showOverlay(jatos.waitSendDataOverlayConfig);
@@ -480,16 +424,16 @@ export function installStudyRunApi(jatos, dependencies) {
     /**
      * DEPRECATED - Kept for backward compatibilty. Use jatos.endStudyWithoutRedirect instead.
      */
-    jatos.endStudyAjax = function (param1, param2, param3, param4, param5) {
-        return jatos.endStudyWithoutRedirect(param1, param2, param3, param4, param5);
+    jatos.endStudyAjax = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+        return jatos.endStudyWithoutRedirect(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError);
     }
 
     /**
      * Ends study and redirects to another URL. The first parameter is the URL and the
      * other up to 5 parameters are the same as in jatos.endStudyWithoutRedirect.
      */
-    jatos.endStudyAndRedirect = function (url, param1, param2, param3, param4, param5) {
-        jatos.endStudyWithoutRedirect(param1, param2, param3, param4, param5).done(function () {
+    jatos.endStudyAndRedirect = function (url, resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+        jatos.endStudyWithoutRedirect(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError).done(function () {
             window.location.href = url;
         });
     };
@@ -497,18 +441,13 @@ export function installStudyRunApi(jatos, dependencies) {
     /**
      * Ends study and optionally redirects to an end page.
      *
-     * Either without result data:
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {boolean} [showEndPage=true] - If true redirect to end page; if false stay on current page
-     *
-     * Or with result data:
-     * @param {(Object|string)} [resultData] - Result data to be sent back to the JATOS server
-     * @param {boolean} [successful=true] - Whether the study finished successfully
-     * @param {string} [message] - Message to be logged (max 255 chars)
-     * @param {boolean} [showEndPage=true] - If true redirect to end page; if false stay on current page
+     * Pass (successful, message, ...) or (resultData, successful, message, ...).
+     * @param {Object|string|boolean} [resultDataOrSuccessful] - Result data or success flag
+     * @param {boolean|string} [successfulOrMessage] - Success flag with data; otherwise log message
+     * @param {string|boolean} [messageOrShowEndPage] - Log message with data; otherwise end-page flag
+     * @param {boolean} [showEndPage=true] - End-page flag when result data is supplied
      */
-    jatos.endStudy = function (param1, param2, param3, param4) {
+    jatos.endStudy = function (resultDataOrSuccessful, successfulOrMessage, messageOrShowEndPage, showEndPage) {
         if (!isInitialized()) {
             console.error("jatos.js not yet initialized");
             return;
@@ -518,17 +457,9 @@ export function installStudyRunApi(jatos, dependencies) {
             return;
         }
 
-        var resultData, successful, message, showEndPage;
-        if (typeof param1 === 'string' || typeof param1 === 'object') {
-            resultData = param1;
-            successful = param2;
-            message = param3;
-            showEndPage = param4;
-        } else if (typeof param1 === 'boolean') {
-            successful = param1;
-            message = param2;
-            showEndPage = param3;
-        }
+        let resultData, successful, message;
+        ({resultData, successful, message, showEndPage} = normalizeEndStudyPageArguments(
+            resultDataOrSuccessful, successfulOrMessage, messageOrShowEndPage, showEndPage));
 
         if (typeof showEndPage !== "undefined" && !showEndPage) {
             if (resultData) {
@@ -565,7 +496,7 @@ export function installStudyRunApi(jatos, dependencies) {
         function end() {
             removeBeforeUnloadWarning();
 
-            var url = getURL("../end");
+            let url = getURL("../end");
             if (typeof successful == 'boolean' && typeof message == 'string') {
                 url = url + "?" + jatos.jQuery.param({
                     "successful": successful,
@@ -593,4 +524,48 @@ export function installStudyRunApi(jatos, dependencies) {
 
 export function isInvalidComponentPosition(componentList, pos) {
     return pos <= 0 || pos > componentList.length;
+}
+
+// Preserve the existing positional conventions, including ignored arguments.
+function normalizeStartComponentArguments(messageOrOnError, onError) {
+    if (typeof messageOrOnError === "string") return {message: messageOrOnError, onError};
+    if (typeof messageOrOnError === "function") return {onError: messageOrOnError};
+    return {};
+}
+
+// Lookup failures historically accept a fourth-position callback even without a message.
+function parseLookupErrorCallback(messageOrOnError, onError) {
+    if (typeof messageOrOnError === "function") return messageOrOnError;
+    if (typeof onError === "function") return onError;
+}
+
+function hasResultDataArgument(value) {
+    // Includes null, as in the existing API; truthiness is checked later before sending.
+    return typeof value === "string" || typeof value === "object";
+}
+
+function normalizeEndStudyArguments(resultDataOrSuccessful, successfulOrMessage,
+    messageOrOnSuccess, onSuccessOrOnError, onError) {
+    if (hasResultDataArgument(resultDataOrSuccessful)) {
+        return {resultData: resultDataOrSuccessful, successful: successfulOrMessage,
+            message: messageOrOnSuccess, onSuccess: onSuccessOrOnError, onError};
+    }
+    if (typeof resultDataOrSuccessful === "boolean") {
+        return {successful: resultDataOrSuccessful, message: successfulOrMessage,
+            onSuccess: messageOrOnSuccess, onError: onSuccessOrOnError};
+    }
+    return {};
+}
+
+function normalizeEndStudyPageArguments(resultDataOrSuccessful, successfulOrMessage,
+    messageOrShowEndPage, showEndPage) {
+    if (hasResultDataArgument(resultDataOrSuccessful)) {
+        return {resultData: resultDataOrSuccessful, successful: successfulOrMessage,
+            message: messageOrShowEndPage, showEndPage};
+    }
+    if (typeof resultDataOrSuccessful === "boolean") {
+        return {successful: resultDataOrSuccessful, message: successfulOrMessage,
+            showEndPage: messageOrShowEndPage};
+    }
+    return {};
 }
