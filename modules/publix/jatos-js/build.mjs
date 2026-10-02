@@ -7,6 +7,16 @@ const projectDir = dirname(fileURLToPath(import.meta.url));
 const outputDirectory = join(projectDir, "../public/javascripts");
 const outputs = [
     {
+        entryPoint: "src/workers/heartbeat.js",
+        filename: "heartbeat.js",
+        minify: false
+    },
+    {
+        entryPoint: "src/workers/heartbeat.js",
+        filename: "heartbeat.min.js",
+        minify: true
+    },
+    {
         entryPoint: "src/with-jquery.js",
         filename: "jatos.js",
         minify: false,

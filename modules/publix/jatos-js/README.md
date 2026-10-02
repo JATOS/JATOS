@@ -1,16 +1,18 @@
 # jatos.js build
 
 This directory contains the source and standalone esbuild configuration for
-the browser library and its HTTP worker.
+the browser library and its HTTP and heartbeat workers.
 
 The main sources are `src/index.js`, the standard-build entry point
-`src/with-jquery.js`, and `src/workers/http-loop-worker.js`. Do not edit the generated files directly:
+`src/with-jquery.js`, and the workers in `src/workers/`. Do not edit the generated files directly:
 
 - `../public/javascripts/jatos.js`
 - `../public/javascripts/jatos.min.js`
 - `../public/javascripts/jatos-slim.js`
 - `../public/javascripts/jatos-slim.min.js`
 - `../public/javascripts/http-loop-worker.js`
+- `../public/javascripts/heartbeat.js`
+- `../public/javascripts/heartbeat.min.js`
 
 Install the pinned build and test dependencies (Node.js 18 or newer):
 
@@ -32,8 +34,9 @@ npm run check
 
 The generated browser-library files remain single classic scripts and preserve the global
 `var jatos` and `window.jatos` API used by existing studies. `jatos.min.js` is
-the minified production variant. `http-loop-worker.js` remains a separately loaded
-classic Web Worker. This build is not yet integrated into sbt.
+the minified production variant. `http-loop-worker.js` and `heartbeat.js` remain separately loaded
+classic Web Workers. `heartbeat.min.js` is also generated from the same source;
+the runtime continues to load `heartbeat.js`. This build is not yet integrated into sbt.
 
 
 Run the unit, extraction smoke, and browser-bundle integration tests:
