@@ -2,7 +2,7 @@ import {encodeQuery} from "./utils/query.js";
 
 /** @typedef {import("./jatos-promise.js").JatosPromise} JatosPromise */
 
-import {callMany} from "./utils/callbacks.js";
+import {callMany, callWithArgs} from "./utils/callbacks.js";
 import {rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
 /**
@@ -250,31 +250,7 @@ export function installStudyRunApi(jatos, dependencies) {
         }
         studyRunState.ending = true;
 
-        let url = getURL("../abort");
-        if (typeof message != 'undefined') {
-            url = url + "?message=" + message;
-        }
-        const request = {
-            url: url,
-            method: "GET",
-            timeout: jatos.httpTimeout,
-            retry: jatos.httpRetry,
-            retryWait: jatos.httpRetryWait
-        };
-        jatos.showBeforeUnloadWarning(false);
-        const deferred = httpLoop.send(request, onSuccess, onError);
-        setTimeout(function () {
-            if (httpLoop.isBusy() && isDeferredPending(deferred)) {
-                jatos.showOverlay(jatos.waitSendDataOverlayConfig);
-            }
-        }, 1000);
-        deferred.done(function () {
-            removeBeforeUnloadWarning();
-            stopStudyRun();
-        });
-        deferred.always(jatos.removeOverlays);
-
-        return deferred.promise();
+        return sendStudyCompletion(getAbortStudyUrl(message), onSuccess, onError);
     };
 
     /**
@@ -330,22 +306,7 @@ export function installStudyRunApi(jatos, dependencies) {
         }
         studyRunState.ending = true;
 
-        function abort() {
-            removeBeforeUnloadWarning();
-
-            const url = getURL("../abort");
-            if (typeof message == 'undefined') {
-                window.location.href = url;
-            } else {
-                window.location.href = url + "?message=" + message;
-            }
-        }
-
-        // Wait for httpLoop.js to finish
-        if (httpLoop.isBusy()) {
-            setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
-        }
-        httpLoop.whenIdle(abort);
+        redirectWhenIdle(() => getAbortStudyUrl(message));
     };
 
     /**
@@ -385,42 +346,7 @@ export function installStudyRunApi(jatos, dependencies) {
         // Before finish send result data
         if (resultData) jatos.appendResultData(resultData);
 
-        let url = getURL("../end");
-        if (typeof successful == 'boolean' && typeof message == 'string') {
-            url = url + "?" + encodeQuery({
-                "successful": successful,
-                "message": message
-            });
-        } else if (typeof successful == 'boolean' && typeof message != 'string') {
-            url = url + "?" + encodeQuery({
-                "successful": successful
-            });
-        } else if (typeof successful != 'boolean' && typeof message == 'string') {
-            url = url + "?" + encodeQuery({
-                "message": message
-            });
-        }
-        const request = {
-            url: url,
-            method: "GET",
-            timeout: jatos.httpTimeout,
-            retry: jatos.httpRetry,
-            retryWait: jatos.httpRetryWait
-        };
-        jatos.showBeforeUnloadWarning(false);
-        const deferred = httpLoop.send(request, onSuccess, onError);
-        setTimeout(function () {
-            if (httpLoop.isBusy() && isDeferredPending(deferred)) {
-                jatos.showOverlay(jatos.waitSendDataOverlayConfig);
-            }
-        }, 1000);
-        deferred.done(function () {
-            removeBeforeUnloadWarning();
-            stopStudyRun();
-        });
-        deferred.always(jatos.removeOverlays);
-
-        return deferred.promise();
+        return sendStudyCompletion(getEndStudyUrl(successful, message), onSuccess, onError);
     };
 
     /**
@@ -495,33 +421,61 @@ export function installStudyRunApi(jatos, dependencies) {
         // Before finish send result data
         if (resultData) jatos.appendResultData(resultData);
 
-        function end() {
+        redirectWhenIdle(() => getEndStudyUrl(successful, message));
+    };
+
+    function getAbortStudyUrl(message) {
+        const url = getURL("../abort");
+        return typeof message === "undefined" ? url : url + "?" + encodeQuery({message: String(message)});
+    }
+
+    function getEndStudyUrl(successful, message) {
+        const url = getURL("../end");
+        const query = {};
+        if (typeof successful === "boolean") query.successful = successful;
+        if (typeof message === "string") query.message = message;
+        const encodedQuery = encodeQuery(query);
+        return encodedQuery ? url + "?" + encodedQuery : url;
+    }
+
+    // Finish a successful cleanup before user callbacks. On failure, only remove overlays;
+    // keep the run in ending state because the server may have completed the request.
+    function sendStudyCompletion(url, onSuccess, onError) {
+        const request = {
+            url,
+            method: "GET",
+            timeout: jatos.httpTimeout,
+            retry: jatos.httpRetry,
+            retryWait: jatos.httpRetryWait
+        };
+        jatos.showBeforeUnloadWarning(false);
+        const deferred = httpLoop.send(request, (...args) => {
             removeBeforeUnloadWarning();
-
-            let url = getURL("../end");
-            if (typeof successful == 'boolean' && typeof message == 'string') {
-                url = url + "?" + encodeQuery({
-                    "successful": successful,
-                    "message": message
-                });
-            } else if (typeof successful == 'boolean' && typeof message != 'string') {
-                url = url + "?" + encodeQuery({
-                    "successful": successful
-                });
-            } else if (typeof successful != 'boolean' && typeof message == 'string') {
-                url = url + "?" + encodeQuery({
-                    "message": message
-                });
+            stopStudyRun();
+            jatos.removeOverlays();
+            callWithArgs(onSuccess, ...args);
+        }, onError);
+        setTimeout(function () {
+            if (httpLoop.isBusy() && isDeferredPending(deferred)) {
+                jatos.showOverlay(jatos.waitSendDataOverlayConfig);
             }
-            window.location.href = url;
-        }
+        }, 1000);
+        deferred.fail(jatos.removeOverlays);
 
-        // Wait for httpLoop.js to finish
+        return deferred.promise();
+    }
+
+    // Resolve the URL only after queued work finishes, as in the public APIs.
+    function redirectWhenIdle(getRedirectUrl) {
         if (httpLoop.isBusy()) {
             setTimeout(jatos.showOverlay, 1000, jatos.waitSendDataOverlayConfig);
         }
-        httpLoop.whenIdle(end);
-    };
+        httpLoop.whenIdle(() => {
+            removeBeforeUnloadWarning();
+            window.location.href = getRedirectUrl();
+        });
+    }
+
 }
 
 export function isInvalidComponentPosition(componentList, pos) {

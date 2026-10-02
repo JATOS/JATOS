@@ -224,7 +224,24 @@ for (const operation of ["end", "abort"]) {
         timers[0]();
         assert.equal(events.at(-1), "overlay");
         requests[0].deferred.resolve("ok");
-        assert.deepEqual(events.slice(-4), ["success", "remove-listener", "stop", "remove-overlays"]);
+        assert.deepEqual(events.slice(-4), ["remove-listener", "stop", "remove-overlays", "success"]);
+        const count = events.length;
+        timers[0]();
+        assert.equal(events.length, count);
+    });
+
+    test(`${operation} completes cleanup even when onSuccess throws`, t => {
+        const {jatos, events, requests, timers} = createLifecycleApi(t);
+        const error = new Error("callback failed");
+        const onSuccess = () => {
+            assert.deepEqual(events.slice(-3), ["remove-listener", "stop", "remove-overlays"]);
+            throw error;
+        };
+        const promise = operation === "end"
+            ? jatos.endStudyWithoutRedirect(true, "done", onSuccess)
+            : jatos.abortStudyWithoutRedirect("stop", onSuccess);
+        assert.throws(() => requests[0].deferred.resolve(), value => value === error);
+        assert.equal(promise.state(), "resolved");
         const count = events.length;
         timers[0]();
         assert.equal(events.length, count);
@@ -372,3 +389,46 @@ test("endStudyAjax and endStudyAndRedirect forward all arguments unchanged", t =
     deferred.resolve();
     assert.equal(window.location.href, "https://example.test/finished");
 });
+
+for (const redirect of [false, true]) {
+    for (const [successful, message, query] of [
+        [undefined, undefined, ""],
+        [true, undefined, "?successful=true"],
+        [false, 7, "?successful=false"],
+        [undefined, "", "?message="],
+        ["ignored", "a & b", "?message=a%20%26%20b"],
+        [false, "a & b", "?successful=false&message=a%20%26%20b"]
+    ]) {
+        test(`end URL preserves parameter types: ${JSON.stringify([redirect, successful, message])}`, t => {
+            const {jatos, requests, window, idle} = createLifecycleApi(t);
+            // Object data selects the signature that permits an omitted success flag.
+            if (redirect) {
+                jatos.endStudy({}, successful, message);
+                idle();
+            } else {
+                jatos.endStudyWithoutRedirect({}, successful, message);
+            }
+            assert.equal(redirect ? window.location.href : requests[0].request.url,
+                `https://example.test/../end${query}`);
+        });
+    }
+    for (const [message, query] of [
+        [undefined, ""],
+        ["", "?message="],
+        ["a & b", "?message=a%20%26%20b"],
+        ["why? #50% = café", "?message=why%3F%20%2350%25%20%3D%20caf%C3%A9"],
+        [null, "?message=null"]
+    ]) {
+        test(`abort URL encodes messages: ${JSON.stringify([redirect, message])}`, t => {
+            const {jatos, requests, window, idle} = createLifecycleApi(t);
+            if (redirect) {
+                jatos.abortStudy(message);
+                idle();
+            } else {
+                jatos.abortStudyWithoutRedirect(message);
+            }
+            assert.equal(redirect ? window.location.href : requests[0].request.url,
+                "https://example.test/../abort" + query);
+        });
+    }
+}
