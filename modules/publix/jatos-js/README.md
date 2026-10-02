@@ -36,7 +36,8 @@ The generated browser-library files remain single classic scripts and preserve t
 `var jatos` and `window.jatos` API used by existing studies. `jatos.min.js` is
 the minified production variant. `http-loop-worker.js` and `heartbeat.js` remain separately loaded
 classic Web Workers. `heartbeat.min.js` is also generated from the same source;
-the runtime continues to load `heartbeat.js`. This build is not yet integrated into sbt.
+the runtime continues to load `heartbeat.js`. Build JavaScript separately with
+`npm run build` from this directory; sbt does not run npm.
 
 
 Run the unit, extraction smoke, and browser-bundle integration tests:
