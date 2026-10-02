@@ -1,3 +1,4 @@
+import com.typesafe.sbt.web.Import.WebKeys.webModules
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 import SharedSettings._
 
@@ -52,6 +53,17 @@ lazy val jatos = (project in file("."))
   .settings(
     aggregateReverseRoutes := Seq(publix, session, common, gui),
     Assets / pipelineStages += digest,
+    // Use live publix mappings instead of sbt-web's extracted dependency copy.
+    // The WebJar extraction can retain old files while the module version stays
+    // unchanged, leaving sbt run serving stale scripts.
+    Assets / webModules / mappings := {
+      val prefix = "lib/jatos-publix/"
+      val otherAssets = (Assets / webModules / mappings).value.filterNot(_._2.startsWith(prefix))
+      val publixAssets = (publix / Assets / mappings).value.map { case (file, path) =>
+        file -> (prefix + path)
+      }
+      otherAssets ++ publixAssets
+    },
     routesGenerator := InjectedRoutesGenerator,
 
     libraryDependencies ++= Seq(
