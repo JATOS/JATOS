@@ -6994,13 +6994,9 @@ var jatos;
   var callWithArgs = (f, ...args) => {
     if (f && typeof f == "function") args.length ? f(...args) : f();
   };
-  function callMany(value, ...callbacks) {
-    for (const callback of callbacks) {
-      if (typeof callback === "function") {
-        callback(value);
-      }
-    }
-  }
+  var callMany = (arg, ...functions) => functions.forEach((f) => {
+    if (f && typeof f === "function") f(arg);
+  });
 
   // src/result-data.js
   function installResultDataApi(jatos2, dependencies) {
@@ -7827,8 +7823,6 @@ var jatos;
     let groupFixedTimeout;
     let batchSessionVersion;
     let groupSessionVersion;
-    let batchSessionCounter = 0;
-    let groupSessionCounter = 0;
     jatos2.batchSessionVersioning = true;
     jatos2.groupSessionVersioning = true;
     let batchChannel;
@@ -7854,9 +7848,7 @@ var jatos;
     );
     const webSocketSupported = "WebSocket" in window;
     let openingBatchChannelDeferred;
-    let sendingBatchSessionDeferred;
     let openingGroupChannelDeferred;
-    let sendingGroupSessionDeferred;
     let sendingGroupFixedDeferred;
     let reassigningGroupDeferred;
     let leavingGroupDeferred;
@@ -8066,47 +8058,20 @@ var jatos;
         window.dispatchEvent(batchChannelDeadEvent);
       }
     }
+    const sendBatchSessionPatch = createSessionSender({
+      kind: "batch",
+      getChannel: () => batchChannel,
+      isVersioning: () => jatos2.batchSessionVersioning,
+      timeouts: batchSessionTimeouts,
+      createMessage: (id, patches, versioning) => ({
+        action: "SESSION",
+        id,
+        patches,
+        version: batchSessionVersion,
+        versioning
+      })
+    });
     jatos2.batchSession = createSessionApi(() => batchSessionData, sendBatchSessionPatch);
-    function sendBatchSessionPatch(patches, onSuccess, onFail) {
-      if (!batchChannel || batchChannel.readyState !== batchChannel.OPEN) {
-        const errorMsg = `Can't send batch session patch. No open batch channel. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (jatos2.batchSessionVersioning && isDeferredPending(sendingBatchSessionDeferred)) {
-        const errorMsg = `Can send only one batch session patch at a time. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunState.invalid) {
-        const errorMsg = `Can't send batch session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      const deferred = createDeferred();
-      if (jatos2.batchSessionVersioning) sendingBatchSessionDeferred = deferred;
-      const sessionActionId = batchSessionCounter++;
-      const msgObj = {};
-      msgObj.action = "SESSION";
-      msgObj.id = sessionActionId;
-      msgObj.patches = patches.constructor === Array ? patches : [patches];
-      msgObj.version = batchSessionVersion;
-      msgObj.versioning = !!jatos2.batchSessionVersioning;
-      try {
-        batchChannel.send(JSON.stringify(msgObj));
-        setChannelSendingTimeoutAndPromiseResolution(
-          deferred,
-          batchSessionTimeouts,
-          sessionActionId,
-          onSuccess,
-          onFail
-        );
-      } catch (error) {
-        callMany(error, onFail, console.error);
-        deferred.reject();
-      }
-      return deferred.promise();
-    }
     jatos2.onBatchSession = function(onBatchSession) {
       onJatosBatchSession = onBatchSession;
     };
@@ -8324,47 +8289,20 @@ var jatos;
     jatos2.isGroupFixed = function() {
       return groupState === "FIXED";
     };
+    const sendGroupSessionPatch = createSessionSender({
+      kind: "group",
+      getChannel: () => groupChannel,
+      isVersioning: () => jatos2.groupSessionVersioning,
+      timeouts: groupSessionTimeouts,
+      createMessage: (id, patches, versioning) => ({
+        action: "SESSION",
+        sessionActionId: id,
+        sessionPatches: patches,
+        sessionVersion: groupSessionVersion,
+        sessionVersioning: versioning
+      })
+    });
     jatos2.groupSession = createSessionApi(() => groupSessionData, sendGroupSessionPatch);
-    function sendGroupSessionPatch(patches, onSuccess, onFail) {
-      if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
-        const errorMsg = `Can't send group session patch. No open group channel. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (jatos2.groupSessionVersioning && isDeferredPending(sendingGroupSessionDeferred)) {
-        const errorMsg = `Can send only one group session patch at a time. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.error);
-        return rejectedPromise(errorMsg);
-      }
-      if (studyRunState.invalid) {
-        const errorMsg = `Can't send group session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
-        callMany(errorMsg, onFail, console.warn);
-        return rejectedPromise(errorMsg);
-      }
-      const deferred = createDeferred();
-      if (jatos2.groupSessionVersioning) sendingGroupSessionDeferred = deferred;
-      const sessionActionId = groupSessionCounter++;
-      const msgObj = {};
-      msgObj.action = "SESSION";
-      msgObj.sessionActionId = sessionActionId;
-      msgObj.sessionPatches = patches.constructor === Array ? patches : [patches];
-      msgObj.sessionVersion = groupSessionVersion;
-      msgObj.sessionVersioning = !!jatos2.groupSessionVersioning;
-      try {
-        groupChannel.send(JSON.stringify(msgObj));
-        setChannelSendingTimeoutAndPromiseResolution(
-          deferred,
-          groupSessionTimeouts,
-          sessionActionId,
-          onSuccess,
-          onFail
-        );
-      } catch (error) {
-        callMany(error, onFail, console.error);
-        deferred.reject();
-      }
-      return deferred.promise();
-    }
     jatos2.setGroupFixed = function(onSuccess, onFail) {
       if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
         const errorMsg = "Can't fix group. No open group channel.";
@@ -8544,9 +8482,47 @@ var jatos;
       });
       return leavingGroupDeferred.promise();
     };
-    function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onFail) {
+    function createSessionSender({ kind, getChannel, isVersioning, timeouts, createMessage }) {
+      let counter = 0;
+      let pending;
+      return function sendSessionPatch(patches, onSuccess, onError) {
+        const channel = getChannel();
+        if (!channel || channel.readyState !== channel.OPEN) {
+          const error = `Can't send ${kind} session patch. No open ${kind} channel. Patch: ${patches.op} ${patches.path}.`;
+          callMany(error, onError, console.error);
+          return rejectedPromise(error);
+        }
+        if (isVersioning() && isDeferredPending(pending)) {
+          const error = `Can send only one ${kind} session patch at a time. Patch: ${patches.op} ${patches.path}.`;
+          callMany(error, onError, console.error);
+          return rejectedPromise(error);
+        }
+        if (studyRunState.invalid) {
+          const error = `Can't send ${kind} session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
+          callMany(error, onError, console.warn);
+          return rejectedPromise(error);
+        }
+        const deferred = createDeferred();
+        if (isVersioning()) pending = deferred;
+        const id = counter++;
+        const message = createMessage(
+          id,
+          patches.constructor === Array ? patches : [patches],
+          !!isVersioning()
+        );
+        try {
+          channel.send(JSON.stringify(message));
+          setChannelSendingTimeoutAndPromiseResolution(deferred, timeouts, id, onSuccess, onError);
+        } catch (error) {
+          callMany(error, onError, console.error);
+          deferred.reject();
+        }
+        return deferred.promise();
+      };
+    }
+    function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onError) {
       const timeoutId = setTimeout(function() {
-        callWithArgs(onFail, "Timeout sending session patch");
+        callWithArgs(onError, "Timeout sending session patch");
         deferred.reject("Timeout sending session patch");
       }, jatos2.channelSendingTimeoutTime);
       sessionTimeouts[sessionActionId] = {
@@ -8557,7 +8533,7 @@ var jatos;
         },
         trigger: function(msg) {
           clearTimeout(timeoutId);
-          callWithArgs(onFail, msg);
+          callWithArgs(onError, msg);
           deferred.reject(msg);
         }
       };

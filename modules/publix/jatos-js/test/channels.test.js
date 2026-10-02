@@ -129,6 +129,27 @@ for (const kind of ["batch", "group"]) {
         assert.equal(session.set("score", 7).state(), "pending");
     });
 
+    test(`${kind} failed sends reject without leaving a pending request or timeout`, t => {
+        const {jatos, open, timers} = setup(t);
+        const socket = open(kind);
+        const session = jatos[`${kind}Session`];
+        const error = new Error("send failed");
+        const send = socket.send;
+        socket.send = () => { throw error; };
+        const errors = [];
+        const failed = session.set("score", 2, undefined, value => errors.push(value));
+        assert.equal(failed.state(), "rejected");
+        failed.fail((...args) => assert.deepEqual(args, []));
+        assert.deepEqual(errors, [error]);
+        assert.equal([...timers.values()].filter(timer => !timer.interval).length, 0);
+        socket.send = send;
+        const next = session.set("score", 3);
+        const ackId = kind === "batch" ? "id" : "sessionActionId";
+        assert.equal(socket.sent.at(-1)[ackId], 1);
+        socket.receive({action: "SESSION_ACK", [ackId]: 1});
+        assert.equal(next.state(), "resolved");
+    });
+
     test(`${kind} reconnects after close and observes live study-run guards`, t => {
         const {jatos, open, timers, sockets, state, fire} = setup(t);
         const socket = open(kind);
@@ -462,3 +483,21 @@ for (const kind of ["batch", "group"]) {
         assert.equal(sockets.length, 1);
     });
 }
+
+test("batch and group session senders keep independent counters and pending requests", t => {
+    const {jatos, open} = setup(t);
+    const batch = open("batch");
+    const group = open("group");
+    const batchPending = jatos.batchSession.set("score", 2);
+    const groupPending = jatos.groupSession.set("score", 3);
+    assert.equal(batch.sent.at(-1).id, 0);
+    assert.equal(group.sent.at(-1).sessionActionId, 0);
+    batch.receive({action: "SESSION_ACK", id: 0});
+    assert.equal(batchPending.state(), "resolved");
+    assert.equal(groupPending.state(), "pending");
+    assert.equal(jatos.batchSession.set("score", 4).state(), "pending");
+    assert.equal(batch.sent.at(-1).id, 1);
+    assert.equal(jatos.groupSession.set("score", 5).state(), "rejected");
+    group.receive({action: "SESSION_ACK", sessionActionId: 0});
+    assert.equal(groupPending.state(), "resolved");
+});
