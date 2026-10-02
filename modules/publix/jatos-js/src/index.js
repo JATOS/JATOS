@@ -2,11 +2,6 @@
  * jatos.js (JATOS JavaScript Library)
  * http://www.jatos.org
  * Licensed under Apache License 2.0
- *
- * Uses Starcounter-Jack/JSON-Patch:
- * https://github.com/Starcounter-Jack/JSON-Patch
- * Copyright (c) 2017-2022 Joachim Wester
- * Licensed under the MIT license.
  */
 
 import {requestHttp} from "./http-transport.js";
@@ -25,8 +20,7 @@ import {
 jatos = {};
 window.jatos = jatos; // Make jatos available in the window object for backward compatibility
 
-// Encapsulate the whole library so nothing unintentional gets out (e.g. jQuery
-// or functions or variables)
+// Encapsulate the whole library so nothing unintentional gets out
 (function () {
     "use strict";
 
@@ -35,15 +29,15 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      */
     jatos.version = "3.11.3";
     /**
-     * How long in ms should JATOS wait before retrying the HTTP call.
+     * How long in ms should JATOS wait before retrying the HTTP call?
      */
     jatos.httpTimeout = 30000;
     /**
-     * How many times should jatos.js retry to send a failed HTTP call.
+     * How many times should jatos.js retry to send a failed HTTP call?
      */
     jatos.httpRetry = 5;
     /**
-     * How long in ms should jatos.js wait between a failed HTTP call and a retry.
+     * How long in ms should jatos.js wait between a failed HTTP call and a retry?
      */
     jatos.httpRetryWait = 1000;
     /**
@@ -53,7 +47,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     jatos.studyJsonInput = {};
     jatos.studyInput = {};
     /**
-     * Number of component this study has
+     * Number of components this study has
      */
     jatos.studyLength = null;
     /**
@@ -94,6 +88,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      */
     jatos.batchJsonInput = {};
     jatos.batchInput = {};
+
     const studyRunState = createStudyRunState();
     const browserUi = createBrowserUi(jatos);
 
@@ -115,6 +110,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         httpLoop,
         channels
     });
+
     jatos.onLoad(browserUi.onLoad);
     initialization.start();
 

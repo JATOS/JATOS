@@ -58,7 +58,7 @@
       handleErrorAndRetry(false);
     };
     function handleErrorAndRetry(timeout) {
-      if (xhr.status && xhr.status === 400 || xhr.status && xhr.status === 413 || "retry" in request === false || request.retry <= 0) {
+      if (xhr.status === 400 || xhr.status === 413 || !(request.retry > 0)) {
         const msg = {
           requestId: request.id,
           url: request.url,

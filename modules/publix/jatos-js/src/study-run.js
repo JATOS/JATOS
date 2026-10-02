@@ -219,7 +219,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {Function} [onError] - Error callback when a message is supplied
      */
     jatos.startLastComponent = function (resultData, messageOrOnError, onError) {
-        const lastActiveComponent = jatos.componentList.reverse().find(c => c.active);
+        const lastActiveComponent = jatos.componentList.slice().reverse().find(c => c.active);
         jatos.startComponent(lastActiveComponent.uuid, resultData, messageOrOnError, onError);
     };
 

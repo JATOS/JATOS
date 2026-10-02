@@ -2503,7 +2503,7 @@ var jatos;
       }
     };
     jatos2.startLastComponent = function(resultData, messageOrOnError, onError) {
-      const lastActiveComponent = jatos2.componentList.reverse().find((c) => c.active);
+      const lastActiveComponent = jatos2.componentList.slice().reverse().find((c) => c.active);
       jatos2.startComponent(lastActiveComponent.uuid, resultData, messageOrOnError, onError);
     };
     jatos2.abortStudyWithoutRedirect = function(message, onSuccess, onError) {
@@ -2735,11 +2735,6 @@ var jatos;
    * jatos.js (JATOS JavaScript Library)
    * http://www.jatos.org
    * Licensed under Apache License 2.0
-   *
-   * Uses Starcounter-Jack/JSON-Patch:
-   * https://github.com/Starcounter-Jack/JSON-Patch
-   * Copyright (c) 2017-2022 Joachim Wester
-   * Licensed under the MIT license.
    */
   jatos = {};
   window.jatos = jatos;

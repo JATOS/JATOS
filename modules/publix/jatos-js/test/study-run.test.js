@@ -432,3 +432,21 @@ for (const redirect of [false, true]) {
         });
     }
 }
+
+
+test("startLastComponent preserves component order for subsequent navigation", t => {
+    const {jatos} = createNavigationApi(t);
+    jatos.componentList.push({id: 3, uuid: "inactive-uuid", position: 3, active: false});
+    const originalOrder = jatos.componentList.slice();
+    const targets = [];
+    jatos.startComponent = uuid => targets.push(uuid);
+
+    jatos.startLastComponent();
+    assert.deepEqual(jatos.componentList, originalOrder);
+    jatos.startLastComponent();
+    jatos.startComponentByPos(1);
+    jatos.startNextComponent();
+
+    assert.deepEqual(targets, ["second-uuid", "second-uuid", "first-uuid", "second-uuid"]);
+    assert.deepEqual(jatos.componentList, originalOrder);
+});

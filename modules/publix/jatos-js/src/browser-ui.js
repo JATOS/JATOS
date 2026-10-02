@@ -1,7 +1,7 @@
 /** Installs browser UI helpers and owns the unload-warning listener. */
 export function createBrowserUi(jatos) {
     /**
-     * Config of the overlay that is shown when the component ended but
+     * Config of the overlay that is shown when the component ended, but
      * the httpLoop still has requests to send. See function jatos.showOverlay
      * for config options.
      */
