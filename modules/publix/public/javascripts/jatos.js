@@ -7195,21 +7195,24 @@ var jatos;
     function handleMessage(msg) {
       const deferred = waitingRequests[msg.requestId];
       delete waitingRequests[msg.requestId];
-      if (msg.status === 200) {
-        deferred.resolve();
-      } else {
-        const errMsg = [msg.status, msg.statusText, msg.error].filter(function(s) {
-          return s;
-        }).join(", ");
-        deferred.reject(
-          msg.method + " to " + msg.url + " failed: " + errMsg,
-          msg.status,
-          msg.statusText,
-          msg.error
-        );
-      }
-      if (Object.keys(waitingRequests).length === 0 && isDeferredPending(idleDeferred)) {
-        idleDeferred.resolve();
+      try {
+        if (msg.status === 200) {
+          deferred.resolve();
+        } else {
+          const errMsg = [msg.status, msg.statusText, msg.error].filter(function(s) {
+            return s;
+          }).join(", ");
+          deferred.reject(
+            msg.method + " to " + msg.url + " failed: " + errMsg,
+            msg.status,
+            msg.statusText,
+            msg.error
+          );
+        }
+      } finally {
+        if (Object.keys(waitingRequests).length === 0 && isDeferredPending(idleDeferred)) {
+          idleDeferred.resolve();
+        }
       }
     }
     function isBusy() {

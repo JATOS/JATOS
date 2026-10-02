@@ -39,17 +39,21 @@ export function createHttpLoop({isInitialized}) {
     function handleMessage(msg) {
         const deferred = waitingRequests[msg.requestId];
         delete waitingRequests[msg.requestId];
-        if (msg.status === 200) {
-            deferred.resolve();
-        } else {
-            const errMsg = [msg.status, msg.statusText, msg.error]
-                .filter(function (s) { return s; }).join(", ");
-            deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg,
-                msg.status, msg.statusText, msg.error);
-        }
-
-        if (Object.keys(waitingRequests).length === 0 && isDeferredPending(idleDeferred)) {
-            idleDeferred.resolve();
+        try {
+            if (msg.status === 200) {
+                deferred.resolve();
+            } else {
+                const errMsg = [msg.status, msg.statusText, msg.error]
+                    .filter(function (s) { return s; }).join(", ");
+                deferred.reject(msg.method + " to " + msg.url + " failed: " + errMsg,
+                    msg.status, msg.statusText, msg.error);
+            }
+        } finally {
+            // Callbacks may throw or enqueue more work. Always update the idle state
+            // afterwards, keeping the queue busy if a callback added a request.
+            if (Object.keys(waitingRequests).length === 0 && isDeferredPending(idleDeferred)) {
+                idleDeferred.resolve();
+            }
         }
     }
 
