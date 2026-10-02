@@ -39,7 +39,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {object} studySessionData - Object to be submitted
      * @param {Function} [onSuccess] - Called after this function is finished
      * @param {Function} [onError] - Called if the request fails
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.setStudySessionData = function (studySessionData, onSuccess, onError) {
         jatos.studySessionData = studySessionData;
@@ -230,7 +230,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string} [message] - Message that should be logged
      * @param {Function} [onSuccess] - Called in case of successful submit
      * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.abortStudyWithoutRedirect = function (message, onSuccess, onError) {
         if (!isInitialized()) {
@@ -254,7 +254,7 @@ export function installStudyRunApi(jatos, dependencies) {
     };
 
     /**
-     * DEPRECATED - Kept for backward compatibility. Use jatos.abortStudyWithoutRedirect instead.
+     * @deprecated Use `jatos.abortStudyWithoutRedirect` instead.
      */
     jatos.abortStudyAjax = function (message, onSuccess, onError) {
         return jatos.abortStudyWithoutRedirect(message, onSuccess, onError);
@@ -318,7 +318,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string|Function} [messageOrOnSuccess] - Log message with data; otherwise success callback
      * @param {Function} [onSuccessOrOnError] - Success callback with data; otherwise error callback
      * @param {Function} [onError] - Error callback when result data is supplied
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.endStudyWithoutRedirect = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
         if (!isInitialized()) {
@@ -350,7 +350,7 @@ export function installStudyRunApi(jatos, dependencies) {
     };
 
     /**
-     * DEPRECATED - Kept for backward compatibilty. Use jatos.endStudyWithoutRedirect instead.
+     * @deprecated Use `jatos.endStudyWithoutRedirect` instead.
      */
     jatos.endStudyAjax = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
         return jatos.endStudyWithoutRedirect(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError);

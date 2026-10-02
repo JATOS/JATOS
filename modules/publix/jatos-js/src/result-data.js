@@ -21,7 +21,7 @@ export function installResultDataApi(jatos, dependencies) {
      * @param {(Object|string)} resultData - String or object to be submitted
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.submitResultData = function (resultData, onSuccess, onError) {
         return submitOrAppendResultData(resultData, false, onSuccess, onError);
@@ -36,15 +36,14 @@ export function installResultDataApi(jatos, dependencies) {
      * @param {(Object|string)} resultData - String or object to be appended
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.appendResultData = function (resultData, onSuccess, onError) {
         return submitOrAppendResultData(resultData, true, onSuccess, onError);
     };
 
     /**
-     * Does the sending of the result data. Uses PUT for submitResultData and
-     * POST for appendResultData.
+     * Sends result data using PUT for submitResultData and POST for appendResultData.
      */
     function submitOrAppendResultData(resultData, append, onSuccess, onError) {
         if (studyRunState.invalid) {
@@ -77,15 +76,13 @@ export function installResultDataApi(jatos, dependencies) {
     /**
      * Uploads a file that will be saved on the JATOS server.
      *
-     * @param {(Blob|string|Object)} obj - Data to be uploaded as a file. A Blob
-     * 										will be uploaded right away. A string
-     * 										is turned into a Blob. An object is
-     * 										first turned into a JSON string	andl
-     * 										then into a Blob.
+     * @param {(Blob|string|Object)} obj - Data to upload. A Blob is uploaded as-is,
+     * a string becomes a text Blob, and an object is serialized as JSON before it
+     * is converted to a Blob.
      * @param {string} filename - Name of the uploaded file
      * @param {Function} [onSuccess] - Called in case of success
      * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
         if (studyRunState.invalid) {
@@ -134,39 +131,36 @@ export function installResultDataApi(jatos, dependencies) {
     /**
      * Downloads a file from the JATOS server. Can only download a file that was previously
      * uploaded with jatos.uploadResultFile in the same study run. If the file contains
-     * text it returns the content as a string. If the file contains JSON, it returns
-     * the JSON already parsed as an object. All other mime types are returned as a Blob.
+     *  text, it returns the content as a string. If the file contains JSON, it returns
+     * parsed JSON as an object. All other MIME types are returned as a Blob.
      *
-     * @param {string} filename - Name of the uploaded file
-     * @param {Function} [onSuccess] - Called in case of success
-     * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
+     * Call as `(filename, onSuccess?, onError?)`, or include the component position as
+     * `(componentPos, filename, onSuccess?, onError?)` when components uploaded files
+     * with the same name.
      *
-     * Additionally one can specify the component ID (in case different components uploaded
-     * files with the same filename):
-     * @param {number} componentPos - Position of the component to look for the file
-     * @param {string} filename - Name of the uploaded file
-     * @param {Function} [onSuccess] - Called in case of success
-     * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
+     * @param {string|number} filenameOrComponentPos - Filename, or the component position
+     * @param {string|Function} [filenameOrOnSuccess] - Filename with a component position; otherwise success callback
+     * @param {Function} [onSuccessOrOnError] - Success callback with a component position; otherwise error callback
+     * @param {Function} [onError] - Error callback when a component position is supplied
+     * @returns {JatosPromise}
      */
-    jatos.downloadResultFile = function (param1, param2, param3, param4) {
+    jatos.downloadResultFile = function (filenameOrComponentPos, filenameOrOnSuccess,
+                                         onSuccessOrOnError, onError) {
         if (!isInitialized()) {
             const errorMsg = "jatos.js not yet initialized";
             console.error(errorMsg);
             return rejectedPromise(errorMsg);
         }
 
-        let componentPos, filename, onSuccess, onError;
-        if (typeof param1 === 'number') {
-            componentPos = param1;
-            filename = param2;
-            onSuccess = param3;
-            onError = param4;
-        } else if (typeof param1 === 'string') {
-            filename = param1;
-            onSuccess = param2;
-            onError = param3;
+        let componentPos, filename, onSuccess;
+        if (typeof filenameOrComponentPos === 'number') {
+            componentPos = filenameOrComponentPos;
+            filename = filenameOrOnSuccess;
+            onSuccess = onSuccessOrOnError;
+        } else if (typeof filenameOrComponentPos === 'string') {
+            filename = filenameOrComponentPos;
+            onSuccess = filenameOrOnSuccess;
+            onError = onSuccessOrOnError;
         } else {
             const errorMsg = "Unknown first parameter.";
             console.error(errorMsg);
@@ -195,7 +189,8 @@ export function installResultDataApi(jatos, dependencies) {
         }
 
         const deferred = createDeferred();
-        // Use XMLHttpRequest instead of jQuery because jQuery cannot handle JSON within a Blob
+        // Fetch as a Blob so its MIME type determines whether to return parsed JSON,
+        // text, or the Blob itself.
         const xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         xhr.responseType = "blob";

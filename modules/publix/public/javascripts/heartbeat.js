@@ -4,9 +4,8 @@
   /*!
    * heartbeat.js
    *
-   * Web worker used in jatos.js that sends a periodic Ajax request back to the
-   * JATOS server. JATOS has two different kinds of heartbeats: this one and the
-   * channel heartbeats (not here defined).
+   * Web worker used by jatos.js to send periodic HTTP requests to the JATOS
+   * server. This study-run heartbeat is separate from the channel heartbeats.
    *
    * http://www.jatos.org
    * Author Kristian Lange
@@ -15,24 +14,24 @@
   var periodDefault = 6e4;
   var period;
   var url;
-  var ajax;
+  var xhr;
   onmessage = function(e) {
     const studyResultUuid = e.data[0];
     period = typeof e.data[1] === "undefined" ? periodDefault : e.data[1];
     url = "../../../../" + studyResultUuid + "/heartbeat";
-    if (!ajax) {
+    if (!xhr) {
       send();
     }
   };
   function send() {
-    ajax = new XMLHttpRequest();
-    ajax.open("POST", url);
-    ajax.setRequestHeader("Content-Type", "text/plain");
-    ajax.onload = function() {
+    xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.onload = function() {
       setTimeout(function() {
         send();
       }, period);
     };
-    ajax.send();
+    xhr.send();
   }
 })();

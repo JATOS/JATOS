@@ -1,20 +1,18 @@
 /** Installs server logging and optional browser error forwarding. */
 export function installLoggingApi(jatos, {getURL, isInitialized, sendToHttpLoop}) {
     /**
-     * DEPRECATED - Instead use the specific function's error callbacks or Promise functions
-     *
      * Defines callback function to be called if jatos.js produces an error.
+     * @deprecated Use each function's error callback or returned JatosPromise instead.
      */
-    jatos.onError = function (onError) {
+    jatos.onError = function () {
         console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
     };
 
     /**
-     * DEPRECATED - Use jatos.log instead
-     *
      * Logs a message within the JATOS log on the server side.
+     * @deprecated Use `jatos.log` instead.
      */
-    jatos.logError = function (logErrorMsg) {
+    jatos.logError = function () {
         console.warn("jatos.logError is abolished - use jatos.log instead");
     };
 

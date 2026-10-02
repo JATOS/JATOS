@@ -62,7 +62,7 @@ test("deprecated logging APIs only warn", t => {
     const {jatos, requests} = setup();
     const warnings = [];
     t.mock.method(console, "warn", message => warnings.push(message));
-    jatos.logError("old message");
+    jatos.logError();
     jatos.onError(() => assert.fail("deprecated callback must not be registered"));
     assert.deepEqual(warnings, [
         "jatos.logError is abolished - use jatos.log instead",

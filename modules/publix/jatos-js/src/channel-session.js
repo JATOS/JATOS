@@ -42,7 +42,7 @@ export function createSessionApi(getData, sendPatch) {
      * locally stored copy of the session and does not call
      * the server.
      * @param {string} name - name of the field
-     * @return {object}
+     * @returns {*} A cloned value, or undefined when the field does not exist
      */
     session.get = function (name) {
         const obj = getValueByPointer(getData(), "/" + name);
@@ -50,10 +50,10 @@ export function createSessionApi(getData, sendPatch) {
     };
 
     /**
-     * Returns the complete session data (might be bad performance-wise)
+     * Returns a clone of the complete session data. Cloning large sessions may be expensive.
      * Gets the object from the locally stored copy of the session
      * and does not call the server.
-     * @return {object}
+     * @returns {*} A clone of the session data
      */
     session.getAll = function () {
         const obj = session.find("");
@@ -67,7 +67,7 @@ export function createSessionApi(getData, sendPatch) {
      * object from the locally stored copy of the session
      * and does not call the server.
      * @param {string} path - JSON pointer path
-     * @return {object}
+     * @returns {*} A cloned value, or undefined when the path does not exist
      */
     session.find = function (path) {
         const obj = getValueByPointer(getData(), path);
@@ -80,8 +80,8 @@ export function createSessionApi(getData, sendPatch) {
      * implementation, but uses the JSON pointer implementation
      * instead.
      * @param {string} path - JSON pointer path to be tested
-     * @param {object} value - value to be tested
-     * @return {boolean}
+     * @param {*} value - Value to test
+     * @returns {boolean}
      */
     session.test = function (path, value) {
         const obj = getValueByPointer(getData(), path);
@@ -91,7 +91,7 @@ export function createSessionApi(getData, sendPatch) {
     /**
      * Check if the field under the given path exists.
      * @param {string} path - JSON pointer path
-     * @return {boolean}
+     * @returns {boolean}
      */
     session.defined = function (path) {
         return !session.test(path, undefined);
@@ -100,10 +100,10 @@ export function createSessionApi(getData, sendPatch) {
     /**
      * JSON Patch add operation
      * @param {string} path - JSON pointer path
-     * @param {object} value - value to be stored
+     * @param {*} value - JSON-compatible value to store
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.add = function (path, value, onSuccess, onFail) {
         const patch = generatePatch("add", path, value, null);
@@ -115,10 +115,10 @@ export function createSessionApi(getData, sendPatch) {
      * a name of the field to be stored. Works only on the first level
      * of the object tree.
      * @param {string} name - name of the field
-     * @param {object} value - value to be stored
+     * @param {*} value - JSON-compatible value to store
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.set = function (name, value, onSuccess, onFail) {
         const patch = generatePatch("add", "/" + name, value, null);
@@ -127,10 +127,10 @@ export function createSessionApi(getData, sendPatch) {
 
     /**
      * Replaces the whole session data (might be bad performance-wise)
-     * @param {object} value - value to be stored in the session
+     * @param {*} value - JSON-compatible value to store in the session
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.setAll = function (value, onSuccess, onFail) {
         return session.replace("", value, onSuccess, onFail);
@@ -141,7 +141,7 @@ export function createSessionApi(getData, sendPatch) {
      * @param {string} path - JSON pointer path to the field that should be removed
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.remove = function (path, onSuccess, onFail) {
         const patch = generatePatch("remove", path, null, null);
@@ -152,7 +152,7 @@ export function createSessionApi(getData, sendPatch) {
      * Clears the session data.
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.clear = function (onSuccess, onFail) {
         const patch = generatePatch("replace", "", {}, null);
@@ -162,10 +162,10 @@ export function createSessionApi(getData, sendPatch) {
     /**
      * JSON Patch replace operation
      * @param {string} path - JSON pointer path
-     * @param {object} value - value to be replaced with
+     * @param {*} value - JSON-compatible replacement value
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.replace = function (path, value, onSuccess, onFail) {
         const patch = generatePatch("replace", path, value, null);
@@ -178,7 +178,7 @@ export function createSessionApi(getData, sendPatch) {
      * @param {string} path - JSON pointer path to the target
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.copy = function (from, path, onSuccess, onFail) {
         const patch = generatePatch("copy", path, null, from);
@@ -191,7 +191,7 @@ export function createSessionApi(getData, sendPatch) {
      * @param {string} path - JSON pointer path to the target
      * @param {Function} [onSuccess] - Called if this patch was successfully applied on the server and the client side
      * @param {Function} [onFail] - Called if this patch failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     session.move = function (from, path, onSuccess, onFail) {
         const patch = generatePatch("move", path, null, from);

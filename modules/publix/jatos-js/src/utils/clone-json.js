@@ -1,8 +1,8 @@
 export function cloneJsonObj(obj) {
-    // Handle the 3 simple types, and null or undefined
+    // Primitive values, null, and undefined can be returned unchanged.
     if (null === obj || "object" != typeof obj) return obj;
 
-    // Handle Array
+    // Clone arrays recursively.
     if (obj instanceof Array) {
         const copy = [];
         const len = obj.length;
@@ -12,7 +12,7 @@ export function cloneJsonObj(obj) {
         return copy;
     }
 
-    // Handle object
+    // Clone object properties recursively.
     if (obj instanceof Object) {
         const copy = {};
         for (const attr in obj) {

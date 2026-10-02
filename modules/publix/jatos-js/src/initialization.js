@@ -22,7 +22,7 @@ export function createInitialization(jatos, dependencies) {
                 // Start heartbeat.js (the general one - not the channel one)
                 heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
                 heartbeatWorker.postMessage([jatos.studyResultUuid]);
-                // Start httpLoop.js
+                // Start the background HTTP request queue
                 httpLoop.start();
             })
             .then(getInitData)
@@ -153,7 +153,7 @@ export function createInitialization(jatos, dependencies) {
     };
 
     /**
-     * Just for convenience. People are used to 'onload' all lower case
+     * Lowercase alias retained for compatibility with the conventional `onload` spelling.
      */
     jatos.onload = jatos.onLoad;
 
@@ -171,9 +171,9 @@ export function createInitialization(jatos, dependencies) {
     /**
      * A web worker used in jatos.js to send periodic requests back to the
      * JATOS server. With this function one can set the period with which the
-     * heartbeat is send.
+     * heartbeat is sent.
      *
-     * @param {number} heartbeatPeriod - in milliseconds (Integer)
+     * @param {number} heartbeatPeriod - Period in milliseconds
      */
     jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
         if (typeof heartbeatPeriod == 'number' && heartbeatWorker) {

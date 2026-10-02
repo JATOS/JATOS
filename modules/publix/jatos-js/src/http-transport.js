@@ -2,8 +2,8 @@ import {createDeferred} from "./jatos-promise.js";
 
 /**
  * Direct HTTP requests used outside the result-data worker queue.
- * retry.times counts total attempts, matching the former ajax-retry plugin.
- * Success/error callbacks run per attempt; the returned promise settles once.
+ * `retry.times` counts total attempts. Success/error callbacks run per attempt;
+ * the returned promise settles once.
  */
 export function requestHttp(options) {
     const deferred = createDeferred();

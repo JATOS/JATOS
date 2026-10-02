@@ -159,7 +159,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * to the given object.
      *
      * @param {Object} [obj={}] - Object to which the IDs will be added
-     * @return {Object} The same object passed in with IDs added
+     * @returns {Object} The same object passed in with IDs added
      */
     jatos.addJatosIds = function (obj = {}) {
         obj.studyCode = jatos.studyCode;

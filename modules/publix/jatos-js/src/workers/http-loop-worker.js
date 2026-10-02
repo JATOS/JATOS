@@ -14,8 +14,6 @@
  * Licensed under Apache License 2.0
  */
 
-// jshint ignore: start
-
 "use strict";
 
 /**
@@ -78,7 +76,7 @@ function run() {
 	xhr.open(request.method, request.url);
 	if (request.contentType) xhr.setRequestHeader("Content-Type", request.contentType);
 	if (request.timeout) xhr.timeout = request.timeout;
-	xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest"); // X-Requested-With header needed to detect Ajax in backend
+	xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest"); // Lets the backend identify this as an XMLHttpRequest.
 
 	xhr.onload = function () {
 		if (xhr.status === 200) {

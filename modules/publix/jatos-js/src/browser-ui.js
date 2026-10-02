@@ -17,7 +17,7 @@ export function createBrowserUi(jatos) {
 
     /**
      * Warn worker with a popup that the component is not reloadable and leaving the page would end the study
-     * Remember: This works only if at least one user action happend in the window (e.g. mouse click)
+     * Browsers show this warning only after the user has interacted with the page.
      * Check: https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
      */
     function onLoad() {
@@ -68,7 +68,7 @@ export function createBrowserUi(jatos) {
      * @param {string} [config.id] - Element ID
      * @param {string} [config.className] - Additional class name
      * @param {number} [config.timeout] - If set the overlay will be removed after the given milliseconds
-     * @return {HTMLElement} The created element (or updated existing one)
+     * @returns {HTMLElement|undefined} The created or updated element, or undefined when hidden by configuration
      */
     jatos.showOverlay = function (config) {
         if (config && typeof config.show == "boolean" && !config.show) return;
@@ -136,7 +136,7 @@ export function createBrowserUi(jatos) {
         return div;
     };
 
-    // Keep this for backward compatibility
+    /** @deprecated Use `jatos.removeOverlays` instead. */
     jatos.removeOverlay = () => jatos.removeOverlays();
 
     /**

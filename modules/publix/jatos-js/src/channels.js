@@ -147,7 +147,7 @@ export function createChannels(jatos, dependencies) {
      */
     const webSocketSupported = 'WebSocket' in window;
     /**
-     * jQuery.Deferred objects: can hold state pending, resolved, or rejected
+     * JatosDeferred instances for channel operations that can be pending, resolved, or rejected.
      */
     let openingBatchChannelDeferred;
     let openingGroupChannelDeferred;
@@ -468,7 +468,7 @@ export function createChannels(jatos, dependencies) {
     jatos.batchSession = createSessionApi(() => batchSessionData, sendBatchSessionPatch);
 
     /**
-     * Defines callback function to be called if an patch for the batch session was received
+     * Registers a callback that is called when a batch-session patch is received.
      */
     jatos.onBatchSession = function (onBatchSession) {
         onJatosBatchSession = onBatchSession;
@@ -478,8 +478,8 @@ export function createChannels(jatos, dependencies) {
      * Tries to join a group (actually a GroupResult) in the JATOS server and if it
      * succeeds opens the group channel's WebSocket.
      *
-     * @param {object} callbacks - Defining callback functions for group events. All
-     *		callbacks are optional. These callbacks functions can be:
+     * @param {Object} callbacks - Callback functions for group events. All callbacks
+     *      are optional. Supported callbacks are:
      *		onOpen: to be called when the group channel is successfully opened
      *		onClose: to be called when the group channel is closed
      *		onError(errorMsg): to be called if an error during opening of the group
@@ -494,10 +494,10 @@ export function createChannels(jatos, dependencies) {
      *			running this study) opened a group channel. It gets the group member
      *			ID as a parameter.
      *		onMemberLeave(memberId): to be called when another member (not the worker
-     *			running his study) left the group. It gets the group member ID as
+     *			running this study) left the group. It gets the group member ID as
      *			a parameter.
      *		onMemberClose(memberId): to be called when another member (not the worker
-     *			running this study) closed his group channel. It gets the group
+     *			running this study) closed their group channel. It gets the group
      *			member ID as a parameter.
      *		onGroupSession(path): to be called when the group session is updated. It gets
      *			a JSON Pointer as a parameter that points to the changed object within
@@ -505,7 +505,7 @@ export function createChannels(jatos, dependencies) {
      *		onUpdate(): Combines several other callbacks. It's called if one of the
      *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
      *			onMemberClose, or onGroupSession.
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.joinGroup = function (callbacks) {
         groupChannelCallbacks = callbacks ? callbacks : {};
@@ -803,7 +803,7 @@ export function createChannels(jatos, dependencies) {
      * Ask the JATOS server to fix this group.
      * @param {Function} [onSuccess] - Called if the fixing was successful
      * @param {Function} [onFail] - Called if the fixing failed
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.setGroupFixed = function (onSuccess, onFail) {
         if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
@@ -876,7 +876,7 @@ export function createChannels(jatos, dependencies) {
     };
 
     /**
-     * @return {boolean} True if the group has reached the maximum amount of active
+     * @returns {boolean} True if the group has reached the maximum number of active
      *         members like specified in the batch properties. It's not necessary
      *         that each member has an open group channel.
      */
@@ -889,7 +889,7 @@ export function createChannels(jatos, dependencies) {
     };
 
     /**
-     * @return {boolean} True if the group has reached the maximum amount of active
+     * @returns {boolean} True if the group has reached the maximum number of active
      *         members like specified in the batch properties and each member has an
      *         open group channel.
      */
@@ -902,7 +902,7 @@ export function createChannels(jatos, dependencies) {
     };
 
     /**
-     * @return {boolean} True if all active members of the group have an open group
+     * @returns {boolean} True if all active members of the group have an open group
      *         channel. It's not necessary that the group has reached its minimum
      *         or maximum active member size.
      */
@@ -917,7 +917,7 @@ export function createChannels(jatos, dependencies) {
     /**
      * Sends a message to all group members if group channel is open.
      *
-     * @param {object} msg - Any JavaScript object
+     * @param {*} msg - Any JSON-serializable value
      */
     jatos.sendGroupMsg = function (msg) {
         if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
@@ -932,7 +932,7 @@ export function createChannels(jatos, dependencies) {
      * (only if group channel is open).
      *
      * @param {string} recipient - Recipient's group member ID
-     * @param {object} msg - Any JavaScript object
+     * @param {*} msg - Any JSON-serializable value
      */
     jatos.sendGroupMsgTo = function (recipient, msg) {
         if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
@@ -950,7 +950,7 @@ export function createChannels(jatos, dependencies) {
      *
      * @param {Function} [onSuccess] - Called if the reassignment was successful
      * @param {Function} [onFail] - Called if the reassignment was unsuccessful
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.reassignGroup = function (onSuccess, onFail) {
         if (isDeferredPending(openingGroupChannelDeferred)) {
@@ -1012,7 +1012,7 @@ export function createChannels(jatos, dependencies) {
      *
      * @param {Function} [onSuccess] - Called after the group is left
      * @param {Function} [onError] - Called in case of error
-     * @return {JatosPromise}
+     * @returns {JatosPromise}
      */
     jatos.leaveGroup = function (onSuccess, onError) {
         if (isDeferredPending(openingGroupChannelDeferred)) {

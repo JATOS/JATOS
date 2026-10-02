@@ -559,10 +559,10 @@ var jatos;
 
   // src/logging.js
   function installLoggingApi(jatos2, { getURL, isInitialized, sendToHttpLoop }) {
-    jatos2.onError = function(onError) {
+    jatos2.onError = function() {
       console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
     };
-    jatos2.logError = function(logErrorMsg) {
+    jatos2.logError = function() {
       console.warn("jatos.logError is abolished - use jatos.log instead");
     };
     jatos2.log = function(logMsg) {
@@ -691,22 +691,21 @@ var jatos;
       });
       return deferred.promise();
     };
-    jatos2.downloadResultFile = function(param1, param2, param3, param4) {
+    jatos2.downloadResultFile = function(filenameOrComponentPos, filenameOrOnSuccess, onSuccessOrOnError, onError) {
       if (!isInitialized()) {
         const errorMsg = "jatos.js not yet initialized";
         console.error(errorMsg);
         return rejectedPromise(errorMsg);
       }
-      let componentPos, filename, onSuccess, onError;
-      if (typeof param1 === "number") {
-        componentPos = param1;
-        filename = param2;
-        onSuccess = param3;
-        onError = param4;
-      } else if (typeof param1 === "string") {
-        filename = param1;
-        onSuccess = param2;
-        onError = param3;
+      let componentPos, filename, onSuccess;
+      if (typeof filenameOrComponentPos === "number") {
+        componentPos = filenameOrComponentPos;
+        filename = filenameOrOnSuccess;
+        onSuccess = onSuccessOrOnError;
+      } else if (typeof filenameOrComponentPos === "string") {
+        filename = filenameOrComponentPos;
+        onSuccess = filenameOrOnSuccess;
+        onError = onSuccessOrOnError;
       } else {
         const errorMsg = "Unknown first parameter.";
         console.error(errorMsg);
