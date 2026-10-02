@@ -77,8 +77,6 @@ export function createChannels(jatos, dependencies) {
      * Channel timeout and interval objects
      */
     let groupFixedTimeout;
-    let batchChannelClosedCheckTimer;
-    let groupChannelClosedCheckTimer;
     /**
      * Version of the current group/batch session data. The version is
      * used to prevent concurrent changes of the data. Can be switch on/off
@@ -131,6 +129,26 @@ export function createChannels(jatos, dependencies) {
     });
 
     /**
+     * Polls batch closure and marks the connection dead before reconnecting.
+     * */
+    const batchClosedCheck = createClosedCheck(
+        () => batchChannel,
+        () => console.info("Batch channel closed"),
+        () => {
+            setBatchChannelDead();
+            reopenBatchChannel();
+        }
+    );
+    /**
+     * Polls group closure, notifies the group's error callback, and reconnects.
+     * */
+    const groupClosedCheck = createClosedCheck(
+        () => groupChannel,
+        () => callMany("Group channel closed", console.info, groupChannelCallbacks.onError),
+        reopenGroupChannel
+    );
+
+    /**
      * WebSocket support by the browser is needed for group channel.
      */
     const webSocketSupported = 'WebSocket' in window;
@@ -180,7 +198,7 @@ export function createChannels(jatos, dependencies) {
     }
 
     /**
-     * Open batch channel with retry and exponential backoff
+     * Open a batch channel with retry and exponential backoff
      */
     function openBatchChannelWithRetry(backoffTime) {
         if (typeof backoffTime !== "number") backoffTime = jatos.channelOpeningBackoffTimeMin;
@@ -237,7 +255,7 @@ export function createChannels(jatos, dependencies) {
             if (batchChannel !== channel) return;
             channel.send('{"action":"READY"}');
             batchHeartbeat.start();
-            batchChannelClosedCheck();
+            batchClosedCheck.start();
             // The actual batch channel opening is done when we have the
             // current version of the batch session
         };
@@ -316,30 +334,38 @@ export function createChannels(jatos, dependencies) {
         reopenBatchChannel();
     }
 
+
     /**
-     * Periodically checks whether the batch channel is closed and if yes
-     * reopens it. We don't rely on WebSocket's onClose callback (we could
-     * just put reopenBatchChannel() in there) because it's not always called
-     * and additionally sometimes called (unwanted) in case of a page
-     * reload/closing.
+     * Polls for closed sockets because close events can be missed or arrive during
+     * page navigation. Notify first, stop polling, then attempt reconnection.
      */
-    function batchChannelClosedCheck() {
-        clearInterval(batchChannelClosedCheckTimer);
-        batchChannelClosedCheckTimer = setInterval(function () {
-            if (batchChannel.readyState === batchChannel.CLOSED) {
-                console.info("Batch channel closed");
-                clearInterval(batchChannelClosedCheckTimer);
-                setBatchChannelDead();
-                reopenBatchChannel();
-            }
-        }, jatos.channelClosedCheckInterval);
+    function createClosedCheck(getChannel, notifyClosed, reconnect) {
+        let interval;
+
+        function start() {
+            stop();
+            interval = setInterval(() => {
+                const channel = getChannel();
+                if (channel.readyState === channel.CLOSED) {
+                    notifyClosed();
+                    stop();
+                    reconnect();
+                }
+            }, jatos.channelClosedCheckInterval);
+        }
+
+        function stop() {
+            clearInterval(interval);
+        }
+
+        return {start, stop};
     }
 
     function clearBatchChannel() {
         batchSessionData = {};
         batchSessionVersion = null;
         batchHeartbeat.stop();
-        // Don't clear batchChannelClosedCheckTimer here
+        // Keep the closed-channel check running here
     }
 
     /**
@@ -405,7 +431,7 @@ export function createChannels(jatos, dependencies) {
                 }
                 break;
             case "CLOSED":
-                clearInterval(batchChannelClosedCheckTimer);
+                batchClosedCheck.stop();
                 setBatchChannelDead();
                 studyRunState.invalid = true;
                 console.info("Batch channel closed by JATOS server");
@@ -577,7 +603,7 @@ export function createChannels(jatos, dependencies) {
         groupChannel.onopen = function () {
             groupChannel.send('{"action":"READY"}');
             groupHeartbeat.start();
-            groupChannelClosedCheck();
+            groupClosedCheck.start();
             // The actual group channel opening is done when we have the current
             // version of the group session
         };
@@ -627,23 +653,6 @@ export function createChannels(jatos, dependencies) {
         openGroupChannelWithRetry();
     }
 
-    /**
-     * Periodically checks whether the group channel is closed and if yes
-     * reopens it. We don't rely on WebSocket's onClose callback (we could
-     * just put reopenGroupChannel() in there) because it's not always called
-     * and additionally sometimes called (unwanted) in case of a page
-     * reload/closing.
-     */
-    function groupChannelClosedCheck() {
-        clearInterval(groupChannelClosedCheckTimer);
-        groupChannelClosedCheckTimer = setInterval(function () {
-            if (groupChannel.readyState === groupChannel.CLOSED) {
-                callMany("Group channel closed", console.info, groupChannelCallbacks.onError);
-                clearInterval(groupChannelClosedCheckTimer);
-                reopenGroupChannel();
-            }
-        }, jatos.channelClosedCheckInterval);
-    }
 
     function clearGroupChannel() {
         jatos.groupMemberId = null;
@@ -654,7 +663,7 @@ export function createChannels(jatos, dependencies) {
         groupSessionVersion = null;
         groupState = null;
         groupHeartbeat.stop();
-        // Don't clear groupChannelClosedCheckTimer here
+        // Keep the closed-channel check running here
     }
 
     /**
@@ -744,7 +753,7 @@ export function createChannels(jatos, dependencies) {
                 callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
                 break;
             case "CLOSED":
-                clearInterval(groupChannelClosedCheckTimer);
+                groupClosedCheck.stop();
                 console.info("Group channel closed by JATOS server");
                 break;
             case "CHANNEL_OPENED":
@@ -1109,7 +1118,7 @@ export function createChannels(jatos, dependencies) {
             method: "GET",
             timeout: jatos.httpTimeout,
             success: function (response) {
-                clearInterval(groupChannelClosedCheckTimer);
+                groupClosedCheck.stop();
                 callWithArgs(onSuccess, response);
                 leavingGroupDeferred.resolve(response);
             },
@@ -1156,8 +1165,8 @@ export function createChannels(jatos, dependencies) {
         openBatchChannelWithRetry,
         // Preserve the existing end/abort cleanup: only stop closed-channel checks.
         stopClosedChecks: () => {
-            clearInterval(batchChannelClosedCheckTimer);
-            clearInterval(groupChannelClosedCheckTimer);
+            batchClosedCheck.stop();
+            groupClosedCheck.stop();
         }
     };
 }

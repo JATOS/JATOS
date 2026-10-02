@@ -423,3 +423,42 @@ test("group reassignment treats HTTP 204 as unsuccessful without retries", t => 
     assert.equal(result.state(), "rejected");
     assert.deepEqual(calls, ["failure"]);
 });
+
+test("closed-channel polling keeps independent timers and channel-specific notifications", t => {
+    const {jatos, open, timers, sockets, fire} = setup(t);
+    const errors = [];
+    const disconnected = [];
+    jatos.onDisconnected(() => disconnected.push(true));
+    const batch = open("batch");
+    const group = open("group", {onError: error => errors.push(error)});
+    const checks = [...timers].filter(([, timer]) => timer.delay === jatos.channelClosedCheckInterval);
+    for (const [id] of checks) fire(id);
+    assert.equal(sockets.length, 2, "open sockets must not reconnect");
+
+    // Simulate closure without a close event: polling must still recover.
+    batch.readyState = batch.CLOSED;
+    fire(checks[0][0]);
+    assert.equal(timers.has(checks[0][0]), false);
+    assert.equal(timers.has(checks[1][0]), true);
+    assert.equal(sockets.length, 3);
+    assert.deepEqual(disconnected, [true]);
+    assert.deepEqual(errors, []);
+
+    group.readyState = group.CLOSED;
+    fire(checks[1][0]);
+    assert.equal(timers.has(checks[1][0]), false);
+    assert.equal(sockets.length, 4);
+    assert.deepEqual(errors, ["Group channel closed"]);
+    assert.deepEqual(disconnected, [true]);
+});
+
+for (const kind of ["batch", "group"]) {
+    test(`${kind} server closure stops polling without reopening`, t => {
+        const {jatos, open, timers, sockets} = setup(t);
+        const socket = open(kind);
+        const checkId = [...timers].find(([, timer]) => timer.delay === jatos.channelClosedCheckInterval)[0];
+        socket.receive({action: "CLOSED"});
+        assert.equal(timers.has(checkId), false);
+        assert.equal(sockets.length, 1);
+    });
+}

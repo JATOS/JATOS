@@ -19,7 +19,7 @@ export const callWithArgs = (f, ...args) => {
 
 /**
  * Calls multiple functions with the given argument. Often used for logging to multiple destinations.
- * Checks if the functions exists.
+ * Checks if the functions exist.
  *
  * @param {*} arg
  * @param  {...function} functions

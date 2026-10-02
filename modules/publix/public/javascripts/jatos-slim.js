@@ -605,9 +605,13 @@ var jatos;
   var callWithArgs = (f, ...args) => {
     if (f && typeof f == "function") args.length ? f(...args) : f();
   };
-  var callMany = (arg, ...functions) => functions.forEach((f) => {
-    if (f && typeof f === "function") f(arg);
-  });
+  function callMany(value, ...callbacks) {
+    for (const callback of callbacks) {
+      if (typeof callback === "function") {
+        callback(value);
+      }
+    }
+  }
 
   // src/result-data.js
   function installResultDataApi(jatos2, dependencies) {
@@ -1432,8 +1436,6 @@ var jatos;
     const batchSessionTimeouts = {};
     const groupSessionTimeouts = {};
     let groupFixedTimeout;
-    let batchChannelClosedCheckTimer;
-    let groupChannelClosedCheckTimer;
     let batchSessionVersion;
     let groupSessionVersion;
     let batchSessionCounter = 0;
@@ -1448,6 +1450,19 @@ var jatos;
       callMany("Group channel heartbeat fail", groupChannelCallbacks.onError, console.warn);
       reopenGroupChannel();
     });
+    const batchClosedCheck = createClosedCheck(
+      () => batchChannel,
+      () => console.info("Batch channel closed"),
+      () => {
+        setBatchChannelDead();
+        reopenBatchChannel();
+      }
+    );
+    const groupClosedCheck = createClosedCheck(
+      () => groupChannel,
+      () => callMany("Group channel closed", console.info, groupChannelCallbacks.onError),
+      reopenGroupChannel
+    );
     const webSocketSupported = "WebSocket" in window;
     let openingBatchChannelDeferred;
     let sendingBatchSessionDeferred;
@@ -1512,7 +1527,7 @@ var jatos;
         if (batchChannel !== channel) return;
         channel.send('{"action":"READY"}');
         batchHeartbeat.start();
-        batchChannelClosedCheck();
+        batchClosedCheck.start();
       };
       channel.onmessage = function(event) {
         if (batchChannel !== channel) return;
@@ -1565,16 +1580,23 @@ var jatos;
       setBatchChannelDead();
       reopenBatchChannel();
     }
-    function batchChannelClosedCheck() {
-      clearInterval(batchChannelClosedCheckTimer);
-      batchChannelClosedCheckTimer = setInterval(function() {
-        if (batchChannel.readyState === batchChannel.CLOSED) {
-          console.info("Batch channel closed");
-          clearInterval(batchChannelClosedCheckTimer);
-          setBatchChannelDead();
-          reopenBatchChannel();
-        }
-      }, jatos2.channelClosedCheckInterval);
+    function createClosedCheck(getChannel, notifyClosed, reconnect) {
+      let interval;
+      function start() {
+        stop();
+        interval = setInterval(() => {
+          const channel = getChannel();
+          if (channel.readyState === channel.CLOSED) {
+            notifyClosed();
+            stop();
+            reconnect();
+          }
+        }, jatos2.channelClosedCheckInterval);
+      }
+      function stop() {
+        clearInterval(interval);
+      }
+      return { start, stop };
     }
     function clearBatchChannel() {
       batchSessionData = {};
@@ -1632,7 +1654,7 @@ var jatos;
           }
           break;
         case "CLOSED":
-          clearInterval(batchChannelClosedCheckTimer);
+          batchClosedCheck.stop();
           setBatchChannelDead();
           studyRunState.invalid = true;
           console.info("Batch channel closed by JATOS server");
@@ -1744,7 +1766,7 @@ var jatos;
       groupChannel.onopen = function() {
         groupChannel.send('{"action":"READY"}');
         groupHeartbeat.start();
-        groupChannelClosedCheck();
+        groupClosedCheck.start();
       };
       groupChannel.onmessage = function(event) {
         handleGroupMsg(event.data);
@@ -1778,16 +1800,6 @@ var jatos;
       }
       clearGroupChannel();
       openGroupChannelWithRetry();
-    }
-    function groupChannelClosedCheck() {
-      clearInterval(groupChannelClosedCheckTimer);
-      groupChannelClosedCheckTimer = setInterval(function() {
-        if (groupChannel.readyState === groupChannel.CLOSED) {
-          callMany("Group channel closed", console.info, groupChannelCallbacks.onError);
-          clearInterval(groupChannelClosedCheckTimer);
-          reopenGroupChannel();
-        }
-      }, jatos2.channelClosedCheckInterval);
     }
     function clearGroupChannel() {
       jatos2.groupMemberId = null;
@@ -1862,7 +1874,7 @@ var jatos;
           callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
           break;
         case "CLOSED":
-          clearInterval(groupChannelClosedCheckTimer);
+          groupClosedCheck.stop();
           console.info("Group channel closed by JATOS server");
           break;
         case "CHANNEL_OPENED":
@@ -2131,7 +2143,7 @@ var jatos;
         method: "GET",
         timeout: jatos2.httpTimeout,
         success: function(response) {
-          clearInterval(groupChannelClosedCheckTimer);
+          groupClosedCheck.stop();
           callWithArgs(onSuccess, response);
           leavingGroupDeferred.resolve(response);
         },
@@ -2168,8 +2180,8 @@ var jatos;
       openBatchChannelWithRetry,
       // Preserve the existing end/abort cleanup: only stop closed-channel checks.
       stopClosedChecks: () => {
-        clearInterval(batchChannelClosedCheckTimer);
-        clearInterval(groupChannelClosedCheckTimer);
+        batchClosedCheck.stop();
+        groupClosedCheck.stop();
       }
     };
   }
