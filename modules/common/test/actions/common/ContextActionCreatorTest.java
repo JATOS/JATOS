@@ -38,6 +38,7 @@ public class ContextActionCreatorTest {
             @Override
             public CompletionStage<Result> call(Http.Request req) {
                 contextInsideAction.set(Context.current());
+                assertSame(requestWithContext, req);
                 return CompletableFuture.completedFuture(Results.ok("success"));
             }
         };
@@ -48,24 +49,18 @@ public class ContextActionCreatorTest {
     }
 
     @Test
-    public void createActionCreatesFallbackContextWhenNotInAttributes() {
-        ContextActionCreator actionCreator = new ContextActionCreator();
-        Request request = Helpers.fakeRequest("GET", "/test").build();
-
-        AtomicReference<Context> contextInsideAction = new AtomicReference<>();
-        Action<Object> action = actionCreator.createAction(request, null);
+    public void missingRequestContextFailsBeforeDelegationWithoutBindingThread() {
+        Request request = Helpers.fakeRequest().build();
+        Action<Object> action = new ContextActionCreator().createAction(request, null);
         action.delegate = new Action.Simple() {
-            @Override
-            public CompletionStage<Result> call(Http.Request req) {
-                contextInsideAction.set(Context.current());
-                return CompletableFuture.completedFuture(Results.ok("fallback"));
+            @Override public CompletionStage<Result> call(Request req) {
+                fail("Missing request context must not reach the controller");
+                return CompletableFuture.completedFuture(Results.ok());
             }
         };
-
-        Result result = action.call(request).toCompletableFuture().join();
-        assertEquals(200, result.status());
-        assertNotNull(contextInsideAction.get());
-        assertSame(request, contextInsideAction.get().requestHeader());
+        JatosException error = assertThrows(JatosException.class, () -> action.call(request));
+        assertEquals("There is no HTTP Context attached to this request.", error.getMessage());
+        assertThrows(JatosException.class, Context::current);
     }
 
     @Test
@@ -138,4 +133,33 @@ public class ContextActionCreatorTest {
         assertEquals("Custom-Val", actionContext.response().headers().get("X-Custom"));
         assertEquals("testUser", actionContext.response().session().get("user").orElse(""));
     }
+    @Test
+    public void missingRequestContextDoesNotUseOrClearAnotherThreadContext() {
+        Request request = Helpers.fakeRequest().build();
+        Context previous = new Context(Helpers.fakeRequest("GET", "/other").build());
+        Context.setCurrent(previous);
+        Action<Object> action = new ContextActionCreator().createAction(request, null);
+        assertThrows(JatosException.class, () -> action.call(request));
+        assertSame(previous, Context.current());
+    }
+
+    @Test
+    public void synchronousFailureRestoresPreviousContext() {
+        Context previous = new Context(Helpers.fakeRequest().build());
+        Context.setCurrent(previous);
+        Request original = Helpers.fakeRequest("GET", "/failure").build();
+        Request request = original.addAttr(Context.CONTEXT_TYPED_KEY, new Context(original));
+        Action<Object> action = new ContextActionCreator().createAction(request, null);
+        IllegalStateException failure = new IllegalStateException("expected");
+        action.delegate = new Action.Simple() {
+            @Override
+            public CompletionStage<Result> call(Request req) {
+                assertNotSame(previous, Context.current());
+                throw failure;
+            }
+        };
+        assertSame(failure, assertThrows(IllegalStateException.class, () -> action.call(request)));
+        assertSame(previous, Context.current());
+    }
+
 }

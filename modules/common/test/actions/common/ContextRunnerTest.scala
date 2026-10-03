@@ -13,11 +13,14 @@ import scala.concurrent.{Await, ExecutionContext}
 
 class ContextRunnerTest extends ContextRunner {
 
-  private val testExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+  private val pool = Executors.newSingleThreadExecutor()
+  private val testExecutor = ExecutionContext.fromExecutor(pool)
 
   @After
   def tearDown(): Unit = {
     Context.clear()
+    pool.shutdownNow()
+    assertTrue(pool.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS))
   }
 
   @Test
@@ -55,7 +58,7 @@ class ContextRunnerTest extends ContextRunner {
   @Test
   def withContextCleansUpContextOnExecutingThread(): Unit = {
     val fakeRequest: RequestHeader = FakeRequest("GET", "/test")
-    val singleThreadEc = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
+    val singleThreadEc = testExecutor
 
     val future = withContext(fakeRequest) {
       Context.current()
@@ -75,7 +78,7 @@ class ContextRunnerTest extends ContextRunner {
       }
     })
 
-    assertTrue(checkFuture.get())
+    assertTrue(checkFuture.get(5, java.util.concurrent.TimeUnit.SECONDS))
   }
 
   @Test
@@ -90,4 +93,18 @@ class ContextRunnerTest extends ContextRunner {
     val result = Await.result(future, 3.seconds)
     assertEquals("object-ok", result)
   }
+  @Test
+  def failedFutureClearsContextBeforeWorkerReuse(): Unit = {
+    val failure = new IllegalStateException("expected")
+    val future = withContext(FakeRequest("GET", "/failed")) {
+      assertNotNull(Context.current())
+      throw failure
+    }(testExecutor)
+    assertSame(failure, assertThrows(classOf[IllegalStateException], () => Await.result(future, 3.seconds)))
+    val check = scala.concurrent.Future {
+      assertThrows(classOf[JatosException], () => Context.current())
+    }(testExecutor)
+    Await.result(check, 3.seconds)
+  }
+
 }

@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 
 /**
  * Provides a framework for handling HTTP requests and responses. It is primarily used for propagating HTTP-related
- * operations across threads and managing request-specific data in a thread-safe manner.
+ * operations across threads with an explicitly bound request context.
  *
  * Additionally, it provides a way to store arguments ({@link Args}) within the context of an HTTP request. This allows
  * for passing data between different parts of the application.
@@ -59,16 +59,14 @@ public class Http {
         }
 
         /**
-         * Safely sets the current HTTP context, for the current thread. Does nothing is the context thread local is
-         * disabled.
+         * Sets the current HTTP context for the current thread. Prefer withContext for scoped bindings.
          */
         public static void setCurrent(Http.Context ctx) {
             current.set(ctx);
         }
 
         /**
-         * Safely removes the current HTTP context, for the current thread. Does nothing is the context thread local is
-         * disabled.
+         * Removes the current HTTP context for the current thread.
          */
         public static void clear() {
             current.remove();
@@ -126,6 +124,8 @@ public class Http {
         /**
          * Runs a block with the given HTTP Context bound to the current thread. Restores the previously bound context
          * afterward.
+         * If the block returns a future, the binding ends when the block returns, not when that future
+         * completes. Bind later callbacks explicitly with wrap or contextAwareExecutor.
          */
         public static <T> T withContext(Context context, Supplier<T> block) {
             Context previous = current.get();
@@ -433,7 +433,7 @@ public class Http {
             return defaultValue;
         }
 
-        // Since TypedMap is immutable, adding a value requires re-setting the ThreadLocal
+        // Since TypedMap is immutable, adding a value requires replacing the map.
         public <T> void put(TypedKey<T> key, T value) {
             set(args.put(key, value));
         }

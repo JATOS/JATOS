@@ -156,4 +156,33 @@ public class ContextFilterTest {
         }
     }
 
+    @Test
+    public void unchangedContextPreservesExplicitResultSessionAndFlash() {
+        ContextFilter filter = new ContextFilter(mock(Materializer.class));
+        Result result = filter.apply(header -> CompletableFuture.completedFuture(Results.ok()
+                        .withSession(java.util.Map.of("user", "direct"))
+                        .withFlash(java.util.Map.of("notice", "direct"))),
+                Helpers.fakeRequest().session("user", "incoming").build()).toCompletableFuture().join();
+        assertEquals("direct", result.session().get("user").orElseThrow());
+        assertEquals("direct", result.flash().get("notice").orElseThrow());
+    }
+
+    @Test
+    public void discardWinsOverSetCookieAndUsesConfiguredBasePath() {
+        try (org.mockito.MockedStatic<general.common.Common> common = org.mockito.Mockito.mockStatic(general.common.Common.class)) {
+            common.when(general.common.Common::getJatosUrlBasePath).thenReturn("/jatos/");
+            ContextFilter filter = new ContextFilter(mock(Materializer.class));
+            Result result = filter.apply(header -> {
+                Context context = Context.current(header);
+                context.response().setCookie(Cookie.builder("id", "new").withPath("/jatos/").build());
+                context.response().discardCookie("id");
+                return CompletableFuture.completedFuture(Results.ok());
+            }, Helpers.fakeRequest().build()).toCompletableFuture().join();
+            Cookie discarded = result.cookies().get("id").orElseThrow();
+            assertEquals("/jatos/", discarded.path());
+            assertEquals("", discarded.value());
+            assertEquals(Integer.valueOf(0), discarded.maxAge());
+        }
+    }
+
 }

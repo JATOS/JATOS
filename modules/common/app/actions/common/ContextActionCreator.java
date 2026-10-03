@@ -13,8 +13,8 @@ import java.util.concurrent.CompletionStage;
  * Play {@link ActionCreator} that binds the request's HTTP {@link Context} to the worker thread for the duration of
  * every Java controller action invocation.
  *
- * It retrieves the {@link Context} attached to the request attributes by ContextFilter (or creates a fallback context
- * if none is present) and wraps the action execution inside
+ * It requires the {@link Context} attached to the request attributes by ContextFilter and fails immediately
+ * if it is missing. It wraps the action execution inside
  * {@link Context#withContext(Context, java.util.function.Supplier)}.
  */
 public class ContextActionCreator implements ActionCreator {
@@ -25,8 +25,7 @@ public class ContextActionCreator implements ActionCreator {
         return new Action.Simple() {
             @Override
             public CompletionStage<Result> call(Http.Request req) {
-                Context context = req.attrs().getOptional(Context.CONTEXT_TYPED_KEY)
-                        .orElseGet(() -> new Context(req));
+                Context context = Context.current(req);
                 return Context.withContext(context, () -> delegate.call(req));
             }
         };
