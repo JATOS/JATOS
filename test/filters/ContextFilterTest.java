@@ -167,6 +167,7 @@ public class ContextFilterTest {
         assertEquals("direct", result.flash().get("notice").orElseThrow());
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void discardWinsOverSetCookieAndUsesConfiguredBasePath() {
         try (org.mockito.MockedStatic<general.common.Common> common = org.mockito.Mockito.mockStatic(general.common.Common.class)) {

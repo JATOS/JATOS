@@ -19,6 +19,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class RequestLoggingFilterTest {
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void delayedLoggingBindsRequestIdentityAndRestoresCompletionThread() {
         Context previous = new Context(Helpers.fakeRequest("GET", "/unrelated").build());
