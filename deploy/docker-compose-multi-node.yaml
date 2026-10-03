@@ -35,6 +35,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    restart: unless-stopped
     environment: &jatos-environment
       JATOS_SECRET: local-multi-node-test-secret-change-before-production
       JATOS_DB_URL: jdbc:mysql://mysql:3306/jatos?characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
@@ -66,6 +67,7 @@ services:
         condition: service_healthy
       jatos-seed:
         condition: service_healthy
+    restart: unless-stopped
     environment:
       <<: *jatos-environment
     ports:
