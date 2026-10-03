@@ -1,5 +1,7 @@
 package filters
 
+import general.common.Common
+import http.common.HttpUtils
 import org.apache.pekko.stream.Materializer
 import play.api.mvc._
 
@@ -15,7 +17,7 @@ class NoCacheHtmlFilter @Inject()(implicit val mat: Materializer, ec: ExecutionC
 
   override def apply(next: EssentialAction): EssentialAction = EssentialAction { request =>
     next(request).map { result =>
-      val shouldApply = request.path.startsWith("/jatos")
+      val shouldApply = HttpUtils.isGuiUrl(request.path) || request.path == Common.getJatosUrlBasePath
       val contentType = result.body.contentType.getOrElse("")
 
       if (shouldApply && contentType.startsWith("text/html")) {
