@@ -1,4 +1,4 @@
-import com.typesafe.sbt.web.Import.WebKeys.webModules
+import com.typesafe.sbt.web.Import.WebKeys.{exportedMappings, webModules}
 import sbtbuildinfo.BuildInfoPlugin.autoImport.buildInfoKeys
 import SharedSettings._
 
@@ -63,6 +63,14 @@ lazy val jatos = (project in file("."))
         file -> (prefix + path)
       }
       otherAssets ++ publixAssets
+    },
+    // The live files above belong to publix, not the root project's WebJar.
+    // sbt-web normally excludes dependency files by their extraction directory;
+    // these source files live elsewhere, so exclude them explicitly from exports.
+    // Otherwise TestAssets imports them twice (from jatos and jatos-publix).
+    Assets / exportedMappings := {
+      val publixFiles = (publix / Assets / mappings).value.map(_._1).toSet
+      (Assets / exportedMappings).value.filterNot { case (file, _) => publixFiles.contains(file) }
     },
     routesGenerator := InjectedRoutesGenerator,
 
