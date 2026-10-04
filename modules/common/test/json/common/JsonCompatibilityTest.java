@@ -13,7 +13,9 @@ import java.util.TimeZone;
 import static org.junit.Assert.assertEquals;
 
 /** v3.11.3 used Json.newDefaultMapper(), with the server timezone, for these scalar values. */
+@SuppressWarnings("deprecation")
 public class JsonCompatibilityTest {
+    @SuppressWarnings("unused")
     public static class Payload {
         @JsonView(DefaultJson.JsonForApi.class) public Timestamp date = Timestamp.valueOf("2024-06-15 12:34:56.123");
         @JsonView(DefaultJson.JsonForApi.class) public Long id = 9007199254740993L;

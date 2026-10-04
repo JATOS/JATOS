@@ -8,6 +8,7 @@ import play.libs.Json;
 import play.libs.ws.WSResponse;
 import testutils.JatosTest;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,6 +24,7 @@ public class ApiJsonCompatibilityTest extends JatosTest {
         body.set("jsonData", input);
         JsonNode data = success(api(collection).post(body), 200);
         assertThat(data.get("id").isIntegralNumber()).isTrue();
+        //noinspection ResultOfMethodCallIgnored
         UUID.fromString(data.get("uuid").asText());
         ObjectNode expected = Json.newObject().put("id", data.get("id").asLong())
                 .put("uuid", data.get("uuid").asText()).put("title", "Compatibility ü")
@@ -77,9 +79,10 @@ public class ApiJsonCompatibilityTest extends JatosTest {
     @Test public void tokenDatesRemainIsoStringsAndSecretsStayHidden() {
         JsonNode data = success(api("/jatos/api/v1/admin/token").get(), 200);
         assertThat(data.get("creationDate").isTextual()).isTrue();
-        java.time.OffsetDateTime.parse(data.get("creationDate").asText());
+        //noinspection ResultOfMethodCallIgnored
+        OffsetDateTime.parse(data.get("creationDate").asText());
         assertThat(data.get("expirationDate").isTextual()).isTrue();
-        assertThat(java.time.OffsetDateTime.parse(data.get("expirationDate").asText()).toInstant())
+        assertThat(OffsetDateTime.parse(data.get("expirationDate").asText()).toInstant())
                 .isEqualTo(java.time.Instant.EPOCH);
         assertThat(data.has("tokenHash")).isFalse();
         assertThat(data.has("token")).isFalse();
@@ -94,7 +97,7 @@ public class ApiJsonCompatibilityTest extends JatosTest {
         }
     }
 
-    private JsonNode success(WSResponse response, int status) {
+    private JsonNode success(WSResponse response, @SuppressWarnings("SameParameterValue") int status) {
         assertThat(response.getStatus()).as(response.getBody()).isEqualTo(status);
         assertThat(response.getContentType()).startsWith("application/json");
         JsonNode json = response.asJson();
