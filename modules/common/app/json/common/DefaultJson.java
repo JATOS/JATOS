@@ -38,6 +38,8 @@ public class DefaultJson {
         jsonMapper = JsonMapper.builder()
                 // Never include source JSON content in exception locations (prevents leaking payload snippets)
                 .disable(Feature.INCLUDE_SOURCE_IN_LOCATION)
+                // Preserve the ISO-8601 date representation used by Play's legacy default mapper.
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .addModule(h5Module)
                 .build();
         jsonMapper.setTimeZone(TimeZone.getDefault());
@@ -48,11 +50,13 @@ public class DefaultJson {
         jsonMapperForApi = JsonMapper.builder()
                 // Never include source JSON content in exception locations (prevents leaking payload snippets)
                 .disable(Feature.INCLUDE_SOURCE_IN_LOCATION)
+                // Preserve the ISO-8601 date representation used by Play's legacy default mapper.
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 // Strictly only includes fields annotated with @JsonView(JsonForApi.class)
                 .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                 .addModule(h5Module)
                 .build();
-        jsonMapper.setTimeZone(TimeZone.getDefault());
+        jsonMapperForApi.setTimeZone(TimeZone.getDefault());
 
         apiWriter = jsonMapperForApi.writerWithView(JsonForApi.class);
     }
