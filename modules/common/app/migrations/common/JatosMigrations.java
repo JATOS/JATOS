@@ -31,17 +31,22 @@ public class JatosMigrations {
     }
 
     private void runWithLocks(Runnable callback) throws SQLException {
-        Connection c = db.getDataSource().getConnection();
-        c.setAutoCommit(false);
-        Statement s = c.createStatement();
-        createLockTableIfNecessary(c, s);
-        lock(c, s, 5);
-
-        callback.run();
-
-        s.close();
-        c.commit();
-        c.close();
+        try (Connection c = db.getDataSource().getConnection()) {
+            c.setAutoCommit(false);
+            try (Statement s = c.createStatement()) {
+                createLockTableIfNecessary(c, s);
+                lock(c, s, 5);
+                callback.run();
+                c.commit();
+            } catch (SQLException | RuntimeException | Error failure) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackFailure) {
+                    failure.addSuppressed(rollbackFailure);
+                }
+                throw failure;
+            }
+        }
     }
 
     private void createLockTableIfNecessary(Connection c, Statement s) throws SQLException {
@@ -58,7 +63,7 @@ public class JatosMigrations {
     private void lock(Connection c, Statement s, int attempts) throws SQLException {
         try {
             s.execute("set innodb_lock_wait_timeout = 1");
-            s.execute("select `lock` from jatos.play_evolutions_lock where `lock` = 1 for update");
+            s.execute("select `lock` from play_evolutions_lock where `lock` = 1 for update");
         } catch (SQLException e) {
             if (attempts == 0) throw e;
             else {
