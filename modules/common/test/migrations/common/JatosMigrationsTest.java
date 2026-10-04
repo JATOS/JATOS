@@ -31,6 +31,7 @@ public class JatosMigrationsTest {
         when(connection.createStatement()).thenReturn(statement);
         when(statement.executeQuery("select `lock` from play_evolutions_lock")).thenReturn(mock(ResultSet.class));
         try (var common = mockStatic(Common.class)) {
+            //noinspection ResultOfMethodCallIgnored
             common.when(Common::isMultiNode).thenReturn(true);
             JatosMigrations migrations = new JatosMigrations(db);
             RuntimeException failure = new RuntimeException("migration failed");
