@@ -4,12 +4,20 @@
 #   docker build -f deploy/Dockerfile -t jatos-multi-node-test target/docker/stage
 #   docker compose -f deploy/docker-compose-multi-node.yaml up --scale jatos=2
 #
-# Open http://localhost:9000 to access the cluster through the load balancer, or
-# http://localhost:9001 to access the seed node directly. Docker assigns a free
+# This starts two fixed seed nodes plus two additional JATOS replicas. All serve
+# study requests. Change --scale jatos=N to choose the number of additional
+# replicas. Use --scale jatos=0 for just the two seeds.
+# Open http://localhost:9000 through the load balancer, or ports 9001 and 9002
+# to access the seed nodes directly. Docker assigns a free
 # host port to port 9000 of every scalable jatos container; list them with
 # `docker compose -f deploy/docker-compose-multi-node.yaml ps`. All nodes use the
 # same database and shared JATOS data volume. This setup is intended for local
 # testing only; its credentials and secret are not suitable for production.
+# Seeds start independently after MySQL: HTTP health is not cluster readiness.
+# During rolling restarts, wait for cluster membership and messaging to recover
+# before stopping the other seed. Initial cluster formation requires seed-1.
+# When replacing the older single-seed setup, stop the old stack first and use
+# up --remove-orphans to remove its obsolete seed container. Preserve the volumes.
 
 name: jatos-multi-node-test
 
@@ -29,9 +37,9 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
 
-  jatos-seed:
+  jatos-seed-1:
     image: jatos-multi-node-test
-    hostname: jatos-seed
+    hostname: jatos-seed-1
     depends_on:
       mysql:
         condition: service_healthy
@@ -55,7 +63,29 @@ services:
       retries: 60
     volumes:
       - jatos-data:/opt/jatos_data
-      - ./jatos-seed.conf:/opt/jatos/conf/jatos.conf:ro
+      - ./jatos.conf:/opt/jatos/conf/jatos.conf:ro
+
+  jatos-seed-2:
+    image: jatos-multi-node-test
+    hostname: jatos-seed-2
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      <<: *jatos-environment
+    ports:
+      - "9002:9000"
+    expose:
+      - "25520"
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /ping HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && IFS= read -r status <&3 && [[ \"$$status\" == *\" 200 \"* ]]"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+    volumes:
+      - jatos-data:/opt/jatos_data
+      - ./jatos.conf:/opt/jatos/conf/jatos.conf:ro
 
   # Scale this service with, for example, `--scale jatos=3`. Do not set a fixed
   # hostname or host port here: every replica needs a unique Pekko address and
@@ -65,7 +95,9 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      jatos-seed:
+      jatos-seed-1:
+        condition: service_healthy
+      jatos-seed-2:
         condition: service_healthy
     restart: unless-stopped
     environment:
@@ -86,9 +118,9 @@ services:
   load-balancer:
     image: nginx:1.28-alpine
     depends_on:
-      jatos-seed:
+      jatos-seed-1:
         condition: service_healthy
-      jatos:
+      jatos-seed-2:
         condition: service_healthy
     ports:
       - "9000:80"
