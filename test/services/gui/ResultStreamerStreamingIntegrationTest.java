@@ -127,6 +127,89 @@ public class ResultStreamerStreamingIntegrationTest {
     }
 
     @Test
+    public void failedCombinedExportDeletesTemporaryMetadata() throws Exception {
+        Study study = new Study();
+        study.setId(1L);
+        when(studyResultDao.findIdsByComponentResultIds(Collections.singletonList(10L)))
+                .thenReturn(Collections.singletonList(2L));
+        when(studyDao.findIdsByStudyResultIds(Collections.singletonList(2L)))
+                .thenReturn(Collections.singletonList(1L));
+        when(studyDao.findById(1L)).thenReturn(study);
+        doThrow(new IllegalStateException("Simulated export failure"))
+                .when(authorizationService).canUserAccessStudy(study, user);
+        Set<Path> before = metadataTempFiles();
+        try {
+            org.junit.Assert.assertThrows(IllegalStateException.class, () ->
+                    resultStreamer.writeResults(Collections.singletonList(10L), user, null,
+                            ResultType.COMBINED, Collections.emptyMap()));
+            assertThat(metadataTempFiles()).isEqualTo(before);
+        } finally {
+            Set<Path> remaining = metadataTempFiles();
+            remaining.removeAll(before);
+            for (Path file : remaining) Files.deleteIfExists(file);
+        }
+    }
+
+    @Test
+    public void interruptedZipWriteDeletesTemporaryMetadata() throws Exception {
+        Set<Path> before = metadataTempFiles();
+        var zip = new java.util.zip.ZipOutputStream(new java.io.OutputStream() {
+            @Override public void write(int value) throws java.io.IOException {
+                throw new java.io.IOException("Simulated client disconnect");
+            }
+        });
+        try {
+            org.junit.Assert.assertThrows(exceptions.common.JatosException.class, () ->
+                    resultStreamer.writeResults(Collections.emptyList(), user, zip,
+                            ResultType.COMBINED, Collections.emptyMap()));
+            assertThat(metadataTempFiles()).isEqualTo(before);
+        } finally {
+            try { zip.close(); } catch (java.io.IOException expected) { /* Disconnected output stays unwritable. */ }
+            Set<Path> remaining = metadataTempFiles();
+            remaining.removeAll(before);
+            for (Path file : remaining) Files.deleteIfExists(file);
+        }
+    }
+
+    @Test
+    public void stalledZipExportDoesNotInjectKeepAliveBytes() throws Exception {
+        var started = new java.util.concurrent.CountDownLatch(1);
+        var release = new java.util.concurrent.CountDownLatch(1);
+        when(studyResultDao.findIdsByComponentResultIds(anyList())).thenAnswer(invocation -> {
+            started.countDown();
+            if (!release.await(45, TimeUnit.SECONDS)) throw new IllegalStateException("Test export not released");
+            return Collections.emptyList();
+        });
+        Http.Request request = fakeJsonRequest(Json.newObject());
+        setCurrentContextWithSignedinUser(request, user);
+        var queue = resultStreamer.streamResults(request, ResultType.DATA_ONLY)
+                .runWith(org.apache.pekko.stream.javadsl.Sink.queue(), materializer);
+        var first = queue.pull().toCompletableFuture();
+        try {
+            assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
+            // Cross the former 30-second keep-alive interval while ZIP generation is deliberately stalled.
+            org.junit.Assert.assertThrows(java.util.concurrent.TimeoutException.class,
+                    () -> first.get(31, TimeUnit.SECONDS));
+            release.countDown();
+            ByteString prefix = first.get(5, TimeUnit.SECONDS).orElseThrow();
+            while (prefix.size() < 2) {
+                prefix = prefix.concat(queue.pull().toCompletableFuture().get(5, TimeUnit.SECONDS).orElseThrow());
+            }
+            assertThat(prefix.take(2).utf8String()).isEqualTo("PK");
+        } finally {
+            release.countDown();
+            queue.cancel();
+        }
+    }
+
+    private Set<Path> metadataTempFiles() throws Exception {
+        try (var files = Files.list(Path.of(System.getProperty("java.io.tmpdir")))) {
+            return files.filter(path -> path.getFileName().toString().matches("metadata[0-9]+json"))
+                    .collect(java.util.stream.Collectors.toSet());
+        }
+    }
+
+    @Test
     public void streamComponentResultData_streamsActualResultData() throws Exception {
         // Given
         Study study = new Study();

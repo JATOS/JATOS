@@ -33,7 +33,6 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -44,6 +43,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
+ * Response streams must not inject keep-alive bytes: stream chunks can split JSON tokens, raw result data
+ * or ZIP records, so even whitespace can corrupt their contents.
  */
 @Singleton
 public class ResultStreamer {
@@ -81,7 +82,6 @@ public class ResultStreamer {
      */
     public Source<ByteString, ?> streamStudyResultsByStudy(Study study) {
         return StreamConverters.asOutputStream()
-                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                         writer.write("[");
@@ -117,7 +117,6 @@ public class ResultStreamer {
     public Source<ByteString, ?> streamStudyResultsByBatch(WorkerType workerType, Batch batch) {
         if (workerType == WorkerType.NONE) {
             return StreamConverters.asOutputStream()
-                    .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                     .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                         try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                             writer.write("[");
@@ -130,7 +129,6 @@ public class ResultStreamer {
                     }));
         } else {
             return StreamConverters.asOutputStream()
-                    .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                     .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                         try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                             writer.write("[");
@@ -182,7 +180,6 @@ public class ResultStreamer {
      */
     public Source<ByteString, ?> streamStudyResultsByGroup(GroupResult groupResult) {
         return StreamConverters.asOutputStream()
-                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                         writer.write("[");
@@ -218,7 +215,6 @@ public class ResultStreamer {
     public Source<ByteString, ?> streamStudyResultsByWorker(Worker worker) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         return StreamConverters.asOutputStream()
-                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                         writer.write("[");
@@ -253,7 +249,6 @@ public class ResultStreamer {
      */
     public Source<ByteString, ?> streamComponentResults(Component component) {
         return StreamConverters.asOutputStream()
-                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                         writer.write("[");
@@ -302,7 +297,6 @@ public class ResultStreamer {
     private Source<ByteString, ?> streamComponentResultData(List<Long> componentResultIdList) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         return StreamConverters.asOutputStream()
-                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
                         writeComponentResultDataByIds(writer, componentResultIdList, signedinUser);
@@ -406,7 +400,6 @@ public class ResultStreamer {
                                                 Map<String, Object> wrapObject) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         return StreamConverters.asOutputStream()
-                .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (ZipOutputStream zipOut = new ZipOutputStream(outputStream, UTF_8)) {
                         studyResultDao.withReadOnlyTransaction(em -> {
@@ -439,63 +432,75 @@ public class ResultStreamer {
      */
     Path writeResults(List<Long> componentResultIds, User signedinUser, ZipOutputStream zipOut,
                       ResultType resultsType, Map<String, Object> wrapObject) {
+        Path metadataFile = null;
+        boolean retainMetadata = false;
         try {
             List<Long> studyResultIds = studyResultDao.findIdsByComponentResultIds(componentResultIds);
 
-            Path metadataFile = null;
-            JsonGenerator jGenerator;
             if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
                 metadataFile = Files.createTempFile("metadata", "json");
-                jGenerator = Json.mapper().getFactory().createGenerator(metadataFile.toFile(), JsonEncoding.UTF8);
-                jGenerator.writeStartObject();
-                if (!wrapObject.isEmpty()) {
-                    for (Map.Entry<String, Object> e : wrapObject.entrySet()) {
-                        jGenerator.writeObjectField(e.getKey(), e.getValue());
+            }
+            try (JsonGenerator jGenerator = metadataFile == null ? null
+                    : Json.mapper().getFactory().createGenerator(metadataFile.toFile(), JsonEncoding.UTF8)) {
+                if (jGenerator != null) {
+                    jGenerator.writeStartObject();
+                    if (!wrapObject.isEmpty()) {
+                        for (Map.Entry<String, Object> e : wrapObject.entrySet()) {
+                            jGenerator.writeObjectField(e.getKey(), e.getValue());
+                        }
+                    }
+                    jGenerator.writeArrayFieldStart("data");
+                }
+
+                List<Long> studyIds = studyDao.findIdsByStudyResultIds(studyResultIds);
+                for (Long studyId : studyIds) {
+                    Study study = studyDao.findById(studyId);
+                    authorizationService.canUserAccessStudy(study, signedinUser);
+
+                    if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
+                        //noinspection DataFlowIssue
+                        jGenerator.writeStartObject();
+                        jGenerator.writeNumberField("studyId", study.getId());
+                        jGenerator.writeStringField("studyUuid", study.getUuid());
+                        jGenerator.writeStringField("studyTitle", study.getTitle());
+                        jGenerator.writeArrayFieldStart("studyResults");
+                    }
+
+                    List<Long> sridsByStudy = studyResultDao.findIdsFromListThatBelongToStudy(studyResultIds, study.getId());
+                    writeStudyResultsToZip(componentResultIds, sridsByStudy, zipOut, jGenerator, resultsType);
+
+                    if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
+                        jGenerator.writeEndArray();
+                        jGenerator.writeEndObject();
+                    }
+                    if (resultsType == ResultType.COMBINED || resultsType == ResultType.DATA_ONLY || resultsType == ResultType.FILES_ONLY) {
+                        studyLogger.log(study, signedinUser, "Exported results (files and/or data)");
                     }
                 }
-                jGenerator.writeArrayFieldStart("data");
-            } else {
-                jGenerator = null;
-            }
-
-            List<Long> studyIds = studyDao.findIdsByStudyResultIds(studyResultIds);
-            for (Long studyId : studyIds) {
-                Study study = studyDao.findById(studyId);
-                authorizationService.canUserAccessStudy(study, signedinUser);
 
                 if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
-                    jGenerator.writeStartObject();
-                    jGenerator.writeNumberField("studyId", study.getId());
-                    jGenerator.writeStringField("studyUuid", study.getUuid());
-                    jGenerator.writeStringField("studyTitle", study.getTitle());
-                    jGenerator.writeArrayFieldStart("studyResults");
-                }
-
-                List<Long> sridsByStudy = studyResultDao.findIdsFromListThatBelongToStudy(studyResultIds, study.getId());
-                writeStudyResultsToZip(componentResultIds, sridsByStudy, zipOut, jGenerator, resultsType);
-
-                if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
+                    //noinspection DataFlowIssue
                     jGenerator.writeEndArray();
-                    jGenerator.writeEndObject();
+                    if (!wrapObject.isEmpty()) jGenerator.writeEndObject();
                 }
-                if (resultsType == ResultType.COMBINED || resultsType == ResultType.DATA_ONLY || resultsType == ResultType.FILES_ONLY) {
-                    studyLogger.log(study, signedinUser, "Exported results (files and/or data)");
-                }
-            }
-
-            if (resultsType == ResultType.METADATA_ONLY || resultsType == ResultType.COMBINED) {
-                jGenerator.writeEndArray();
-                if (!wrapObject.isEmpty()) jGenerator.writeEndObject();
-                jGenerator.close();
             }
 
             if (resultsType == ResultType.COMBINED) {
                 ZipUtil.addFileToZip(zipOut, Path.of(""), Path.of("metadata.json"), metadataFile);
-                Files.delete(metadataFile);
             }
-            return resultsType == ResultType.METADATA_ONLY ? metadataFile : null;
+            retainMetadata = resultsType == ResultType.METADATA_ONLY;
+            return retainMetadata ? metadataFile : null;
         } catch (IOException e) {
             throw new JatosException(e);
+        } finally {
+            // Only a successfully generated metadata-only response transfers file ownership to the caller.
+            if (metadataFile != null && !retainMetadata) {
+                try {
+                    Files.deleteIfExists(metadataFile);
+                } catch (IOException e) {
+                    LOGGER.error("Could not delete export metadata file " + metadataFile, e);
+                }
+            }
         }
     }
 
