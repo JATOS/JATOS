@@ -21,7 +21,7 @@ import static org.junit.Assume.assumeTrue;
  */
 public class StudyRunIntegrationTest extends JatosTest {
     /**
-     * Runs the imported study through {@code test/resources/study-compatibility/browser.cjs}
+     * Runs the imported study through {@code test/resources/studyrun/browser.cjs}
      * against a test server. Playwright exercises Chromium, Firefox and WebKit with the current standard
      * client, current minified client and an abort scenario: nine study runs in total.
      *
@@ -55,7 +55,7 @@ public class StudyRunIntegrationTest extends JatosTest {
         Files.writeString(input, config.toString());
         Process process = null;
         try {
-            process = new ProcessBuilder("node", "test/resources/study-compatibility/browser.cjs", input.toString())
+            process = new ProcessBuilder("node", "test/resources/studyrun/browser.cjs", input.toString())
                     .redirectErrorStream(true).redirectOutput(log.toFile()).start();
             assertTrue("Browser timeout; log: " + log, process.waitFor(240, TimeUnit.SECONDS));
             assertEquals(Files.readString(log), 0, process.exitValue());
