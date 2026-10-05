@@ -153,18 +153,17 @@ public class ResultStreamerStreamingIntegrationTest {
     @Test
     public void interruptedZipWriteDeletesTemporaryMetadata() throws Exception {
         Set<Path> before = metadataTempFiles();
-        var zip = new java.util.zip.ZipOutputStream(new java.io.OutputStream() {
-            @Override public void write(int value) throws java.io.IOException {
+        try (var zip = new java.util.zip.ZipOutputStream(new java.io.OutputStream() {
+            @Override
+            public void write(int value) throws java.io.IOException {
                 throw new java.io.IOException("Simulated client disconnect");
             }
-        });
-        try {
-            org.junit.Assert.assertThrows(exceptions.common.JatosException.class, () ->
+        })) {
+            Assert.assertThrows(exceptions.common.JatosException.class, () ->
                     resultStreamer.writeResults(Collections.emptyList(), user, zip,
                             ResultType.COMBINED, Collections.emptyMap()));
             assertThat(metadataTempFiles()).isEqualTo(before);
-        } finally {
-            try { zip.close(); } catch (java.io.IOException expected) { /* Disconnected output stays unwritable. */ }
+        } catch (java.io.IOException expected) { /* Disconnected output stays unwritable. */ } finally {
             Set<Path> remaining = metadataTempFiles();
             remaining.removeAll(before);
             for (Path file : remaining) Files.deleteIfExists(file);
