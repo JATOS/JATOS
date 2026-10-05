@@ -29,6 +29,7 @@ public class JatosMigrationsTest {
         when(db.getDataSource()).thenReturn(source);
         when(source.getConnection()).thenReturn(connection);
         when(connection.createStatement()).thenReturn(statement);
+        //noinspection SqlResolve
         when(statement.executeQuery("select `lock` from play_evolutions_lock")).thenReturn(mock(ResultSet.class));
         try (var common = mockStatic(Common.class)) {
             //noinspection ResultOfMethodCallIgnored
@@ -43,6 +44,7 @@ public class JatosMigrationsTest {
                 migrations.start(() -> {});
                 verify(connection).commit();
             }
+            //noinspection SqlResolve
             verify(statement).execute("select `lock` from play_evolutions_lock where `lock` = 1 for update");
             verify(statement).close();
             verify(connection).close();
