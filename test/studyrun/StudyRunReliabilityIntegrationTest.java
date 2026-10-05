@@ -33,6 +33,7 @@ import static org.junit.Assume.assumeTrue;
  * result isolation; full and cancelled HTTP exports exercise streaming and temporary-file cleanup.
  * This is a bounded regression exercise, not a production capacity benchmark.
  */
+@SuppressWarnings("BusyWait")
 public class StudyRunReliabilityIntegrationTest extends JatosTest {
     @Test public void concurrentRunsReconnectAndExportsReleaseResources() throws Exception {
         assumeTrue(System.getenv("JATOS_PLAYWRIGHT_MODULE") != null);
