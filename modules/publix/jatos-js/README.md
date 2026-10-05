@@ -66,3 +66,19 @@ Neither variant downloads startup scripts. GUI jQuery is unaffected.
 JSON Patch is imported from the pinned `fast-json-patch@3.1.1` npm package and
 bundled into both browser variants. No additional JSON Patch script or global is
 needed. Its MIT notice is preserved in the bundles.
+
+## Real study run check
+
+The test `studyrun.StudyRunIntegrationTest` runs that study in Chromium, Firefox and WebKit
+with the current standard and minified clients, plus abort scenarios (nine runs in total).
+It verifies persisted results afterward.
+It needs an installed Playwright package and all three browser binaries; it does
+not download them. From the repository root:
+
+```bash
+JATOS_PLAYWRIGHT_MODULE=/path/to/node_modules/@playwright/test \
+sbt 'testOnly gui.StudyImportExportIntegrationTest studyrun.StudyRunIntegrationTest'
+```
+
+Without this environment variable, only the optional browser test is skipped.
+The legacy archive round-trip test still runs.
