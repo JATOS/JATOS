@@ -41,6 +41,7 @@ public class ResultRemoverTest {
     private IOUtils ioUtils;
 
     private ResultRemover resultRemover;
+    private JPAMocker.TransactionCallbacks callbacks;
 
     private User user;
     private Study study;
@@ -84,7 +85,8 @@ public class ResultRemoverTest {
         component = newComponent(study);
         worker = newWorker();
 
-        JPAMocker.mockDaoTransactions(componentResultDao, studyResultDao, groupResultDao, workerDao);
+        callbacks = new JPAMocker.TransactionCallbacks();
+        JPAMocker.mockDaoTransactions(callbacks.em, componentResultDao, studyResultDao, groupResultDao, workerDao);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
         Context.current().args().put(SIGNEDIN_USER, user);
@@ -173,6 +175,7 @@ public class ResultRemoverTest {
         when(componentResultDao.findById(201L)).thenReturn(cr2);
 
         resultRemover.removeComponentResults(Arrays.asList(200L, 201L), true);
+        callbacks.commit();
 
         // studyResult should have both removed, uploads dir removed twice, and component results removed
         verify(ioUtils, times(1)).removeResultUploadsDir(eq(sr.getId()), eq(200L));
@@ -198,6 +201,7 @@ public class ResultRemoverTest {
         when(componentResultDao.findById(210L)).thenReturn(cr1);
 
         resultRemover.removeComponentResults(Collections.singletonList(210L), true);
+        callbacks.commit();
 
         // Only the specified component removed, and sr not removed
         verify(componentResultDao).remove(cr1);
@@ -213,6 +217,7 @@ public class ResultRemoverTest {
         doThrow(new ForbiddenException("no")).when(authorizationService).canUserAccessComponentResults(anyList(), any(User.class), anyBoolean());
 
         resultRemover.removeComponentResults(Collections.singletonList(220L), true);
+        callbacks.commit();
     }
 
     @Test
@@ -227,6 +232,7 @@ public class ResultRemoverTest {
         when(studyResultDao.findById(301L)).thenReturn(sr2);
 
         resultRemover.removeStudyResults(Arrays.asList(300L, 301L));
+        callbacks.commit();
 
         // uploads dir removed per study result and study result removed
         verify(ioUtils).removeResultUploadsDir(300L);
@@ -252,6 +258,7 @@ public class ResultRemoverTest {
         when(componentResultDao.findById(601L)).thenReturn(cr2);
 
         resultRemover.removeAllComponentResults(component);
+        callbacks.commit();
 
         // both removed via dao
         verify(componentResultDao).remove(cr1);
@@ -276,6 +283,7 @@ public class ResultRemoverTest {
         newComponentResult(801L, sr2);
 
         resultRemover.removeAllStudyResults(batch);
+        callbacks.commit();
 
         // components removed
         // uploads for sr and studyResult removed

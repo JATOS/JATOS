@@ -38,16 +38,19 @@ public class BatchService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final StudyLogger studyLogger;
+    private final ResultRemover resultRemover;
 
     @Inject
     BatchService(BatchDao batchDao,
                  StudyDao studyDao,
                  WorkerDao workerDao,
-                 StudyLogger studyLogger) {
+                 StudyLogger studyLogger,
+                 ResultRemover resultRemover) {
         this.batchDao = batchDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.studyLogger = studyLogger;
+        this.resultRemover = resultRemover;
     }
 
     /**
@@ -170,8 +173,10 @@ public class BatchService {
      */
     public void remove(Batch batch) {
         batchDao.withTransaction(entityManager -> {
-            // Remove or update Workers of this batch
-            // (StudyResults, ComponentResults, GroupResults, and StudyLinks are cascaded by database)
+            // Do the result deletion before removing workers or the batch: group membership FKs restrict deletion.
+            resultRemover.removeAllStudyResults(batch);
+
+            // Remove or update Workers of this batch (groups and links cascade from the batch).
             for (Worker worker : new ArrayList<>(batch.getWorkerList())) {
                 removeOrUpdateWorkerForBatch(batch, worker);
             }
@@ -184,13 +189,14 @@ public class BatchService {
             batchDao.remove(batch);
 
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            studyLogger.log(study, signedinUser, "Removed batch", batch);
+            batchDao.afterCommit("Log removal of batch " + batch.getId(),
+                    () -> studyLogger.log(study, signedinUser, "Removed batch", batch));
         });
     }
 
     /**
-     * Remove or update worker from the batch. Workers can belong to multiple batches, so we only remove
-     * the batch from the worker's list (the BatchWorkerMap entry will be cascaded by database).
+     * Remove or update worker from the batch. Workers can belong to multiple batches, so we only remove the batch from
+     * the worker's list (the BatchWorkerMap entry will be cascaded by database).
      */
     private void removeOrUpdateWorkerForBatch(Batch batch, Worker worker) {
         if (worker.getBatchList().size() == 1) {

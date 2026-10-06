@@ -45,6 +45,7 @@ public class BatchServiceTest {
     private StudyLogger studyLogger;
 
     private BatchService batchService;
+    private JPAMocker.TransactionCallbacks callbacks;
 
     @Before
     public void setup() {
@@ -54,9 +55,10 @@ public class BatchServiceTest {
         groupResultDao = Mockito.mock(GroupResultDao.class);
         StudyLinkDao studyLinkDao = Mockito.mock(StudyLinkDao.class);
         studyLogger = Mockito.mock(StudyLogger.class);
-        batchService = new BatchService(batchDao, studyDao, workerDao, studyLogger);
+        batchService = new BatchService(batchDao, studyDao, workerDao, studyLogger, mock(ResultRemover.class));
 
-        JPAMocker.mockDaoTransactions(batchDao, studyDao, workerDao, groupResultDao, studyLinkDao);
+        callbacks = new JPAMocker.TransactionCallbacks();
+        JPAMocker.mockDaoTransactions(callbacks.em, batchDao, studyDao, workerDao, groupResultDao, studyLinkDao);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
@@ -248,6 +250,7 @@ public class BatchServiceTest {
 
         // When
         batchService.remove(batch);
+        callbacks.commit();
 
         // Then: study updated and batch removed
         verify(studyDao, times(1)).merge(study);

@@ -8,6 +8,7 @@ import exceptions.common.ForbiddenException;
 import exceptions.common.ValidationException;
 import general.common.StudyLogger;
 import http.common.Http.Context;
+import jakarta.persistence.EntityManager;
 import models.common.Batch;
 import models.common.Component;
 import models.common.Study;
@@ -17,12 +18,10 @@ import models.common.workers.JatosWorker;
 import models.gui.StudyProperties;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import play.test.Helpers;
 import testutils.gui.JPAMocker;
 import utils.common.IOUtils;
 
-import jakarta.persistence.EntityManager;
 import java.io.IOException;
 import java.util.*;
 
@@ -37,6 +36,7 @@ import static org.mockito.Mockito.*;
 public class StudyServiceTest {
 
     private EntityManager entityManager;
+    private JPAMocker.TransactionCallbacks callbacks;
     private BatchService batchService;
     private ComponentService componentService;
     private BatchDao batchDao;
@@ -57,9 +57,10 @@ public class StudyServiceTest {
         ioUtils = mock(IOUtils.class);
         studyLogger = mock(StudyLogger.class);
 
-        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao, ioUtils, studyLogger);
+        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao, ioUtils, studyLogger, mock(ResultRemover.class));
 
-        entityManager = Mockito.mock(EntityManager.class);
+        callbacks = new JPAMocker.TransactionCallbacks();
+        entityManager = callbacks.em;
         JPAMocker.mockDaoTransactions(entityManager, batchDao, userDao, studyDao);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
@@ -105,7 +106,7 @@ public class StudyServiceTest {
     @Test(expected = BadRequestException.class)
     public void changeComponentPosition_outOfBounds_throws() {
         Study s = newStudyWithComponents("T", "d", 2);
-        studyService.changeComponentPosition(5, s, s.getComponentList().get(0));
+        studyService.changeComponentPosition(5, s, s.getComponentList().getFirst());
     }
 
     @Test
@@ -661,6 +662,8 @@ public class StudyServiceTest {
         Context.current().args().put(SIGNEDIN_USER, signedIn);
 
         studyService.removeStudyInclAssets(study);
+        verify(ioUtils, never()).removeStudyAssetsDir(anyString());
+        callbacks.commit();
 
         verify(studyDao).remove(study);
         verify(ioUtils).removeStudyAssetsDir("dir");
@@ -682,6 +685,8 @@ public class StudyServiceTest {
         Context.current().args().put(SIGNEDIN_USER, signedIn);
 
         studyService.removeStudyInclAssets(study);
+        verify(ioUtils, never()).removeStudyAssetsDir(anyString());
+        callbacks.commit();
 
         verify(studyDao).remove(study);
         verify(ioUtils, never()).removeStudyAssetsDir(anyString());

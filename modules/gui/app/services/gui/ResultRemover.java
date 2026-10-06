@@ -6,13 +6,10 @@ import daos.common.StudyResultDao;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import models.common.*;
-import play.Logger;
-import play.Logger.ALogger;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,8 +21,6 @@ import static auth.gui.AuthAction.SIGNEDIN_USER;
  */
 @Singleton
 public class ResultRemover {
-
-    private static final ALogger LOGGER = Logger.of(ResultRemover.class);
 
     private final AuthorizationService authorizationService;
     private final ComponentResultDao componentResultDao;
@@ -107,28 +102,46 @@ public class ResultRemover {
     }
 
     /**
-     * Removes all StudyResults that belong to the given batch. Removes result upload files.
+     * Removes and flushes all StudyResults before deleting their batch. Removes upload files after commit.
      */
     void removeAllStudyResults(Batch batch) {
         studyResultDao.withTransaction(em -> {
             List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
             for (StudyResult studyResult : studyResultList) {
-                removeStudyResult(studyResult.getId());
+                removeStudyResultAndUploadDir(studyResult);
             }
+            // Establish deletion order: first child deletion before Hibernate queues Batch/Study deletion and its database cascades.
+            em.flush();
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            studyLogger.log(batch.getStudy(), signedinUser, "Removed result data and files");
+            Study study = batch.getStudy();
+            studyResultDao.afterCommit("Log result removal for batch " + batch.getId(),
+                    () -> studyLogger.log(study, signedinUser, "Removed result data and files"));
         });
     }
 
     /**
-     * Removes all StudyResults that reference the given study.
+     * Removes and flushes all StudyResults before deleting their study. Removes upload files after commit.
      */
     void removeAllStudyResults(Study study, User user) {
-        List<Long> studyResultIds = studyResultDao.findIdsByStudyId(study.getId());
-        for (Long studyResultId : studyResultIds) {
-            removeStudyResult(studyResultId);
-        }
-        studyLogger.log(study, user, "Removed result data and files");
+        studyResultDao.withTransaction(em -> {
+            for (Long id : studyResultDao.findIdsByStudyId(study.getId())) {
+                removeStudyResultAndUploadDir(studyResultDao.findById(id));
+            }
+            // Establish deletion order: first child deletion before Hibernate queues Batch/Study deletion and its database cascades.
+            em.flush();
+            studyResultDao.afterCommit("Log result removal for study " + study.getId(),
+                    () -> studyLogger.log(study, user, "Removed result data and files"));
+        });
+    }
+
+    /**
+     * Only for whole-study/batch deletion: the parent cascade will remove the groups. Do not queue group removal here,
+     * since group rows still have other referencing results.
+     */
+    private void removeStudyResultAndUploadDir(StudyResult result) {
+        Long id = result.getId();
+        studyResultDao.remove(result); // Hibernate removes component results before their study result.
+        studyResultDao.afterCommit("Remove uploads for study result " + id, () -> ioUtils.removeResultUploadsDir(id));
     }
 
     /**
@@ -137,15 +150,13 @@ public class ResultRemover {
     private void removeComponentResult(long componentResultId) {
         componentResultDao.withTransaction(em -> {
             ComponentResult componentResult = componentResultDao.findById(componentResultId);
-            try {
-                // Remove componentResult's upload dir
-                StudyResult studyResult = componentResult.getStudyResult();
-                if (studyResult != null) {
-                    studyResult.removeComponentResult(componentResult);
-                    ioUtils.removeResultUploadsDir(studyResult.getId(), componentResult.getId());
-                }
-            } catch (IOException e) {
-                LOGGER.error(".removeComponentResult: Couldn't remove upload dir " + componentResult.getId(), e);
+            StudyResult studyResult = componentResult.getStudyResult();
+            if (studyResult != null) {
+                studyResult.removeComponentResult(componentResult);
+                Long studyResultId = studyResult.getId();
+                Long resultId = componentResult.getId();
+                studyResultDao.afterCommit("Remove uploads for component result " + resultId,
+                        () -> ioUtils.removeResultUploadsDir(studyResultId, resultId));
             }
             componentResultDao.remove(componentResult);
         });
@@ -177,12 +188,9 @@ public class ResultRemover {
                 updateOrRemoveGroupResult(historyGroupResult);
             }
 
-            try {
-                // Remove studyResult's upload dir
-                ioUtils.removeResultUploadsDir(studyResult.getId());
-            } catch (IOException e) {
-                LOGGER.error(".removeStudyResult: Couldn't remove upload dir " + studyResult.getId(), e);
-            }
+            Long id = studyResult.getId();
+            studyResultDao.afterCommit("Remove uploads for study result " + id,
+                    () -> ioUtils.removeResultUploadsDir(id));
 
             // Remove studyResult (Worker cleanup is handled by database cascade)
             studyResultDao.remove(studyResult);

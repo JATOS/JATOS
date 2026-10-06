@@ -46,6 +46,7 @@ public class StudyService {
     private final BatchDao batchDao;
     private final IOUtils ioUtils;
     private final StudyLogger studyLogger;
+    private final ResultRemover resultRemover;
 
     @Inject
     StudyService(BatchService batchService,
@@ -54,7 +55,8 @@ public class StudyService {
                  UserDao userDao,
                  BatchDao batchDao,
                  IOUtils ioUtils,
-                 StudyLogger studyLogger) {
+                 StudyLogger studyLogger,
+                 ResultRemover resultRemover) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -62,6 +64,7 @@ public class StudyService {
         this.batchDao = batchDao;
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
+        this.resultRemover = resultRemover;
     }
 
     /**
@@ -400,19 +403,20 @@ public class StudyService {
                 managedStudy.removeUser(user);
             }
 
-            // Single deletion cascades everything via database constraints:
-            // Study -> Batch -> StudyResult -> ComponentResult
-            //    -> Component -> (ComponentResult via cascade) -> GroupResult
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            resultRemover.removeAllStudyResults(managedStudy, signedinUser);
+            // Results have been flushed; remaining group, batch and component cascades are now safe.
             studyDao.remove(managedStudy);
+            String dirName = managedStudy.getDirName();
+            if (dirName != null) {
+                studyDao.afterCommit("Remove study assets directory " + dirName,
+                        () -> ioUtils.removeStudyAssetsDir(dirName));
+            }
+            studyDao.afterCommit("Retire study log " + managedStudy.getId(), () -> {
+                studyLogger.log(managedStudy, signedinUser, "Removed study");
+                studyLogger.retire(managedStudy);
+            });
         });
-
-        if (study.getDirName() != null) {
-            unchecked(() -> ioUtils.removeStudyAssetsDir(study.getDirName()));
-        }
-
-        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        studyLogger.log(study, signedinUser, "Removed study");
-        studyLogger.retire(study);
 
         Context.current().response().putFlash(INFO, "Study \"" + study.getTitle() + "\" deleted");
     }
