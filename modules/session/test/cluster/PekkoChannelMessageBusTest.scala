@@ -108,7 +108,21 @@ class PekkoChannelMessageBusTest {
     }
   }
 
-  private def createActorSystem(): ActorSystem = {
+  @Test
+  def clusterMessagesRoundTripWithLz4Compression(): Unit = {
+    val system = createActorSystem(
+      """pekko.serialization.jackson.jackson-cbor.compression {
+        |  algorithm = lz4
+        |  compress-larger-than = 1 KiB
+        |}""".stripMargin)
+    val serialization = SerializationExtension(system)
+    val message = BatchClusterMessage("node-1", 10L, "x" * 10000)
+    val bytes = serialization.serialize(message).get
+    assertTrue("The payload must actually be compressed", bytes.length < 1000)
+    assertEquals(message, serialization.deserialize(bytes, message.getClass).get)
+  }
+
+  private def createActorSystem(extraConfig: String = ""): ActorSystem = {
     val config = ConfigFactory.parseString(
       s"""
          |pekko {
@@ -132,7 +146,7 @@ class PekkoChannelMessageBusTest {
          |""".stripMargin)
       .withFallback(ConfigFactory.defaultReference())
 
-    val system = ActorSystem("channel-pubsub-test", config)
+    val system = ActorSystem("channel-pubsub-test", ConfigFactory.parseString(extraConfig).withFallback(config))
     actorSystems += system
     system
   }
