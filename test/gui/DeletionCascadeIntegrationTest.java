@@ -71,6 +71,7 @@ public class DeletionCascadeIntegrationTest {
     private record Fixture(Long study, Long batch, Long sibling, Long otherStudy, Long worker,
                            String dir, String uuid, List<Run> selected, List<Run> siblingRuns, List<Run> otherRuns) {}
 
+    @SuppressWarnings("SqlResolve")
     private void check(String driver, String url, String username, String password) throws Exception {
         String root = temp.getRoot().getAbsolutePath();
         Application app = new GuiceApplicationBuilder()
