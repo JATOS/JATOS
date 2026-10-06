@@ -45,6 +45,19 @@ Return to the repository root before running sbt. Neither sbt nor the release
 script runs npm automatically. See
 [the jatos.js build instructions](modules/publix/jatos-js/README.md) for details.
 
+### Multi-node integration tests
+
+The opt-in [multi-node test runner](test/multinode/README.md) builds the current
+checkout and exercises cross-node messaging, node restarts, and cleanup in an
+isolated Docker environment. It requires Docker Compose and installed Playwright
+Chromium; it is separate from `sbt test`.
+
+### Database deletion integration tests
+
+[Study and batch deletion tests](test/gui/DELETION_TESTS.md) exercise the real schema,
+group memberships, cascading deletion, and filesystem cleanup on commit or rollback.
+H2 checks run with `sbt test`; MySQL checks are opt-in against a disposable server.
+
 ## Run in development mode
 
 From the repository root:

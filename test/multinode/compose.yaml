@@ -1,0 +1,91 @@
+# Isolated integration-test stack. Run through run.sh for unique project names and cleanup.
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: jatos
+      MYSQL_USER: jatos
+      MYSQL_PASSWORD: jatos
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  jatos-seed:
+    image: ${JATOS_TEST_IMAGE:?Set-JATOS_TEST_IMAGE}
+    hostname: jatos-seed
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+    environment: &jatos-environment
+      JATOS_ADMIN_PASSWORD: multi-node-test-password
+      JATOS_SECRET: isolated-integration-test-secret-not-for-production
+      JATOS_DB_URL: jdbc:mysql://mysql:3306/jatos?characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+      JATOS_DB_DRIVER: com.mysql.cj.jdbc.Driver
+      JATOS_DB_USERNAME: jatos
+      JATOS_DB_PASSWORD: jatos
+      JATOS_DB_CONNECTIONPOOL_SIZE: 20
+      JATOS_THREADPOOL_SIZE: 30
+    ports:
+      - "127.0.0.1:$JATOS_IT_SEED_PORT:9000"
+    expose:
+      - "25520"
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /ping HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && IFS= read -r status <&3 && [[ \"$$status\" == *\" 200 \"* ]]"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+    volumes:
+      - jatos-data:/opt/jatos_data
+      - ./node.conf:/opt/jatos/conf/jatos.conf:ro
+
+  # Fixed second seed for deterministic restart recovery in this two-node test.
+  jatos:
+    hostname: jatos-worker
+    image: ${JATOS_TEST_IMAGE:?Set-JATOS_TEST_IMAGE}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      jatos-seed:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      <<: *jatos-environment
+    ports:
+      - "127.0.0.1:$JATOS_IT_WORKER_PORT:9000"
+    expose:
+      - "25520"
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /ping HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && IFS= read -r status <&3 && [[ \"$$status\" == *\" 200 \"* ]]"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+    volumes:
+      - jatos-data:/opt/jatos_data
+      - ./node.conf:/opt/jatos/conf/jatos.conf:ro
+
+  load-balancer:
+    image: nginx:1.28-alpine
+    depends_on:
+      jatos-seed:
+        condition: service_healthy
+      jatos:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:$JATOS_IT_PROXY_PORT:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+volumes:
+  mysql-data:
+  jatos-data:
