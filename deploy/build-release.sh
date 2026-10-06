@@ -258,7 +258,8 @@ find_jre_root() {
     [[ -n "$java_executable" ]] ||
         die "Could not find $java_path in $extraction_dir"
 
-    echo "${java_executable%/$java_path}"
+    local bin_dir="${java_executable%/*}"
+    echo "${bin_dir%/bin}"
 }
 
 prepare_bundle() {
