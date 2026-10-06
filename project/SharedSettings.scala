@@ -24,6 +24,21 @@ object SharedSettings {
   val assertjVersion = "3.27.7"
   val guavaVersion = "33.4.8-jre"
   val pekkoVersion = "1.0.3"
+  val jacksonVersion = "2.18.11"
+
+  // Play/Pekko still request Jackson 2.14.3. Keep core and all modules on the patched
+  // 2.18 line together; the Scala module checks the databind minor version at runtime.
+  val jacksonOverrides: Seq[ModuleID] = Seq(
+    "com.fasterxml.jackson.core" % "jackson-core",
+    "com.fasterxml.jackson.core" % "jackson-annotations",
+    "com.fasterxml.jackson.core" % "jackson-databind",
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor",
+    "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8",
+    "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310",
+    "com.fasterxml.jackson.datatype" % "jackson-datatype-hibernate6",
+    "com.fasterxml.jackson.module" % "jackson-module-parameter-names",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala"
+  ).map(_ % jacksonVersion)
 
   // Test dependencies (mockito is handled separately via mockitoSettings)
   val testDependencies: Seq[ModuleID] = Seq(
@@ -56,6 +71,7 @@ object SharedSettings {
     organization := jatosOrganization,
     scalaVersion := jatosScalaVersion,
     dependencyOverrides += "com.google.guava" % "guava" % guavaVersion,
+    dependencyOverrides ++= jacksonOverrides,
     javacOptions ++= Seq("--release", jatosJavaRelease, "-Xlint"),
     Compile / doc / sources := Seq.empty,
     Compile / packageDoc / publishArtifact := false,

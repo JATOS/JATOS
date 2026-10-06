@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.datatype.hibernate5.jakarta.Hibernate5JakartaModule;
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope;
 import play.libs.Json;
@@ -32,15 +32,17 @@ public class DefaultJson {
         // FORCE_LAZY_LOADING is disabled, so serialization will not trigger database loading of uninitialized
         // lazy associations. Uninitialized lazy values are serialized as null / not expanded instead of causing
         // Jackson to traverse Hibernate internals or potentially throwing LazyInitializationException.
-        Hibernate5JakartaModule h5Module = new Hibernate5JakartaModule();
-        h5Module.disable(Hibernate5JakartaModule.Feature.FORCE_LAZY_LOADING);
+        Hibernate6Module hibernateModule = new Hibernate6Module();
+        hibernateModule.disable(Hibernate6Module.Feature.FORCE_LAZY_LOADING);
 
+        // Keep Jackson's bounded default StreamReadConstraints (nesting, number and string lengths).
+        // StrictJson copies this mapper and retains the same constraints.
         jsonMapper = JsonMapper.builder()
                 // Never include source JSON content in exception locations (prevents leaking payload snippets)
                 .disable(Feature.INCLUDE_SOURCE_IN_LOCATION)
                 // Preserve the ISO-8601 date representation used by Play's legacy default mapper.
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .addModule(h5Module)
+                .addModule(hibernateModule)
                 .build();
         jsonMapper.setTimeZone(TimeZone.getDefault());
 
@@ -54,7 +56,7 @@ public class DefaultJson {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 // Strictly only includes fields annotated with @JsonView(JsonForApi.class)
                 .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
-                .addModule(h5Module)
+                .addModule(hibernateModule)
                 .build();
         jsonMapperForApi.setTimeZone(TimeZone.getDefault());
 
