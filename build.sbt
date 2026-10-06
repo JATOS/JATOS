@@ -67,7 +67,7 @@ lazy val jatos = (project in file("."))
     // The live files above belong to publix, not the root project's WebJar.
     // sbt-web normally excludes dependency files by their extraction directory;
     // these source files live elsewhere, so exclude them explicitly from exports.
-    // Otherwise TestAssets imports them twice (from jatos and jatos-publix).
+    // Otherwise, TestAssets imports them twice (from jatos and jatos-publix).
     Assets / exportedMappings := {
       val publixFiles = (publix / Assets / mappings).value.map(_._1).toSet
       (Assets / exportedMappings).value.filterNot { case (file, _) => publixFiles.contains(file) }
@@ -101,9 +101,7 @@ lazy val jatos = (project in file("."))
       (baseDirectory.value / "jatos-api.yaml") -> "jatos-api.yaml",
       (baseDirectory.value / "deploy" / "loader.sh") -> "loader.sh",
       (baseDirectory.value / "deploy" / "loader.bat") -> "loader.bat",
-      file(baseDirectory.value + "/VERSION") -> "VERSION",
-      file(baseDirectory.value + "/conf/jatos.conf") -> "conf/jatos.conf",
-      file(baseDirectory.value + "/conf/jatos-wrapper.conf") -> "conf/jatos-wrapper.conf"
+      file(baseDirectory.value + "/VERSION") -> "VERSION"
     ),
 
     // Filter out unwanted files from distribution
