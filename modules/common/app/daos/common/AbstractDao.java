@@ -69,7 +69,6 @@ public abstract class AbstractDao {
      */
     public void afterCommit(String description, Cleanup cleanup) {
         // Borrowed from the surrounding transaction; JPAApi owns and closes it.
-        @SuppressWarnings("resource")
         EntityManager em = jpa.em("default");
         if (em == null) throw new IllegalStateException("afterCommit requires an active transaction");
         Transaction transaction = em.unwrap(Session.class).getTransaction();
