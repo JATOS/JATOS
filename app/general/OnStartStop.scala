@@ -152,7 +152,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   }
 
   /**
-   * Sets the initial admin password from the configuration
+   * Sets the admin password from configuration on every startup, including for an existing user.
    */
   private def initAdminPassword(): Unit = {
     if (Common.hasUserAdminPassword) {
