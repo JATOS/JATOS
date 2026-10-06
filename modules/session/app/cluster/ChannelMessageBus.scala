@@ -33,4 +33,10 @@ trait ChannelMessageReceiverRegistrar {
 /**
  * Provides outbound publishing and inbound receiver registration for batch and group channel messages.
  */
-trait ChannelMessageBus extends ChannelMessagePublisher with ChannelMessageReceiverRegistrar
+trait ChannelMessageBus extends ChannelMessagePublisher with ChannelMessageReceiverRegistrar {
+  /**
+   * Whether this node can accept channel connections. The distributed transport
+   * requires local cluster membership to be Up; this does not guarantee peer reachability.
+   */
+  def isReady: Boolean
+}

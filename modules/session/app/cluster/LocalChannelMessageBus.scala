@@ -10,6 +10,8 @@ import javax.inject.Singleton
 @Singleton
 class LocalChannelMessageBus extends ChannelMessageBus {
 
+  override val isReady: Boolean = true
+
   override val isDistributed: Boolean = false
 
   override def publishBatchMsgToCluster(message: BatchClusterMessage): Unit = ()

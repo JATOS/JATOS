@@ -1,6 +1,7 @@
 package controllers.publix
 
 import actions.common.ContextRunner
+import cluster.ChannelMessageBus
 import daos.common.StudyResultDao
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
 import executor.common.IOExecutor
@@ -34,6 +35,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
                                    generalSingleGroupChannel: GeneralSingleGroupChannel,
                                    generalMultipleGroupChannel: GeneralMultipleGroupChannel,
                                    mTGroupChannel: MTGroupChannel,
+                                   channelMessageBus: ChannelMessageBus,
                                    ioExecutor: IOExecutor)
   extends AbstractController(components) with ContextRunner {
 
@@ -53,7 +55,10 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
   def openBatch(studyResultUuid: String): WebSocket =
     WebSocket.acceptOrResult[JsValue, JsValue] { request =>
       withContext(request) {
-        studyResultDao.withReadOnlyTransaction((_: EntityManager) => {
+        if (!channelMessageBus.isReady) {
+          Left(Results.ServiceUnavailable("Cluster node is joining; retry the channel connection.")
+            .withHeaders("Retry-After" -> "1"))
+        } else studyResultDao.withReadOnlyTransaction((_: EntityManager) => {
           try {
             val studyResult = fetchStudyResult(studyResultUuid)
             studyResult.getWorkerType match {
@@ -99,7 +104,10 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
   def joinGroup(studyResultUuid: String): WebSocket =
     WebSocket.acceptOrResult[JsValue, JsValue] { request =>
       withContext(request) {
-        try {
+        if (!channelMessageBus.isReady) {
+          Left(Results.ServiceUnavailable("Cluster node is joining; retry the channel connection.")
+            .withHeaders("Retry-After" -> "1"))
+        } else try {
           val studyResult = fetchStudyResultAndInitLazy(studyResultUuid)
           studyResult.getWorkerType match {
             case WorkerType.JATOS =>

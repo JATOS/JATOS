@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.cluster.{Cluster, MemberStatus}
 import org.apache.pekko.serialization.SerializationExtension
-import org.junit.Assert.{assertEquals, assertNull}
+import org.junit.Assert.{assertEquals, assertNull, assertFalse, assertTrue}
 import org.junit.{After, Test}
 
 import java.util.concurrent.{CountDownLatch, LinkedBlockingQueue, TimeUnit}
@@ -21,6 +21,20 @@ class PekkoChannelMessageBusTest {
   @After
   def tearDown(): Unit = {
     actorSystems.foreach(system => Await.ready(system.terminate(), 10.seconds))
+  }
+
+  @Test
+  def readinessRequiresUpMembershipAndRejectsLeavingNode(): Unit = {
+    val system = createActorSystem()
+    val cluster = Cluster(system)
+    val bus = new PekkoChannelMessageBus(system, FixedNodeIdentity("readiness-node"))
+    assertFalse(bus.isReady)
+    cluster.join(cluster.selfAddress)
+    awaitCondition(10.seconds) { bus.isReady }
+    assertTrue(bus.isReady)
+    cluster.leave(cluster.selfAddress)
+    awaitCondition(10.seconds) { !bus.isReady }
+    assertFalse(bus.isReady)
   }
 
   @Test

@@ -1,6 +1,7 @@
 package cluster
 
 import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.cluster.{Cluster, MemberStatus}
 
 import javax.inject.Inject
 
@@ -15,6 +16,8 @@ class PekkoChannelMessageBus @Inject()(actorSystem: ActorSystem,
   private val gateway = actorSystem.actorOf(
     ChannelPubSubGateway.props(nodeIdentity),
     "channelPubSubGateway")
+
+  override def isReady: Boolean = Cluster(actorSystem).selfMember.status == MemberStatus.Up
 
   override val isDistributed: Boolean = true
 
