@@ -22,7 +22,8 @@ export function installStudyRunApi(jatos, dependencies) {
         getURL,
         httpLoop,
         isInitialized,
-        stopStudyRun
+        stopStudyRun,
+        cancelChannelOpenings = () => {}
     } = dependencies;
 
     /**
@@ -106,6 +107,7 @@ export function installStudyRunApi(jatos, dependencies) {
         }
 
         studyRunState.starting = true;
+        cancelChannelOpenings();
 
         // Send result data and study session data before starting next component
         if (resultData) jatos.appendResultData(resultData);
@@ -249,6 +251,7 @@ export function installStudyRunApi(jatos, dependencies) {
             return rejectedPromise(errorMsg);
         }
         studyRunState.ending = true;
+        cancelChannelOpenings();
 
         return sendStudyCompletion(getAbortStudyUrl(message), onSuccess, onError);
     };
@@ -305,6 +308,7 @@ export function installStudyRunApi(jatos, dependencies) {
             return;
         }
         studyRunState.ending = true;
+        cancelChannelOpenings();
 
         redirectWhenIdle(() => getAbortStudyUrl(message));
     };
@@ -342,6 +346,7 @@ export function installStudyRunApi(jatos, dependencies) {
             return rejectedPromise(errorMsg);
         }
         studyRunState.ending = true;
+        cancelChannelOpenings();
 
         // Before finish send result data
         if (resultData) jatos.appendResultData(resultData);
@@ -417,6 +422,7 @@ export function installStudyRunApi(jatos, dependencies) {
             return;
         }
         studyRunState.ending = true;
+        cancelChannelOpenings();
 
         // Before finish send result data
         if (resultData) jatos.appendResultData(resultData);

@@ -7867,14 +7867,36 @@ var jatos;
     jatos2.isConnected = function() {
       return batchChannelAlive;
     };
-    function openBatchChannelWithRetry(backoffTime) {
-      if (typeof backoffTime !== "number") backoffTime = jatos2.channelOpeningBackoffTimeMin;
-      return openBatchChannel().fail(function() {
-        if (backoffTime < jatos2.channelOpeningBackoffTimeMax) backoffTime *= 2;
-        setTimeout(function() {
-          openBatchChannelWithRetry(backoffTime);
-        }, backoffTime);
+    let batchOpeningRetry;
+    function cancelBatchOpeningRetries(message = "Batch opening cancelled") {
+      const retry = batchOpeningRetry;
+      if (!retry) return;
+      batchOpeningRetry = null;
+      const channel = batchChannel;
+      batchChannel = null;
+      batchClosedCheck.stop();
+      clearBatchChannel();
+      setBatchChannelDead();
+      channel?.close();
+      retry.cancel(message);
+      if (isDeferredPending(openingBatchChannelDeferred)) openingBatchChannelDeferred.reject(message);
+    }
+    function openBatchChannelWithRetry(reconnecting = false) {
+      if (batchOpeningRetry) return batchOpeningRetry.promise;
+      const retry = createOpeningRetry({
+        open: openBatchChannel,
+        canOpen: () => webSocketSupported && !studyRunState.invalid && !studyRunState.starting && !studyRunState.ending,
+        delay: jatos2.channelOpeningBackoffTimeMin * 2,
+        maxDelay: jatos2.channelOpeningBackoffTimeMax,
+        timeout: reconnecting ? null : 12e4,
+        onTimeout: () => cancelBatchOpeningRetries("Timeout opening batch channel after 120 seconds")
       });
+      batchOpeningRetry = retry;
+      retry.promise.always(() => {
+        if (batchOpeningRetry === retry) batchOpeningRetry = null;
+      });
+      retry.start();
+      return retry.promise;
     }
     function openBatchChannel() {
       if (!webSocketSupported) {
@@ -7933,7 +7955,7 @@ var jatos;
       if (isDeferredPending(openingBatchChannelDeferred)) return;
       if (batchChannel instanceof WebSocket) batchChannel.close();
       clearBatchChannel();
-      openBatchChannelWithRetry();
+      openBatchChannelWithRetry(true);
     }
     function createHeartbeat(getChannel, onFailure) {
       let interval;
@@ -8078,8 +8100,12 @@ var jatos;
       onJatosBatchSession = onBatchSession;
     };
     jatos2.joinGroup = function(callbacks) {
+      if (groupJoinRetry) return groupJoinRetry.promise;
+      if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
+        return rejectedPromise("Can open only one group channel.");
+      }
       groupChannelCallbacks = callbacks ? callbacks : {};
-      return openGroupChannel();
+      return openGroupChannelWithRetry();
     };
     function openGroupChannel() {
       if (!webSocketSupported) {
@@ -8116,36 +8142,66 @@ var jatos;
         return rejectedPromise(errorMsg);
       }
       openingGroupChannelDeferred = createDeferred();
-      groupChannel = new WebSocket(
+      const channel = new WebSocket(
         (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + jatos2.urlBasePath + "publix/" + jatos2.studyResultUuid + "/group/join"
       );
-      groupChannel.onopen = function() {
+      groupChannel = channel;
+      const openingDeferred = openingGroupChannelDeferred;
+      channel.onopen = function() {
+        if (groupChannel !== channel) return;
         groupChannel.send('{"action":"READY"}');
         groupHeartbeat.start();
         groupClosedCheck.start();
       };
-      groupChannel.onmessage = function(event) {
+      channel.onmessage = function(event) {
+        if (groupChannel !== channel) return;
         handleGroupMsg(event.data);
       };
-      groupChannel.onerror = function() {
-        callMany("Group channel error", console.error, groupChannelCallbacks.onError);
-        openingGroupChannelDeferred.reject();
+      channel.onerror = function() {
+        if (groupChannel !== channel) return;
+        if (!groupJoinRetry) callMany("Group channel error", console.error, groupChannelCallbacks.onError);
+        openingDeferred.reject("Group channel error");
       };
-      groupChannel.onclose = function() {
+      channel.onclose = function() {
+        if (groupChannel !== channel) return;
         clearGroupChannel();
-        call(groupChannelCallbacks.onClose);
-        openingGroupChannelDeferred.reject();
+        if (!groupJoinRetry) call(groupChannelCallbacks.onClose);
+        openingDeferred.reject("Group channel closed");
       };
       return openingGroupChannelDeferred.promise();
     }
-    function openGroupChannelWithRetry(backoffTime) {
-      if (typeof backoffTime !== "number") backoffTime = jatos2.channelOpeningBackoffTimeMin;
-      openGroupChannel().fail(function() {
-        if (backoffTime < jatos2.channelOpeningBackoffTimeMax) backoffTime *= 2;
-        setTimeout(function() {
-          openGroupChannelWithRetry(backoffTime);
-        }, backoffTime);
+    let groupJoinRetry;
+    function cancelGroupJoinRetries(message = "Group joining cancelled") {
+      const retry = groupJoinRetry;
+      if (!retry) return;
+      groupJoinRetry = null;
+      const channel = groupChannel;
+      groupChannel = null;
+      groupClosedCheck.stop();
+      clearGroupChannel();
+      channel?.close();
+      retry.cancel(message);
+      if (isDeferredPending(openingGroupChannelDeferred)) openingGroupChannelDeferred.reject(message);
+    }
+    function openGroupChannelWithRetry(reconnecting = false) {
+      if (groupJoinRetry) return groupJoinRetry.promise;
+      const retry = createOpeningRetry({
+        open: openGroupChannel,
+        canOpen: () => webSocketSupported && !studyRunState.invalid && !studyRunState.starting && !studyRunState.ending && !isDeferredPending(leavingGroupDeferred) && !isDeferredPending(reassigningGroupDeferred),
+        delay: 1e3,
+        maxDelay: 8e3,
+        timeout: reconnecting ? null : 6e4,
+        onTimeout: () => cancelGroupJoinRetries("Timeout joining group after 60 seconds")
       });
+      groupJoinRetry = retry;
+      retry.promise.always(() => {
+        if (groupJoinRetry === retry) groupJoinRetry = null;
+      });
+      retry.promise.fail((error) => {
+        if (error !== "Group joining cancelled") callMany(error, console.error, groupChannelCallbacks.onError);
+      });
+      retry.start();
+      return retry.promise;
     }
     function reopenGroupChannel() {
       if (isDeferredPending(openingGroupChannelDeferred) || isDeferredPending(reassigningGroupDeferred) || isDeferredPending(leavingGroupDeferred)) {
@@ -8155,7 +8211,7 @@ var jatos;
         groupChannel.close();
       }
       clearGroupChannel();
-      openGroupChannelWithRetry();
+      openGroupChannelWithRetry(true);
     }
     function clearGroupChannel() {
       jatos2.groupMemberId = null;
@@ -8445,6 +8501,8 @@ var jatos;
       return reassigningGroupDeferred.promise();
     };
     jatos2.leaveGroup = function(onSuccess, onError) {
+      cancelGroupJoinRetries();
+      groupClosedCheck.stop();
       if (isDeferredPending(openingGroupChannelDeferred)) {
         const errorMsg = "Can't leave group if not joined yet.";
         callMany(errorMsg, onError, console.error);
@@ -8484,6 +8542,35 @@ var jatos;
       });
       return leavingGroupDeferred.promise();
     };
+    function createOpeningRetry({ open, canOpen, delay, maxDelay, timeout, onTimeout }) {
+      const deferred = createDeferred();
+      let timer;
+      let deadline;
+      deferred.always(() => {
+        clearTimeout(timer);
+        clearTimeout(deadline);
+      });
+      function attempt() {
+        if (!isDeferredPending(deferred)) return;
+        if (!canOpen()) {
+          deferred.reject("Can't open channel in the current study state.");
+          return;
+        }
+        open().done(() => deferred.resolve()).fail(() => {
+          if (!isDeferredPending(deferred)) return;
+          timer = setTimeout(attempt, delay);
+          delay = Math.min(delay * 2, maxDelay);
+        });
+      }
+      return {
+        promise: deferred.promise(),
+        cancel: (error) => deferred.reject(error),
+        start: () => {
+          if (timeout !== null) deadline = setTimeout(onTimeout, timeout);
+          attempt();
+        }
+      };
+    }
     function createSessionSender({ kind, getChannel, isVersioning, timeouts, createMessage }) {
       let counter = 0;
       let pending;
@@ -8545,6 +8632,11 @@ var jatos;
     }
     return {
       openBatchChannelWithRetry,
+      // Study transitions cancel pending batch and group opening/reconnection attempts.
+      cancelChannelOpenings: () => {
+        cancelBatchOpeningRetries();
+        cancelGroupJoinRetries();
+      },
       // Preserve the existing end/abort cleanup: only stop closed-channel checks.
       stopClosedChecks: () => {
         batchClosedCheck.stop();
@@ -8665,6 +8757,8 @@ var jatos;
   function createInitialization(jatos2, dependencies) {
     const { requestHttp: requestHttp2, getURL, showIdOverlay, httpLoop, channels } = dependencies;
     let initialized = false;
+    let initializationError;
+    const errorCallbacks = [];
     let jatosOnLoadEventFired = false;
     const jatosOnLoadEvent = new Event("jatosOnLoad");
     let heartbeatWorker;
@@ -8675,9 +8769,16 @@ var jatos;
         heartbeatWorker = new Worker("jatos-publix/javascripts/heartbeat.js");
         heartbeatWorker.postMessage([jatos2.studyResultUuid]);
         httpLoop.start();
-      }).then(getInitData).then(showIdOverlay).then(channels.openBatchChannelWithRetry).always(function() {
+      }).then(getInitData).then(showIdOverlay).then(() => channels.openBatchChannelWithRetry()).done(function() {
         initialized = true;
+        errorCallbacks.length = 0;
         readyForOnLoad();
+      }).fail(function(error) {
+        initializationError = error || "JATOS initialization failed";
+        heartbeatWorker?.terminate();
+        httpLoop.terminate();
+        console.error("JATOS initialization failed:", initializationError);
+        errorCallbacks.splice(0).forEach((callback) => callback(initializationError));
       });
     }
     function readIdCookie() {
@@ -8744,7 +8845,12 @@ var jatos;
       jatos2.frameId = jatos2.urlQueryParameters.frameId || void 0;
       jatos2.studyCode = initData.studyCode;
     }
-    jatos2.onLoad = function(callback) {
+    jatos2.onLoad = function(callback, onError) {
+      if (initializationError !== void 0) {
+        if (typeof onError === "function") onError(initializationError);
+        return;
+      }
+      if (!initialized && typeof onError === "function") errorCallbacks.push(onError);
       if (!jatosOnLoadEventFired) {
         window.addEventListener("jatosOnLoad", callback);
         readyForOnLoad();
@@ -8789,7 +8895,9 @@ var jatos;
       getURL,
       httpLoop,
       isInitialized,
-      stopStudyRun
+      stopStudyRun,
+      cancelChannelOpenings = () => {
+      }
     } = dependencies;
     jatos2.setStudySessionData = function(studySessionData, onSuccess, onError) {
       jatos2.studySessionData = studySessionData;
@@ -8840,6 +8948,7 @@ var jatos;
         return;
       }
       studyRunState.starting = true;
+      cancelChannelOpenings();
       if (resultData) jatos2.appendResultData(resultData);
       jatos2.setStudySessionData(jatos2.studySessionData);
       const start = function() {
@@ -8914,6 +9023,7 @@ var jatos;
         return rejectedPromise(errorMsg);
       }
       studyRunState.ending = true;
+      cancelChannelOpenings();
       return sendStudyCompletion(getAbortStudyUrl(message), onSuccess, onError);
     };
     jatos2.abortStudyAjax = function(message, onSuccess, onError) {
@@ -8941,6 +9051,7 @@ var jatos;
         return;
       }
       studyRunState.ending = true;
+      cancelChannelOpenings();
       redirectWhenIdle(() => getAbortStudyUrl(message));
     };
     jatos2.endStudyWithoutRedirect = function(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
@@ -8968,6 +9079,7 @@ var jatos;
         return rejectedPromise(errorMsg);
       }
       studyRunState.ending = true;
+      cancelChannelOpenings();
       if (resultData) jatos2.appendResultData(resultData);
       return sendStudyCompletion(getEndStudyUrl(successful, message), onSuccess, onError);
     };
@@ -9019,6 +9131,7 @@ var jatos;
         return;
       }
       studyRunState.ending = true;
+      cancelChannelOpenings();
       if (resultData) jatos2.appendResultData(resultData);
       redirectWhenIdle(() => getEndStudyUrl(successful, message));
     };
@@ -9181,6 +9294,7 @@ var jatos;
       getURL,
       httpLoop,
       isInitialized: () => initialization.isInitialized(),
+      cancelChannelOpenings: channels.cancelChannelOpenings,
       stopStudyRun: () => {
         initialization.terminateHeartbeat();
         httpLoop.terminate();

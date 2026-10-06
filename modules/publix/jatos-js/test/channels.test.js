@@ -165,7 +165,7 @@ for (const kind of ["batch", "group"]) {
         replacement.close();
         fire(newCheckId);
         assert.equal(sockets.length, 2);
-        assert.ok([...timers.values()].some(timer => timer.delay === 2 * jatos.channelOpeningBackoffTimeMin));
+        assert.equal([...timers.values()].some(timer => !timer.interval), false);
     });
 
     test(`${kind} heartbeat pong cancels the outstanding heartbeat timeout`, t => {
@@ -501,3 +501,106 @@ test("batch and group session senders keep independent counters and pending requ
     group.receive({action: "SESSION_ACK", sessionActionId: 0});
     assert.equal(groupPending.state(), "resolved");
 });
+
+
+test("group joining retries with capped exponential backoff and resolves after session initialization", t => {
+    const {jatos, sockets, timers, fire} = setup(t);
+    const errors = [];
+    const promise = jatos.joinGroup({onError: error => errors.push(error)});
+    for (const delay of [1000, 2000, 4000, 8000, 8000]) {
+        sockets.at(-1).close();
+        assert.equal(promise.state(), "pending");
+        fire([...timers].find(([, timer]) => timer.delay === delay)[0]);
+    }
+    sockets.at(-1).open();
+    sockets.at(-1).receive({sessionVersion: 1});
+    assert.equal(promise.state(), "resolved");
+    assert.deepEqual(errors, []);
+    assert.equal([...timers.values()].filter(timer => !timer.interval).length, 0);
+});
+
+test("group joining expires after 60 seconds even with a stalled socket", t => {
+    const {jatos, sockets, timers, fire} = setup(t);
+    const errors = [];
+    const promise = jatos.joinGroup({onError: error => errors.push(error)});
+    const socket = sockets[0];
+    fire([...timers].find(([, timer]) => timer.delay === 60000)[0]);
+    assert.equal(promise.state(), "rejected");
+    assert.equal(errors.length, 1);
+    assert.match(errors[0], /60 seconds/);
+    socket.open();
+    socket.receive({sessionVersion: 1});
+    assert.equal(promise.state(), "rejected");
+    assert.equal(timers.size, 0);
+});
+
+for (const pendingSocket of [true, false]) {
+    test(`leaving cancels group joining with ${pendingSocket ? "a pending socket" : "a scheduled retry"}`, t => {
+        const {jatos, sockets, timers, requests} = setup(t);
+        const promise = jatos.joinGroup();
+        if (!pendingSocket) sockets[0].close();
+        jatos.leaveGroup();
+        assert.equal(promise.state(), "rejected");
+        assert.equal(timers.size, 0);
+        assert.equal(requests.length, 1);
+    });
+}
+
+for (const operation of ["startComponent", "endStudy", "abortStudy"]) {
+    test(`${operation} cancels scheduled group joining before waiting for HTTP requests`, t => {
+        const {jatos, channels, sockets, timers, state} = setup(t);
+        installStudyRunApi(jatos, {
+            studyRunState: state, isInitialized: () => true,
+            cancelChannelOpenings: channels.cancelChannelOpenings,
+            getURL: path => path, removeBeforeUnloadWarning: () => {},
+            httpLoop: {isBusy: () => false, whenIdle: () => {}}
+        });
+        jatos.setStudySessionData = () => {};
+        const promise = jatos.joinGroup();
+        sockets[0].close();
+        if (operation === "startComponent") jatos.startComponent("next-component");
+        else jatos[operation]();
+        assert.equal(promise.state(), "rejected");
+        assert.equal(timers.size, 0);
+    });
+}
+
+
+test("batch initial opening keeps one promise across failures until the session arrives", t => {
+    const {channels, sockets, timers, fire} = setup(t);
+    const promise = channels.openBatchChannelWithRetry();
+    sockets[0].close();
+    assert.equal(promise.state(), "pending");
+    fire([...timers].find(([, timer]) => timer.delay === 2000)[0]);
+    sockets[1].open();
+    assert.equal(promise.state(), "pending");
+    sockets[1].receive({version: 1});
+    assert.equal(promise.state(), "resolved");
+    assert.equal([...timers.values()].some(timer => timer.delay === 120000), false);
+});
+
+test("batch initial opening times out and ignores late socket events", t => {
+    const {channels, sockets, timers, fire} = setup(t);
+    const promise = channels.openBatchChannelWithRetry();
+    fire([...timers].find(([, timer]) => timer.delay === 120000)[0]);
+    assert.equal(promise.state(), "rejected");
+    sockets[0].open();
+    sockets[0].receive({version: 1});
+    assert.equal(promise.state(), "rejected");
+    assert.equal(timers.size, 0);
+});
+
+for (const kind of ["batch", "group"]) {
+    test(`${kind} reconnecting retries without an opening deadline`, t => {
+        const {jatos, open, sockets, timers, fire} = setup(t);
+        open(kind).close();
+        fire([...timers].find(([, timer]) => timer.interval && timer.delay === jatos.channelClosedCheckInterval)[0]);
+        for (let i = 0; i < 10; i++) {
+            sockets.at(-1).close();
+            const scheduled = [...timers].filter(([, timer]) => !timer.interval);
+            assert.equal(scheduled.length, 1, "only a retry timer, no deadline");
+            fire(scheduled[0][0]);
+        }
+        assert.equal(sockets.length, 12);
+    });
+}

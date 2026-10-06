@@ -64,7 +64,7 @@ function setup(t, cookie = "other=value; JATOS_ID_old=studyResultUuid=other&comp
 
         getURL: path => `https://example.test/${path}`,
         showIdOverlay: () => { events.push("ids"); },
-        httpLoop: {start: () => events.push("http-start")},
+        httpLoop: {start: () => events.push("http-start"), terminate: () => events.push("terminate-http")},
         channels: {openBatchChannelWithRetry: () => { events.push("batch-open"); return batch.promise(); }}
     });
     function start() {
@@ -149,25 +149,31 @@ test("missing inputs and invalid session JSON retain the existing fallback behav
 });
 
 for (const stage of ["init-data", "batch"]) {
-    test(`${stage} failure still marks initialization complete and notifies onLoad`, t => {
+    test(`${stage} failure prevents readiness and notifies early and late error callbacks`, t => {
         const {jatos, initialization, workers, requests, batch, events, errors, flush} = setup(t);
         let calls = 0;
-        jatos.onLoad(() => { calls++; });
+        const failures = [];
+        jatos.onLoad(() => { calls++; }, error => failures.push(error));
         initialization.start();
         flush();
         if (stage === "init-data") {
             requests[0].deferred.reject({statusText: "timeout"});
-            assert.deepEqual(errors, ["JATOS server not responding"]);
+            assert.equal(errors[0], "JATOS server not responding");
             assert.equal(events.includes("batch-open"), false);
         } else {
             requests[0].deferred.resolve(initData());
             batch.reject("channel failed");
         }
         flush();
-        assert.equal(initialization.isInitialized(), true);
-        assert.equal(calls, 1);
-        jatos.onload(() => { calls++; });
-        assert.equal(calls, 2);
+        assert.equal(initialization.isInitialized(), false);
+        assert.equal(calls, 0);
+        assert.equal(failures.length, 1);
+        assert.ok(events.includes("terminate-heartbeat"));
+        assert.ok(events.includes("terminate-http"));
+        jatos.onload(() => { calls++; }, error => failures.push(error));
+        assert.equal(calls, 0);
+        assert.equal(failures.length, 2);
+        assert.equal(failures[0], failures[1]);
     });
 }
 

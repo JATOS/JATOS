@@ -128,6 +128,7 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         getURL,
         httpLoop,
         isInitialized: () => initialization.isInitialized(),
+        cancelChannelOpenings: channels.cancelChannelOpenings,
         stopStudyRun: () => {
             initialization.terminateHeartbeat();
             httpLoop.terminate();

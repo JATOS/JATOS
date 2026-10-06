@@ -7,6 +7,8 @@ export function createInitialization(jatos, dependencies) {
     const {requestHttp, getURL, showIdOverlay, httpLoop, channels} = dependencies;
 
     let initialized = false;
+    let initializationError;
+    const errorCallbacks = [];
     let jatosOnLoadEventFired = false;
     const jatosOnLoadEvent = new Event("jatosOnLoad");
     // The study-run heartbeat is separate from batch/group channel heartbeats.
@@ -27,10 +29,18 @@ export function createInitialization(jatos, dependencies) {
             })
             .then(getInitData)
             .then(showIdOverlay)
-            .then(channels.openBatchChannelWithRetry)
-            .always(function () {
+            .then(() => channels.openBatchChannelWithRetry())
+            .done(function () {
                 initialized = true;
+                errorCallbacks.length = 0;
                 readyForOnLoad();
+            })
+            .fail(function (error) {
+                initializationError = error || "JATOS initialization failed";
+                heartbeatWorker?.terminate();
+                httpLoop.terminate();
+                console.error("JATOS initialization failed:", initializationError);
+                errorCallbacks.splice(0).forEach(callback => callback(initializationError));
             });
     }
 
@@ -141,9 +151,16 @@ export function createInitialization(jatos, dependencies) {
      * listeners (called in the order as defined). If the
      * jatosOnLoad event was already fired, the callback is called
      * right away.
+     * Success callbacks run only after init data and the batch session are available.
      * @param {function} callback - callback function
+     * @param {function} [onError] - Called if startup fails, including batch opening timeout
      */
-    jatos.onLoad = function (callback) {
+    jatos.onLoad = function (callback, onError) {
+        if (initializationError !== undefined) {
+            if (typeof onError === "function") onError(initializationError);
+            return;
+        }
+        if (!initialized && typeof onError === "function") errorCallbacks.push(onError);
         if (!jatosOnLoadEventFired) {
             window.addEventListener("jatosOnLoad", callback);
             readyForOnLoad();

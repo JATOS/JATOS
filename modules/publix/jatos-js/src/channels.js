@@ -189,17 +189,51 @@ export function createChannels(jatos, dependencies) {
         return batchChannelAlive;
     }
 
+    let batchOpeningRetry;
+
     /**
-     * Open a batch channel with retry and exponential backoff
+     * Cancels pending batch opening or reconnection, stops its timers, and rejects
+     * both the retry promise and any pending attempt. Detaches the socket before
+     * closing it so late events cannot affect a replacement channel.
+     * Does nothing if no retry sequence is active.
+     * @param {string} [message] - Reason passed to the rejected promises.
      */
-    function openBatchChannelWithRetry(backoffTime) {
-        if (typeof backoffTime !== "number") backoffTime = jatos.channelOpeningBackoffTimeMin;
-        return openBatchChannel().fail(function () {
-            if (backoffTime < jatos.channelOpeningBackoffTimeMax) backoffTime *= 2;
-            setTimeout(function () {
-                openBatchChannelWithRetry(backoffTime);
-            }, backoffTime);
+    function cancelBatchOpeningRetries(message = "Batch opening cancelled") {
+        const retry = batchOpeningRetry;
+        if (!retry) return;
+        batchOpeningRetry = null;
+        const channel = batchChannel;
+        batchChannel = null;
+        batchClosedCheck.stop();
+        clearBatchChannel();
+        setBatchChannelDead();
+        channel?.close();
+        retry.cancel(message);
+        if (isDeferredPending(openingBatchChannelDeferred)) openingBatchChannelDeferred.reject(message);
+    }
+
+    /**
+     * Opens the batch channel with exponential backoff using the channel backoff settings.
+     * One promise covers all attempts and resolves only after the batch session arrives.
+     * Initial opening has a 120-second deadline; reconnection has no deadline while
+     * the study remains active. Concurrent calls share the current retry promise.
+     * @param {boolean} [reconnecting=false] - Whether this replaces an established connection.
+     * @returns {JatosPromise}
+     */
+    function openBatchChannelWithRetry(reconnecting = false) {
+        if (batchOpeningRetry) return batchOpeningRetry.promise;
+        const retry = createOpeningRetry({
+            open: openBatchChannel,
+            canOpen: () => webSocketSupported && !studyRunState.invalid && !studyRunState.starting && !studyRunState.ending,
+            delay: jatos.channelOpeningBackoffTimeMin * 2,
+            maxDelay: jatos.channelOpeningBackoffTimeMax,
+            timeout: reconnecting ? null : 120000,
+            onTimeout: () => cancelBatchOpeningRetries("Timeout opening batch channel after 120 seconds")
         });
+        batchOpeningRetry = retry;
+        retry.promise.always(() => { if (batchOpeningRetry === retry) batchOpeningRetry = null; });
+        retry.start();
+        return retry.promise;
     }
 
     /**
@@ -281,7 +315,7 @@ export function createChannels(jatos, dependencies) {
         if (isDeferredPending(openingBatchChannelDeferred)) return;
         if (batchChannel instanceof WebSocket) batchChannel.close();
         clearBatchChannel();
-        openBatchChannelWithRetry();
+        openBatchChannelWithRetry(true);
     }
 
     /**
@@ -505,13 +539,18 @@ export function createChannels(jatos, dependencies) {
      *		onUpdate(): Combines several other callbacks. It's called if one of the
      *			following is called: onMemberJoin, onMemberOpen, onMemberLeave,
      *			onMemberClose, or onGroupSession.
+     * Connection failures retry after 1, 2, 4, then 8 seconds, for at most 60 seconds.
+     * The promise stays pending during retries; onError reports final failure.
+     * Leaving the group or changing/ending the study cancels pending joining.
      * @returns {JatosPromise}
      */
     jatos.joinGroup = function (callbacks) {
+        if (groupJoinRetry) return groupJoinRetry.promise;
+        if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
+            return rejectedPromise("Can open only one group channel.");
+        }
         groupChannelCallbacks = callbacks ? callbacks : {};
-        // Try open only once - no retry like with batch channel or with openGroupChannelWithRetry
-        // Any retry has to be implemented in the component's JS.
-        return openGroupChannel();
+        return openGroupChannelWithRetry();
     };
 
     function openGroupChannel() {
@@ -555,43 +594,88 @@ export function createChannels(jatos, dependencies) {
         }
 
         openingGroupChannelDeferred = createDeferred();
-        groupChannel = new WebSocket(
+        const channel = new WebSocket(
             ((window.location.protocol === "https:") ? "wss://" : "ws://") +
             window.location.host + jatos.urlBasePath + "publix/" + jatos.studyResultUuid + "/group/join");
-        groupChannel.onopen = function () {
+        groupChannel = channel;
+        const openingDeferred = openingGroupChannelDeferred;
+        channel.onopen = function () {
+            if (groupChannel !== channel) return;
             groupChannel.send('{"action":"READY"}');
             groupHeartbeat.start();
             groupClosedCheck.start();
             // The actual group channel opening is done when we have the current
             // version of the group session
         };
-        groupChannel.onmessage = function (event) {
+        channel.onmessage = function (event) {
+            if (groupChannel !== channel) return;
             handleGroupMsg(event.data);
         };
-        groupChannel.onerror = function () {
-            callMany("Group channel error", console.error, groupChannelCallbacks.onError);
-            openingGroupChannelDeferred.reject();
+        channel.onerror = function () {
+            if (groupChannel !== channel) return;
+            if (!groupJoinRetry) callMany("Group channel error", console.error, groupChannelCallbacks.onError);
+            openingDeferred.reject("Group channel error");
         };
-        groupChannel.onclose = function () {
+        channel.onclose = function () {
+            if (groupChannel !== channel) return;
             clearGroupChannel();
-            call(groupChannelCallbacks.onClose);
-            openingGroupChannelDeferred.reject();
+            if (!groupJoinRetry) call(groupChannelCallbacks.onClose);
+            openingDeferred.reject("Group channel closed");
         };
 
         return openingGroupChannelDeferred.promise();
     }
 
+    let groupJoinRetry;
+
     /**
-     * Open group channel with retry and exponential backoff
+     * Cancels pending group joining or reconnection, stops its timers, and rejects
+     * both the retry promise and any pending attempt. Detaches the socket before
+     * closing it so late events cannot restart joining or alter a replacement channel.
+     * Used on group leave, study transitions, and the initial-joining timeout;
+     * does nothing if no retry sequence is active.
+     * @param {string} [message] - Reason passed to the rejected promises.
      */
-    function openGroupChannelWithRetry(backoffTime) {
-        if (typeof backoffTime !== "number") backoffTime = jatos.channelOpeningBackoffTimeMin;
-        openGroupChannel().fail(function () {
-            if (backoffTime < jatos.channelOpeningBackoffTimeMax) backoffTime *= 2;
-            setTimeout(function () {
-                openGroupChannelWithRetry(backoffTime);
-            }, backoffTime);
+    function cancelGroupJoinRetries(message = "Group joining cancelled") {
+        const retry = groupJoinRetry;
+        if (!retry) return;
+        groupJoinRetry = null;
+        const channel = groupChannel;
+        groupChannel = null;
+        groupClosedCheck.stop();
+        clearGroupChannel();
+        channel?.close();
+        retry.cancel(message);
+        if (isDeferredPending(openingGroupChannelDeferred)) openingGroupChannelDeferred.reject(message);
+    }
+
+    /**
+     * Joins the group with retry delays of 1, 2, 4, then 8 seconds, capped at 8 seconds.
+     * One promise covers all attempts and resolves only after the group session arrives.
+     * Initial joining has a 60-second deadline; reconnection has no deadline while
+     * the study remains active. Concurrent calls share the current retry promise.
+     * Final failures notify onError; intentional cancellation does not.
+     * @param {boolean} [reconnecting=false] - Whether this replaces an established connection.
+     * @returns {JatosPromise}
+     */
+    function openGroupChannelWithRetry(reconnecting = false) {
+        if (groupJoinRetry) return groupJoinRetry.promise;
+        const retry = createOpeningRetry({
+            open: openGroupChannel,
+            canOpen: () => webSocketSupported && !studyRunState.invalid && !studyRunState.starting && !studyRunState.ending &&
+                !isDeferredPending(leavingGroupDeferred) && !isDeferredPending(reassigningGroupDeferred),
+            delay: 1000,
+            maxDelay: 8000,
+            timeout: reconnecting ? null : 60000,
+            onTimeout: () => cancelGroupJoinRetries("Timeout joining group after 60 seconds")
         });
+        groupJoinRetry = retry;
+        retry.promise.always(() => { if (groupJoinRetry === retry) groupJoinRetry = null; });
+        retry.promise.fail(error => {
+            if (error !== "Group joining cancelled") callMany(error, console.error, groupChannelCallbacks.onError);
+        });
+        retry.start();
+        return retry.promise;
     }
 
     /**
@@ -608,7 +692,7 @@ export function createChannels(jatos, dependencies) {
             groupChannel.close();
         }
         clearGroupChannel();
-        openGroupChannelWithRetry();
+        openGroupChannelWithRetry(true);
     }
 
 
@@ -837,6 +921,16 @@ export function createChannels(jatos, dependencies) {
         return sendingGroupFixedDeferred.promise();
     };
 
+    /**
+     * Waits for the server's FIXED message after requesting that a group accept no
+     * new members. The message handler calls groupFixedTimeout.cancel(), which
+     * clears the timer, calls onSuccess, and resolves the promise with "success".
+     * If no confirmation arrives within channelSendingTimeoutTime, calls onFail
+     * and rejects the promise. Clears the stored timeout handle when the promise settles.
+     * @param {JatosDeferred} deferred - Pending group-fixing operation.
+     * @param {Function} [onSuccess] - Called when the server confirms the group is fixed.
+     * @param {Function} [onFail] - Called when confirmation times out.
+     */
     function setGroupFixedTimeoutAndPromiseResolution(deferred, onSuccess, onFail) {
         const timeoutId = setTimeout(() => {
             callWithArgs(onFail, "Timeout sending message");
@@ -1015,6 +1109,8 @@ export function createChannels(jatos, dependencies) {
      * @returns {JatosPromise}
      */
     jatos.leaveGroup = function (onSuccess, onError) {
+        cancelGroupJoinRetries();
+        groupClosedCheck.stop();
         if (isDeferredPending(openingGroupChannelDeferred)) {
             const errorMsg = "Can't leave group if not joined yet.";
             callMany(errorMsg, onError, console.error);
@@ -1056,7 +1152,43 @@ export function createChannels(jatos, dependencies) {
         return leavingGroupDeferred.promise();
     };
 
-    /** Each sender owns its action counter and versioned pending request. */
+    /**
+     * Shared batch/group opening helper. One promise covers all attempts;
+     * each channel supplies its backoff policy and initial-opening deadline.
+     */
+    function createOpeningRetry({open, canOpen, delay, maxDelay, timeout, onTimeout}) {
+        const deferred = createDeferred();
+        let timer;
+        let deadline;
+        deferred.always(() => {
+            clearTimeout(timer);
+            clearTimeout(deadline);
+        });
+        function attempt() {
+            if (!isDeferredPending(deferred)) return;
+            if (!canOpen()) {
+                deferred.reject("Can't open channel in the current study state.");
+                return;
+            }
+            open().done(() => deferred.resolve()).fail(() => {
+                if (!isDeferredPending(deferred)) return;
+                timer = setTimeout(attempt, delay);
+                delay = Math.min(delay * 2, maxDelay);
+            });
+        }
+        return {
+            promise: deferred.promise(),
+            cancel: error => deferred.reject(error),
+            start: () => {
+                if (timeout !== null) deadline = setTimeout(onTimeout, timeout);
+                attempt();
+            }
+        };
+    }
+
+    /**
+     * Each sender owns its action counter and versioned pending request.
+     */
     function createSessionSender({kind, getChannel, isVersioning, timeouts, createMessage}) {
         let counter = 0;
         let pending;
@@ -1127,6 +1259,11 @@ export function createChannels(jatos, dependencies) {
 
     return {
         openBatchChannelWithRetry,
+        // Study transitions cancel pending batch and group opening/reconnection attempts.
+        cancelChannelOpenings: () => {
+            cancelBatchOpeningRetries();
+            cancelGroupJoinRetries();
+        },
         // Preserve the existing end/abort cleanup: only stop closed-channel checks.
         stopClosedChecks: () => {
             batchClosedCheck.stop();
