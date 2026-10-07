@@ -121,7 +121,10 @@
                 {"Current version": window.common.jatosVersion, "Update version": version}, true);
 
         const releaseNodesClean = releaseInfo.releaseNotes.replace(/(\s|\n|\r|#)*Which variant(.|\n|\r)*/, "");
-        const releaseNotesHtml = new showdown.Converter().makeHtml(releaseNodesClean);
+        const releaseNotesHtml = new showdown.Converter({
+            // Keep the features implicated in Showdown's table-ID and metadata-title XSS advisories disabled.
+            tables: false, tablesHeaderId: false, metadata: false, completeHTMLDocument: false
+        }).makeHtml(releaseNodesClean);
         $("#releaseNotesModal .modal-body").html(releaseNotesHtml);
         $("#releaseNotesModal .modal-body a").attr("target", "_blank");
 

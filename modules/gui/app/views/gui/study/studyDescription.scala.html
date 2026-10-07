@@ -45,7 +45,10 @@
     function draw() {
         $("#studyDescriptionTitle").html(window.study.title);
         const markdown = $("#studyDescription").data().markdown;
-        const html = markdown ? new showdown.Converter().makeHtml(markdown) : "Here could be a description of this study.";
+        const html = markdown ? new showdown.Converter({
+            // Keep the features implicated in Showdown's table-ID and metadata-title XSS advisories disabled.
+            tables: false, tablesHeaderId: false, metadata: false, completeHTMLDocument: false
+        }).makeHtml(markdown) : "Here could be a description of this study.";
         $('#studyDescription').html(html);
         $("#studyDescription a").attr("target", "_blank");
     }
