@@ -1,6 +1,7 @@
 logs
-study_logs
-result_uploads
+study_logs*
+result_uploads*
+study_assets_root*
 project/project
 target
 /.target
@@ -15,7 +16,6 @@ target
 /RUNNING_PID
 /.settings
 /.sbtserver
-/study_assets_root/
 /database/
 .DS_Store
 .sbtserver
