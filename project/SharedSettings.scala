@@ -26,6 +26,7 @@ object SharedSettings {
   val pekkoVersion = "1.0.3"
   val jacksonVersion = "2.18.11"
   val lz4Version = "1.11.4"
+  val protobufVersion = "3.25.9"
 
   // Play/Pekko still request Jackson 2.14.3. Keep core and all modules on the patched
   // 2.18 line together; the Scala module checks the databind minor version at runtime.
@@ -77,6 +78,8 @@ object SharedSettings {
     // Exclude the legacy coordinates everywhere; version overrides alone cannot replace a group ID.
     excludeDependencies += ExclusionRule("org.lz4", "lz4-java"),
     dependencyOverrides += "at.yawk.lz4" % "lz4-java" % lz4Version,
+    // Patch MySQL Connector/J's protobuf runtime without changing the major API version.
+    dependencyOverrides += "com.google.protobuf" % "protobuf-java" % protobufVersion,
     javacOptions ++= Seq("--release", jatosJavaRelease, "-Xlint"),
     Compile / doc / sources := Seq.empty,
     Compile / packageDoc / publishArtifact := false,
