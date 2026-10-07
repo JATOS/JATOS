@@ -73,11 +73,11 @@ class StudyAssets @Inject()(components: ControllerComponents,
         case "jatos.min.js" =>
           assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.min.js")(request)
 
-        case "jatos-slim.js" =>
-          assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-slim.js")(request)
+        case "jatos.slim.js" =>
+          assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.slim.js")(request)
 
-        case "jatos-slim.min.js" =>
-          assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos-slim.min.js")(request)
+        case "jatos.slim.min.js" =>
+          assets.at(path = "/public/lib/jatos-publix/javascripts", file = "jatos.slim.min.js")(request)
 
         case jatosPublixPattern(_, _, file) =>
           assets.at(path = "/public/lib/jatos-publix", file = file)(request)

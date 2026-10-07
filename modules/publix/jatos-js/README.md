@@ -8,8 +8,8 @@ The main sources are `src/index.js`, the standard-build entry point
 
 - `../public/javascripts/jatos.js`
 - `../public/javascripts/jatos.min.js`
-- `../public/javascripts/jatos-slim.js`
-- `../public/javascripts/jatos-slim.min.js`
+- `../public/javascripts/jatos.slim.js`
+- `../public/javascripts/jatos.slim.min.js`
 - `../public/javascripts/http-loop-worker.js`
 - `../public/javascripts/heartbeat.js`
 - `../public/javascripts/heartbeat.min.js`
@@ -57,7 +57,7 @@ The standard builds bundle jQuery 3.7.1 as the deprecated `jatos.jQuery`
 compatibility API, available immediately and before `onLoad`. They do not modify
 page globals `$` or `jQuery`, and preserve the historical AJAX cache setting.
 
-Use `jatos-slim.js` or `jatos-slim.min.js` for studies that do not use
+Use `jatos.slim.js` or `jatos.slim.min.js` for studies that do not use
 `jatos.jQuery`. Slim builds omit full jQuery and the `jatos.jQuery` property;
 all other JATOS APIs, the private Deferred, and JSON Patch remain included.
 Both variants work via study-relative URLs and `/assets/javascripts/`.

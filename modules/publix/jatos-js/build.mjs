@@ -30,13 +30,13 @@ const outputs = [
     },
     {
         entryPoint: "src/index.js",
-        filename: "jatos-slim.js",
+        filename: "jatos.slim.js",
         minify: false,
         banner: "var jatos;"
     },
     {
         entryPoint: "src/index.js",
-        filename: "jatos-slim.min.js",
+        filename: "jatos.slim.min.js",
         minify: true,
         banner: "var jatos;"
     },
