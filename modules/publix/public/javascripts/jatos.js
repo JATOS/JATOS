@@ -9244,7 +9244,7 @@ var jatos;
   window.jatos = jatos;
   (function() {
     "use strict";
-    jatos.version = "3.11.3";
+    jatos.version = "3.12.0";
     jatos.httpTimeout = 3e4;
     jatos.httpRetry = 5;
     jatos.httpRetryWait = 1e3;
