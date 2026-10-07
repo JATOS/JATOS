@@ -1,8 +1,8 @@
 # Build the JATOS image from the current checkout before starting this stack:
 #
 #   sbt "Assets / clean" "Docker / stage"
-#   docker build -f deploy/Dockerfile -t jatos-multi-node-test target/docker/stage
-#   docker compose -f deploy/docker-compose-multi-node.yaml up --scale jatos=2
+#   docker build -f deploy/multi-node/Dockerfile -t jatos-multi-node-test target/docker/stage
+#   docker compose -f deploy/multi-node/docker-compose-multi-node.yaml up --scale jatos=2
 #
 # This starts two fixed seed nodes plus two additional JATOS replicas. All serve
 # study requests. Change --scale jatos=N to choose the number of additional
@@ -10,7 +10,7 @@
 # Open http://localhost:9000 through the load balancer, or ports 9001 and 9002
 # to access the seed nodes directly. Docker assigns a free
 # host port to port 9000 of every scalable jatos container; list them with
-# `docker compose -f deploy/docker-compose-multi-node.yaml ps`. All nodes use the
+# `docker compose -f deploy/multi-node/docker-compose-multi-node.yaml ps`. All nodes use the
 # same database and shared JATOS data volume. This setup is intended for local
 # testing only; its credentials and secret are not suitable for production.
 # Seeds start independently after MySQL: HTTP health is not cluster readiness.
