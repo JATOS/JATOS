@@ -2,25 +2,17 @@ Try out the new version on [cortex.jatos.org](https://cortex.jatos.org/).
 
 ---
 
-## Changes
+## Changed
 
 * Fixes
 * Features
 * Changes
-
+ 
 ---
 
 ## Upgrading
 
-**Old H2 1.x databases require an explicit migration; Java 21 or newer is required.**
-
-**MySQL and MariaDB do not need an H2 conversion.**
-
-**GUI auto-update can install bundled Java automatically.** On supported single-node
-Linux and macOS installations, if your running Java is too old, the updater downloads
-JATOS bundled with Java 25 and uses that runtime after restarting. It does not update
-system Java. If you **do not** (want to) use the GUI auto-update, you need to install
-Java 21 or newer manually.
+### Old H2 1.x databases require an explicit migration
 
 **Embedded H2 1.x database** files cannot be opened by H2 2.x. For an H2 upgrade,
 export the stopped database using the old H2 version and import
@@ -29,6 +21,16 @@ and validate the converted copy before deploying it. See the
 [H2 migration instructions](https://h2database.com/html/migration.html).
 If you have a custom H2 JDBC URL in JATOS' config: remove `SELECT_FOR_UPDATE_MVCC=FALSE`
 and include `NON_KEYWORDS=USER`
+
+**MySQL and MariaDB do not need an H2 conversion.**
+
+### Java 21 or newer required
+
+**GUI auto-update can install bundled Java automatically.** On supported single-node
+Linux and macOS installations, if your running Java is too old, the updater downloads
+JATOS bundled with Java 25 and uses that runtime after restarting. It does not update
+system Java. If you **do not** (want to) use the GUI auto-update, you need to install
+Java 21 or newer manually.
 
 **Always back up and test a migration before deployment.**
 
