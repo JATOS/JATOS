@@ -34,13 +34,12 @@
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as Editor from "@routes.Assets.versioned("lib/jatos-gui/javascripts/editor.js")";
-    import * as ConfirmationModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/confirmationModal.js")";
 
     const alerts = new Alerts.Named("study-description");
 
-    $("#studyDescriptionSidebar").on('hide.bs.offcanvas', alerts.hideAll);
-
-    $("#studyDescriptionSidebar").on('show.bs.offcanvas', draw);
+    $("#studyDescriptionSidebar")
+        .on('hide.bs.offcanvas', alerts.hideAll)
+        .on('show.bs.offcanvas', draw);
 
     function draw() {
         $("#studyDescriptionTitle").html(window.study.title);
@@ -93,7 +92,7 @@
             contentType: 'text/plain; charset=utf-8',
             processData: false,
             data: markdown,
-            success: function(response) {
+            success: function() {
                 $("#studyDescription").data("markdown", markdown);
                 draw();
                 toggleEditor();

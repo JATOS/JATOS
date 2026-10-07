@@ -166,7 +166,7 @@
         $("#updateJatosConfirmed").off("click").on("click", downloadJatos);
 
         $("#updateJatosModal").modal('show');
-    };
+    }
 
     function cancelUpdate() {
         $.ajax({
@@ -176,17 +176,13 @@
     }
 
     function downloadJatos() {
-        const releaseInfo = $("#updateJatos").data("releaseInfo");
-        const fileSizeInMb = getFileSizeInMb(releaseInfo);
-        const version = getVersionName(releaseInfo);
-
         $('#updateJatosModal')
             .modal('hide')
             .one('hidden.bs.modal', WaitingModal.show);
 
         $.ajax({
             url: window.routes.Updates.downloadJatos,
-            timeout: 0, // Do not timeout
+            timeout: 0, // Do not time out
             success: showUpdateJatosModalDownloaded,
             error: function(err) {
                 err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during the JATOS downloading: check the application logs");
