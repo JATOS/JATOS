@@ -63,9 +63,15 @@ Example:
   $0 -h
 
   $0 \\
+     --skip-clean \\
      --skip-tests \\
-     --push-docker \\
+     --skip-java-bundles \\
      --github-release
+
+    $0 \\
+       --skip-tests \\
+       --push-docker \\
+       --github-release
 EOF
 }
 
