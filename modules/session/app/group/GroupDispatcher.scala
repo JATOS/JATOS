@@ -1,18 +1,17 @@
 package group
 
+import cluster._
 import daos.common.StudyDao
-import group.GroupDispatcher.TellWhom.TellWhom
-import group.GroupDispatcher._
-import cluster.{GroupChannelCloseRequest, GroupChannelPresenceRequest, GroupOpenChannelsRequest, GroupOpenChannelsResponse, GroupClusterMessage, GroupDirectMsgDeliveryRequest, GroupReassignmentRequest, GroupRecipients, NodeIdentity, ChannelMessagePublisher}
 import general.common.Common
+import group.GroupProtocol._
 import models.common.Study.GroupSessionWriteScope
 import org.apache.pekko.actor.{ActorRef, ActorSystem, Cancellable, PoisonPill}
 import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsObject, Json}
 
-import javax.inject.{Inject, Singleton}
 import java.util.UUID
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.concurrent.{Future, Promise}
 import scala.jdk.DurationConverters._
@@ -32,79 +31,14 @@ import scala.jdk.DurationConverters._
  *
  * Channels are grouped by group result ID. Empty group entries are removed automatically.
  *
- * A GroupDispatcher handles all messages specified in the GroupDispatcherProtocol. There are fundamentally three
+ * A GroupDispatcher handles all messages specified in the GroupProtocol. There are fundamentally three
  * different message types: 1) group session patches, 2) broadcast messages, and 3) direct messages for a particular
  * group member.
  *
  * The group session patches are JSON Patches after RFC 6902 and used to describe changes in the group session data. The
  * session data are stored in the GroupResult.
  */
-object GroupDispatcher {
-
-  object TellWhom extends Enumeration {
-    type TellWhom = Value
-    val All, AllButSender, SenderOnly, Unknown = Value
-  }
-
-  //noinspection TypeAnnotation
-  object GroupAction extends Enumeration {
-    type GroupAction = Value
-    val Ready = Value("READY") // jatos.js signals that the group channel is ready (comes before OPENED)
-    val Joined = Value("JOINED") // Signals to every group member that a new member joined
-    val Left = Value("LEFT") // Signals to every member that a member left
-    val Opened = Value("OPENED") // Signals to the sender that its group channel opened
-    val Closed = Value("CLOSED") // Signals to the recipient that its group channel was closed by JATOS
-    val ChannelOpened = Value("CHANNEL_OPENED") // Signals that another member's group channel opened
-    val ChannelClosed = Value("CHANNEL_CLOSED") // Signals that another member's group channel closed
-    val Session = Value("SESSION") // Signals this message contains a group session update
-    val SessionAck = Value("SESSION_ACK") // Signals that the session update was successful
-    val SessionFail = Value("SESSION_FAIL") // Signals that the session update failed
-    val Fixed = Value("FIXED") // Signals that this group is now fixed (no new members)
-    val Error = Value("ERROR") // Used to send an error back to the sender
-  }
-
-  /**
-   * Strings used as keys in the group action JSON
-   */
-  //noinspection TypeAnnotation
-  object GroupActionJsonKey extends Enumeration {
-    // Action (mandatory for an action GroupMsg)
-    val Action = Value("action")
-    // Recipient of a group msg
-    val Recipient = Value("recipient")
-    // Group result ID
-    val GroupResultId = Value("groupResultId")
-    // GroupState
-    val GroupState = Value("groupState")
-    // Group member ID (which is equal to the study result ID)
-    val MemberId = Value("memberId")
-    // All active members of the group defined by their study result ID
-    val Members = Value("members")
-    // All open group channels defined by their study result ID
-    val Channels = Value("channels")
-    // Session data (must be accompanied with a session version)
-    val SessionData = Value("sessionData")
-    // Session patches (must be accompanied with a session version)
-    val SessionPatches = Value("sessionPatches")
-    // Identifier of an session action (mandatory)
-    val SessionActionId = Value("sessionActionId")
-    // Batch session version (mandatory for session data or patches)
-    val SessionVersion = Value("sessionVersion")
-    // Defines if we check the version before applying the patch
-    val SessionVersioning = Value("sessionVersioning")
-    // Error message
-    val ErrorMsg = Value("errorMsg")
-  }
-
-  /**
-   * Message format used for communication in the group channel between the GroupDispatcher and
-   * the group members. A GroupMsg contains a JSON node. If the JSON has an 'action' key, it is a group action
-   * message. With 'tellWhom' the recipient can be specified.
-   */
-  case class GroupMsg(json: JsObject, tellWhom: TellWhom = TellWhom.Unknown)
-
-}
-
+//noinspection ScalaUnusedSymbol
 @Singleton
 class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                 actionMsgBuilder: GroupActionMsgBuilder,
@@ -192,6 +126,8 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
   }
 
   // Message entry points
+
+  def buildPong(groupResultId: Long): JsObject = actionMsgBuilder.buildPong(groupResultId)
 
   /**
    * Handle a GroupMsg received from a client. What to do with it depends on the JSON inside the GroupMsg. It can be
@@ -487,7 +423,7 @@ class GroupDispatcher @Inject()(actionHandler: GroupActionHandler,
                                       errorMsg: String): Unit = {
     logger.debug(s".sendDirectDeliveryError: groupResultId $groupResultId, " +
       s"recipientStudyResultId $recipientStudyResultId, errorMsg $errorMsg")
-    val groupMsg = actionMsgBuilder.buildError(groupResultId, errorMsg, TellWhom.SenderOnly)
+    val groupMsg = actionMsgBuilder.buildError(groupResultId, errorMsg, GroupErrorCode.MessageDeliveryFailed, TellWhom.SenderOnly)
     tellActionMsg(List(groupMsg), groupResultId, senderStudyResultId, sender)
   }
 

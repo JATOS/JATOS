@@ -3,7 +3,7 @@ package cluster
 import batch.BatchDispatcher
 import com.typesafe.config.ConfigFactory
 import daos.common.StudyDao
-import group.GroupDispatcher.{GroupAction, GroupMsg, TellWhom}
+import group.GroupProtocol.{GroupAction, GroupMsg, TellWhom}
 import group.{GroupActionHandler, GroupActionMsgBuilder, GroupChannelActor, GroupDispatcher}
 import general.common.Common
 import models.common.Study.GroupSessionWriteScope
@@ -213,6 +213,7 @@ class DistributedGroupMessagingTest {
     system
   }
 
+  //noinspection SameParameterValue
   private def awaitClusterUp(cluster: Cluster, expectedMembers: Int): Unit = {
     val deadline = 10.seconds.fromNow
     while (cluster.state.members.count(_.status == MemberStatus.Up) != expectedMembers && deadline.hasTimeLeft()) {

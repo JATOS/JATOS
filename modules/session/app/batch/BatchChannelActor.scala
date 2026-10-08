@@ -1,9 +1,9 @@
 package batch
 
-import batch.BatchDispatcher.BatchActionJsonKey.Action
-import batch.BatchDispatcher._
+import batch.BatchProtocol.BatchActionJsonKey.Action
+import batch.BatchProtocol._
 import org.apache.pekko.actor.{Actor, ActorRef}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
 
 import javax.inject.Inject
 
@@ -28,9 +28,6 @@ class BatchChannelActor @Inject()(out: ActorRef,
   override def postStop(): Unit = {
     if (registered) batchDispatcher.unregisterChannel(batchId, studyResultId)
   }
-
-  val pong: JsObject = Json.obj("heartbeat" -> "pong")
-
   def receive: Receive = {
 
     case msg: JsObject if (msg \ Action.toString).asOpt[String].contains(BatchAction.Ready.toString) =>
@@ -41,8 +38,7 @@ class BatchChannelActor @Inject()(out: ActorRef,
       }
 
     case msg: JsObject if msg.keys.contains("heartbeat") =>
-      // If we receive a heartbeat ping, answer directly with a pong
-      out ! pong
+      out ! batchDispatcher.buildPong(batchId)
 
     case msg: JsObject =>
       // If we receive an JSON object (can only come from the client), wrap it in a

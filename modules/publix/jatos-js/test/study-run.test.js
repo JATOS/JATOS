@@ -112,7 +112,7 @@ function createNavigationApi(t, overrides = {}) {
 
 // Study session persistence
 
-test("study session persistence updates local data and queues a JSON snapshot", () => {
+test("study session persistence updates local data and queues the full session as JSON", () => {
     const calls = [];
     const promise = {};
     const jatos = {studySessionData: {old: true}};

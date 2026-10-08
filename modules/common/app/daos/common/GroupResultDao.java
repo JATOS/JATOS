@@ -7,10 +7,12 @@ import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -98,7 +100,7 @@ public class GroupResultDao extends AbstractDao {
                     .setMaxResults(1)
                     .getResultList();
 
-            return groupResults.isEmpty() ? Optional.empty() : Optional.of(groupResults.get(0));
+            return groupResults.isEmpty() ? Optional.empty() : Optional.of(groupResults.getFirst());
         });
     }
 
@@ -129,33 +131,7 @@ public class GroupResultDao extends AbstractDao {
                     .setMaxResults(1)
                     .getResultList();
 
-            return groupResults.isEmpty() ? Optional.empty() : Optional.of(groupResults.get(0));
-        });
-    }
-
-    /**
-     * Searches the database for GroupResults that fit the criteria: 1) are in the given batch, 2) are in state STARTED,
-     * 3) where the activeMemberCount < Batch's maxActiveMembers, 3) activeMemberCount + historyMemberCount < Batch's
-     * maxTotalMembers. Additionally the results are ordered by the activeMemberCount (highest first) and as a secondary
-     * sorting criteria it orders by historyMemberCount (highest first).
-     *
-     * We use a PESSIMISTIC_WRITE lock to let GroupResults always have the current activeMemberCount and
-     * historyMemberCount.
-     */
-    public List<GroupResult> findAllMaxNotReached(Batch batch) {
-        return withReadOnlyTransaction((EntityManager em) -> {
-            String queryStr = """
-                    SELECT gr FROM GroupResult gr
-                    WHERE gr.batch = :batch
-                    AND gr.groupState = :groupState
-                    AND (gr.batch.maxActiveMembers IS NULL OR gr.activeMemberCount < gr.batch.maxActiveMembers)
-                    AND (gr.batch.maxTotalMembers IS NULL OR (gr.activeMemberCount + gr.historyMemberCount) < gr.batch.maxTotalMembers)
-                    ORDER BY gr.activeMemberCount DESC, gr.historyMemberCount DESC""";
-            TypedQuery<GroupResult> query = em.createQuery(queryStr, GroupResult.class);
-            query.setParameter("batch", batch);
-            query.setParameter("groupState", GroupState.STARTED);
-            query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-            return query.getResultList();
+            return groupResults.isEmpty() ? Optional.empty() : Optional.of(groupResults.getFirst());
         });
     }
 
@@ -207,6 +183,18 @@ public class GroupResultDao extends AbstractDao {
 
             return updated == 1 ? expectedVersion + 1 : null;
         });
+    }
+
+    /**
+     * Reads only the session version, without loading session data or the entity.
+     *
+     */
+    public Optional<Long> findSessionVersion(Long id) {
+        return withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("SELECT s.groupSessionVersion FROM GroupResult s WHERE s.id = :id", Long.class)
+                        .setParameter("id", id)
+                        .getResultStream()
+                        .findFirst());
     }
 
 }

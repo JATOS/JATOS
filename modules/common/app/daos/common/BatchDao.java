@@ -102,6 +102,17 @@ public class BatchDao extends AbstractDao {
     }
 
     /**
+     * Reads only the session version, without loading session data or the entity.
+     */
+    public Optional<Long> findSessionVersion(Long id) {
+        return withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("SELECT s.batchSessionVersion FROM Batch s WHERE s.id = :id", Long.class)
+                        .setParameter("id", id)
+                        .getResultStream()
+                        .findFirst());
+    }
+
+    /**
      * Returns the number of Workers belonging to the given Batch.
      */
     public int countWorkers(Batch batch) {

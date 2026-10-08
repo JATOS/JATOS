@@ -129,6 +129,278 @@ for (const kind of ["batch", "group"]) {
         assert.equal(session.set("score", 7).state(), "pending");
     });
 
+    test(`${kind} session retries version conflicts only when opted in`, t => {
+        const {jatos, open, timers} = setup(t);
+        const socket = open(kind);
+        const session = jatos[`${kind}Session`];
+        const maxRetriesSetting = `${kind}SessionPatchMaxRetries`;
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const successes = [];
+        const failures = [];
+
+        assert.equal(jatos[maxRetriesSetting], 0);
+        jatos[maxRetriesSetting] = 1;
+        const pending = session.set("score", 3,
+            msg => successes.push(msg), msg => failures.push(msg));
+        const firstAttempt = socket.sent.at(-1);
+        assert.equal(firstAttempt[idKey], 0);
+        assert.equal(firstAttempt[versionKey], 4);
+
+        socket.receive({
+            action: "SESSION_FAIL",
+            [idKey]: 0,
+            [versionKey]: 5,
+            errorCode: "SESSION_VERSION_CONFLICT",
+            errorMsg: "Version mismatch"
+        });
+
+        assert.equal(socket.sent.at(-1)[idKey], 0, "waits for the broadcast");
+        assert.equal(session.get("score"), 1, "conflict version does not advance local data");
+        socket.receive({action: "SESSION", [versionKey]: 5,
+            [kind === "batch" ? "patches" : "sessionPatches"]: [{op: "replace", path: "/score", value: 2}]});
+
+        const retry = socket.sent.at(-1);
+        assert.equal(retry[idKey], 1);
+        assert.equal(retry[versionKey], 5);
+        assert.deepEqual(retry[kind === "batch" ? "patches" : "sessionPatches"],
+            firstAttempt[kind === "batch" ? "patches" : "sessionPatches"]);
+        assert.equal(pending.state(), "pending");
+        assert.equal(session.get("score"), 2);
+        assert.deepEqual(successes, []);
+        assert.deepEqual(failures, []);
+        assert.equal([...timers.values()].filter(timer => !timer.interval).length, 1);
+
+        socket.receive({action: "SESSION_ACK", [idKey]: 1});
+        assert.equal(pending.state(), "resolved");
+        assert.equal(successes.length, 1);
+        assert.deepEqual(failures, []);
+    });
+
+    test(`${kind} session stops after the configured number of conflict retries`, t => {
+        const {jatos, open} = setup(t);
+        const socket = open(kind);
+        const session = jatos[`${kind}Session`];
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const failures = [];
+        jatos[`${kind}SessionPatchMaxRetries`] = 1;
+
+        const pending = session.set("score", 3, undefined, msg => failures.push(msg));
+        socket.receive({action: "SESSION", [versionKey]: 5,
+            [kind === "batch" ? "patches" : "sessionPatches"]: [{op: "replace", path: "/score", value: 2}]});
+        socket.receive({action: "SESSION_FAIL", [idKey]: 0, [versionKey]: 5,
+            errorCode: "SESSION_VERSION_CONFLICT", errorMsg: "first conflict"});
+        jatos[`${kind}SessionPatchMaxRetries`] = 100; // Applies only to future operations.
+        socket.receive({action: "SESSION_FAIL", [idKey]: 1, [versionKey]: 6,
+            errorCode: "SESSION_VERSION_CONFLICT", errorMsg: "second conflict"});
+
+        assert.equal(socket.sent.filter(msg => msg.action === "SESSION").length, 2);
+        assert.equal(pending.state(), "rejected");
+        assert.deepEqual(failures, ["second conflict"]);
+    });
+
+    test(`${kind} retries ignore late acknowledgements and preserve the original patch`, t => {
+        const {jatos, open} = setup(t);
+        const socket = open(kind);
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const dataKey = kind === "batch" ? "data" : "sessionData";
+        const patchKey = kind === "batch" ? "patches" : "sessionPatches";
+        jatos[`${kind}SessionPatchMaxRetries`] = 1;
+        const value = {nested: 1};
+        const promise = jatos[`${kind}Session`].set("score", value);
+        value.nested = 99;
+        socket.receive({action: "SESSION", [versionKey]: 5,
+            [patchKey]: [{op: "replace", path: "/score", value: 2}]});
+        socket.receive({action: "SESSION_FAIL", [idKey]: 0, [versionKey]: 5,
+            errorCode: "SESSION_VERSION_CONFLICT"});
+        assert.equal(socket.sent.at(-1)[patchKey][0].value.nested, 1);
+        socket.receive({action: "SESSION_ACK", [idKey]: 0, [versionKey]: 1});
+        socket.receive({action: "SESSION_FAIL", [idKey]: 0, [versionKey]: 1,
+            [dataKey]: {score: -1}, errorCode: "SESSION_VERSION_CONFLICT"});
+        assert.equal(jatos[`${kind}Session`].get("score"), 2);
+        assert.equal(promise.state(), "pending");
+        socket.receive({action: "SESSION_ACK", [idKey]: 1});
+        assert.equal(promise.state(), "resolved");
+    });
+
+    test(`${kind} does not retry default conflicts, ordinary failures, missing versions, or timeouts`, t => {
+        const {jatos, open, timers, fire} = setup(t);
+        const socket = open(kind);
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        for (const scenario of ["default", "ordinary", "version", "timeout"]) {
+            jatos[`${kind}SessionPatchMaxRetries`] = scenario === "default" ? 0 : 2;
+            const failures = [];
+            const promise = jatos[`${kind}Session`].set("score", 3, undefined, msg => failures.push(msg));
+            const count = socket.sent.length;
+            const id = socket.sent.at(-1)[idKey];
+            if (scenario === "timeout") {
+                fire([...timers].find(([, timer]) => !timer.interval && timer.delay === jatos.channelSendingTimeoutTime)[0]);
+            } else {
+                socket.receive({action: "SESSION_FAIL", [idKey]: id,
+                    ...(scenario === "version" ? {} : {[versionKey]: 4}),
+                    ...(scenario === "ordinary" ? {} : {errorCode: "SESSION_VERSION_CONFLICT"})});
+            }
+            assert.equal(promise.state(), "rejected", scenario);
+            assert.equal(failures.length, 1, scenario);
+            assert.equal(socket.sent.length, count, scenario);
+        }
+    });
+
+    test(`${kind} additional error codes never trigger patch retries`, t => {
+        const {jatos, open} = setup(t);
+        const socket = open(kind);
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        jatos[`${kind}SessionPatchMaxRetries`] = 3;
+        for (const errorCode of ["SESSION_PATCH_FAILED", "SESSION_WRITE_FORBIDDEN",
+            "SESSION_UPDATE_RETRIES_EXHAUSTED", "UNKNOWN_ACTION", "BATCH_NOT_FOUND",
+            "GROUP_NOT_FOUND", "MESSAGE_DELIVERY_FAILED"]) {
+            const failures = [];
+            const pending = jatos[`${kind}Session`].set("score", 2, undefined, error => failures.push(error));
+            const count = socket.sent.length;
+            const id = socket.sent.at(-1)[idKey];
+            socket.receive({action: "SESSION_FAIL", [idKey]: id, [versionKey]: 4, errorCode, errorMsg: "Rejected"});
+            assert.equal(pending.state(), "rejected", errorCode);
+            assert.deepEqual(failures, ["Rejected"]);
+            assert.equal(socket.sent.length, count);
+        }
+    });
+
+    test(`${kind} requests full state only after waiting and ignores broadcasts already included`, t => {
+        const {jatos, open, timers, fire} = setup(t);
+        const socket = open(kind);
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const dataKey = kind === "batch" ? "data" : "sessionData";
+        const patchKey = kind === "batch" ? "patches" : "sessionPatches";
+        jatos[`${kind}SessionPatchMaxRetries`] = 1;
+        const session = jatos[`${kind}Session`];
+        const pending = session.set("score", 3);
+        socket.receive({action: "SESSION_FAIL", [idKey]: 0, [versionKey]: 5,
+            errorCode: "SESSION_VERSION_CONFLICT"});
+        assert.equal(socket.sent.length, 2);
+        fire([...timers].find(([, timer]) => timer.delay === 250)[0]);
+        assert.deepEqual(socket.sent.at(-1), {action: "SESSION_GET"});
+        socket.receive({action: "SESSION", [versionKey]: 5, [dataKey]: {list: [1]}});
+        assert.equal(socket.sent.at(-1)[idKey], 1);
+        assert.equal(pending.state(), "pending");
+        socket.receive({action: "SESSION", [versionKey]: 5,
+            [patchKey]: [{op: "add", path: "/list/-", value: 1}]});
+        socket.receive({action: "SESSION", [versionKey]: 6,
+            [patchKey]: [{op: "add", path: "/list/-", value: 2}]});
+        assert.deepEqual(session.get("list"), [1, 2]);
+    });
+
+    test(`${kind} full-state SESSION replies stay silent while patches emit callbacks`, t => {
+        const {jatos, open} = setup(t);
+        const calls = [];
+        const onSession = (...args) => calls.push(args);
+        if (kind === "batch") jatos.onBatchSession(onSession);
+        const socket = open(kind, {onGroupSession: onSession, onUpdate: () => calls.push("update")});
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const dataKey = kind === "batch" ? "data" : "sessionData";
+        const patchKey = kind === "batch" ? "patches" : "sessionPatches";
+        socket.receive({action: "SESSION", [versionKey]: 5, [dataKey]: {score: 5}});
+        assert.equal(jatos[`${kind}Session`].get("score"), 5);
+        assert.deepEqual(calls, []);
+        socket.receive({action: "SESSION", [versionKey]: 6,
+            [patchKey]: [{op: "replace", path: "/score", value: 6}]});
+        assert.equal(jatos[`${kind}Session`].get("score"), 6);
+        assert.deepEqual(calls, kind === "batch" ? [["/score", "replace"]]
+            : [["/score", "replace"], "update"]);
+    });
+
+    test(`${kind} out-of-order broadcasts fill gaps without requesting full state`, t => {
+        const {jatos, open} = setup(t);
+        const socket = open(kind);
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const patchKey = kind === "batch" ? "patches" : "sessionPatches";
+        jatos[`${kind}SessionPatchMaxRetries`] = 1;
+        jatos[`${kind}Session`].set("score", 3);
+        socket.receive({action: "SESSION", [versionKey]: 6,
+            [patchKey]: [{op: "replace", path: "/score", value: 6}]});
+        assert.equal(jatos[`${kind}Session`].get("score"), 1);
+        socket.receive({action: "SESSION_FAIL", [idKey]: 0, [versionKey]: 5,
+            errorCode: "SESSION_VERSION_CONFLICT"});
+        socket.receive({action: "SESSION", [versionKey]: 5,
+            [patchKey]: [{op: "replace", path: "/score", value: 5}]});
+        assert.equal(jatos[`${kind}Session`].get("score"), 6);
+        assert.equal(socket.sent.at(-1)[versionKey], 6);
+        assert.equal(socket.sent.some(msg => msg.action === "SESSION_GET"), false);
+    });
+
+    for (const failure of ["timeout", "close", "server close", "send", "ending"]) {
+        test(`${kind} waiting retry rejects on synchronization ${failure}`, t => {
+            const {jatos, open, timers, fire, state} = setup(t);
+            const socket = open(kind);
+            const idKey = kind === "batch" ? "id" : "sessionActionId";
+            const versionKey = kind === "batch" ? "version" : "sessionVersion";
+            const dataKey = kind === "batch" ? "data" : "sessionData";
+            const errors = [];
+            jatos[`${kind}SessionPatchMaxRetries`] = 1;
+            const pending = jatos[`${kind}Session`].set("score", 3, undefined, error => errors.push(error));
+            socket.receive({action: "SESSION_FAIL", [idKey]: 0, [versionKey]: 5,
+                errorCode: "SESSION_VERSION_CONFLICT"});
+            if (failure === "close") socket.close();
+            else if (failure === "server close") socket.receive({action: "CLOSED", [versionKey]: 5});
+            else {
+                if (failure === "send") socket.send = () => { throw new Error("send failed"); };
+                fire([...timers].find(([, timer]) => timer.delay === 250)[0]);
+                if (failure === "timeout") {
+                    fire([...timers].find(([, timer]) => !timer.interval
+                        && timer.delay === jatos.channelSendingTimeoutTime)[0]);
+                } else if (failure === "ending") {
+                    state.ending = true;
+                    socket.receive({action: "SESSION", [versionKey]: 5, [dataKey]: {score: 2}});
+                }
+            }
+            assert.equal(pending.state(), "rejected");
+            assert.equal(errors.length, 1);
+            assert.equal(socket.sent.filter(msg => msg.action === "SESSION").length, 1);
+            assert.equal([...timers.values()].some(timer => timer.delay === 250), false);
+        });
+    }
+
+    test(`${kind} detects gaps without write retries and shares one refresh request`, t => {
+        const {jatos, open, timers, fire} = setup(t);
+        const socket = open(kind);
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const dataKey = kind === "batch" ? "data" : "sessionData";
+        const patchKey = kind === "batch" ? "patches" : "sessionPatches";
+        const patch = version => ({action: "SESSION", [versionKey]: version,
+            [patchKey]: [{op: "replace", path: "/score", value: version}]});
+        socket.receive(patch(6));
+        socket.receive(patch(7));
+        assert.equal(jatos[`${kind}Session`].get("score"), 1);
+        assert.equal([...timers.values()].filter(timer => timer.delay === 250).length, 1);
+        fire([...timers].find(([, timer]) => timer.delay === 250)[0]);
+        socket.receive(patch(8));
+        assert.equal(socket.sent.filter(msg => msg.action === "SESSION_GET").length, 1);
+        socket.receive({action: "SESSION", [versionKey]: 6, [dataKey]: {score: 6}});
+        assert.equal(jatos[`${kind}Session`].get("score"), 8);
+        socket.receive({action: "SESSION", [versionKey]: 5, [dataKey]: {score: -1}});
+        assert.equal(jatos[`${kind}Session`].get("score"), 8);
+        assert.equal([...timers.values()].some(timer => !timer.interval), false);
+    });
+
+    test(`${kind} acknowledgements do not advance the applied session version`, t => {
+        const {jatos, open} = setup(t);
+        const socket = open(kind);
+        const idKey = kind === "batch" ? "id" : "sessionActionId";
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const session = jatos[`${kind}Session`];
+        const pending = session.set("score", 3);
+        socket.receive({action: "SESSION_ACK", [idKey]: 0, [versionKey]: 5});
+        assert.equal(pending.state(), "resolved");
+        session.set("score", 4);
+        assert.equal(socket.sent.at(-1)[versionKey], 4);
+        assert.equal(session.get("score"), 1);
+    });
+
     test(`${kind} failed sends reject without leaving a pending request or timeout`, t => {
         const {jatos, open, timers} = setup(t);
         const socket = open(kind);
@@ -159,13 +431,77 @@ for (const kind of ["batch", "group"]) {
         assert.equal(sockets.length, 2);
         const replacement = sockets[1];
         replacement.open();
-        replacement.receive(kind === "batch" ? {version: 5} : {sessionVersion: 5});
+        replacement.receive(kind === "batch" ? {version: 5, data: {}} : {sessionVersion: 5, sessionData: {}});
         state.ending = true;
         const newCheckId = [...timers].find(([, timer]) => timer.delay === jatos.channelClosedCheckInterval)[0];
         replacement.close();
         fire(newCheckId);
         assert.equal(sockets.length, 2);
         assert.equal([...timers.values()].some(timer => !timer.interval), false);
+    });
+
+    test(`${kind} heartbeat versions detect silent loss with retries disabled`, t => {
+        const {jatos, open, timers, fire} = setup(t);
+        const socket = open(kind);
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const dataKey = kind === "batch" ? "data" : "sessionData";
+        assert.equal(jatos[`${kind}SessionPatchMaxRetries`], 0);
+        fire([...timers].find(([, timer]) => timer.delay === jatos.channelHeartbeatInterval)[0]);
+        socket.receive({heartbeat: "pong", [versionKey]: 5});
+        assert.equal(jatos[`${kind}Session`].get("score"), 1);
+        assert.equal([...timers.values()].filter(timer => !timer.interval).length, 1,
+            "heartbeat timeout is replaced by a synchronization grace period");
+        socket.receive({heartbeat: "pong", [versionKey]: 5});
+        fire([...timers].find(([, timer]) => timer.delay === 250)[0]);
+        assert.deepEqual(socket.sent.at(-1), {action: "SESSION_GET"});
+        socket.receive({heartbeat: "pong", [versionKey]: 6});
+        assert.equal(socket.sent.filter(msg => msg.action === "SESSION_GET").length, 1);
+        socket.receive({action: "SESSION", [versionKey]: 6, [dataKey]: {score: 6}});
+        assert.equal(jatos[`${kind}Session`].get("score"), 6);
+        assert.equal([...timers.values()].some(timer => !timer.interval), false);
+    });
+
+    test(`${kind} heartbeat version waits for broadcasts without advancing local version`, t => {
+        const {jatos, open, timers} = setup(t);
+        const socket = open(kind);
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const patchKey = kind === "batch" ? "patches" : "sessionPatches";
+        socket.receive({heartbeat: "pong", [versionKey]: 5});
+        jatos[`${kind}Session`].set("score", 9);
+        assert.equal(socket.sent.at(-1)[versionKey], 4);
+        socket.receive({action: "SESSION", [versionKey]: 5,
+            [patchKey]: [{op: "replace", path: "/score", value: 5}]});
+        assert.equal(jatos[`${kind}Session`].get("score"), 5);
+        assert.equal([...timers.values()].some(timer => timer.delay === 250), false);
+        assert.equal(socket.sent.some(msg => msg.action === "SESSION_GET"), false);
+    });
+
+    test(`${kind} old, equal, absent and invalid heartbeat versions require no synchronization`, t => {
+        const {jatos, open, timers} = setup(t);
+        const socket = open(kind);
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        for (const version of [undefined, null, 3, 4, -1, 5.5, "5"]) {
+            socket.receive({heartbeat: "pong", [versionKey]: version});
+        }
+        assert.equal(jatos[`${kind}Session`].get("score"), 1);
+        assert.equal([...timers.values()].some(timer => !timer.interval), false);
+        assert.equal(socket.sent.length, 1);
+    });
+
+    test(`${kind} later heartbeat can recover after a refresh timeout`, t => {
+        const {jatos, open, timers, fire} = setup(t);
+        const socket = open(kind);
+        const versionKey = kind === "batch" ? "version" : "sessionVersion";
+        const dataKey = kind === "batch" ? "data" : "sessionData";
+        socket.receive({heartbeat: "pong", [versionKey]: 5});
+        fire([...timers].find(([, timer]) => timer.delay === 250)[0]);
+        fire([...timers].find(([, timer]) => !timer.interval
+            && timer.delay === jatos.channelSendingTimeoutTime)[0]);
+        socket.receive({heartbeat: "pong", [versionKey]: 5});
+        fire([...timers].find(([, timer]) => timer.delay === 250)[0]);
+        assert.equal(socket.sent.filter(msg => msg.action === "SESSION_GET").length, 2);
+        socket.receive({action: "SESSION", [versionKey]: 5, [dataKey]: {score: 5}});
+        assert.equal(jatos[`${kind}Session`].get("score"), 5);
     });
 
     test(`${kind} heartbeat pong cancels the outstanding heartbeat timeout`, t => {
@@ -336,7 +672,7 @@ test("shared session APIs keep batch and group data independent and read live re
 });
 
 for (const kind of ["batch", "group"]) {
-    test(`${kind} incoming updates preserve root replacements and snapshot precedence`, t => {
+    test(`${kind} incoming updates preserve root replacements and full-session precedence`, t => {
         const {jatos, open} = setup(t);
         const socket = open(kind);
         const session = jatos[`${kind}Session`];
@@ -348,10 +684,10 @@ for (const kind of ["batch", "group"]) {
         ]});
         assert.deepEqual(session.getAll(), {nested: {score: 3}});
         socket.receive({[patchKey]: [{op: "replace", path: "/nested/score", value: 4}],
-            [dataKey]: {snapshot: true}});
-        assert.deepEqual(session.getAll(), {snapshot: true});
+            [dataKey]: {fullSession: true}});
+        assert.deepEqual(session.getAll(), {fullSession: true});
         socket.receive({heartbeat: "pong"});
-        assert.deepEqual(session.getAll(), {snapshot: true});
+        assert.deepEqual(session.getAll(), {fullSession: true});
         socket.receive({[dataKey]: null});
         assert.deepEqual(session.getAll(), {});
         socket.receive({[patchKey]: [{op: "replace", path: "", value: null}]});
@@ -513,7 +849,7 @@ test("group joining retries with capped exponential backoff and resolves after s
         fire([...timers].find(([, timer]) => timer.delay === delay)[0]);
     }
     sockets.at(-1).open();
-    sockets.at(-1).receive({sessionVersion: 1});
+    sockets.at(-1).receive({sessionVersion: 1, sessionData: {}});
     assert.equal(promise.state(), "resolved");
     assert.deepEqual(errors, []);
     assert.equal([...timers.values()].filter(timer => !timer.interval).length, 0);
@@ -574,7 +910,7 @@ test("batch initial opening keeps one promise across failures until the session 
     fire([...timers].find(([, timer]) => timer.delay === 2000)[0]);
     sockets[1].open();
     assert.equal(promise.state(), "pending");
-    sockets[1].receive({version: 1});
+    sockets[1].receive({version: 1, data: {}});
     assert.equal(promise.state(), "resolved");
     assert.equal([...timers.values()].some(timer => timer.delay === 120000), false);
 });

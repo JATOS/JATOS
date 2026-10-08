@@ -1,9 +1,9 @@
 package group
 
 import daos.common.GroupResultDao
-import group.GroupDispatcher.GroupAction.GroupAction
-import group.GroupDispatcher.TellWhom.TellWhom
-import group.GroupDispatcher._
+import group.GroupProtocol.GroupAction.GroupAction
+import group.GroupProtocol.TellWhom.TellWhom
+import group.GroupProtocol._
 import jakarta.persistence.EntityManager
 import models.common.GroupResult
 import play.api.Logger
@@ -20,12 +20,28 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
+  /** A database version detects lost cluster broadcasts even while the WebSocket stays healthy. */
+  def buildPong(groupResultId: Long): JsObject = {
+    val pong = Json.obj("heartbeat" -> "pong")
+    try {
+      val version = groupResultDao.findSessionVersion(groupResultId)
+      if (version.isPresent) pong ++ Json.obj("sessionVersion" -> version.get().longValue())
+      else pong
+    } catch {
+      case scala.util.control.NonFatal(error) =>
+        // A failed version lookup must not turn a healthy connection into a failed heartbeat.
+        logger.warn(s"Could not read session version for groupResultId $groupResultId", error)
+        pong
+    }
+  }
+
   /**
    * Creates a simple GroupMsg with an error message
    */
-  def buildError(groupResultId: Long, errorMsg: String, tellWhom: TellWhom): GroupMsg = {
+  def buildError(groupResultId: Long, errorMsg: String, errorCode: String, tellWhom: TellWhom): GroupMsg = {
     val json = Json.obj(
       GroupActionJsonKey.Action.toString -> GroupAction.Error.toString,
+      GroupActionJsonKey.ErrorCode.toString -> errorCode,
       GroupActionJsonKey.ErrorMsg.toString -> errorMsg,
       GroupActionJsonKey.GroupResultId.toString -> groupResultId.toString)
     GroupMsg(json, tellWhom)
@@ -55,6 +71,19 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
   }
 
   /**
+   * Builds a failed session-update response with a machine-readable error code.
+   */
+  def buildSessionFailure(groupResult: GroupResult,
+                          sessionActionId: Long,
+                          errorMsg: String,
+                          errorCode: String,
+                          tellWhom: TellWhom): GroupMsg = {
+    val message = buildSimple(groupResult, GroupAction.SessionFail, Some(sessionActionId), Some(errorMsg), tellWhom)
+    message.copy(json = message.json ++ Json.obj(
+      GroupActionJsonKey.ErrorCode.toString -> errorCode))
+  }
+
+  /**
    * Builds a GroupMsg with or without session data but always with the session version
    */
   def build(groupResultId: Long, studyResultId: Long, channelStudyResultIds: Option[Iterable[Long]],
@@ -68,7 +97,7 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
       if (groupResult != null)
         buildAction(groupResult, studyResultId, channelStudyResultIds, includeSessionData, action, tellWhom)
       else
-        buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", TellWhom.SenderOnly)
+        buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", GroupErrorCode.GroupNotFound, TellWhom.SenderOnly)
     })
   }
 

@@ -3,7 +3,7 @@ package batch.session;
 import batch.BatchActionHandler;
 import batch.BatchActionMsgBuilder;
 import batch.BatchDispatcher;
-import batch.BatchDispatcher.BatchMsg;
+import batch.BatchProtocol.BatchMsg;
 import cluster.BatchClusterMessage;
 import cluster.GroupClusterMessage;
 import cluster.GroupChannelPresenceRequest;
@@ -31,7 +31,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static batch.BatchDispatcher.*;
+import static batch.BatchProtocol.*;
 import static org.junit.Assert.*;
 import static scala.jdk.javaapi.CollectionConverters.asScala;
 

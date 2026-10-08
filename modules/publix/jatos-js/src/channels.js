@@ -1,9 +1,11 @@
 import {getHttpErrorMessage} from "./http-transport.js";
+import {createSessionSync} from "./session-sync.js";
 
 /** @typedef {import("./jatos-promise.js").JatosPromise} JatosPromise */
 
 import {call, callMany, callWithArgs} from "./utils/callbacks.js";
-import {createSessionApi, applySessionUpdate} from "./channel-session.js";
+import {createSessionApi} from "./session-api.js";
+import {createSessionSender} from "./session-sender.js";
 import {createDeferred, rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
 /** Installs the batch and group APIs and owns their channel state. */
@@ -38,14 +40,6 @@ export function createChannels(jatos, dependencies) {
      */
     let groupState = null;
     /**
-     * Group session data: shared in between members of the group
-     */
-    let groupSessionData = {};
-    /**
-     * Batch session data: shared in between study runs of the same batch
-     */
-    let batchSessionData = {};
-    /**
      * How long in ms should jatos.js wait for an answer after message was sent via
      * a group or batch channel.
      */
@@ -68,22 +62,25 @@ export function createChannels(jatos, dependencies) {
     jatos.channelOpeningBackoffTimeMin = 1000;
     jatos.channelOpeningBackoffTimeMax = 120000; // 2 min
     /**
-     * All batch/group session actions currently waiting for an response.
-     * Maps sessionActionId -> timeout object
-     */
-    const batchSessionTimeouts = {};
-    const groupSessionTimeouts = {};
-    /**
      * Channel timeout and interval objects
      */
     let groupFixedTimeout;
     /**
-     * Version of the current group/batch session data. The version is
-     * used to prevent concurrent changes of the data. Can be switch on/off
-     * by flags *SessionVersioning.
+     * Keeps batch session patches in version order and requests full state if a gap persists.
+     * Also detects gaps from pong versions, independently of the patch retry setting.
      */
-    let batchSessionVersion;
-    let groupSessionVersion;
+    const batchSessionSync = createSessionSync({
+        requestFullSession: () => requestFullSession(batchChannel),
+        getTimeout: () => jatos.channelSendingTimeoutTime
+    });
+    /**
+     * Keeps group session patches in version order and requests full state if a gap persists.
+     * Also detects gaps from pong versions, independently of the patch retry setting.
+     */
+    const groupSessionSync = createSessionSync({
+        requestFullSession: () => requestFullSession(groupChannel),
+        getTimeout: () => jatos.channelSendingTimeoutTime
+    });
     /**
      * If versioning is set to true all batch/group session data patches are
      * accompanied by a version. On the JATOS server side only the a patch with
@@ -95,6 +92,13 @@ export function createChannels(jatos, dependencies) {
      */
     jatos.batchSessionVersioning = true;
     jatos.groupSessionVersioning = true;
+    /**
+     * Maximum retries after a confirmed batch/group-session version conflict. Default 0
+     * means no retry and immediate failure. Retries reapply the patch to the latest state;
+     * timeouts, connection failures, and invalid patches are never retried.
+     */
+    jatos.batchSessionPatchMaxRetries = 0;
+    jatos.groupSessionPatchMaxRetries = 0;
     /**
      * Batch channel WebSocket: exchange date between study runs of a batch
      */
@@ -387,9 +391,14 @@ export function createChannels(jatos, dependencies) {
         return {start, stop};
     }
 
+    /** Sends recovery requests without exposing WebSockets to session synchronization. */
+    function requestFullSession(channel) {
+        if (!channel || channel.readyState !== channel.OPEN) throw new Error("Session channel closed");
+        channel.send(JSON.stringify({action: "SESSION_GET"}));
+    }
+
     function clearBatchChannel() {
-        batchSessionData = {};
-        batchSessionVersion = null;
+        batchSessionSync.reset();
         batchHeartbeat.stop();
         // Keep the closed-channel check running here
     }
@@ -406,15 +415,30 @@ export function createChannels(jatos, dependencies) {
             return;
         }
         if (typeof batchMsg.heartbeat != 'undefined' && batchMsg.heartbeat === 'pong') {
-            // Batch channel is alive:  clear all heartbeat timeouts
+            // Batch channel is alive: clear all heartbeat timeouts
             // and set batchChannelAlive flag and fire batchChannelAliveEvent
             batchHeartbeat.acknowledge();
             setBatchChannelAlive();
+            batchSessionSync.observeVersion(batchMsg.version);
             return;
         }
-        batchSessionData = applySessionUpdate(batchSessionData, batchMsg.patches, batchMsg.data);
-        if (typeof batchMsg.version != 'undefined') {
-            batchSessionVersion = batchMsg.version;
+        if ((batchMsg.action === "SESSION_ACK" || batchMsg.action === "SESSION_FAIL")
+            && !batchSessionSender.hasPending(batchMsg.id)) return;
+        if (batchMsg.action === "CLOSED") return applyBatchMsg(batchMsg);
+        batchSessionSync.receive({
+            version: batchMsg.version,
+            patches: batchMsg.action === "SESSION_FAIL" ? undefined : batchMsg.patches,
+            fullSession: batchMsg.action === "SESSION_FAIL" ? undefined : batchMsg.data
+        }, () => applyBatchMsg(batchMsg));
+    }
+
+    /**
+     * Applies a parsed batch message after session synchronization checks.
+     */
+    function applyBatchMsg(batchMsg) {
+        const hasSessionUpdate = batchMsg.action !== "SESSION_FAIL"
+            && (batchMsg.patches !== undefined || batchMsg.data !== undefined);
+        if (hasSessionUpdate && typeof batchMsg.version != 'undefined') {
             if (isDeferredPending(openingBatchChannelDeferred)) {
                 // Batch channel opening is only done when we have the batch session version
                 console.info("Batch channel opened");
@@ -435,6 +459,8 @@ export function createChannels(jatos, dependencies) {
                 setBatchChannelAlive();
                 break;
             case "SESSION":
+                // Full-state replies update local data without emitting patch callbacks.
+                if (batchMsg.patches === undefined) break;
                 // Call onJatosBatchSession with JSON Patch's path and
                 // op (operation) for each patch
                 batchMsg.patches.forEach(function (patch) {
@@ -442,21 +468,15 @@ export function createChannels(jatos, dependencies) {
                 });
                 break;
             case "SESSION_ACK":
-                if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-                    batchSessionTimeouts[batchMsg.id].cancel("Batch session update successful");
-                } else {
-                    console.error("Batch session got 'SESSION_ACK' with nonexistent ID " + batchMsg.id);
-                }
+                batchSessionSender.acknowledge(batchMsg.id, "Batch session update successful");
                 break;
             case "SESSION_FAIL":
-                if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-                    const errorMsg = batchMsg.errorMsg || "Batch session update failed";
-                    batchSessionTimeouts[batchMsg.id].trigger(errorMsg);
-                } else {
-                    console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
-                }
+                batchSessionSender.reject(batchMsg.id,
+                    batchMsg.errorMsg || "Batch session update failed",
+                    {errorCode: batchMsg.errorCode, version: batchMsg.version});
                 break;
             case "CLOSED":
+                batchSessionSync.cancel();
                 batchClosedCheck.stop();
                 setBatchChannelDead();
                 studyRunState.invalid = true;
@@ -490,16 +510,20 @@ export function createChannels(jatos, dependencies) {
     }
 
     /** Sends batch session updates using the batch channel's wire format. */
-    const sendBatchSessionPatch = createSessionSender({
+    const batchSessionSender = createSessionSender({
         kind: "batch",
         getChannel: () => batchChannel,
         isVersioning: () => jatos.batchSessionVersioning,
-        timeouts: batchSessionTimeouts,
+        getMaxRetries: () => jatos.batchSessionPatchMaxRetries,
+        sync: batchSessionSync,
+        studyRunState,
+        getTimeout: () => jatos.channelSendingTimeoutTime,
+        patchesKey: "patches",
         createMessage: (id, patches, versioning) => ({
-            action: "SESSION", id, patches, version: batchSessionVersion, versioning
+            action: "SESSION", id, patches, version: batchSessionSync.getVersion(), versioning
         })
     });
-    jatos.batchSession = createSessionApi(() => batchSessionData, sendBatchSessionPatch);
+    jatos.batchSession = createSessionApi(batchSessionSync.getData, batchSessionSender.send);
 
     /**
      * Registers a callback that is called when a batch-session patch is received.
@@ -701,8 +725,7 @@ export function createChannels(jatos, dependencies) {
         jatos.groupResultId = null;
         jatos.groupMembers = [];
         jatos.groupChannels = [];
-        groupSessionData = {};
-        groupSessionVersion = null;
+        groupSessionSync.reset();
         groupState = null;
         groupHeartbeat.stop();
         // Keep the closed-channel check running here
@@ -725,8 +748,21 @@ export function createChannels(jatos, dependencies) {
         if (typeof groupMsg.heartbeat != 'undefined') {
             // Group channel is alive - clear all heartbeat timeouts
             groupHeartbeat.acknowledge();
+            groupSessionSync.observeVersion(groupMsg.sessionVersion);
             return;
         }
+        if ((groupMsg.action === "SESSION_ACK" || groupMsg.action === "SESSION_FAIL")
+            && !groupSessionSender.hasPending(groupMsg.sessionActionId)) return;
+        if (groupMsg.action === "CLOSED") return applyGroupMsg(groupMsg);
+        groupSessionSync.receive({
+            version: groupMsg.sessionVersion,
+            patches: groupMsg.action === "SESSION_FAIL" ? undefined : groupMsg.sessionPatches,
+            fullSession: groupMsg.action === "SESSION_FAIL" ? undefined : groupMsg.sessionData
+        }, () => applyGroupMsg(groupMsg));
+    }
+
+    /** Applies a parsed group message after session synchronization checks. */
+    function applyGroupMsg(groupMsg) {
         updateGroupVars(groupMsg);
         // Now handle the action and map them to callbacks that were given as
         // parameter to joinGroup
@@ -774,9 +810,9 @@ export function createChannels(jatos, dependencies) {
                 return memberId !== groupMsg.memberId;
             });
         }
-        groupSessionData = applySessionUpdate(groupSessionData, groupMsg.sessionPatches, groupMsg.sessionData);
-        if (typeof groupMsg.sessionVersion != 'undefined') {
-            groupSessionVersion = groupMsg.sessionVersion;
+        const hasSessionUpdate = groupMsg.action !== "SESSION_FAIL"
+            && (groupMsg.sessionPatches !== undefined || groupMsg.sessionData !== undefined);
+        if (hasSessionUpdate && typeof groupMsg.sessionVersion != 'undefined') {
             if (isDeferredPending(openingGroupChannelDeferred)) {
                 // Group joining is only done after the session version is received
                 console.info("Group channel opened");
@@ -795,6 +831,7 @@ export function createChannels(jatos, dependencies) {
                 callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
                 break;
             case "CLOSED":
+                groupSessionSync.cancel();
                 groupClosedCheck.stop();
                 console.info("Group channel closed by JATOS server");
                 break;
@@ -825,6 +862,8 @@ export function createChannels(jatos, dependencies) {
                 }
                 break;
             case "SESSION":
+                // Keep full-state replies silent, including the general onUpdate callback.
+                if (groupMsg.sessionPatches === undefined) break;
                 // onGroupSession
                 // Got updated group session data and version.
                 // Call onGroupSession with JSON Patch's path
@@ -842,19 +881,12 @@ export function createChannels(jatos, dependencies) {
                 call(groupChannelCallbacks.onUpdate);
                 break;
             case "SESSION_ACK":
-                if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-                    groupSessionTimeouts[groupMsg.sessionActionId].cancel("Group session update successful");
-                } else {
-                    console.warn("Group session got 'SESSION_ACK' with nonexistent ID " + groupMsg.sessionActionId);
-                }
+                groupSessionSender.acknowledge(groupMsg.sessionActionId, "Group session update successful");
                 break;
             case "SESSION_FAIL":
-                if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-                    const errorMsg = groupMsg.errorMsg || "Group session update failed";
-                    groupSessionTimeouts[groupMsg.sessionActionId].trigger(errorMsg);
-                } else {
-                    console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
-                }
+                groupSessionSender.reject(groupMsg.sessionActionId,
+                    groupMsg.errorMsg || "Group session update failed",
+                    {errorCode: groupMsg.errorCode, version: groupMsg.sessionVersion});
                 break;
             case "ERROR":
                 callMany(groupMsg.errorMsg, groupChannelCallbacks.onError, console.error);
@@ -871,17 +903,21 @@ export function createChannels(jatos, dependencies) {
     };
 
     /** Sends group session updates using the group channel's wire format. */
-    const sendGroupSessionPatch = createSessionSender({
+    const groupSessionSender = createSessionSender({
         kind: "group",
         getChannel: () => groupChannel,
         isVersioning: () => jatos.groupSessionVersioning,
-        timeouts: groupSessionTimeouts,
+        getMaxRetries: () => jatos.groupSessionPatchMaxRetries,
+        sync: groupSessionSync,
+        studyRunState,
+        getTimeout: () => jatos.channelSendingTimeoutTime,
+        patchesKey: "sessionPatches",
         createMessage: (id, patches, versioning) => ({
             action: "SESSION", sessionActionId: id, sessionPatches: patches,
-            sessionVersion: groupSessionVersion, sessionVersioning: versioning
+            sessionVersion: groupSessionSync.getVersion(), sessionVersioning: versioning
         })
     });
-    jatos.groupSession = createSessionApi(() => groupSessionData, sendGroupSessionPatch);
+    jatos.groupSession = createSessionApi(groupSessionSync.getData, groupSessionSender.send);
 
     /**
      * Ask the JATOS server to fix this group.
@@ -1186,76 +1222,6 @@ export function createChannels(jatos, dependencies) {
         };
     }
 
-    /**
-     * Each sender owns its action counter and versioned pending request.
-     */
-    function createSessionSender({kind, getChannel, isVersioning, timeouts, createMessage}) {
-        let counter = 0;
-        let pending;
-
-        return function sendSessionPatch(patches, onSuccess, onError) {
-            const channel = getChannel();
-            if (!channel || channel.readyState !== channel.OPEN) {
-                const error = `Can't send ${kind} session patch. No open ${kind} channel. Patch: ${patches.op} ${patches.path}.`;
-                callMany(error, onError, console.error);
-                return rejectedPromise(error);
-            }
-            if (isVersioning() && isDeferredPending(pending)) {
-                const error = `Can send only one ${kind} session patch at a time. Patch: ${patches.op} ${patches.path}.`;
-                callMany(error, onError, console.error);
-                return rejectedPromise(error);
-            }
-            if (studyRunState.invalid) {
-                const error = `Can't send ${kind} session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
-                callMany(error, onError, console.warn);
-                return rejectedPromise(error);
-            }
-
-            const deferred = createDeferred();
-            if (isVersioning()) pending = deferred;
-            const id = counter++;
-            const message = createMessage(id,
-                patches.constructor === Array ? patches : [patches], !!isVersioning());
-            try {
-                channel.send(JSON.stringify(message));
-                setChannelSendingTimeoutAndPromiseResolution(deferred, timeouts, id, onSuccess, onError);
-            } catch (error) {
-                callMany(error, onError, console.error);
-                deferred.reject();
-            }
-            return deferred.promise();
-        };
-    }
-
-    /**
-     * Sets a timeout and puts an object with two functions, 'cancel' and 'trigger'
-     * into the given sessionTimeouts
-     */
-    function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts,
-                                                          sessionActionId, onSuccess, onError) {
-        const timeoutId = setTimeout(function () {
-            callWithArgs(onError, "Timeout sending session patch");
-            deferred.reject("Timeout sending session patch");
-        }, jatos.channelSendingTimeoutTime);
-
-        // Create a new timeout object with two functions: 1) to cancel
-        // the timeout and 2) to trigger the timeout prematurely
-        sessionTimeouts[sessionActionId] = {
-            cancel: function (msg) {
-                clearTimeout(timeoutId);
-                callWithArgs(onSuccess, msg);
-                deferred.resolve(msg);
-            },
-            trigger: function (msg) {
-                clearTimeout(timeoutId);
-                callWithArgs(onError, msg);
-                deferred.reject(msg);
-            }
-        };
-
-        // Always clean up and delete the timeout obj after the deferred is resolved
-        deferred.always(function () { delete sessionTimeouts[sessionActionId]; });
-    }
 
     return {
         openBatchChannelWithRetry,

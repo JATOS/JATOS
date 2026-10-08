@@ -1,9 +1,9 @@
 package group
 
-import group.GroupDispatcher.GroupActionJsonKey.Action
+import group.GroupProtocol.GroupActionJsonKey.Action
 import org.apache.pekko.actor.{Actor, ActorRef}
-import group.GroupDispatcher._
-import play.api.libs.json.{JsObject, Json}
+import group.GroupProtocol._
+import play.api.libs.json.JsObject
 
 import javax.inject.Inject
 
@@ -25,8 +25,6 @@ class GroupChannelActor @Inject()(out: ActorRef,
 
   private var registered = false
 
-  val pong: JsObject = Json.obj("heartbeat" -> "pong")
-
   override def postStop(): Unit = {
     if (registered) groupDispatcher.unregisterChannel(groupResultId, studyResultId)
   }
@@ -45,8 +43,7 @@ class GroupChannelActor @Inject()(out: ActorRef,
       }
 
     case msg: JsObject if msg.keys.contains("heartbeat") =>
-      // If we receive a heartbeat ping, answer directly with a pong
-      out ! pong
+      out ! groupDispatcher.buildPong(groupResultId)
 
     case json: JsObject =>
       // If we receive a JsonNode (only from the client) wrap it in a GroupMsg and forward it to

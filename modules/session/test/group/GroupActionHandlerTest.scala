@@ -1,7 +1,7 @@
 package group
 
 import daos.common.GroupResultDao
-import group.GroupDispatcher.{GroupAction, GroupMsg, TellWhom}
+import group.GroupProtocol.{GroupErrorCode, GroupAction, GroupMsg, TellWhom}
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
 import models.common.Study.GroupSessionWriteScope
@@ -56,10 +56,21 @@ class GroupActionHandlerTest {
   // =========================================================================
 
   @Test
+  def handleActionMsg_sessionGet_returnsFullStateOnlyToSender(): Unit = {
+    val expected = GroupMsg(Json.obj("action" -> "SESSION", "sessionVersion" -> 7,
+      "sessionData" -> Json.obj("score" -> 2)), TellWhom.SenderOnly)
+    when(msgBuilder.build(groupResultId, studyResultId, None,
+      includeSessionData = true, GroupAction.Session, TellWhom.SenderOnly)).thenReturn(expected)
+    assertEquals(List(expected), groupActionHandler.handleActionMsg(
+      GroupMsg(Json.obj("action" -> "SESSION_GET")), groupResultId, studyResultId, GroupSessionWriteScope.SHARED))
+    verifyNoInteractions(groupResultDao)
+  }
+
+  @Test
   def handleActionMsg_unknownAction_returnsErrorMsg(): Unit = {
     val unknownMsg = GroupMsg(Json.obj("action" -> "UNKNOWN_ACTION"))
     val expectedError = GroupMsg(Json.obj("action" -> "ERROR", "errorMsg" -> "Unknown action UNKNOWN_ACTION"))
-    when(msgBuilder.buildError(groupResultId, "Unknown action UNKNOWN_ACTION", TellWhom.SenderOnly))
+    when(msgBuilder.buildError(groupResultId, "Unknown action UNKNOWN_ACTION", GroupErrorCode.UnknownAction, TellWhom.SenderOnly))
       .thenReturn(expectedError)
 
     val result = groupActionHandler.handleActionMsg(unknownMsg, groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
@@ -90,7 +101,7 @@ class GroupActionHandlerTest {
   def handleActionMsg_groupResultNotFound_returnsError(): Unit = {
     when(groupResultDao.findById(groupResultId)).thenReturn(null)
     val expectedError = GroupMsg(Json.obj("action" -> "ERROR"))
-    when(msgBuilder.buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", TellWhom.SenderOnly))
+    when(msgBuilder.buildError(groupResultId, s"Couldn't find group result with ID $groupResultId in database.", GroupErrorCode.GroupNotFound, TellWhom.SenderOnly))
       .thenReturn(expectedError)
 
     val result = groupActionHandler.handleActionMsg(sessionMsg(Json.arr()), groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
@@ -102,6 +113,57 @@ class GroupActionHandlerTest {
   // =========================================================================
 
   @Test
+  def databaseUpdateExceptionsAreNotConvertedToPatchFailures(): Unit = {
+    val groupResult = new GroupResult()
+    groupResult.setGroupSessionData("{}")
+    groupResult.setGroupSessionVersion(1L)
+    when(groupResultDao.findById(groupResultId)).thenReturn(groupResult)
+    val failure = new RuntimeException("Database unavailable")
+    when(groupResultDao.updateGroupSession(any[java.lang.Long](), any[java.lang.Long](), anyString()))
+      .thenThrow(failure)
+    try {
+      groupActionHandler.handleActionMsg(sessionMsg(Json.arr()), groupResultId, studyResultId, GroupSessionWriteScope.SHARED)
+      fail("Expected the database exception")
+    } catch {
+      case error: RuntimeException => assertSame(failure, error)
+    }
+    verifyNoInteractions(msgBuilder)
+  }
+
+  @Test
+  def conflictReloadMissingEntityKeepsOriginalVersion(): Unit = {
+    val groupResult = new GroupResult()
+    groupResult.setGroupSessionData("{}")
+    groupResult.setGroupSessionVersion(1L)
+    when(groupResultDao.findById(groupResultId)).thenReturn(groupResult, null)
+    when(groupResultDao.updateGroupSession(any[java.lang.Long](), any[java.lang.Long](), anyString()))
+      .thenReturn(null)
+    val response = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
+    when(msgBuilder.buildSessionFailure(groupResult, 10L,
+      "Concurrent update conflict (client version: 1, current: 1).",
+      GroupErrorCode.SessionVersionConflict, TellWhom.SenderOnly)).thenReturn(response)
+    assertEquals(List(response), groupActionHandler.handleActionMsg(sessionMsg(Json.arr()), groupResultId, studyResultId, GroupSessionWriteScope.SHARED))
+    verify(groupResultDao, times(2)).findById(groupResultId)
+    verify(groupResultDao, times(1)).updateGroupSession(any[java.lang.Long](), any[java.lang.Long](), anyString())
+  }
+
+  @Test
+  def versionMismatchPrecedesWriteScopeAndPatchValidation(): Unit = {
+    val groupResult = new GroupResult()
+    groupResult.setGroupSessionVersion(2L)
+    groupResult.setGroupSessionData("invalid JSON")
+    when(groupResultDao.findById(groupResultId)).thenReturn(groupResult)
+    val response = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
+    when(msgBuilder.buildSessionFailure(groupResult, 10L,
+      "Version mismatch (client version: 1, current: 2).",
+      GroupErrorCode.SessionVersionConflict, TellWhom.SenderOnly)).thenReturn(response)
+    val patches = Json.arr(Json.obj("op" -> "remove", "path" -> "/other-member"))
+    assertEquals(List(response), groupActionHandler.handleActionMsg(
+      sessionMsg(patches), groupResultId, studyResultId, GroupSessionWriteScope.MEMBER))
+    verify(groupResultDao, never()).updateGroupSession(anyLong(), anyLong(), anyString())
+  }
+
+  @Test
   def handleActionMsg_versionMismatch_failsPatch(): Unit = {
     val groupResult = new GroupResult()
     groupResult.setId(groupResultId)
@@ -110,11 +172,11 @@ class GroupActionHandlerTest {
     when(groupResultDao.findById(groupResultId)).thenReturn(groupResult)
 
     val failMsg = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(
+    when(msgBuilder.buildSessionFailure(
       ArgumentMatchers.eq(groupResult),
-      ArgumentMatchers.eq(GroupAction.SessionFail),
-      ArgumentMatchers.eq(Some(10L)),
-      any(),
+      ArgumentMatchers.eq(10L),
+      anyString(),
+      ArgumentMatchers.eq("SESSION_VERSION_CONFLICT"),
       ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
@@ -173,11 +235,11 @@ class GroupActionHandlerTest {
       anyString())).thenReturn(null)
 
     val failMsg = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(
+    when(msgBuilder.buildSessionFailure(
       ArgumentMatchers.eq(concurrentlyUpdatedGroupResult),
-      ArgumentMatchers.eq(GroupAction.SessionFail),
-      ArgumentMatchers.eq(Some(10L)),
-      any(),
+      ArgumentMatchers.eq(10L),
+      anyString(),
+      ArgumentMatchers.eq("SESSION_VERSION_CONFLICT"),
       ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
@@ -393,11 +455,11 @@ class GroupActionHandlerTest {
     when(groupResultDao.findById(groupResultId)).thenReturn(groupResult)
 
     val failMsg = GroupMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(
+    when(msgBuilder.buildSessionFailure(
       ArgumentMatchers.eq(groupResult),
-      ArgumentMatchers.eq(GroupAction.SessionFail),
-      ArgumentMatchers.eq(Some(10L)),
-      any(),
+      ArgumentMatchers.eq(10L),
+      anyString(),
+      ArgumentMatchers.eq(GroupErrorCode.SessionPatchFailed),
       ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 

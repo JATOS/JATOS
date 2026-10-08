@@ -45,7 +45,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.time.Duration;
 
-import static group.GroupDispatcher.*;
+import static group.GroupProtocol.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -655,7 +655,7 @@ public class GroupDispatcherTest {
         assertEquals(directJson, ((GroupMsg) msg2).json());
 
         // Direct to unknown -> should create error back to sender
-        when(msgBuilder.buildError(eq(groupResultId), anyString(), eq(TW_SenderOnly())))
+        when(msgBuilder.buildError(eq(groupResultId), anyString(), eq("MESSAGE_DELIVERY_FAILED"), eq(TW_SenderOnly())))
                 .thenReturn(actionMsgToSender(js("{\"action\":\"ERROR\"}")));
         JsObject toUnknown = js("{\"recipient\":\"999\"}");
         dispatcher.handleGroupMsg(directOrBroadcastMsg(toUnknown), groupResultId, 1L, ch1.self());
@@ -745,7 +745,7 @@ public class GroupDispatcherTest {
         assertEquals(2L, request.recipientStudyResultId());
         assertEquals(Json$.MODULE$.stringify(json), request.json());
         distributedDispatcher.acknowledgeDirectDelivery(request.deliveryId());
-        verify(msgBuilder, never()).buildError(anyLong(), anyString(), any());
+        verify(msgBuilder, never()).buildError(anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -755,7 +755,7 @@ public class GroupDispatcherTest {
         BlockingQueue<Object> senderMessages = new LinkedBlockingQueue<>();
         ActorRef sender = system.actorOf(Props.create(CapturingActor.class, senderMessages));
         GroupMsg error = actionMsgToSender(js("{\"action\":\"ERROR\"}"));
-        when(msgBuilder.buildError(eq(groupResultId), contains("could not be delivered"), eq(TW_SenderOnly())))
+        when(msgBuilder.buildError(eq(groupResultId), contains("could not be delivered"), eq("MESSAGE_DELIVERY_FAILED"), eq(TW_SenderOnly())))
                 .thenReturn(error);
 
         distributedDispatcher.handleGroupMsg(

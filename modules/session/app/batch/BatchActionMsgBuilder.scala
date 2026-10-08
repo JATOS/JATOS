@@ -1,15 +1,14 @@
 package batch
 
-import batch.BatchDispatcher.BatchAction.BatchAction
-import batch.BatchDispatcher.TellWhom.TellWhom
-import batch.BatchDispatcher.{BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
+import batch.BatchProtocol.BatchAction.BatchAction
+import batch.BatchProtocol.TellWhom.TellWhom
+import batch.BatchProtocol.{BatchErrorCode, BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
 import com.google.common.base.Strings
 import daos.common.BatchDao
 import jakarta.persistence.EntityManager
 import models.common.Batch
 import play.api.Logger
-import play.api.libs.json.{JsNumber, JsString, JsValue, Json}
-import play.db.jpa.JPAApi
+import play.api.libs.json._
 
 import java.io.IOException
 import javax.inject.{Inject, Singleton}
@@ -23,11 +22,29 @@ class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
   private val logger: Logger = Logger(this.getClass)
 
   /**
+   * A database version detects lost cluster broadcasts even while the WebSocket stays healthy.
+   */
+  def buildPong(batchId: Long): JsObject = {
+    val pong = Json.obj("heartbeat" -> "pong")
+    try {
+      val version = batchDao.findSessionVersion(batchId)
+      if (version.isPresent) pong ++ Json.obj("version" -> version.get().longValue())
+      else pong
+    } catch {
+      case scala.util.control.NonFatal(error) =>
+        // A failed version lookup must not turn a healthy connection into a failed heartbeat.
+        logger.warn(s"Could not read session version for batchId $batchId", error)
+        pong
+    }
+  }
+
+  /**
    * Creates a simple BatchMsg with an error message
    */
-  def buildError(errorMsg: String, tellWhom: TellWhom): BatchMsg = {
+  def buildError(errorMsg: String, errorCode: String, tellWhom: TellWhom): BatchMsg = {
     val json = Json.obj(
       BatchActionJsonKey.Action.toString -> BatchAction.Error.toString,
+      BatchActionJsonKey.ErrorCode.toString -> errorCode,
       BatchActionJsonKey.ErrorMsg.toString -> errorMsg)
     BatchMsg(json, tellWhom)
   }
@@ -49,6 +66,19 @@ class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
       json = json + (BatchActionJsonKey.ErrorMsg.toString -> JsString(errorMsg.get))
     }
     BatchMsg(json, tellWhom)
+  }
+
+  /**
+   * Builds a failed session-update response with a machine-readable error code.
+   */
+  def buildSessionFailure(batch: Batch,
+                          sessionActionId: Long,
+                          errorMsg: String,
+                          errorCode: String,
+                          tellWhom: TellWhom): BatchMsg = {
+    val message = buildSimple(batch, BatchAction.SessionFail, sessionActionId, Some(errorMsg), tellWhom)
+    message.copy(json = message.json ++ Json.obj(
+      BatchActionJsonKey.ErrorCode.toString -> errorCode))
   }
 
   /**
@@ -74,7 +104,7 @@ class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
       }")
       val batch = batchDao.findById(batchId)
       if (batch != null) buildSessionAction(batch, action, tellWhom)
-      else buildError(s"Couldn't find batch with ID $batchId in database.", TellWhom.SenderOnly)
+      else buildError(s"Couldn't find batch with ID $batchId in database.", BatchErrorCode.BatchNotFound, TellWhom.SenderOnly)
     })
   }
 

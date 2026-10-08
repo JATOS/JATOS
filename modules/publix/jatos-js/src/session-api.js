@@ -23,7 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {applyPatch, getValueByPointer} from "fast-json-patch/module/core.mjs";
+import {getValueByPointer} from "fast-json-patch/module/core.mjs";
 
 import {cloneJsonObj} from "./utils/clone-json.js";
 
@@ -217,22 +217,4 @@ function generatePatch(op, path, value, from) {
         patch.from = from;
     }
     return patch;
-}
-
-/**
- * Applies incoming patches before an optional full snapshot. A null snapshot
- * clears the session; a root patch retains JSON Patch's replacement document.
- * Version tracking and callbacks remain the channel's responsibility.
- */
-export function applySessionUpdate(data, patches, snapshot) {
-    if (patches !== undefined) {
-        const results = applyPatch(data, patches);
-        if (results && results.newDocument !== undefined) {
-            data = results.newDocument;
-        }
-    }
-    if (snapshot !== undefined) {
-        data = snapshot === null ? {} : snapshot;
-    }
-    return data;
 }

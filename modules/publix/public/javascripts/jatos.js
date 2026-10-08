@@ -7672,6 +7672,116 @@ var jatos;
     return a !== a && b !== b;
   }
 
+  // src/session-sync.js
+  function createSessionSync({ requestFullSession, getTimeout }) {
+    let data = {};
+    let version;
+    const getVersion = () => version;
+    function apply({ update, onApplied }) {
+      if (update.patches !== void 0 || update.fullSession !== void 0) {
+        data = applySessionUpdate(data, update.patches, update.fullSession);
+        if (update.version !== void 0) version = update.version;
+      }
+      onApplied();
+    }
+    const buffered = /* @__PURE__ */ new Map();
+    const waiters = /* @__PURE__ */ new Set();
+    let target = -1;
+    let timer;
+    function fail(error) {
+      clearTimeout(timer);
+      timer = void 0;
+      buffered.clear();
+      target = -1;
+      for (const waiter of [...waiters]) {
+        waiters.delete(waiter);
+        waiter.done(error);
+      }
+    }
+    function check() {
+      if (target < 0 || getVersion() != null && getVersion() >= target) {
+        clearTimeout(timer);
+        timer = void 0;
+        for (const waiter of [...waiters]) {
+          waiters.delete(waiter);
+          waiter.done();
+        }
+      } else if (timer === void 0) {
+        timer = setTimeout(() => {
+          timer = void 0;
+          try {
+            timer = setTimeout(() => fail("Timeout synchronizing session"), getTimeout());
+            requestFullSession();
+          } catch (error) {
+            fail(error);
+          }
+        }, Math.min(250, getTimeout()));
+      }
+    }
+    function receive(update, onApplied = () => {
+    }) {
+      const message = { update, onApplied };
+      const version2 = update.version;
+      const hasVersion = Number.isSafeInteger(version2) && version2 >= 0;
+      if (hasVersion && update.fullSession !== void 0) {
+        if (getVersion() == null || version2 >= getVersion()) apply(message);
+      } else if (hasVersion && update.patches !== void 0) {
+        if (getVersion() != null && version2 === getVersion() + 1) apply(message);
+        else if (getVersion() == null || version2 > getVersion()) {
+          if (buffered.size < 100) buffered.set(version2, message);
+        }
+      } else {
+        apply(message);
+      }
+      if (hasVersion) target = Math.max(target, version2);
+      for (const version3 of buffered.keys()) {
+        if (version3 <= getVersion()) buffered.delete(version3);
+      }
+      while (getVersion() != null && buffered.has(getVersion() + 1)) {
+        const next = getVersion() + 1;
+        const message2 = buffered.get(next);
+        buffered.delete(next);
+        apply(message2);
+      }
+      check();
+    }
+    return {
+      getData: () => data,
+      getVersion,
+      receive,
+      observeVersion(version2) {
+        if (!Number.isSafeInteger(version2) || version2 < 0) return;
+        target = Math.max(target, version2);
+        check();
+      },
+      waitFor(version2, done) {
+        target = Math.max(target, version2);
+        waiters.add({ done });
+        check();
+      },
+      cancel() {
+        fail("Session channel closed while synchronizing");
+      },
+      reset() {
+        data = {};
+        version = null;
+        fail("Session channel closed while synchronizing");
+      }
+    };
+  }
+  function applySessionUpdate(data, patches, fullSession) {
+    if (patches !== void 0) {
+      const results = applyPatch(data, patches);
+      if (results && results.newDocument !== void 0) {
+        data = results.newDocument;
+      }
+    }
+    if (fullSession !== void 0) {
+      data = fullSession === null ? {} : fullSession;
+    }
+    return data;
+  }
+
   // src/utils/clone-json.js
   function cloneJsonObj(obj) {
     if (null === obj || "object" != typeof obj) return obj;
@@ -7693,7 +7803,7 @@ var jatos;
     throw new Error("Unable to copy obj! Its type isn't supported.");
   }
 
-  // src/channel-session.js
+  // src/session-api.js
   /*! fast-json-patch 3.1.1
    * (The MIT License)
    *
@@ -7786,17 +7896,131 @@ var jatos;
     }
     return patch;
   }
-  function applySessionUpdate(data, patches, snapshot) {
-    if (patches !== void 0) {
-      const results = applyPatch(data, patches);
-      if (results && results.newDocument !== void 0) {
-        data = results.newDocument;
+
+  // src/session-sender.js
+  function createSessionSender({
+    kind,
+    getChannel,
+    isVersioning,
+    getMaxRetries,
+    sync,
+    createMessage,
+    patchesKey,
+    studyRunState,
+    getTimeout
+  }) {
+    let counter = 0;
+    let pending;
+    const timeouts = {};
+    function getValidationError(patches) {
+      const channel = getChannel();
+      if (!channel || channel.readyState !== channel.OPEN) {
+        return { message: `Can't send ${kind} session patch. No open ${kind} channel. Patch: ${patches.op} ${patches.path}.`, log: console.error };
+      }
+      if (isVersioning() && isDeferredPending(pending)) {
+        return { message: `Can send only one ${kind} session patch at a time. Patch: ${patches.op} ${patches.path}.`, log: console.error };
+      }
+      if (studyRunState.invalid) {
+        return { message: `Can't send ${kind} session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`, log: console.warn };
       }
     }
-    if (snapshot !== void 0) {
-      data = snapshot === null ? {} : snapshot;
+    function isRetryChannelAvailable(channel) {
+      return !studyRunState.ending && !studyRunState.invalid && isVersioning() && getChannel() === channel && channel.readyState === channel.OPEN;
     }
-    return data;
+    function canRetry(operation, channel, failure) {
+      return operation.versioning && isRetryChannelAvailable(channel) && failure?.errorCode === "SESSION_VERSION_CONFLICT" && Number.isSafeInteger(failure.version) && operation.retries < operation.maxRetries;
+    }
+    function retryAfterSync(operation, channel, failure) {
+      if (!canRetry(operation, channel, failure)) return false;
+      operation.retries++;
+      sync.waitFor(failure.version, (error) => {
+        if (!error && !isRetryChannelAvailable(channel)) {
+          error = "Session channel unavailable for retry";
+        }
+        if (error) {
+          callWithArgs(operation.onError, error);
+          operation.deferred.reject(error);
+        } else sendAttempt(operation);
+      });
+      return true;
+    }
+    function sendAttempt(operation) {
+      const channel = getChannel();
+      const id = counter++;
+      const message = createMessage(id, operation.patches, operation.versioning);
+      try {
+        const serializedMessage = JSON.stringify(message);
+        if (operation.maxRetries > 0 && operation.retries === 0) {
+          operation.patches = JSON.parse(serializedMessage)[patchesKey];
+        }
+        channel.send(serializedMessage);
+        setChannelSendingTimeoutAndPromiseResolution(
+          operation.deferred,
+          timeouts,
+          id,
+          operation.onSuccess,
+          operation.onError,
+          (failure) => retryAfterSync(operation, channel, failure),
+          getTimeout()
+        );
+      } catch (error) {
+        callMany(error, operation.onError, console.error);
+        operation.deferred.reject();
+      }
+    }
+    function sendSessionPatch(patches, onSuccess, onError) {
+      const error = getValidationError(patches);
+      if (error) {
+        callMany(error.message, onError, error.log);
+        return rejectedPromise(error.message);
+      }
+      const deferred = createDeferred();
+      if (isVersioning()) pending = deferred;
+      const configuredRetries = getMaxRetries();
+      const operation = {
+        deferred,
+        onSuccess,
+        onError,
+        maxRetries: Number.isSafeInteger(configuredRetries) && configuredRetries > 0 ? configuredRetries : 0,
+        versioning: !!isVersioning(),
+        patches: patches.constructor === Array ? patches : [patches],
+        retries: 0
+      };
+      sendAttempt(operation);
+      return deferred.promise();
+    }
+    return {
+      send: sendSessionPatch,
+      hasPending: (id) => timeouts.hasOwnProperty(id),
+      acknowledge(id, message) {
+        if (timeouts.hasOwnProperty(id)) timeouts[id].cancel(message);
+      },
+      reject(id, message, failure) {
+        if (timeouts.hasOwnProperty(id)) timeouts[id].trigger(message, failure);
+      }
+    };
+  }
+  function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onError, retry, timeout) {
+    const timeoutId = setTimeout(function() {
+      delete sessionTimeouts[sessionActionId];
+      callWithArgs(onError, "Timeout sending session patch");
+      deferred.reject("Timeout sending session patch");
+    }, timeout);
+    sessionTimeouts[sessionActionId] = {
+      cancel: function(msg) {
+        clearTimeout(timeoutId);
+        delete sessionTimeouts[sessionActionId];
+        callWithArgs(onSuccess, msg);
+        deferred.resolve(msg);
+      },
+      trigger: function(msg, failure) {
+        clearTimeout(timeoutId);
+        delete sessionTimeouts[sessionActionId];
+        if (retry(failure)) return;
+        callWithArgs(onError, msg);
+        deferred.reject(msg);
+      }
+    };
   }
 
   // src/channels.js
@@ -7812,21 +8036,25 @@ var jatos;
     jatos2.groupMembers = [];
     jatos2.groupChannels = [];
     let groupState = null;
-    let groupSessionData = {};
-    let batchSessionData = {};
     jatos2.channelSendingTimeoutTime = 1e4;
     jatos2.channelHeartbeatInterval = 1e4;
     jatos2.channelHeartbeatTimeoutTime = 1e4;
     jatos2.channelClosedCheckInterval = 2e3;
     jatos2.channelOpeningBackoffTimeMin = 1e3;
     jatos2.channelOpeningBackoffTimeMax = 12e4;
-    const batchSessionTimeouts = {};
-    const groupSessionTimeouts = {};
     let groupFixedTimeout;
-    let batchSessionVersion;
-    let groupSessionVersion;
+    const batchSessionSync = createSessionSync({
+      requestFullSession: () => requestFullSession(batchChannel),
+      getTimeout: () => jatos2.channelSendingTimeoutTime
+    });
+    const groupSessionSync = createSessionSync({
+      requestFullSession: () => requestFullSession(groupChannel),
+      getTimeout: () => jatos2.channelSendingTimeoutTime
+    });
     jatos2.batchSessionVersioning = true;
     jatos2.groupSessionVersioning = true;
+    jatos2.batchSessionPatchMaxRetries = 0;
+    jatos2.groupSessionPatchMaxRetries = 0;
     let batchChannel;
     let groupChannel;
     let groupChannelCallbacks;
@@ -8003,9 +8231,12 @@ var jatos;
       }
       return { start, stop };
     }
+    function requestFullSession(channel) {
+      if (!channel || channel.readyState !== channel.OPEN) throw new Error("Session channel closed");
+      channel.send(JSON.stringify({ action: "SESSION_GET" }));
+    }
     function clearBatchChannel() {
-      batchSessionData = {};
-      batchSessionVersion = null;
+      batchSessionSync.reset();
       batchHeartbeat.stop();
     }
     function handleBatchMsg(msg) {
@@ -8019,11 +8250,20 @@ var jatos;
       if (typeof batchMsg.heartbeat != "undefined" && batchMsg.heartbeat === "pong") {
         batchHeartbeat.acknowledge();
         setBatchChannelAlive();
+        batchSessionSync.observeVersion(batchMsg.version);
         return;
       }
-      batchSessionData = applySessionUpdate(batchSessionData, batchMsg.patches, batchMsg.data);
-      if (typeof batchMsg.version != "undefined") {
-        batchSessionVersion = batchMsg.version;
+      if ((batchMsg.action === "SESSION_ACK" || batchMsg.action === "SESSION_FAIL") && !batchSessionSender.hasPending(batchMsg.id)) return;
+      if (batchMsg.action === "CLOSED") return applyBatchMsg(batchMsg);
+      batchSessionSync.receive({
+        version: batchMsg.version,
+        patches: batchMsg.action === "SESSION_FAIL" ? void 0 : batchMsg.patches,
+        fullSession: batchMsg.action === "SESSION_FAIL" ? void 0 : batchMsg.data
+      }, () => applyBatchMsg(batchMsg));
+    }
+    function applyBatchMsg(batchMsg) {
+      const hasSessionUpdate = batchMsg.action !== "SESSION_FAIL" && (batchMsg.patches !== void 0 || batchMsg.data !== void 0);
+      if (hasSessionUpdate && typeof batchMsg.version != "undefined") {
         if (isDeferredPending(openingBatchChannelDeferred)) {
           console.info("Batch channel opened");
           openingBatchChannelDeferred.resolve();
@@ -8039,26 +8279,23 @@ var jatos;
           setBatchChannelAlive();
           break;
         case "SESSION":
+          if (batchMsg.patches === void 0) break;
           batchMsg.patches.forEach(function(patch) {
             callWithArgs(onJatosBatchSession, patch.path, patch.op);
           });
           break;
         case "SESSION_ACK":
-          if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-            batchSessionTimeouts[batchMsg.id].cancel("Batch session update successful");
-          } else {
-            console.error("Batch session got 'SESSION_ACK' with nonexistent ID " + batchMsg.id);
-          }
+          batchSessionSender.acknowledge(batchMsg.id, "Batch session update successful");
           break;
         case "SESSION_FAIL":
-          if (batchSessionTimeouts.hasOwnProperty(batchMsg.id)) {
-            const errorMsg = batchMsg.errorMsg || "Batch session update failed";
-            batchSessionTimeouts[batchMsg.id].trigger(errorMsg);
-          } else {
-            console.error("Batch session got 'SESSION_FAIL' with nonexistent ID " + batchMsg.id);
-          }
+          batchSessionSender.reject(
+            batchMsg.id,
+            batchMsg.errorMsg || "Batch session update failed",
+            { errorCode: batchMsg.errorCode, version: batchMsg.version }
+          );
           break;
         case "CLOSED":
+          batchSessionSync.cancel();
           batchClosedCheck.stop();
           setBatchChannelDead();
           studyRunState.invalid = true;
@@ -8082,20 +8319,24 @@ var jatos;
         window.dispatchEvent(batchChannelDeadEvent);
       }
     }
-    const sendBatchSessionPatch = createSessionSender({
+    const batchSessionSender = createSessionSender({
       kind: "batch",
       getChannel: () => batchChannel,
       isVersioning: () => jatos2.batchSessionVersioning,
-      timeouts: batchSessionTimeouts,
+      getMaxRetries: () => jatos2.batchSessionPatchMaxRetries,
+      sync: batchSessionSync,
+      studyRunState,
+      getTimeout: () => jatos2.channelSendingTimeoutTime,
+      patchesKey: "patches",
       createMessage: (id, patches, versioning) => ({
         action: "SESSION",
         id,
         patches,
-        version: batchSessionVersion,
+        version: batchSessionSync.getVersion(),
         versioning
       })
     });
-    jatos2.batchSession = createSessionApi(() => batchSessionData, sendBatchSessionPatch);
+    jatos2.batchSession = createSessionApi(batchSessionSync.getData, batchSessionSender.send);
     jatos2.onBatchSession = function(onBatchSession) {
       onJatosBatchSession = onBatchSession;
     };
@@ -8218,8 +8459,7 @@ var jatos;
       jatos2.groupResultId = null;
       jatos2.groupMembers = [];
       jatos2.groupChannels = [];
-      groupSessionData = {};
-      groupSessionVersion = null;
+      groupSessionSync.reset();
       groupState = null;
       groupHeartbeat.stop();
     }
@@ -8233,8 +8473,18 @@ var jatos;
       }
       if (typeof groupMsg.heartbeat != "undefined") {
         groupHeartbeat.acknowledge();
+        groupSessionSync.observeVersion(groupMsg.sessionVersion);
         return;
       }
+      if ((groupMsg.action === "SESSION_ACK" || groupMsg.action === "SESSION_FAIL") && !groupSessionSender.hasPending(groupMsg.sessionActionId)) return;
+      if (groupMsg.action === "CLOSED") return applyGroupMsg(groupMsg);
+      groupSessionSync.receive({
+        version: groupMsg.sessionVersion,
+        patches: groupMsg.action === "SESSION_FAIL" ? void 0 : groupMsg.sessionPatches,
+        fullSession: groupMsg.action === "SESSION_FAIL" ? void 0 : groupMsg.sessionData
+      }, () => applyGroupMsg(groupMsg));
+    }
+    function applyGroupMsg(groupMsg) {
       updateGroupVars(groupMsg);
       callGroupActionCallbacks(groupMsg);
       if (groupMsg.msg && groupChannelCallbacks.onMessage) {
@@ -8268,9 +8518,8 @@ var jatos;
           return memberId !== groupMsg.memberId;
         });
       }
-      groupSessionData = applySessionUpdate(groupSessionData, groupMsg.sessionPatches, groupMsg.sessionData);
-      if (typeof groupMsg.sessionVersion != "undefined") {
-        groupSessionVersion = groupMsg.sessionVersion;
+      const hasSessionUpdate = groupMsg.action !== "SESSION_FAIL" && (groupMsg.sessionPatches !== void 0 || groupMsg.sessionData !== void 0);
+      if (hasSessionUpdate && typeof groupMsg.sessionVersion != "undefined") {
         if (isDeferredPending(openingGroupChannelDeferred)) {
           console.info("Group channel opened");
           openingGroupChannelDeferred.resolve();
@@ -8286,6 +8535,7 @@ var jatos;
           callWithArgs(groupChannelCallbacks.onOpen, groupMsg.memberId);
           break;
         case "CLOSED":
+          groupSessionSync.cancel();
           groupClosedCheck.stop();
           console.info("Group channel closed by JATOS server");
           break;
@@ -8310,6 +8560,7 @@ var jatos;
           }
           break;
         case "SESSION":
+          if (groupMsg.sessionPatches === void 0) break;
           groupMsg.sessionPatches.forEach(function(patch) {
             callWithArgs(groupChannelCallbacks.onGroupSession, patch.path, patch.op);
           });
@@ -8322,19 +8573,14 @@ var jatos;
           call(groupChannelCallbacks.onUpdate);
           break;
         case "SESSION_ACK":
-          if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-            groupSessionTimeouts[groupMsg.sessionActionId].cancel("Group session update successful");
-          } else {
-            console.warn("Group session got 'SESSION_ACK' with nonexistent ID " + groupMsg.sessionActionId);
-          }
+          groupSessionSender.acknowledge(groupMsg.sessionActionId, "Group session update successful");
           break;
         case "SESSION_FAIL":
-          if (groupSessionTimeouts.hasOwnProperty(groupMsg.sessionActionId)) {
-            const errorMsg = groupMsg.errorMsg || "Group session update failed";
-            groupSessionTimeouts[groupMsg.sessionActionId].trigger(errorMsg);
-          } else {
-            console.warn("Group session got 'SESSION_FAIL' with nonexistent ID " + groupMsg.sessionActionId);
-          }
+          groupSessionSender.reject(
+            groupMsg.sessionActionId,
+            groupMsg.errorMsg || "Group session update failed",
+            { errorCode: groupMsg.errorCode, version: groupMsg.sessionVersion }
+          );
           break;
         case "ERROR":
           callMany(groupMsg.errorMsg, groupChannelCallbacks.onError, console.error);
@@ -8347,20 +8593,24 @@ var jatos;
     jatos2.isGroupFixed = function() {
       return groupState === "FIXED";
     };
-    const sendGroupSessionPatch = createSessionSender({
+    const groupSessionSender = createSessionSender({
       kind: "group",
       getChannel: () => groupChannel,
       isVersioning: () => jatos2.groupSessionVersioning,
-      timeouts: groupSessionTimeouts,
+      getMaxRetries: () => jatos2.groupSessionPatchMaxRetries,
+      sync: groupSessionSync,
+      studyRunState,
+      getTimeout: () => jatos2.channelSendingTimeoutTime,
+      patchesKey: "sessionPatches",
       createMessage: (id, patches, versioning) => ({
         action: "SESSION",
         sessionActionId: id,
         sessionPatches: patches,
-        sessionVersion: groupSessionVersion,
+        sessionVersion: groupSessionSync.getVersion(),
         sessionVersioning: versioning
       })
     });
-    jatos2.groupSession = createSessionApi(() => groupSessionData, sendGroupSessionPatch);
+    jatos2.groupSession = createSessionApi(groupSessionSync.getData, groupSessionSender.send);
     jatos2.setGroupFixed = function(onSuccess, onFail) {
       if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
         const errorMsg = "Can't fix group. No open group channel.";
@@ -8570,65 +8820,6 @@ var jatos;
           attempt();
         }
       };
-    }
-    function createSessionSender({ kind, getChannel, isVersioning, timeouts, createMessage }) {
-      let counter = 0;
-      let pending;
-      return function sendSessionPatch(patches, onSuccess, onError) {
-        const channel = getChannel();
-        if (!channel || channel.readyState !== channel.OPEN) {
-          const error = `Can't send ${kind} session patch. No open ${kind} channel. Patch: ${patches.op} ${patches.path}.`;
-          callMany(error, onError, console.error);
-          return rejectedPromise(error);
-        }
-        if (isVersioning() && isDeferredPending(pending)) {
-          const error = `Can send only one ${kind} session patch at a time. Patch: ${patches.op} ${patches.path}.`;
-          callMany(error, onError, console.error);
-          return rejectedPromise(error);
-        }
-        if (studyRunState.invalid) {
-          const error = `Can't send ${kind} session patch. This study run is invalid. Patch: ${patches.op} ${patches.path}.`;
-          callMany(error, onError, console.warn);
-          return rejectedPromise(error);
-        }
-        const deferred = createDeferred();
-        if (isVersioning()) pending = deferred;
-        const id = counter++;
-        const message = createMessage(
-          id,
-          patches.constructor === Array ? patches : [patches],
-          !!isVersioning()
-        );
-        try {
-          channel.send(JSON.stringify(message));
-          setChannelSendingTimeoutAndPromiseResolution(deferred, timeouts, id, onSuccess, onError);
-        } catch (error) {
-          callMany(error, onError, console.error);
-          deferred.reject();
-        }
-        return deferred.promise();
-      };
-    }
-    function setChannelSendingTimeoutAndPromiseResolution(deferred, sessionTimeouts, sessionActionId, onSuccess, onError) {
-      const timeoutId = setTimeout(function() {
-        callWithArgs(onError, "Timeout sending session patch");
-        deferred.reject("Timeout sending session patch");
-      }, jatos2.channelSendingTimeoutTime);
-      sessionTimeouts[sessionActionId] = {
-        cancel: function(msg) {
-          clearTimeout(timeoutId);
-          callWithArgs(onSuccess, msg);
-          deferred.resolve(msg);
-        },
-        trigger: function(msg) {
-          clearTimeout(timeoutId);
-          callWithArgs(onError, msg);
-          deferred.reject(msg);
-        }
-      };
-      deferred.always(function() {
-        delete sessionTimeouts[sessionActionId];
-      });
     }
     return {
       openBatchChannelWithRetry,
@@ -9244,7 +9435,7 @@ var jatos;
   window.jatos = jatos;
   (function() {
     "use strict";
-    jatos.version = "3.12.0";
+    jatos.version = "3.11.3";
     jatos.httpTimeout = 3e4;
     jatos.httpRetry = 5;
     jatos.httpRetryWait = 1e3;

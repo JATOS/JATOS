@@ -1,6 +1,6 @@
 package cluster
 
-import batch.BatchDispatcher.{BatchAction, BatchMsg, TellWhom}
+import batch.BatchProtocol.{BatchAction, BatchMsg, TellWhom}
 import batch.{BatchActionHandler, BatchActionMsgBuilder, BatchDispatcher}
 import group.GroupDispatcher
 import com.typesafe.config.ConfigFactory
@@ -114,6 +114,7 @@ class DistributedBatchMessagingTest {
     system
   }
 
+  //noinspection SameParameterValue
   private def awaitClusterUp(cluster: Cluster, expectedMembers: Int): Unit = {
     val deadline = 10.seconds.fromNow
     while (cluster.state.members.count(_.status == MemberStatus.Up) != expectedMembers && deadline.hasTimeLeft()) {

@@ -1,6 +1,6 @@
 package batch
 
-import batch.BatchDispatcher.{BatchAction, BatchMsg, TellWhom}
+import batch.BatchProtocol.{BatchErrorCode, BatchAction, BatchMsg, TellWhom}
 import daos.common.BatchDao
 import models.common.Batch
 import org.junit.Assert._
@@ -54,10 +54,21 @@ class BatchActionHandlerTest {
   // =========================================================================
 
   @Test
+  def handleActionMsg_sessionGet_returnsFullStateOnlyToSender(): Unit = {
+    val expected = BatchMsg(Json.obj("action" -> "SESSION", "version" -> 7,
+      "data" -> Json.obj("score" -> 2)), TellWhom.SenderOnly)
+    when(msgBuilder.buildSessionData(batchId, BatchAction.Session, TellWhom.SenderOnly))
+      .thenReturn(expected)
+    assertEquals(List(expected), batchActionHandler.handleActionMsg(
+      BatchMsg(Json.obj("action" -> "SESSION_GET")), batchId))
+    verifyNoInteractions(batchDao)
+  }
+
+  @Test
   def handleActionMsg_unknownAction_returnsErrorMsg(): Unit = {
     val unknownMsg = BatchMsg(Json.obj("action" -> "UNKNOWN_ACTION"))
     val expectedError = BatchMsg(Json.obj("action" -> "ERROR", "errorMsg" -> "Unknown action UNKNOWN_ACTION"))
-    when(msgBuilder.buildError("Unknown action UNKNOWN_ACTION", TellWhom.SenderOnly))
+    when(msgBuilder.buildError("Unknown action UNKNOWN_ACTION", BatchErrorCode.UnknownAction, TellWhom.SenderOnly))
       .thenReturn(expectedError)
 
     val result = batchActionHandler.handleActionMsg(unknownMsg, batchId)
@@ -68,7 +79,7 @@ class BatchActionHandlerTest {
   def handleActionMsg_batchNotFound_returnsError(): Unit = {
     when(batchDao.findById(batchId)).thenReturn(null)
     val expectedError = BatchMsg(Json.obj("action" -> "ERROR"))
-    when(msgBuilder.buildError(s"Couldn't find batch with ID $batchId in database.", TellWhom.SenderOnly))
+    when(msgBuilder.buildError(s"Couldn't find batch with ID $batchId in database.", BatchErrorCode.BatchNotFound, TellWhom.SenderOnly))
       .thenReturn(expectedError)
 
     val result = batchActionHandler.handleActionMsg(sessionMsg(Json.arr()), batchId)
@@ -80,6 +91,41 @@ class BatchActionHandlerTest {
   // =========================================================================
 
   @Test
+  def databaseUpdateExceptionsAreNotConvertedToPatchFailures(): Unit = {
+    val batch = new Batch()
+    batch.setBatchSessionData("{}")
+    batch.setBatchSessionVersion(1L)
+    when(batchDao.findById(batchId)).thenReturn(batch)
+    val failure = new RuntimeException("Database unavailable")
+    when(batchDao.updateBatchSession(any[java.lang.Long](), any[java.lang.Long](), anyString()))
+      .thenThrow(failure)
+    try {
+      batchActionHandler.handleActionMsg(sessionMsg(Json.arr()), batchId)
+      fail("Expected the database exception")
+    } catch {
+      case error: RuntimeException => assertSame(failure, error)
+    }
+    verifyNoInteractions(msgBuilder)
+  }
+
+  @Test
+  def conflictReloadMissingEntityKeepsOriginalVersion(): Unit = {
+    val batch = new Batch()
+    batch.setBatchSessionData("{}")
+    batch.setBatchSessionVersion(1L)
+    when(batchDao.findById(batchId)).thenReturn(batch, null)
+    when(batchDao.updateBatchSession(any[java.lang.Long](), any[java.lang.Long](), anyString()))
+      .thenReturn(null)
+    val response = BatchMsg(Json.obj("action" -> "SESSION_FAIL"))
+    when(msgBuilder.buildSessionFailure(batch, 10L,
+      "Concurrent update conflict (client version: 1, current: 1).",
+      BatchErrorCode.SessionVersionConflict, TellWhom.SenderOnly)).thenReturn(response)
+    assertEquals(List(response), batchActionHandler.handleActionMsg(sessionMsg(Json.arr()), batchId))
+    verify(batchDao, times(2)).findById(batchId)
+    verify(batchDao, times(1)).updateBatchSession(any[java.lang.Long](), any[java.lang.Long](), anyString())
+  }
+
+  @Test
   def handleActionMsg_versionMismatch_failsPatch(): Unit = {
     val batch = new Batch()
     batch.setId(batchId)
@@ -88,11 +134,11 @@ class BatchActionHandlerTest {
     when(batchDao.findById(batchId)).thenReturn(batch)
 
     val failMsg = BatchMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(
+    when(msgBuilder.buildSessionFailure(
       ArgumentMatchers.eq(batch),
-      ArgumentMatchers.eq(BatchAction.SessionFail),
       ArgumentMatchers.eq(10L),
-      any(),
+      anyString(),
+      ArgumentMatchers.eq("SESSION_VERSION_CONFLICT"),
       ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
@@ -151,11 +197,11 @@ class BatchActionHandlerTest {
       anyString())).thenReturn(null)
 
     val failMsg = BatchMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(
+    when(msgBuilder.buildSessionFailure(
       ArgumentMatchers.eq(concurrentlyUpdatedBatch),
-      ArgumentMatchers.eq(BatchAction.SessionFail),
       ArgumentMatchers.eq(10L),
-      any(),
+      anyString(),
+      ArgumentMatchers.eq("SESSION_VERSION_CONFLICT"),
       ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
@@ -352,11 +398,11 @@ class BatchActionHandlerTest {
     when(batchDao.findById(batchId)).thenReturn(batch)
 
     val failMsg = BatchMsg(Json.obj("action" -> "SESSION_FAIL"))
-    when(msgBuilder.buildSimple(
+    when(msgBuilder.buildSessionFailure(
       ArgumentMatchers.eq(batch),
-      ArgumentMatchers.eq(BatchAction.SessionFail),
       ArgumentMatchers.eq(10L),
-      any(),
+      anyString(),
+      ArgumentMatchers.eq(BatchErrorCode.SessionPatchFailed),
       ArgumentMatchers.eq(TellWhom.SenderOnly)))
       .thenReturn(failMsg)
 
