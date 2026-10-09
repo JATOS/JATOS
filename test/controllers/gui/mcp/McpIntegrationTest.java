@@ -34,9 +34,6 @@ public class McpIntegrationTest {
     public TemporaryFolder temp = new TemporaryFolder();
 
     /**
-     * Exercises the MCP workflow with JATOS mounted at the root URL.
-     */
-    /**
      * Exercises the same workflow with a configured URL prefix.
      */
     @Test

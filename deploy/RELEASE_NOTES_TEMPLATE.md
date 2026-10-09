@@ -4,9 +4,27 @@ Try out the new version on [cortex.jatos.org](https://cortex.jatos.org/).
 
 ## Changed
 
-* Fixes
-* Features
-* Changes
+* **Major Internal Refactoring** (backward compatible with existing studies, imports, exports, and API responses)
+    * **Java 21 or newer** is now required (bundled packages ship with Java 25).
+    * **Upgraded embedded H2 database** to 2.4. Existing 1.x databases require explicit conversion. (see [Upgrading](#Upgrading))
+    * **Framework & Core Upgrades:** Upgraded to Play Framework 3.0.12, replaced Akka with Apache Pekko, and migrated to Hibernate 6 / Jakarta Persistence.
+    * **Refactored `jatos.js`** and added slim builds without jQuery dependencies.
+    * **Launcher Scripts:** Refactored `loader.sh` and `loader.bat`.
+* **Reworked batch/group channels and session** handling to support multi-node messaging, group reassignment, acknowledged direct messages, cluster-readiness checks, and automatic cleanup.
+    * Add opt-in session patch retries and automatic session synchronization
+* **Deployment:** Added a multi-node Docker Compose setup example in `/deploy/multi-node/`.
+* **Data Integrity & Cleanup:**
+    * Fixed study/batch deletion ordering and result upload cleanup; filesystem cleanup is now deferred until after a successful database commit.
+    * Improved result export streaming and temporary file cleanup.
+* **Performance & Networking:**
+    * Added a dedicated thread pool for serving study assets.
+    * Added selective gzip compression for text-based HTTP responses.
+* **Configuration & Logging:**
+    * Added support for setting the admin password via jatos.conf / environment variable.
+    * Added configurable logging levels and request log categories.
+* **Maintenance & Testing:**
+    * Improved auto-update handling.
+    * Expanded test coverage
  
 ---
 

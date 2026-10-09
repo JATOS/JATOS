@@ -33,6 +33,7 @@ public class McpTest {
     /**
      * Creates a controller backed by a mock API client that accepts the test token.
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Before
     public void setup() {
         api = mock(McpApiClient.class);
@@ -137,6 +138,7 @@ public class McpTest {
     /**
      * Checks disabled access, missing credentials and unlisted origins are rejected before API access.
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void rejectsDisabledMissingCredentialsAndUnlistedOriginsBeforeCallingApi() {
         commonMock.when(Common::isJatosMcpEnabled).thenReturn(false);

@@ -15,6 +15,7 @@ import static services.gui.mcp.McpProtocol.*;
 /**
  * Checks protocol validation independently of API authentication and tool execution.
  */
+@SuppressWarnings("DataFlowIssue")
 public class McpProtocolTest {
     /**
      * Creates modern metadata for a read-only tool invocation.
