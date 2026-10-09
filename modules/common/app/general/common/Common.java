@@ -115,6 +115,10 @@ public class Common {
     private static boolean showResultDataSizeInStudyManager;
     private static boolean showResultFileSizeInStudyManager;
     private static boolean userRoleAllowSuperuser;
+    private static boolean jatosMcpEnabled;
+    private static List<String> jatosMcpAllowedOrigins;
+    private static Duration jatosMcpApiTimeout;
+    private static long jatosMcpMaxResponseSize;
     private static boolean jatosApiAllowed;
     private static boolean jatosApiTokensApiGenerationAllowed;
     private static Duration jatosApiTokensApiGenerationExpiresAfter;
@@ -251,6 +255,10 @@ public class Common {
         showResultDataSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultDataSize");
         showResultFileSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
+        jatosMcpEnabled = config.getBoolean("jatos.mcp.enabled");
+        jatosMcpAllowedOrigins = List.copyOf(config.getStringList("jatos.mcp.allowedOrigins"));
+        jatosMcpApiTimeout = config.getDuration("jatos.mcp.apiTimeout");
+        jatosMcpMaxResponseSize = config.getBytes("jatos.mcp.maxResponseSize");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
         jatosApiTokensApiGenerationAllowed = config.getBoolean("jatos.api.tokens.apiGeneration.allowed");
         jatosApiTokensApiGenerationExpiresAfter = getDurationWithDefaultUnit(config, "jatos.api.tokens.apiGeneration.expiresAfter");
@@ -996,6 +1004,26 @@ public class Common {
      */
     public static boolean isUserRoleAllowSuperuser() {
         return userRoleAllowSuperuser;
+    }
+
+    /** Whether the embedded MCP endpoint is enabled. */
+    public static boolean isJatosMcpEnabled() {
+        return jatosMcpEnabled;
+    }
+
+    /** Exact browser origins allowed to access the MCP endpoint. */
+    public static List<String> getJatosMcpAllowedOrigins() {
+        return jatosMcpAllowedOrigins;
+    }
+
+    /** Timeout for MCP's internal API requests and response streams. */
+    public static Duration getJatosMcpApiTimeout() {
+        return jatosMcpApiTimeout;
+    }
+
+    /** Maximum internal API response size in bytes. */
+    public static long getJatosMcpMaxResponseSize() {
+        return jatosMcpMaxResponseSize;
     }
 
     /**

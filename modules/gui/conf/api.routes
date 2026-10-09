@@ -3,6 +3,12 @@
 # Order is important!
 # ~~~~
 
+# MCP
++ nocsrf
+POST     /jatos/mcp                                                        @controllers.gui.mcp.Mcp.post(request: Request)
+GET      /jatos/mcp                                                        @controllers.gui.mcp.Mcp.unsupported(request: Request)
+DELETE   /jatos/mcp                                                        @controllers.gui.mcp.Mcp.unsupported(request: Request)
+
 # API admin
 GET      /jatos/api/v1/admin/status                                         @controllers.gui.api.AdminApi.status()
 GET      /jatos/api/v1/admin/logs/list                                      @controllers.gui.api.AdminApi.listLogs()
