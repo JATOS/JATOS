@@ -1049,8 +1049,11 @@ paths:
     get:
       summary: Get the study log of a study
       description: |
-        If `download=true` (default), returns the full log as a downloadable stream (`application/octet-stream`).
-        If `download=false`, returns chunked log lines (`application/x-ndjson`) and can be limited by `entryLimit`.
+        If `download=true` (default), returns the complete log file in its stored order
+        as a downloadable `application/octet-stream` response. `entryLimit` is ignored.
+
+        If `download=false`, returns an `application/json` array of log entries in reverse
+        chronological order using chunked transfer, limited by `entryLimit`.
       tags: [ study ]
       parameters:
         - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -1060,25 +1063,39 @@ paths:
           schema:
             type: boolean
             default: true
-          description: If `true` download the full log; if `false` stream a limited JSON-lines response.
+          description: >-
+            If `true`, download the complete log file; if `false`, stream a JSON array
+            in reverse chronological order.
         - in: query
           name: entryLimit
           required: false
           schema:
             type: integer
             default: -1
-          description: Maximum number of log lines (only used when `download=false`).
+          description: >-
+            Maximum number of log lines when `download=false`; -1 means unlimited. Ignored when `download=true`.
+            A truncation notice may be appended in addition to the log entries.
       responses:
         '200':
-          description: Success
+          description: |
+            With `download=true`, returns the complete log file
+            With `download=false`, returns a chunked `application/json` array in reverse
+            chronological order, without an API envelope. The array can also contain a string notice indicating truncation or a log-read failure.
           content:
             application/octet-stream:
               schema:
                 type: string
                 format: binary
-            application/x-ndjson:
+            application/json:
               schema:
-                type: string
+                type: array
+                items:
+                  oneOf:
+                    - type: object
+                      additionalProperties: true
+                      description: A study log entry.
+                    - type: string
+                      description: A truncation or log-read failure notice.
         '400':
           $ref: "#/components/responses/BadRequestError"
         '401':

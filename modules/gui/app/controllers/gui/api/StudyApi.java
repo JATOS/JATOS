@@ -388,8 +388,8 @@ public class StudyApi extends Controller {
      * @param id         Study's ID or UUID
      * @param entryLimit It cuts the log after the number of lines given in entryLimit. Only if 'download' is false.
      * @param download   If true streams the whole study log file - if not only until entryLimit
-     * @return Depending on the 'download' flag returns the whole study log file - or only part of it (until entryLimit)
-     * in reverse order and 'Transfer-Encoding:chunked'
+     * @return The complete log file as application/octet-stream when downloading, otherwise a chunked
+     * application/json array of log entries in reverse chronological order, limited by entryLimit.
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
@@ -412,7 +412,7 @@ public class StudyApi extends Controller {
                     new ResponseHeader(200, Collections.emptyMap()),
                     new HttpEntity.Streamed(source, contentLength, Optional.of("application/octet-stream")));
         } else {
-            return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/x-ndjson");
+            return ok().chunked(studyLogger.readLogFile(study, entryLimit)).as("application/json");
         }
     }
 
