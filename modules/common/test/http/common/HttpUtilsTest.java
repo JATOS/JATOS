@@ -15,6 +15,37 @@ import static org.mockito.Mockito.mockStatic;
 
 public class HttpUtilsTest {
 
+    /**
+     * Formats normalized listener addresses as URL hosts without changing their destination.
+     */
+    @Test
+    public void formatsConfiguredHttpAddress() {
+        assertEquals("192.168.0.1", HttpUtils.formatUrlHost("192.168.0.1"));
+        assertEquals("127.0.0.1", HttpUtils.formatUrlHost("127.0.0.1"));
+        assertEquals("localhost", HttpUtils.formatUrlHost("localhost"));
+        assertEquals("[::1]", HttpUtils.formatUrlHost("::1"));
+        assertEquals("[2001:db8::1]", HttpUtils.formatUrlHost("[2001:db8::1]"));
+        assertEquals("[fe80::1%25eth0]", HttpUtils.formatUrlHost("fe80::1%eth0"));
+    }
+
+    /**
+     * Builds usable HTTP URLs for both address families and configured context paths.
+     */
+    @Test
+    public void buildsJatosHttpBaseUrl() {
+        commonStatic.when(Common::getJatosHttpPort).thenReturn(9000);
+        commonStatic.when(Common::getJatosHttpAddress).thenReturn("::1");
+        commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/research/");
+        try {
+            assertEquals("http://[::1]:9000/research/", HttpUtils.getJatosHttpBaseUrl());
+            commonStatic.when(Common::getJatosHttpAddress).thenReturn("127.0.0.1");
+            commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/");
+            assertEquals("http://127.0.0.1:9000/", HttpUtils.getJatosHttpBaseUrl());
+        } finally {
+            commonStatic.when(Common::getJatosUrlBasePath).thenReturn("");
+        }
+    }
+
     private static MockedStatic<Common> commonStatic;
 
     @BeforeClass
