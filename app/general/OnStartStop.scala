@@ -3,6 +3,7 @@ package general
 import com.typesafe.config.Config
 import daos.common.{LoginAttemptDao, UserDao}
 import general.common.{Common, JatosUpdater}
+import http.common.HttpUtils
 import migrations.common.{ComponentResultMigration, MySQLCharsetFix, StudyLinkMigration}
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
@@ -74,7 +75,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
 
   if (isPortInUse && environment.isProd && !isUpdateRestart) {
     // If port is already in use, log with Logger or STDOUT
-    val msg = s"Error - Could not bind to ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort}"
+    val msg = s"Error - Could not bind to ${HttpUtils.formatUrlHost(Common.getJatosHttpAddress)}:${Common.getJatosHttpPort}"
     if (Common.isLogsAppenderStdOut) println(msg) else logger.error(msg)
   } else if (!environment.isProd) {
     // During development use Logger only
@@ -85,7 +86,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   } else {
     // Log with Logger or STDOUT
     if (Common.isLogsAppenderStdOut) logger.info("JATOS started") else println("started")
-    val msg = s"To use JATOS type ${Common.getJatosHttpAddress}:${Common.getJatosHttpPort} in your " +
+    val msg = s"To use JATOS type ${HttpUtils.getJatosHttpBaseUrl} in your " +
       s"browser's address bar"
     if (!Common.isLogsAppenderStdOut) println(msg)
   }

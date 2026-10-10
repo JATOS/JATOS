@@ -21,6 +21,27 @@ import java.util.stream.Collectors;
  */
 public class HttpUtils {
 
+    /**
+     * Builds the configured local HTTP base URL, including its port and trailing-slash base path.
+     */
+    public static String getJatosHttpBaseUrl() {
+        return "http://" + formatUrlHost(Common.getJatosHttpAddress()) + ":" + Common.getJatosHttpPort()
+                + Common.getJatosUrlBasePath();
+    }
+
+    /**
+     * Formats a host address for use in an HTTP URL, including IPv6 brackets and scope IDs.
+     */
+    public static String formatUrlHost(String address) {
+        if (address.startsWith("[") && address.endsWith("]")) {
+            address = address.substring(1, address.length() - 1);
+        }
+        if (address.contains(":")) {
+            return "[" + address.replace("%", "%25") + "]";
+        }
+        return address;
+    }
+
     public static boolean isHtmlRequest(Http.RequestHeader request) {
         return request.headers().get("Accept")
                 .map(accept -> Arrays.stream(accept.split(","))
@@ -52,8 +73,8 @@ public class HttpUtils {
     }
 
     /**
-     * Checks if the given request is a JATOS API request. An API request has a URL path that starts with
-     * '/jatos/api/' after JATOS' configured base URL path.
+     * Checks if the given request is a JATOS API request. An API request has a URL path that starts with '/jatos/api/'
+     * after JATOS' configured base URL path.
      */
     public static boolean isApiRequest(Http.RequestHeader request) {
         String base = Common.getJatosUrlBasePath().replaceAll("/$", "");
