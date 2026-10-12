@@ -11,7 +11,7 @@ import javax.inject.Inject;
 public class McpBodyParser extends BodyParser.TolerantText {
 
     /**
-     * Limits incoming MCP message bodies to 64 KiB and delegates parser failures to Play.
+     * Limits incoming MCP message bodies to 64 KiB and uses Play's standard error handling.
      */
     @Inject
     public McpBodyParser(HttpErrorHandler errorHandler) {

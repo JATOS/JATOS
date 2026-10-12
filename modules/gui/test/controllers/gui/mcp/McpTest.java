@@ -13,7 +13,7 @@ import services.gui.mcp.McpApiClient;
 
 import java.util.concurrent.CompletableFuture;
 
-import static services.gui.mcp.McpProtocol.*;
+import static services.gui.mcp.McpProtocolUtils.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -42,7 +42,33 @@ public class McpTest {
         commonMock = mockStatic(Common.class);
         commonMock.when(Common::isJatosMcpEnabled).thenReturn(true);
         commonMock.when(Common::getJatosMcpAllowedOrigins).thenReturn(java.util.List.of("https://jatos.example.org"));
-        controller = new Mcp(api);
+        controller = new Mcp(api, new json.common.DefaultJson());
+    }
+
+    /** Exercises the transport action as Play would before invoking the POST controller. */
+    private java.util.concurrent.CompletionStage<Result> post(Http.Request request) {
+        return throughTransport(request, controller::post);
+    }
+
+    /** Exercises authentication before the controller rejects an unsupported HTTP method. */
+    private java.util.concurrent.CompletionStage<Result> unsupported(Http.Request request) {
+        return throughTransport(request, controller::unsupported);
+    }
+
+    /** Composes the real transport action with a controller endpoint without starting Play. */
+    private java.util.concurrent.CompletionStage<Result> throughTransport(Http.Request request,
+            java.util.function.Function<Http.Request, java.util.concurrent.CompletionStage<Result>> endpoint) {
+        McpTransportAction action = new McpTransportAction(api);
+        action.delegate = new play.mvc.Action.Simple() {
+            @Override
+            public java.util.concurrent.CompletionStage<Result> call(Http.Request request) {
+                return endpoint.apply(request);
+            }
+        };
+        return action.call(request).thenApply(result -> {
+            assertThat(result.header("Cache-Control")).contains("no-store");
+            return result;
+        });
     }
 
     /**
@@ -68,7 +94,7 @@ public class McpTest {
      * Dispatches a test message to the controller and waits for its HTTP result.
      */
     private Result call(String body) {
-        return controller.post(request(body).build()).toCompletableFuture().join();
+        return post(request(body).build()).toCompletableFuture().join();
     }
 
     /**
@@ -94,13 +120,13 @@ public class McpTest {
     }
 
     /**
-     * Checks discovery returns all five tools with read-only annotations and strict input schemas.
+     * Checks discovery returns all ten tools with read-only annotations and strict input schemas.
      */
     @Test
-    public void listsFiveReadOnlyTools() {
+    public void listsTenReadOnlyTools() {
         JsonNode tools = json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
                 .path("result").path("tools");
-        assertThat(tools.size()).isEqualTo(5);
+        assertThat(tools.size()).isEqualTo(10);
         for (JsonNode tool : tools) {
             assertThat(tool.path("annotations").path("readOnlyHint").asBoolean()).isTrue();
             assertThat(tool.path("inputSchema").path("additionalProperties").asBoolean()).isFalse();
@@ -112,14 +138,17 @@ public class McpTest {
      */
     @Test
     public void toolCallsUseCallersTokenAndReturnCompactStructuredData() {
-        when(api.get("/studies/properties", AUTH)).thenReturn(CompletableFuture.completedFuture(
+        when(api.get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON)).thenReturn(CompletableFuture.completedFuture(
                 new McpApiClient.Reply(200, Json.parse("{\"data\":[{\"id\":7,\"uuid\":\"abc\",\"title\":\"Study\",\"jsonData\":\"large\"}]}"))));
         JsonNode result = json(call("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"list_studies\"}}"))
                 .path("result");
         assertThat(result.path("isError").asBoolean()).isFalse();
         assertThat(result.path("structuredContent").path("data").get(0).size()).isEqualTo(3);
         assertThat(Json.parse(result.path("content").get(0).path("text").asText())).isEqualTo(result.path("structuredContent"));
-        verify(api).get("/studies/properties", AUTH);
+        var order = inOrder(api);
+        order.verify(api).get("/admin/token", AUTH);
+        order.verify(api).get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON);
+        verifyNoMoreInteractions(api);
     }
 
     /**
@@ -127,7 +156,7 @@ public class McpTest {
      */
     @Test
     public void apiPermissionErrorsAreToolErrors() {
-        when(api.get("/studies/7/properties", AUTH)).thenReturn(CompletableFuture.completedFuture(
+        when(api.get("/studies/7/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON)).thenReturn(CompletableFuture.completedFuture(
                 new McpApiClient.Reply(403, Json.parse("{\"error\":{\"message\":\"Access denied\"}}"))));
         JsonNode result = json(call("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"get_study\",\"arguments\":{\"study_id\":7}}}"))
                 .path("result");
@@ -142,10 +171,10 @@ public class McpTest {
     @Test
     public void rejectsDisabledMissingCredentialsAndUnlistedOriginsBeforeCallingApi() {
         commonMock.when(Common::isJatosMcpEnabled).thenReturn(false);
-        assertThat(controller.post(request("{}").build()).toCompletableFuture().join().status()).isEqualTo(404);
+        assertThat(post(request("{}").build()).toCompletableFuture().join().status()).isEqualTo(404);
         commonMock.when(Common::isJatosMcpEnabled).thenReturn(true);
-        assertThat(controller.post(fakeRequest("POST", "/jatos/mcp").bodyText("{}").build()).toCompletableFuture().join().status()).isEqualTo(401);
-        assertThat(controller.post(request("{}").header("Origin", "https://evil.example").build()).toCompletableFuture().join().status()).isEqualTo(403);
+        assertThat(post(fakeRequest("POST", "/jatos/mcp").bodyText("{}").build()).toCompletableFuture().join().status()).isEqualTo(401);
+        assertThat(post(request("{}").header("Origin", "https://evil.example").build()).toCompletableFuture().join().status()).isEqualTo(403);
         verifyNoInteractions(api);
     }
 
@@ -163,8 +192,11 @@ public class McpTest {
      */
     @Test
     public void rejectsUnsupportedVersionsAndDoesNotOfferSseOrSessions() {
-        assertThat(controller.post(request("{}").header("MCP-Protocol-Version", "unknown").build()).toCompletableFuture().join().status()).isEqualTo(400);
-        assertThat(controller.unsupported(request("{}").build()).toCompletableFuture().join().status()).isEqualTo(405);
+        assertThat(post(request("{}").header("MCP-Protocol-Version", "unknown").build()).toCompletableFuture().join().status()).isEqualTo(400);
+        for (String method : java.util.List.of("GET", "DELETE")) {
+            assertThat(unsupported(request("{}").method(method).build())
+                    .toCompletableFuture().join().status()).isEqualTo(405);
+        }
     }
 
     /**
@@ -177,17 +209,17 @@ public class McpTest {
         assertThat(json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"unknown\"}")).path("error").path("code").asInt()).isEqualTo(-32601);
         assertThat(call("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").status()).isEqualTo(202);
         assertThat(call("{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"list_studies\"}}").status()).isEqualTo(202);
-        verify(api, never()).get(eq("/studies/properties"), anyString());
+        verify(api, never()).get(eq("/studies/properties"), anyString(), any(McpApiClient.ResponseFormat.class));
     }
 
     /**
-     * Checks path-like tool arguments are rejected after authentication without invoking a tool endpoint.
+     * Checks path-like tool arguments are rejected after authentication without calling the tool endpoint.
      */
     @Test
     public void rejectsUnsafeArgumentsWithoutCallingToolEndpoint() {
         JsonNode response = json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"get_study\",\"arguments\":{\"study_id\":\"../admin/token\"}}}"));
         assertThat(response.path("error").path("code").asInt()).isEqualTo(-32602);
-        verify(api).get("/admin/token", AUTH);
+        verify(api, times(1)).get("/admin/token", AUTH);
         verifyNoMoreInteractions(api);
     }
 
@@ -214,14 +246,14 @@ public class McpTest {
         var malformed = Json.newObject().put("name", "get_study");
         malformed.putArray("arguments");
         for (var params : java.util.List.of(unknown, malformed)) {
-            Result response = controller.post(modern("tools/call", params).build()).toCompletableFuture().join();
+            Result response = post(modern("tools/call", params).build()).toCompletableFuture().join();
             assertThat(response.status()).isEqualTo(400);
             assertThat(json(response).path("error").path("code").asInt()).isEqualTo(-32602);
         }
 
         var invalidInput = Json.newObject().put("name", "get_study");
         invalidInput.putObject("arguments").put("study_id", 0);
-        Result response = controller.post(modern("tools/call", invalidInput).build()).toCompletableFuture().join();
+        Result response = post(modern("tools/call", invalidInput).build()).toCompletableFuture().join();
         assertThat(response.status()).isEqualTo(200);
         JsonNode body = json(response);
         assertThat(body.has("error")).isFalse();
@@ -237,7 +269,7 @@ public class McpTest {
      */
     @Test
     public void modernToolListingRejectsCursorWithBadRequest() {
-        Result response = controller.post(modern("tools/list", Json.newObject().put("cursor", "next"))
+        Result response = post(modern("tools/list", Json.newObject().put("cursor", "next"))
                 .build()).toCompletableFuture().join();
         assertThat(response.status()).isEqualTo(400);
         assertThat(json(response).path("error").path("code").asInt()).isEqualTo(-32602);
@@ -248,16 +280,16 @@ public class McpTest {
      */
     @Test
     public void modernDiscoveryAndDirectToolCalls() {
-        JsonNode discovery = json(controller.post(modern("server/discover", Json.newObject()).build())
+        JsonNode discovery = json(post(modern("server/discover", Json.newObject()).build())
                 .toCompletableFuture().join()).path("result");
         assertThat(discovery.path("supportedVersions")).isEqualTo(Json.parse(
                 "[\"2026-07-28\",\"2025-11-25\",\"2025-06-18\",\"2025-03-26\"]"));
         assertThat(discovery.path("resultType").asText()).isEqualTo("complete");
         assertThat(discovery.path("_meta").path("io.modelcontextprotocol/serverInfo").path("name").asText()).isEqualTo("JATOS");
         assertThat(discovery.path("capabilities").path("tools").isEmpty()).isTrue();
-        when(api.get("/studies/properties", AUTH)).thenReturn(CompletableFuture.completedFuture(
+        when(api.get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON)).thenReturn(CompletableFuture.completedFuture(
                 new McpApiClient.Reply(200, Json.parse("{\"data\":[]}"))));
-        JsonNode result = json(controller.post(modern("tools/call", Json.newObject().put("name", "list_studies"))
+        JsonNode result = json(post(modern("tools/call", Json.newObject().put("name", "list_studies"))
                 .build()).toCompletableFuture().join()).path("result");
         assertThat(result.path("resultType").asText()).isEqualTo("complete");
         assertThat(result.has("structuredContent")).isTrue();
@@ -268,19 +300,19 @@ public class McpTest {
      */
     @Test
     public void legacyVersionsKeepTheirResponseShapes() {
-        when(api.get("/studies/properties", AUTH)).thenReturn(CompletableFuture.completedFuture(
+        when(api.get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON)).thenReturn(CompletableFuture.completedFuture(
                 new McpApiClient.Reply(200, Json.parse("{\"data\":[]}"))));
         for (String version : java.util.List.of(VERSION_2025_03_26, VERSION_2025_06_18, VERSION_2025_11_25)) {
             var init = Json.newObject().put("jsonrpc", "2.0").put("id", 1).put("method", "initialize");
             var params = init.putObject("params").put("protocolVersion", version);
             params.putObject("capabilities");
             params.putObject("clientInfo").put("name", "legacy").put("version", "1");
-            JsonNode initialized = json(controller.post(request(Json.stringify(init))
+            JsonNode initialized = json(post(request(Json.stringify(init))
                     .header("MCP-Protocol-Version", version).build()).toCompletableFuture().join()).path("result");
             assertThat(initialized.path("protocolVersion").asText()).isEqualTo(version);
             assertThat(initialized.has("resultType")).isFalse();
             String body = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"list_studies\"}}";
-            JsonNode result = json(controller.post(request(body).header("MCP-Protocol-Version", version).build())
+            JsonNode result = json(post(request(body).header("MCP-Protocol-Version", version).build())
                     .toCompletableFuture().join()).path("result");
             assertThat(result.has("resultType")).isFalse();
             assertThat(result.has("structuredContent")).isEqualTo(!version.equals(VERSION_2025_03_26));
@@ -295,12 +327,12 @@ public class McpTest {
     public void modernHeadersMustMatchBody() {
         for (String header : java.util.List.of("MCP-Protocol-Version", "Mcp-Method", "Mcp-Name")) {
             var request = modern("tools/call", Json.newObject().put("name", "list_studies"));
-            Result result = controller.post(request.header(header, "wrong").build()).toCompletableFuture().join();
+            Result result = post(request.header(header, "wrong").build()).toCompletableFuture().join();
             assertThat(result.status()).isEqualTo(400);
             assertThat(json(result).path("error").path("code").asInt()).isEqualTo(-32020);
         }
-        verify(api, never()).get(eq("/studies/properties"), anyString());
-        Result unknown = controller.post(modern("unknown", Json.newObject()).build()).toCompletableFuture().join();
+        verify(api, never()).get(eq("/studies/properties"), anyString(), any(McpApiClient.ResponseFormat.class));
+        Result unknown = post(modern("unknown", Json.newObject()).build()).toCompletableFuture().join();
         assertThat(unknown.status()).isEqualTo(404);
         assertThat(json(unknown).path("error").path("code").asInt()).isEqualTo(-32601);
     }
@@ -310,15 +342,117 @@ public class McpTest {
      */
     @Test
     public void modernResultsIncludeCompletionMetadata() {
-        JsonNode ping = json(controller.post(modern("ping", Json.newObject()).build()).toCompletableFuture().join());
+        JsonNode ping = json(post(modern("ping", Json.newObject()).build()).toCompletableFuture().join());
         assertThat(ping.path("result").path("resultType").asText()).isEqualTo("complete");
-        when(api.get("/studies/properties", AUTH)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("backend failed")));
+        when(api.get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON))
+                .thenReturn(CompletableFuture.failedFuture(new McpApiClient.ApiFailure(
+                        McpApiClient.FailureReason.UNAVAILABLE, new java.io.IOException("backend failed"))));
         String encoded = "=?base64?" + java.util.Base64.getEncoder().encodeToString(
                 "list_studies".getBytes(java.nio.charset.StandardCharsets.UTF_8)) + "?=";
-        JsonNode result = json(controller.post(modern("tools/call", Json.newObject().put("name", "list_studies"))
-                .header("Mcp-Name", encoded).build()).toCompletableFuture().join()).path("result");
+        Result response = post(modern("tools/call", Json.newObject().put("name", "list_studies"))
+                .header("Mcp-Name", encoded).build()).toCompletableFuture().join();
+        assertThat(response.status()).isEqualTo(200);
+        JsonNode result = json(response).path("result");
         assertThat(result.path("isError").asBoolean()).isTrue();
         assertThat(result.path("resultType").asText()).isEqualTo("complete");
+    }
+
+    /** Preserves tool endpoint authentication failures even after the initial token lookup succeeds. */
+    @Test
+    public void toolEndpointAuthenticationFailuresRemainUnauthorized() {
+        when(api.get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON)).thenReturn(CompletableFuture.completedFuture(
+                new McpApiClient.Reply(401, Json.newObject())));
+        var params = Json.newObject().put("name", "list_studies");
+        var message = Json.newObject().put("jsonrpc", "2.0").put("id", 1).put("method", "tools/call");
+        message.set("params", params);
+        Result legacy = call(Json.stringify(message));
+        Result modernResult = post(modern("tools/call", params).build()).toCompletableFuture().join();
+        for (Result result : java.util.List.of(legacy, modernResult)) {
+            assertThat(result.status()).isEqualTo(401);
+            assertThat(result.header("WWW-Authenticate")).contains("Bearer");
+            assertThat(result.header("Cache-Control")).contains("no-store");
+        }
+        verify(api, times(2)).get("/admin/token", AUTH);
+        verify(api, times(2)).get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON);
+        verifyNoMoreInteractions(api);
+    }
+
+    /** Rejects invalid tokens before validating tool arguments. */
+    @Test
+    public void invalidToolArgumentsAuthenticateFirst() {
+        when(api.get("/admin/token", AUTH)).thenReturn(CompletableFuture.completedFuture(
+                new McpApiClient.Reply(401, Json.newObject())));
+        var params = Json.newObject().put("name", "get_study");
+        params.putObject("arguments").put("study_id", 0);
+        Result result = post(modern("tools/call", params).build()).toCompletableFuture().join();
+        assertThat(result.status()).isEqualTo(401);
+        verify(api).get("/admin/token", AUTH);
+        verifyNoMoreInteractions(api);
+    }
+
+    /** Authenticates malformed messages and local protocol errors before returning them. */
+    @Test
+    public void localProtocolErrorsAuthenticateFirst() {
+        Result malformed = call("{");
+        assertThat(malformed.status()).isEqualTo(400);
+        Result unknown = post(modern("unknown/method", Json.newObject()).build())
+                .toCompletableFuture().join();
+        assertThat(unknown.status()).isEqualTo(404);
+        Result invalidListing = post(modern("tools/list", Json.newObject().put("cursor", "next")).build())
+                .toCompletableFuture().join();
+        assertThat(invalidListing.status()).isEqualTo(400);
+        verify(api, times(3)).get("/admin/token", AUTH);
+        verifyNoMoreInteractions(api);
+    }
+
+    /** Invalid credentials take precedence over HTTP and JSON-RPC errors, and prevent tool execution. */
+    @Test
+    public void failedAuthenticationStopsAllRequestProcessing() {
+        when(api.get("/admin/token", AUTH)).thenReturn(CompletableFuture.completedFuture(
+                new McpApiClient.Reply(401, Json.newObject())));
+        var requests = java.util.List.of(
+                request("{"),
+                request("{}").method("GET"),
+                request("{}").header("Content-Type", "text/plain"),
+                modern("unknown/method", Json.newObject()),
+                modern("tools/call", Json.newObject().put("name", "list_studies")),
+                request("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}"));
+        for (var request : requests) {
+            Result result = post(request.build()).toCompletableFuture().join();
+            assertThat(result.status()).isEqualTo(401);
+            assertThat(result.header("WWW-Authenticate")).contains("Bearer");
+        }
+        verify(api, times(requests.size())).get("/admin/token", AUTH);
+        verifyNoMoreInteractions(api);
+    }
+
+    /** Unexpected tool response bugs retain the known request ID and are not reported as API failures. */
+    @Test
+    public void unexpectedToolFailurePreservesId() {
+        when(api.get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON)).thenReturn(CompletableFuture.completedFuture(
+                new McpApiClient.Reply(200, null)));
+        Result result = post(modern("tools/call", Json.newObject().put("name", "list_studies"))
+                .build()).toCompletableFuture().join();
+        assertThat(result.status()).isEqualTo(500);
+        assertThat(json(result).path("id").asText()).isEqualTo("modern");
+        assertThat(json(result).path("error").path("code").asInt()).isEqualTo(INTERNAL_ERROR);
+        assertThat(json(result).path("error").path("message").asText()).isEqualTo("Internal error");
+    }
+
+    /** Expected API failures provide actionable tool messages without exposing their underlying cause. */
+    @Test
+    public void expectedToolFailureHasSafeSpecificMessage() {
+        when(api.get("/studies/properties", AUTH, McpApiClient.ResponseFormat.ENVELOPED_JSON)).thenReturn(CompletableFuture.failedFuture(
+                new McpApiClient.ApiFailure(McpApiClient.FailureReason.TOO_LARGE,
+                        new RuntimeException("private response"))));
+        Result result = post(modern("tools/call", Json.newObject().put("name", "list_studies"))
+                .build()).toCompletableFuture().join();
+        assertThat(result.status()).isEqualTo(200);
+        JsonNode body = json(result);
+        assertThat(body.path("id").asText()).isEqualTo("modern");
+        assertThat(body.path("result").path("isError").asBoolean()).isTrue();
+        assertThat(body.path("result").path("content").get(0).path("text").asText())
+                .isEqualTo("JATOS API response exceeds the configured size limit");
     }
 
 }

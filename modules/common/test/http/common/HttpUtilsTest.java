@@ -29,18 +29,43 @@ public class HttpUtilsTest {
     }
 
     /**
-     * Builds usable HTTP URLs for both address families and configured context paths.
+     * Builds usable HTTP URLs for configured context paths without altering the listener host.
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void buildsJatosHttpBaseUrl() {
         commonStatic.when(Common::getJatosHttpPort).thenReturn(9000);
-        commonStatic.when(Common::getJatosHttpAddress).thenReturn("::1");
+        commonStatic.when(Common::getJatosHttpAddress).thenReturn("0.0.0.0");
         commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/research/");
         try {
-            assertEquals("http://[::1]:9000/research/", HttpUtils.getJatosHttpBaseUrl());
+            assertEquals("http://0.0.0.0:9000/research/", HttpUtils.getJatosHttpBaseUrl());
+            commonStatic.when(Common::getJatosHttpAddress).thenReturn("::");
+            assertEquals("http://[::]:9000/research/", HttpUtils.getJatosHttpBaseUrl());
             commonStatic.when(Common::getJatosHttpAddress).thenReturn("127.0.0.1");
             commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/");
             assertEquals("http://127.0.0.1:9000/", HttpUtils.getJatosHttpBaseUrl());
+        } finally {
+            commonStatic.when(Common::getJatosUrlBasePath).thenReturn("");
+        }
+    }
+
+    /**
+     * Builds connectable loopback URLs by mapping wildcard binds to loopback addresses.
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
+    public void buildsJatosLoopbackBaseUrl() {
+        commonStatic.when(Common::getJatosHttpPort).thenReturn(9000);
+        commonStatic.when(Common::getJatosHttpAddress).thenReturn("0.0.0.0");
+        commonStatic.when(Common::getJatosUrlBasePath).thenReturn("/research/");
+        try {
+            assertEquals("http://127.0.0.1:9000/research/", HttpUtils.getJatosLoopbackBaseUrl());
+            commonStatic.when(Common::getJatosHttpAddress).thenReturn("::");
+            assertEquals("http://[::1]:9000/research/", HttpUtils.getJatosLoopbackBaseUrl());
+            commonStatic.when(Common::getJatosHttpAddress).thenReturn("[0:0:0:0:0:0:0:0]");
+            assertEquals("http://[::1]:9000/research/", HttpUtils.getJatosLoopbackBaseUrl());
+            commonStatic.when(Common::getJatosHttpAddress).thenReturn("192.168.1.10");
+            assertEquals("http://192.168.1.10:9000/research/", HttpUtils.getJatosLoopbackBaseUrl());
         } finally {
             commonStatic.when(Common::getJatosUrlBasePath).thenReturn("");
         }

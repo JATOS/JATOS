@@ -30,6 +30,23 @@ public class HttpUtils {
     }
 
     /**
+     * Builds a connectable loopback HTTP base URL for local clients, mapping wildcard bind addresses to loopback.
+     */
+    public static String getJatosLoopbackBaseUrl() {
+        String address = Common.getJatosHttpAddress();
+        if (address.startsWith("[") && address.endsWith("]")) {
+            address = address.substring(1, address.length() - 1);
+        }
+        if ("0.0.0.0".equals(address)) {
+            address = "127.0.0.1";
+        } else if (address.contains(":") && address.replace(":", "").matches("0*")) {
+            address = "::1";
+        }
+        return "http://" + formatUrlHost(address) + ":" + Common.getJatosHttpPort()
+                + Common.getJatosUrlBasePath();
+    }
+
+    /**
      * Formats a host address for use in an HTTP URL, including IPv6 brackets and scope IDs.
      */
     public static String formatUrlHost(String address) {

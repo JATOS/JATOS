@@ -2,65 +2,225 @@ package services.gui.mcp;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import general.common.Common;
+import json.common.DefaultJson;
+import http.common.HttpUtils;
 import org.apache.pekko.stream.Materializer;
 import org.apache.pekko.util.ByteString;
 import play.Logger;
-import play.libs.Json;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import play.libs.ws.WSClient;
+import play.libs.ws.WSResponse;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.io.IOException;
+
+import org.apache.pekko.stream.StreamLimitReachedException;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Calls only fixed API paths on this installation, never a client-supplied host or URL.
- * */
+ * Calls only fixed API paths on this installation's configured HTTP listener, never a client-supplied host or URL.
+ *
+ */
 @Singleton
 public class McpApiClient {
 
     private static final Logger.ALogger LOGGER = Logger.of(McpApiClient.class);
 
-    /** HTTP status and parsed JSON body returned by the local JATOS API. */
+    /**
+     * HTTP status and parsed JSON body returned by the local JATOS API.
+     */
     public record Reply(int status, JsonNode body) {}
+
+    /**
+     * How a successful API response is decoded before it is passed to the MCP controller.
+     */
+    public enum ResponseFormat {ENVELOPED_JSON, RAW_JSON, RAW_TEXT}
+
+    /**
+     * Expected API failures with messages safe to show to an MCP client.
+     */
+    public enum FailureReason {
+        TIMEOUT("JATOS API request timed out"),
+        TOO_LARGE("JATOS API response exceeds the configured size limit"),
+        INVALID_UTF8("Asset is not valid UTF-8 text"),
+        INVALID_JSON("JATOS API returned invalid JSON"),
+        UNAVAILABLE("JATOS API connection failed");
+
+        private final String message;
+
+        /**
+         * Associates a failure category with its controlled client-facing message.
+         */
+        FailureReason(String message) {
+            this.message = message;
+        }
+    }
+
+    /**
+     * Separates expected transport and decoding failures from programming errors.
+     */
+    public static final class ApiFailure extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Retains the cause for diagnosis while exposing only the category's safe message.
+         */
+        public ApiFailure(FailureReason reason, Throwable cause) {
+            super(reason.message, cause);
+        }
+    }
 
     private final WSClient ws;
     private final Materializer materializer;
+    private final DefaultJson defaultJson;
 
     /**
-     * Creates the loopback API client with its HTTP client and stream materializer.
+     * Creates the loopback API client with its HTTP client, stream materializer and shared JSON mapper.
      */
     @Inject
-    public McpApiClient(WSClient ws, Materializer materializer) {
+    public McpApiClient(WSClient ws, Materializer materializer, DefaultJson defaultJson) {
         this.ws = ws;
         this.materializer = materializer;
+        this.defaultJson = defaultJson;
     }
 
     /**
-     * Performs an asynchronous GET using the caller's Authorization header and a trusted API-relative path.
-     * Redirects are disabled; transport, timeout, size-limit and JSON parsing failures complete the stage exceptionally.
+     * Performs an asynchronous GET using the caller's Authorization header and a trusted API-relative path. Redirects
+     * are disabled; transport, timeout, size-limit and JSON parsing failures complete the stage exceptionally.
      */
     public CompletionStage<Reply> get(String path, String authorization) {
-        int port = Common.getJatosHttpPort();
-        if (port < 1 || port > 65535) throw new IllegalArgumentException("Invalid play.server.http.port");
-        String context = Common.getJatosUrlBasePath().replaceAll("/$", "");
-        String baseUrl = "http://127.0.0.1:" + port + context + "/jatos/api/v1";
-        return ws.url(baseUrl + path)
-                .setFollowRedirects(false)
-                .setRequestTimeout(Common.getJatosMcpApiTimeout())
-                .addHeader("Authorization", authorization)
-                .addHeader("Accept", "application/json")
-                .setMethod("GET").stream()
-                .thenCompose(response -> response.getBodyAsSource()
-                        .limitWeighted(Common.getJatosMcpMaxResponseSize(), bytes -> (long) bytes.size())
-                        .completionTimeout(Common.getJatosMcpApiTimeout())
-                        .runFold(ByteString.emptyByteString(), ByteString::concat, materializer)
-                        .thenApply(bytes -> new Reply(response.getStatus(), Json.parse(bytes.toArray()))))
-                .whenComplete((reply, failure) -> {
-                    if (failure != null) logFailure(path, failure);
+        return get(path, authorization, ResponseFormat.ENVELOPED_JSON);
+    }
+
+    /**
+     * Fetches a bounded API response, wrapping raw JSON or UTF-8 text in the usual data envelope.
+     */
+    public CompletionStage<Reply> get(String path, String authorization, ResponseFormat format) {
+        // Starting construction inside a callback also captures synchronous client/configuration errors.
+        return CompletableFuture.completedFuture((Void) null).thenCompose(ignored -> {
+            String baseUrl = HttpUtils.getJatosLoopbackBaseUrl() + "jatos/api/v1";
+            return ws.url(baseUrl + path)
+                    .setFollowRedirects(false)
+                    .setRequestTimeout(Common.getJatosMcpApiTimeout())
+                    .addHeader("Authorization", authorization)
+                    .addHeader("Accept", format == ResponseFormat.RAW_TEXT ? "*/*" : "application/json")
+                    .setMethod("GET").stream()
+                    .thenCompose(response -> readReply(response, path, format));
+        }).handle((reply, failure) -> {
+            if (failure == null) return reply;
+            Throwable cause = classifyFailure(failure);
+            if (cause instanceof ApiFailure) logFailure(path, cause);
+            throw new CompletionException(cause);
+        });
+    }
+
+    /** Reads a bounded response body while preserving an HTTP error status if its body cannot be read. */
+    private CompletionStage<Reply> readReply(WSResponse response, String path, ResponseFormat format) {
+        int status = response.getStatus();
+        return response.getBodyAsSource()
+                .limitWeighted(Common.getJatosMcpMaxResponseSize(), bytes -> (long) bytes.size())
+                .completionTimeout(Common.getJatosMcpApiTimeout())
+                .runFold(ByteString.emptyByteString(), ByteString::concat, materializer)
+                .thenApply(bytes -> new Reply(status, decode(bytes, status, format)))
+                .exceptionally(failure -> {
+                    Throwable cause = classifyFailure(failure);
+                    if (status != 200 && cause instanceof ApiFailure) {
+                        logFailure(path, cause);
+                        return new Reply(status, errorBody());
+                    }
+                    throw new CompletionException(cause);
                 });
     }
 
-    /** Logs the underlying failure type once without exception messages that might expose response content. */
+    /**
+     * Decodes successful payloads by format and keeps API error envelopes unchanged.
+     */
+    JsonNode decode(ByteString bytes, int status, ResponseFormat format) {
+        if (status != 200) {
+            try {
+                JsonNode body = parseJson(bytes);
+                return body.isObject() ? body : errorBody();
+            } catch (ApiFailure e) {
+                return errorBody();
+            }
+        }
+        if (format == ResponseFormat.ENVELOPED_JSON) return parseJson(bytes);
+        var envelope = JsonNodeFactory.instance.objectNode();
+        if (format == ResponseFormat.RAW_JSON) {
+            envelope.set("data", parseJson(bytes));
+        } else {
+            String text;
+            try {
+                text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(CodingErrorAction.REPORT)
+                        .decode(ByteBuffer.wrap(bytes.toArray())).toString();
+            } catch (CharacterCodingException e) {
+                throw new ApiFailure(FailureReason.INVALID_UTF8, e);
+            }
+            envelope.put("data", text);
+        }
+        return envelope;
+    }
+
+    /**
+     * Parses JSON, classifying only malformed response content as an expected API failure.
+     */
+    private JsonNode parseJson(ByteString bytes) {
+        try {
+            JsonNode value = defaultJson.mapper().readTree(bytes.toArray());
+            if (value == null || value.isMissingNode()) throw new ApiFailure(FailureReason.INVALID_JSON, null);
+            return value;
+        } catch (IOException e) {
+            // Reading an in-memory byte array can only fail here while decoding JSON.
+            throw new ApiFailure(FailureReason.INVALID_JSON, e);
+        }
+    }
+
+    /**
+     * Supplies a safe message when an HTTP error has no usable JSON error body.
+     */
+    private static JsonNode errorBody() {
+        return JsonNodeFactory.instance.objectNode().set("error", JsonNodeFactory.instance.objectNode().put("message", "Request failed"));
+    }
+
+    /**
+     * Removes asynchronous wrappers without discarding a classified failure's safe message.
+     */
+    public static Throwable unwrapFailure(Throwable failure) {
+        while ((failure instanceof CompletionException || failure instanceof ExecutionException)
+                && failure.getCause() != null) {
+            failure = failure.getCause();
+        }
+        return failure;
+    }
+
+    /**
+     * Recognizes expected stream/network failures and leaves programming errors unchanged.
+     */
+    static Throwable classifyFailure(Throwable failure) {
+        Throwable cause = unwrapFailure(failure);
+        if (cause instanceof ApiFailure) return cause;
+        if (cause instanceof StreamLimitReachedException) return new ApiFailure(FailureReason.TOO_LARGE, cause);
+        if (cause instanceof TimeoutException || cause instanceof java.net.SocketTimeoutException
+                || cause instanceof java.net.http.HttpTimeoutException)
+            return new ApiFailure(FailureReason.TIMEOUT, cause);
+        if (cause instanceof IOException) return new ApiFailure(FailureReason.UNAVAILABLE, cause);
+        return cause;
+    }
+
+    /**
+     * Logs the underlying failure type once without exception messages that might expose response content.
+     */
     private static void logFailure(String path, Throwable failure) {
         Throwable cause = failure;
         while (cause.getCause() != null && cause.getCause() != cause) {

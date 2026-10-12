@@ -10,13 +10,13 @@ import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static play.test.Helpers.fakeRequest;
-import static services.gui.mcp.McpProtocol.*;
+import static services.gui.mcp.McpProtocolUtils.*;
 
 /**
  * Checks protocol validation independently of API authentication and tool execution.
  */
 @SuppressWarnings("DataFlowIssue")
-public class McpProtocolTest {
+public class McpProtocolUtilsTest {
     /**
      * Creates modern metadata for a read-only tool invocation.
      */
@@ -43,7 +43,7 @@ public class McpProtocolTest {
         for (String field : new String[]{VERSION_KEY, CAPABILITIES_KEY}) {
             ObjectNode message = message();
             ((ObjectNode) message.path("params").path("_meta")).remove(field);
-            assertThat(validateRequestMetadata(request().build(), message).path("error").path("code").asInt()).isEqualTo(-32602);
+            assertThat(validateMessage(request().build(), message).path("error").path("code").asInt()).isEqualTo(-32602);
         }
     }
 
@@ -54,12 +54,12 @@ public class McpProtocolTest {
     public void rejectsMissingMismatchedAndDuplicateHeaders() {
         for (String header : new String[]{"MCP-Protocol-Version", "Mcp-Method", "Mcp-Name"}) {
             for (String value : new String[]{"", "wrong", " padded "}) {
-                assertThat(validateRequestMetadata(request().header(header, value).build(), message())
+                assertThat(validateMessage(request().header(header, value).build(), message())
                         .path("error").path("code").asInt()).isEqualTo(-32020);
             }
         }
-        assertThat(validateRequestMetadata(fakeRequest().build(), message()).path("error").path("code").asInt()).isEqualTo(-32020);
-        assertThat(validateRequestMetadata(request().header("Mcp-Name", java.util.List.of("list_studies", "list_studies")).build(), message())
+        assertThat(validateMessage(fakeRequest().build(), message()).path("error").path("code").asInt()).isEqualTo(-32020);
+        assertThat(validateMessage(request().header("Mcp-Name", java.util.List.of("list_studies", "list_studies")).build(), message())
                 .path("error").path("code").asInt()).isEqualTo(-32020);
     }
 
@@ -70,7 +70,7 @@ public class McpProtocolTest {
     public void unsupportedVersionRetainsIdAndOffersAlternatives() {
         ObjectNode message = message();
         ((ObjectNode) message.path("params").path("_meta")).put(VERSION_KEY, "2099-01-01");
-        ObjectNode error = validateRequestMetadata(request().header("MCP-Protocol-Version", "2099-01-01").build(), message);
+        ObjectNode error = validateMessage(request().header("MCP-Protocol-Version", "2099-01-01").build(), message);
         assertThat(error.path("id").asInt()).isEqualTo(42);
         assertThat(error.path("error").path("code").asInt()).isEqualTo(-32022);
         assertThat(error.path("error").path("data").path("requested").asText()).isEqualTo("2099-01-01");
@@ -85,9 +85,9 @@ public class McpProtocolTest {
         ObjectNode message = message();
         ((ObjectNode) message.get("params")).put("name", "工具");
         String encoded = "=?base64?" + Base64.getEncoder().encodeToString("工具".getBytes(StandardCharsets.UTF_8)) + "?=";
-        assertThat(validateRequestMetadata(request().header("Mcp-Name", encoded).build(), message)).isNull();
+        assertThat(validateMessage(request().header("Mcp-Name", encoded).build(), message)).isNull();
         for (String invalid : new String[]{"=?base64?%%%?=", "=?base64?/w==?="}) {
-            assertThat(validateRequestMetadata(request().header("Mcp-Name", invalid).build(), message)
+            assertThat(validateMessage(request().header("Mcp-Name", invalid).build(), message)
                     .path("error").path("code").asInt()).isEqualTo(-32020);
         }
     }
@@ -99,10 +99,10 @@ public class McpProtocolTest {
     public void acceptsLegacyRequestsWithoutModernMetadata() {
         ObjectNode message = Json.newObject().put("jsonrpc", "2.0").put("id", 1).put("method", "tools/list");
         assertThat(version(fakeRequest().build())).isEqualTo(VERSION_2025_03_26);
-        assertThat(validateRequestMetadata(fakeRequest().build(), message)).isNull();
-        assertThat(validateRequestMetadata(fakeRequest().header("Mcp-Method", "tools/list").build(), message)).isNull();
+        assertThat(validateMessage(fakeRequest().build(), message)).isNull();
+        assertThat(validateMessage(fakeRequest().header("Mcp-Method", "tools/list").build(), message)).isNull();
         for (String version : VERSIONS.subList(1, VERSIONS.size())) {
-            assertThat(validateRequestMetadata(fakeRequest().header("MCP-Protocol-Version", version).build(), message)).isNull();
+            assertThat(validateMessage(fakeRequest().header("MCP-Protocol-Version", version).build(), message)).isNull();
         }
     }
 }

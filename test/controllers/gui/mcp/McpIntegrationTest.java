@@ -20,9 +20,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
-import static services.gui.mcp.McpProtocol.*;
+import static services.gui.mcp.McpProtocolUtils.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -86,7 +88,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(5);
+            assertThat(tools.size()).isEqualTo(10);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -96,6 +98,16 @@ public class McpIntegrationTest {
                     "{\"title\":\"MCP component\",\"htmlFilePath\":\"index.html\"}").body()).path("data");
             long componentId = component.path("id").asLong();
             assertThat(componentId).isPositive();
+            JsonNode batches = Json.parse(client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/studies/" + studyId + "/batches"))
+                    .header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofString())
+                    .body()).path("data");
+            long batchId = batches.get(0).path("id").asLong();
+            assertThat(batchId).isPositive();
+            Path assetDir = Path.of(root, "assets", "mcp_study");
+            Files.createDirectories(assetDir.resolve("js"));
+            String assetText = "const message = '你好';\n";
+            Files.writeString(assetDir.resolve("js/my file.js"), assetText);
+
             for (String version : new String[]{VERSION_2025_03_26, VERSION_2025_06_18, VERSION_2025_11_25, VERSION_2026_07_28}) {
                 if (version.equals(VERSION_2026_07_28)) {
                     JsonNode discovery = Json.parse(postVersion(client, base + "/mcp", token,
@@ -111,10 +123,14 @@ public class McpIntegrationTest {
                             Json.stringify(init), version).body()).path("result");
                     assertThat(handshake.path("protocolVersion").asText()).isEqualTo(version);
                 }
-                for (String name : new String[]{"list_studies", "get_study", "list_components", "get_component", "list_batches"}) {
+                for (String name : new String[]{"list_batches", "get_batch", "get_batch_session", "list_components", "get_component",
+                        "list_studies", "get_study", "get_study_log", "list_study_assets", "read_study_asset"}) {
                     var args = Json.newObject();
                     if (name.equals("get_component")) args.put("component_id", componentId);
+                    else if (name.equals("get_batch") || name.equals("get_batch_session")) args.put("batch_id", batchId);
                     else if (!name.equals("list_studies")) args.put("study_id", studyId);
+                    if (name.equals("read_study_asset")) args.put("filepath", "js/my file.js");
+                    if (name.equals("get_study_log")) args.put("entry_limit", 5);
                     var message = Json.newObject().put("jsonrpc", "2.0").put("id", 4).put("method", "tools/call");
                     message.putObject("params").put("name", name).set("arguments", args);
                     HttpResponse<String> response = postVersion(client, base + "/mcp", token, Json.stringify(message), version);
@@ -127,6 +143,9 @@ public class McpIntegrationTest {
                     assertThat(content.isMissingNode()).isFalse();
                     if (name.equals("get_study")) assertThat(content.path("id").asLong()).isEqualTo(studyId);
                     if (name.equals("get_component")) assertThat(content.path("id").asLong()).isEqualTo(componentId);
+                    if (name.equals("get_batch")) assertThat(content.path("id").asLong()).isEqualTo(batchId);
+                    if (name.equals("get_study_log")) assertThat(content.isArray()).isTrue();
+                    if (name.equals("read_study_asset")) assertThat(content.asText()).isEqualTo(assetText);
                 }
             }
 
@@ -166,7 +185,8 @@ public class McpIntegrationTest {
             assertThat(updated.statusCode()).isEqualTo(200);
             JsonNode oversized = tool(client, base, token, "get_study", Json.newObject().put("study_id", studyId));
             assertThat(oversized.path("isError").asBoolean()).isTrue();
-            assertThat(oversized.path("content").get(0).path("text").asText()).contains("response size limit");
+            assertThat(oversized.path("content").get(0).path("text").asText())
+                    .isEqualTo("JATOS API response exceeds the configured size limit");
 
             HttpResponse<String> revoked = client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/tokens/" + tokenPair.getLeft().getId()))
                     .header("Authorization", "Bearer " + token).header("Content-Type", "application/json")

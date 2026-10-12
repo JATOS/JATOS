@@ -3,7 +3,7 @@ package services.gui.mcp;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import general.common.BuildInfo;
-import play.libs.Json;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import play.mvc.Http;
 
 import java.nio.ByteBuffer;
@@ -14,9 +14,20 @@ import java.util.Base64;
 import java.util.List;
 
 /**
- * MCP version negotiation, HTTP transport metadata validation and version-specific response formatting.
+ * Utilities for JSON-RPC message validation, MCP version and HTTP metadata checks, and response formatting.
  */
-public final class McpProtocol {
+public final class McpProtocolUtils {
+
+    // Standard JSON-RPC 2.0 error codes.
+    public static final int PARSE_ERROR = -32700;
+    public static final int INVALID_REQUEST = -32600;
+    public static final int METHOD_NOT_FOUND = -32601;
+    public static final int INVALID_PARAMS = -32602;
+    public static final int INTERNAL_ERROR = -32603;
+
+    // MCP-specific protocol errors.
+    public static final int HEADER_MISMATCH = -32020;
+    public static final int UNSUPPORTED_PROTOCOL_VERSION = -32022;
 
     public static final String VERSION_2026_07_28 = "2026-07-28";
     public static final String VERSION_2025_11_25 = "2025-11-25";
@@ -31,7 +42,7 @@ public final class McpProtocol {
     /**
      * Prevents instantiation of the protocol helper.
      */
-    private McpProtocol() {
+    private McpProtocolUtils() {
     }
 
     /**
@@ -42,10 +53,32 @@ public final class McpProtocol {
     }
 
     /**
+     * Returns a JSON-RPC or protocol validation error, or null for a valid message.
+     */
+    public static ObjectNode validateMessage(Http.Request request, JsonNode message) {
+        if (message == null
+                || !message.isObject()
+                || !"2.0".equals(message.path("jsonrpc").asText())
+                || !message.path("method").isTextual()
+                || message.has("result")
+                || message.has("error")) {
+            return error(null, INVALID_REQUEST, "Invalid JSON-RPC request");
+        }
+        JsonNode id = message.get("id");
+        if (id != null && !(id.isTextual() || id.isIntegralNumber())) {
+            return error(null, INVALID_REQUEST, "Request ID must be a string or integer");
+        }
+        if (message.has("params") && !message.get("params").isObject()) {
+            return error(id, INVALID_PARAMS, "params must be an object");
+        }
+        return validateRequestMetadata(request, message);
+    }
+
+    /**
      * Checks the supported protocol version and required HTTP headers against message metadata.
      * Returns a JSON-RPC error body, or null when the request metadata is valid.
      */
-    public static ObjectNode validateRequestMetadata(Http.Request request, JsonNode message) {
+    private static ObjectNode validateRequestMetadata(Http.Request request, JsonNode message) {
         JsonNode id = message.get("id");
         JsonNode params = message.path("params");
         JsonNode meta = params.path("_meta");
@@ -53,11 +86,11 @@ public final class McpProtocol {
         boolean perRequest = VERSION_2026_07_28.equals(version) || meta.has(VERSION_KEY) || meta.has(CAPABILITIES_KEY);
         if (perRequest && id != null) {
             if (!meta.path(VERSION_KEY).isTextual() || !meta.path(CAPABILITIES_KEY).isObject()) {
-                return error(id, -32602, "Request _meta requires protocolVersion and clientCapabilities");
+                return error(id, INVALID_PARAMS, "Request _meta requires protocolVersion and clientCapabilities");
             }
             if (!matches(request, "MCP-Protocol-Version", meta.get(VERSION_KEY).asText(), false)
                     || !matches(request, "Mcp-Method", message.path("method").asText(), false)) {
-                return error(id, -32020, "Missing, malformed or mismatched MCP-Protocol-Version or Mcp-Method header");
+                return error(id, HEADER_MISMATCH, "Missing, malformed or mismatched MCP-Protocol-Version or Mcp-Method header");
             }
             String method = message.path("method").asText();
             String field = switch (method) {
@@ -67,13 +100,13 @@ public final class McpProtocol {
             };
             if (field != null && (!params.path(field).isTextual()
                     || !matches(request, "Mcp-Name", params.path(field).asText(), true))) {
-                return error(id, -32020, "Missing, malformed or mismatched Mcp-Name header");
+                return error(id, HEADER_MISMATCH, "Missing, malformed or mismatched Mcp-Name header");
             }
         }
         if (!VERSIONS.contains(version)) {
-            ObjectNode error = error(id, -32022, "Unsupported protocol version");
+            ObjectNode error = error(id, UNSUPPORTED_PROTOCOL_VERSION, "Unsupported protocol version");
             ObjectNode data = ((ObjectNode) error.get("error")).putObject("data").put("requested", version);
-            data.set("supported", Json.toJson(VERSIONS));
+            VERSIONS.forEach(data.putArray("supported")::add);
             return error;
         }
         return null;
@@ -101,17 +134,17 @@ public final class McpProtocol {
     }
 
     /**
-     * Returns JATOS's implementation identity without retaining client-specific state.
+     * Returns JATOS' implementation identity without retaining client-specific state.
      */
     public static ObjectNode serverInfo() {
-        return Json.newObject().put("name", "JATOS").put("version", BuildInfo.version());
+        return JsonNodeFactory.instance.objectNode().put("name", "JATOS").put("version", BuildInfo.version());
     }
 
     /**
      * Describes the fixed tool capability using the fields appropriate to the requested revision.
      */
     public static ObjectNode capabilities(boolean modern) {
-        ObjectNode capabilities = Json.newObject();
+        ObjectNode capabilities = JsonNodeFactory.instance.objectNode();
         ObjectNode tools = capabilities.putObject("tools");
         if (!modern) tools.put("listChanged", false);
         return capabilities;
@@ -125,7 +158,7 @@ public final class McpProtocol {
             result.put("resultType", "complete");
             result.withObject("_meta").set("io.modelcontextprotocol/serverInfo", serverInfo());
         }
-        ObjectNode response = Json.newObject().put("jsonrpc", "2.0");
+        ObjectNode response = JsonNodeFactory.instance.objectNode().put("jsonrpc", "2.0");
         response.set("id", id);
         response.set("result", result);
         return response;
@@ -135,7 +168,7 @@ public final class McpProtocol {
      * Builds a JSON-RPC error, retaining the request ID when it can be read.
      */
     public static ObjectNode error(JsonNode id, int code, String message) {
-        ObjectNode response = Json.newObject().put("jsonrpc", "2.0");
+        ObjectNode response = JsonNodeFactory.instance.objectNode().put("jsonrpc", "2.0");
         response.set("id", id);
         response.putObject("error").put("code", code).put("message", message);
         return response;

@@ -1,43 +1,45 @@
 package controllers.gui.mcp;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import general.common.Common;
-import play.libs.Json;
-import play.mvc.BodyParser;
-import play.mvc.Controller;
-import play.mvc.Http;
-import play.mvc.Result;
+import exceptions.common.JatosException;
+import json.common.DefaultJson;
+import play.Logger;
+import play.Logger.ALogger;
+import play.mvc.*;
 import services.gui.mcp.McpApiClient;
+import services.gui.mcp.McpProtocolUtils;
 import services.gui.mcp.McpTools;
-import services.gui.mcp.McpProtocol;
-
-import static services.gui.mcp.McpProtocol.*;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+
+import static services.gui.mcp.McpProtocolUtils.*;
 
 /**
  * Stateless Streamable HTTP MCP with legacy initialization and modern per-request discovery. Returns JSON responses
  * without SSE or server-initiated requests.
  */
 @Singleton
+@With(McpTransportAction.class)
 public class Mcp extends Controller {
 
-    private static final String API_FAILURE =
-            "JATOS API unavailable, timed out, returned invalid JSON, or exceeded the response size limit";
+    private static final ALogger LOGGER = Logger.of(Mcp.class);
 
-    private final McpApiClient api;
+    private final McpApiClient mcpApi;
+    private final DefaultJson defaultJson;
 
     /**
-     * Creates the endpoint with its loopback API client.
+     * Creates the endpoint with its loopback API client and shared JSON mapper.
      */
     @Inject
-    public Mcp(McpApiClient api) {
-        this.api = api;
+    public Mcp(McpApiClient mcpApi, DefaultJson defaultJson) {
+        this.mcpApi = mcpApi;
+        this.defaultJson = defaultJson;
     }
 
     /**
@@ -45,201 +47,163 @@ public class Mcp extends Controller {
      */
     @BodyParser.Of(McpBodyParser.class)
     public CompletionStage<Result> post(Http.Request request) {
-        return handle(request, true);
-    }
-
-    /**
-     * Checks authentication before rejecting GET streams and DELETE session requests.
-     */
-    public CompletionStage<Result> unsupported(Http.Request request) {
-        return handle(request, false);
-    }
-
-    /**
-     * Validates access and authenticates each request before processing its message.
-     */
-    private CompletionStage<Result> handle(Http.Request request, boolean post) {
-        Result rejection = validateAccess(request);
-        if (rejection != null) return completed(rejection);
-
-        String authorization = request.header("Authorization").orElse("");
-        // Authenticate even discovery and notifications; token revocation takes effect immediately.
-        return api.get("/admin/token", authorization)
-                .thenCompose(auth -> {
-                    Result authError = authenticationError(auth.status());
-                    return authError != null ? completed(authError) : handleAuthenticated(request, post, authorization);
-                })
-                .exceptionally(e -> status(BAD_GATEWAY, error(null, -32603, API_FAILURE)))
-                .thenApply(result -> result.withHeader("Cache-Control", "no-store"));
-    }
-
-    /**
-     * Returns an access rejection or null when the request may authenticate.
-     */
-    private Result validateAccess(Http.Request request) {
-        if (!Common.isJatosMcpEnabled()) return notFound();
-        // Native clients normally omit Origin. Browser origins must be explicitly configured.
-        List<String> origins = request.headers().getAll("Origin");
-        if (!origins.isEmpty() && (origins.size() != 1 || !Common.getJatosMcpAllowedOrigins().contains(origins.getFirst()))) {
-            return forbidden();
-        }
-        String authorization = request.header("Authorization").orElse("");
-        if (!authorization.startsWith("Bearer ") || authorization.substring(7).isBlank()) {
-            return unauthorized().withHeader("WWW-Authenticate", "Bearer");
-        }
-        return null;
-    }
-
-    /**
-     * Maps the token API status to an HTTP rejection or null for successful authentication.
-     */
-    private Result authenticationError(int statusCode) {
-        return switch (statusCode) {
-            case 200 -> null;
-            case 401 -> unauthorized().withHeader("WWW-Authenticate", "Bearer");
-            case 403 -> forbidden();
-            default -> status(BAD_GATEWAY);
-        };
-    }
-
-    /**
-     * Checks transport requirements and parses the authenticated request as JSON.
-     */
-    private CompletionStage<Result> handleAuthenticated(Http.Request request, boolean post, String authorization) {
-        if (!post) return completed(status(METHOD_NOT_ALLOWED).withHeader("Allow", "POST"));
-        if (!request.contentType().orElse("").equalsIgnoreCase("application/json")) {
-            return completed(status(UNSUPPORTED_MEDIA_TYPE));
-        }
-        if (!request.accepts("application/json") || !request.accepts("text/event-stream")) {
-            return completed(status(NOT_ACCEPTABLE));
-        }
         JsonNode message;
         try {
-            message = Json.parse(request.body().asText());
-        } catch (RuntimeException e) {
-            return completed(badRequest(error(null, -32700, "Parse error")));
+            message = defaultJson.jsonAsJsonNode(request.body().asText());
+        } catch (JatosException e) {
+            return completed(badRequest(error(null, PARSE_ERROR, "Parse error")));
         }
-        return dispatch(message, authorization, request);
+        JsonNode id = message == null ? null : message.get("id");
+        JsonNode responseId = id != null && (id.isTextual() || id.isIntegralNumber()) ? id : null;
+        return CompletableFuture.completedFuture(message)
+                .thenCompose(m -> dispatch(m, request))
+                .exceptionally(e -> failureResult(responseId, e));
+    }
+
+    /**
+     * Returns 405 after the transport action has authenticated the request.
+     */
+    @BodyParser.Of(BodyParser.Empty.class)
+    public CompletionStage<Result> unsupported(Http.Request request) {
+        return completed(status(METHOD_NOT_ALLOWED).withHeader("Allow", "POST"));
     }
 
     /**
      * Validates the message, ignores notifications, and routes requests to their MCP operation.
      */
-    private CompletionStage<Result> dispatch(JsonNode message, String authorization, Http.Request request) {
-        ObjectNode validationError = validateMessage(message, request);
+    private CompletionStage<Result> dispatch(JsonNode message, Http.Request request) {
+        ObjectNode validationError = validateMessage(request, message);
         if (validationError != null) return completed(badRequest(validationError));
 
         JsonNode id = message.get("id");
         // Unknown notifications are ignored; they never execute tools.
         if (id == null) return completed(status(ACCEPTED));
 
-        JsonNode params = message.has("params") ? message.get("params") : Json.newObject();
-        String version = McpProtocol.version(request);
-        return switch (message.get("method").asText()) {
-            case "server/discover" -> completed(discover(id, version));
-            case "initialize" -> completed(initialize(id, params, version));
-            case "ping" -> completed(ok(success(id, Json.newObject(), version)));
-            case "tools/list" -> completed(listTools(id, params, version));
-            case "tools/call" -> callTool(id, params, version, authorization);
-            default -> completed(status(VERSION_2026_07_28.equals(version) ? NOT_FOUND : OK,
-                    error(id, -32601, "Method not found")));
-        };
-    }
+        JsonNode params = message.has("params") ? message.get("params") : JsonNodeFactory.instance.objectNode();
+        String version = McpProtocolUtils.version(request);
+        String method = message.get("method").asText();
+        if (method.equals("tools/call")) {
+            return callTool(id, params, version, request.header("Authorization").orElse(""));
+        }
 
-    /**
-     * Returns a JSON-RPC or protocol validation error, or null for a valid message.
-     */
-    private ObjectNode validateMessage(JsonNode message, Http.Request request) {
-        if (message == null || !message.isObject() || !"2.0".equals(message.path("jsonrpc").asText())
-                || !message.path("method").isTextual() || message.has("result") || message.has("error")) {
-            return error(null, -32600, "Invalid JSON-RPC request");
+        ObjectNode result = switch (method) {
+            case "server/discover" -> discover(id, version);
+            case "initialize" -> initialize(id, params, version);
+            case "ping" -> success(id, JsonNodeFactory.instance.objectNode(), version);
+            case "tools/list" -> listTools(id, params, version);
+            default -> error(id, METHOD_NOT_FOUND, "Method not found");
+        };
+        int statusCode = OK;
+        if (result.has("error") && VERSION_2026_07_28.equals(version)) {
+            int errorCode = result.path("error").path("code").asInt();
+            statusCode = errorCode == METHOD_NOT_FOUND ? NOT_FOUND : BAD_REQUEST;
         }
-        JsonNode id = message.get("id");
-        if (id != null && !(id.isTextual() || id.isIntegralNumber())) {
-            return error(null, -32600, "Request ID must be a string or integer");
-        }
-        if (message.has("params") && !message.get("params").isObject()) {
-            return error(id, -32602, "params must be an object");
-        }
-        return McpProtocol.validateRequestMetadata(request, message);
+        return completed(status(statusCode, result));
     }
 
     /**
      * Describes the server for protocol versions supporting per-request discovery.
      */
-    private Result discover(JsonNode id, String version) {
-        if (!VERSION_2026_07_28.equals(version)) return ok(error(id, -32601, "Method not found"));
-        ObjectNode discovery = Json.newObject();
-        discovery.set("supportedVersions", Json.toJson(VERSIONS));
+    private ObjectNode discover(JsonNode id, String version) {
+        if (!VERSION_2026_07_28.equals(version)) return error(id, METHOD_NOT_FOUND, "Method not found");
+        ObjectNode discovery = JsonNodeFactory.instance.objectNode();
+        discovery.set("supportedVersions", defaultJson.objAsJsonNode(VERSIONS));
         discovery.set("capabilities", capabilities(true));
         discovery.put("instructions", INSTRUCTIONS);
-        return ok(success(id, discovery, version));
+        return success(id, discovery, version);
     }
 
     /**
      * Validates legacy initialization parameters and negotiates a supported legacy version.
      */
-    private Result initialize(JsonNode id, JsonNode params, String version) {
+    private ObjectNode initialize(JsonNode id, JsonNode params, String version) {
         if (VERSION_2026_07_28.equals(version)) {
-            return notFound(error(id, -32601, "Use server/discover with this protocol version"));
+            return error(id, METHOD_NOT_FOUND, "Use server/discover with this protocol version");
         }
-        if (!params.path("protocolVersion").isTextual() || !params.path("capabilities").isObject()
+        if (!params.path("protocolVersion").isTextual()
+                || !params.path("capabilities").isObject()
                 || !params.path("clientInfo").path("name").isTextual()
                 || !params.path("clientInfo").path("version").isTextual()) {
-            return invalidParams(id, "initialize requires protocolVersion, capabilities and clientInfo", version);
+            return error(id, INVALID_PARAMS, "initialize requires protocolVersion, capabilities and clientInfo");
         }
         String requested = params.get("protocolVersion").asText();
         String negotiated = VERSIONS.contains(requested) && !VERSION_2026_07_28.equals(requested) ? requested : VERSION_2025_11_25;
-        ObjectNode init = Json.newObject().put("protocolVersion", negotiated);
+        ObjectNode init = JsonNodeFactory.instance.objectNode().put("protocolVersion", negotiated);
         init.set("capabilities", capabilities(false));
         init.set("serverInfo", serverInfo());
         init.put("instructions", INSTRUCTIONS);
-        return ok(success(id, init, version));
+        return success(id, init, version);
     }
 
     /**
      * Returns the complete tool catalog; pagination is not supported.
      */
-    private Result listTools(JsonNode id, JsonNode params, String version) {
+    private ObjectNode listTools(JsonNode id, JsonNode params, String version) {
         if (params.has("cursor")) {
-            return invalidParams(id, "Tool discovery is not paginated; omit cursor", version);
+            return error(id, INVALID_PARAMS, "Tool discovery is not paginated; omit cursor");
         }
-        ObjectNode tools = Json.newObject();
+        ObjectNode tools = JsonNodeFactory.instance.objectNode();
         tools.set("tools", McpTools.list());
-        return ok(success(id, tools, version));
+        return success(id, tools, version);
     }
 
     /**
      * Validates tool arguments and calls the corresponding API endpoint with the caller's token.
      */
     private CompletionStage<Result> callTool(JsonNode id, JsonNode params, String version, String authorization) {
-        if (!params.path("name").isTextual()) return completed(invalidParams(id, "Tool name is required", version));
+        if (!params.path("name").isTextual())
+            return completed(invalidParams(id, "Tool name is required", version));
         String name = params.get("name").asText();
-        String path;
+        McpTools.ResolvedCall call;
         try {
-            path = McpTools.path(name, params.get("arguments"));
+            call = McpTools.resolveCall(name, params.get("arguments"));
         } catch (McpTools.InvalidToolInputException e) {
             if (VERSION_2026_07_28.equals(version)) {
                 return completed(ok(success(id, toolError(e.getMessage()), version)));
             }
             return completed(invalidParams(id, e.getMessage(), version));
-        } catch (IllegalArgumentException e) {
+        } catch (McpTools.InvalidToolRequestException e) {
             return completed(invalidParams(id, e.getMessage(), version));
         }
-        return api.get(path, authorization)
-                .thenApply(reply -> ok(success(id, toolResult(name, reply, version), version)))
-                .exceptionally(e -> ok(success(id, toolError(API_FAILURE), version)));
+        return mcpApi.get(call.path(), authorization, call.format())
+                .thenApply(reply -> reply.status() == UNAUTHORIZED
+                        ? unauthorized().withHeader("WWW-Authenticate", "Bearer")
+                        : ok(success(id, toolResult(call, reply, version), version)))
+                .exceptionally(e -> {
+                    Throwable cause = McpApiClient.unwrapFailure(e);
+                    if (cause instanceof McpApiClient.ApiFailure) {
+                        return ok(success(id, toolError(cause.getMessage()), version));
+                    }
+                    throw new CompletionException(cause);
+                });
     }
 
-    /** Returns HTTP 400 for modern invalid-parameter errors, retaining legacy HTTP 200 responses. */
+    /**
+     * Reports known API failures separately from unexpected bugs, retaining the request ID when available.
+     */
+    static Result failureResult(JsonNode id, Throwable failure) {
+        Throwable cause = McpApiClient.unwrapFailure(failure);
+        if (cause instanceof McpApiClient.ApiFailure) {
+            return status(BAD_GATEWAY, error(id, INTERNAL_ERROR, cause.getMessage()));
+        }
+        // Keep the exception type and stack location but never log messages that may contain request/response data.
+        RuntimeException diagnostic = new RuntimeException(cause.getClass().getName());
+        diagnostic.setStackTrace(cause.getStackTrace());
+        LOGGER.error("Unexpected MCP request processing failure", diagnostic);
+        return internalServerError(error(id, INTERNAL_ERROR, "Internal error"));
+    }
+
+    /**
+     * Returns HTTP 400 for modern invalid-parameter errors, retaining legacy HTTP 200 responses.
+     */
     private Result invalidParams(JsonNode id, String message, String version) {
-        return status(VERSION_2026_07_28.equals(version) ? BAD_REQUEST : OK, error(id, -32602, message));
+        return status(VERSION_2026_07_28.equals(version) ? BAD_REQUEST : OK, error(id, INVALID_PARAMS, message));
     }
 
     /**
      * Converts an API reply to tool content or a tool execution error.
      */
-    private ObjectNode toolResult(String name, McpApiClient.Reply reply, String version) {
+    private ObjectNode toolResult(McpTools.ResolvedCall call, McpApiClient.Reply reply, String version) {
         if (reply.status() != 200) {
             return toolError("JATOS API returned HTTP " + reply.status() + ": "
                     + reply.body().path("error").path("message").asText("Request failed"));
@@ -247,11 +211,11 @@ public class Mcp extends Controller {
         JsonNode data = reply.body().get("data");
         if (data == null) return toolError("JATOS API response has no data field");
 
-        ObjectNode structured = Json.newObject();
-        structured.set("data", McpTools.output(name, data));
-        ObjectNode result = Json.newObject().put("isError", false);
+        ObjectNode structured = JsonNodeFactory.instance.objectNode();
+        structured.set("data", call.postProcess().apply(data));
+        ObjectNode result = JsonNodeFactory.instance.objectNode().put("isError", false);
         if (!VERSION_2025_03_26.equals(version)) result.set("structuredContent", structured);
-        result.putArray("content").addObject().put("type", "text").put("text", Json.stringify(structured));
+        result.putArray("content").addObject().put("type", "text").put("text", defaultJson.objAsJson(structured));
         return result;
     }
 
@@ -259,7 +223,7 @@ public class Mcp extends Controller {
      * Builds an MCP tool execution error, distinct from a JSON-RPC protocol error.
      */
     private static ObjectNode toolError(String message) {
-        ObjectNode result = Json.newObject().put("isError", true);
+        ObjectNode result = JsonNodeFactory.instance.objectNode().put("isError", true);
         result.putArray("content").addObject().put("type", "text").put("text", message);
         return result;
     }

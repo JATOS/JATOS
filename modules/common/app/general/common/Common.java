@@ -190,14 +190,6 @@ public class Common {
         jatosUrlBasePath = config.getString("play.http.context"); // Also jatos.urlBasePath
         jatosUpdateMsg = !config.getIsNull("jatos.update.msg") ? config.getString("jatos.update.msg") : null;
         jatosHttpAddress = config.getString("play.server.http.address"); // Also jatos.http.address
-        if (jatosHttpAddress.startsWith("[") && jatosHttpAddress.endsWith("]")) {
-            jatosHttpAddress = jatosHttpAddress.substring(1, jatosHttpAddress.length() - 1);
-        }
-        // Use a connectable loopback address for IPv4 and IPv6 wildcard binds.
-        if (jatosHttpAddress.equals("0.0.0.0")) jatosHttpAddress = "127.0.0.1";
-        else if (jatosHttpAddress.contains(":") && jatosHttpAddress.replace(":", "").matches("0*")) {
-            jatosHttpAddress = "::1";
-        }
         jatosHttpPort = config.getInt("play.server.http.port"); // Also jatos.http.port
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
         ldapUserAttribute = config.getString("jatos.user.authentication.ldap.userAttribute");
