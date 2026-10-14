@@ -210,13 +210,12 @@ public class StudyApi extends Controller {
         try {
             Map<String, Object> importInfo = importExportService.importStudy(file);
 
-            Study study = importExportService.importStudyConfirmed(
+            JsonNode studyNode = importExportService.importStudyConfirmedForApi(
                     keepProperties,
                     keepAssets,
                     keepCurrentAssetsName,
                     renameAssets);
 
-            JsonNode studyNode = domainJsonMapper.studyAsJsonForApi(study, false, false);
             JsonNode envelope = ApiEnvelope.wrap(studyNode).asJsonNode();
             boolean wasOverwritten = TRUE.equals(importInfo.get("studyExists"));
             return wasOverwritten ? ok(envelope) : created(envelope);

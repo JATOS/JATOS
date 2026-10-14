@@ -1,5 +1,7 @@
 package services.gui;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.common.ForbiddenException;
@@ -179,6 +181,24 @@ public class ImportExportService {
                 }
             }
             return importNewStudy(tempUnzippedStudyDir, uploadedStudy);
+        });
+    }
+
+    /**
+     * Confirms an import and builds its API representation in the same transaction, keeping lazy associations
+     * available during serialization. The transaction in importStudyConfirmed joins this transaction.
+     *
+     * @param keepProperties        preserve the existing study properties on a UUID match
+     * @param keepAssets            preserve the existing study assets on a UUID match
+     * @param keepCurrentAssetsName retain the existing assets directory name when replacing assets
+     * @param renameAssets          rename imported assets if their directory belongs to another study
+     * @return the imported study's API properties, including component, batch and member references
+     */
+    public JsonNode importStudyConfirmedForApi(boolean keepProperties, boolean keepAssets,
+                                               boolean keepCurrentAssetsName, boolean renameAssets) {
+        return studyDao.withTransaction(em -> {
+            Study study = importStudyConfirmed(keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
+            return domainJsonMapper.studyAsJsonForApi(study, false, false);
         });
     }
 

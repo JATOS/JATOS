@@ -2,6 +2,7 @@ package controllers.gui.mcp;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.UserDao;
+import general.common.Common;
 import models.common.User;
 import org.junit.Rule;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class McpIntegrationTest {
                 .configure("play.server.http.port", port)
                 .configure("jatos.mcp.maxResponseSize", "8KiB")
                 .configure("jatos.user.admin.password", "Mcp-Test-Only-42!")
-                .configure("jatos.studyAssetsRootPath", root + "/assets")
+                .configure("jatos.studyAssets.rootPath", root + "/assets")
                 .configure("jatos.studyLogs.path", root + "/study-logs")
                 .configure("jatos.resultUploads.path", root + "/uploads")
                 .configure("jatos.logs.path", root + "/logs")
@@ -74,6 +75,7 @@ public class McpIntegrationTest {
         TestServer server = Helpers.testServer(port, app);
         Helpers.start(server);
         try (HttpClient client = HttpClient.newHttpClient()) {
+            assertThat(Path.of(Common.getStudyAssetsRootPath())).isEqualTo(Path.of(root, "assets"));
             User admin = app.injector().instanceOf(UserDao.class).findByUsernameWithStudies(UserService.ADMIN_USERNAME);
             var tokenPair = app.injector().instanceOf(ApiTokenService.class).create(admin, "mcp-test", 0);
             String token = tokenPair.getRight();

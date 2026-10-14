@@ -2,7 +2,14 @@ package controllers.gui.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import general.common.Common;
 import models.common.Study;
+import org.apache.pekko.stream.javadsl.FileIO;
+import play.libs.ws.SourceBodyWritable;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import models.common.User;
 import org.junit.Test;
 import play.libs.Json;
@@ -64,6 +71,38 @@ public class StudyApiTest extends JatosTest {
         JsonNode data = resp.asJson().get("data");
         assertThat(data.get("title").asText()).isEqualTo("New Api Study");
         assertThat(data.get("id")).isNotNull();
+    }
+
+    /** Existing-study imports must serialize lazy associations after the import transaction has committed. */
+    @Test
+    public void importExistingStudy_keepPropertiesAndAssets_returnsCompleteResponse() throws Exception {
+        Study study = importAndGetExampleStudy();
+        String propertiesUrl = "/jatos/api/v1/studies/" + study.getId() + "/properties";
+        WSResponse updated = api(propertiesUrl).patch(Json.newObject().put("title", "Preserved title"));
+        assertThat(updated.getStatus()).isEqualTo(OK);
+        JsonNode expected = updated.asJson().path("data");
+        Path marker = Path.of(Common.getStudyAssetsRootPath(), study.getDirName(), "preserved.txt");
+        Files.writeString(marker, "Preserved asset");
+        Path archive = Path.of("test/resources/potato_compass.jzip");
+
+        WSResponse response = api("/jatos/api/v1/studies")
+                .queryParam("keepProperties", "true")
+                .queryParam("keepAssets", "true")
+                .raw()
+                .addHeader("Content-Length", Long.toString(Files.size(archive)))
+                .setBody(new SourceBodyWritable(FileIO.fromPath(archive), "application/zip"))
+                .execute("POST").toCompletableFuture().get(30, TimeUnit.SECONDS);
+
+        assertThat(response.getStatus()).as(response.getBody()).isEqualTo(OK);
+        JsonNode data = response.asJson().path("data");
+        assertThat(data.path("id").asLong()).isEqualTo(study.getId());
+        assertThat(data.path("title").asText()).isEqualTo("Preserved title");
+        for (String field : new String[]{"components", "batches", "members"}) {
+            assertThat(expected.path(field).isArray()).as(field).isTrue();
+            assertThat(expected.path(field).size()).as(field).isPositive();
+            assertThat(data.path(field)).as(field).isEqualTo(expected.path(field));
+        }
+        assertThat(Files.readString(marker)).isEqualTo("Preserved asset");
     }
 
     // ---------- /jatos/api/v1/studies/:id ----------
