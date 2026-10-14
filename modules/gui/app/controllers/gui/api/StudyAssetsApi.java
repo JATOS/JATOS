@@ -1,9 +1,13 @@
 package controllers.gui.api;
 
+import general.common.Common;
+import play.mvc.BodyParser;
+import http.common.UploadBodyParsers;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
+import exceptions.common.HttpException;
 import exceptions.common.BadRequestException;
 import exceptions.common.InternalServerErrorException;
 import exceptions.common.JatosException;
@@ -36,8 +40,7 @@ import java.nio.file.Path;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static general.common.ApiEnvelope.ErrorCode.FILE_ALREADY_EXISTS;
-import static general.common.ApiEnvelope.ErrorCode.MISSING_FILE;
+import static general.common.ApiEnvelope.ErrorCode.*;
 import static models.common.User.Role.USER;
 
 @Singleton
@@ -100,6 +103,7 @@ public class StudyAssetsApi extends Controller {
      */
     @Async(Executor.STUDY_ASSETS)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @BodyParser.Of(UploadBodyParsers.StudyAsset.class)
     public Result uploadStudyAssetsFile(play.mvc.Http.Request request, String id, String filepath) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -113,6 +117,10 @@ public class StudyAssetsApi extends Controller {
         if (filePart == null) {
             throw new BadRequestException("File missing", MISSING_FILE);
         }
+        if (filePart.getFileSize() > Common.getStudyAssetsMaxFileSize()) {
+            throw new HttpException(REQUEST_ENTITY_TOO_LARGE, "Uploaded file exceeds the configured size limit", TOO_LARGE);
+        }
+
         Path uploadedFile = filePart.getRef().path();
 
         try {
@@ -130,7 +138,7 @@ public class StudyAssetsApi extends Controller {
         } catch (FileAlreadyExistsException e) {
             throw new BadRequestException("File already exists but is of a different type", FILE_ALREADY_EXISTS);
         } catch (IOException e) {
-            throw new JatosException(e.getMessage(), e, ApiEnvelope.ErrorCode.IO_ERROR);
+            throw new JatosException(e.getMessage(), e, IO_ERROR);
         }
     }
 
@@ -181,7 +189,7 @@ public class StudyAssetsApi extends Controller {
         try {
             Path file = ioUtils.getFileInStudyAssetsDir(study.getDirName(), finalFilepath);
             if (Files.isDirectory(file)) {
-                throw new JatosException("Directories can't be deleted.", ApiEnvelope.ErrorCode.IO_ERROR);
+                throw new JatosException("Directories can't be deleted.", IO_ERROR);
             }
             Files.delete(file);
         } catch (NoSuchFileException e) {

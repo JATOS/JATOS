@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import exceptions.common.BadRequestException;
-import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
+import general.common.Common;
 import general.common.MessagesStrings;
 import http.common.HttpUtils;
 import json.common.DefaultJson;
 import models.common.Study;
+import org.apache.pekko.util.ByteString;
 import play.data.validation.Constraints;
 import play.data.validation.ValidationError;
 import play.libs.Files.TemporaryFile;
@@ -24,7 +25,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -39,7 +39,7 @@ public class ApiService {
 
     @Inject
     ApiService(IOUtils ioUtils,
-                       DefaultJson defaultJson) {
+               DefaultJson defaultJson) {
         this.ioUtils = ioUtils;
         this.defaultJson = defaultJson;
     }
@@ -47,7 +47,7 @@ public class ApiService {
     public void validateProps(Constraints.Validatable<List<ValidationError>> props) {
         List<ValidationError> errors = props.validate();
         if (errors != null && !errors.isEmpty()) {
-            String msg = "Error in field '" + errors.get(0).key() + "' - " + errors.get(0).message();
+            String msg = "Error in field '" + errors.getFirst().key() + "' - " + errors.getFirst().message();
             throw new BadRequestException(msg, VALIDATION_ERROR);
         }
     }
@@ -78,12 +78,24 @@ public class ApiService {
     }
 
     /**
-     * Controller method needs to be annotated with @BodyParser.Of(BodyParser.Raw.class) for this method to work
+     * Reads raw JSON within the ordinary request limit, including disk-backed buffers.
+     */
+    private byte[] readRawJson(Http.RawBuffer raw) {
+        if (raw == null) return null;
+        ByteString bytes = raw.asBytes((int) Math.min(Common.getHttpMaxMemoryBuffer(), Integer.MAX_VALUE));
+        if (bytes == null) {
+            throw new BadRequestException("Request body exceeds the configured memory limit", ErrorCode.INVALID_REQUEST);
+        }
+        return bytes.toArray();
+    }
+
+    /**
+     * Controller method needs to be annotated with @BodyParser.Of(ApiJsonBodyParser.class) for this method to work
      * properly
      */
     public JsonNode getJsonFromBody(Http.Request request) {
         Http.RawBuffer raw = request.body().asRaw();
-        byte[] bytes = raw != null ? raw.asBytes().toArray() : null;
+        byte[] bytes = readRawJson(raw);
         if (bytes == null || bytes.length == 0) {
             throw new BadRequestException("Request body is empty", ErrorCode.INVALID_REQUEST);
         }
@@ -92,12 +104,12 @@ public class ApiService {
     }
 
     /**
-     * Controller method needs to be annotated with @BodyParser.Of(BodyParser.Raw.class) for this method to work
+     * Controller method needs to be annotated with @BodyParser.Of(ApiJsonBodyParser.class) for this method to work
      * properly
      */
     public String getSessionDataFromBody(Http.Request request) {
         Http.RawBuffer raw = request.body().asRaw();
-        byte[] bytes = raw != null ? raw.asBytes().toArray() : null;
+        byte[] bytes = readRawJson(raw);
         String body;
         if (bytes == null || bytes.length == 0) {
             body = "{}";
@@ -156,21 +168,12 @@ public class ApiService {
             if (raw == null) {
                 throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
             }
-            // Prefer a temp file if Play stored it on disk (common for larger uploads)
+            // Returns the existing temporary file or writes an in-memory upload to one.
             File rawFile = raw.asFile();
             if (rawFile != null && rawFile.exists() && rawFile.length() > 0) {
                 return rawFile.toPath();
             }
-            // Fallback: raw bytes (small uploads); write to a temp file
-            if (raw.asBytes() == null || raw.asBytes().isEmpty()) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
-            }
-            try {
-                Path tmp = Files.createTempFile("jatos-file-upload-", ".tmp");
-                Files.write(tmp, raw.asBytes().toArray());
-            } catch (IOException e) {
-                throw new JatosException(e.getMessage(), e, ErrorCode.IO_ERROR);
-            }
+            throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
         }
 
         throw new BadRequestException(

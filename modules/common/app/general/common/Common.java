@@ -2,6 +2,7 @@ package general.common;
 
 import com.google.common.base.Strings;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueType;
 import org.apache.commons.lang3.tuple.Pair;
 import play.Logger;
@@ -41,6 +42,11 @@ public class Common {
     private static long resultUploadsMaxFileSize;
     private static long resultUploadsLimitPerStudyRun;
     private static long resultDataMaxSize;
+    private static long httpMaxMemoryBuffer;
+    private static long httpMaxDiskBuffer;
+    private static long studyArchiveMaxSize;
+    private static long studyArchiveMaxMemoryBuffer;
+    private static long studyAssetsMaxFileSize;
     private static int maxResultsDbQuerySize;
     private static int userSessionTimeout;
     private static int userSessionInactivity;
@@ -161,7 +167,9 @@ public class Common {
     Common(Config config) {
         jatosVersion = BuildInfo.version();
         basepath = config.getString("play.server.dir");
-        studyAssetsRootPath = obtainPath(config, "jatos.studyAssetsRootPath");
+        studyAssetsRootPath = obtainPath(config, config.hasPath("jatos.studyAssets.rootPath")
+                ? "jatos.studyAssets.rootPath" : "jatos.studyAssetsRootPath");
+        studyAssetsMaxFileSize = config.getBytes("jatos.studyAssets.maxFileSize");
         LOGGER.info("Path to study assets directory is " + studyAssetsRootPath);
         studyLogsEnabled = config.getBoolean("jatos.studyLogs.enabled");
         studyLogsPath = obtainPath(config, "jatos.studyLogs.path");
@@ -172,6 +180,10 @@ public class Common {
         resultUploadsMaxFileSize = config.getBytes("jatos.resultUploads.maxFileSize");
         resultUploadsLimitPerStudyRun = config.getBytes("jatos.resultUploads.limitPerStudyRun");
         resultDataMaxSize = config.getBytes("jatos.resultData.maxSize");
+        httpMaxMemoryBuffer = config.getBytes("jatos.http.parser.maxMemoryBuffer");
+        httpMaxDiskBuffer = config.getBytes("jatos.http.parser.maxDiskBuffer");
+        studyArchiveMaxSize = config.getBytes("jatos.studyArchive.maxSize");
+        studyArchiveMaxMemoryBuffer = config.getBytes("jatos.studyArchive.maxMemoryBuffer");
         maxResultsDbQuerySize = config.getInt("jatos.maxResultsDbQuerySize");
         userSessionTimeout = config.getInt("jatos.userSession.timeout");
         userSessionInactivity = config.getInt("jatos.userSession.inactivity");
@@ -195,7 +207,10 @@ public class Common {
         ldapUrl = config.getString("jatos.user.authentication.ldap.url");
         ldapUserAttribute = config.getString("jatos.user.authentication.ldap.userAttribute");
         if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.STRING) {
-            ldapBaseDn = Collections.singletonList(config.getString("jatos.user.authentication.ldap.basedn"));
+            String baseDn = config.getString("jatos.user.authentication.ldap.basedn");
+            ldapBaseDn = baseDn.stripLeading().startsWith("[")
+                    ? getStringList(config, "jatos.user.authentication.ldap.basedn")
+                    : Collections.singletonList(baseDn);
         } else if (config.getValue("jatos.user.authentication.ldap.basedn").valueType() == ConfigValueType.LIST) {
             ldapBaseDn = config.getStringList("jatos.user.authentication.ldap.basedn");
         }
@@ -207,7 +222,7 @@ public class Common {
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
         oidcClientSecret = config.getString("jatos.user.authentication.oidc.clientSecret");
         oidcPkceMode = readPkceMode(config, "jatos.user.authentication.oidc.pkceMode");
-        oidcScope = config.getStringList("jatos.user.authentication.oidc.scope");
+        oidcScope = getStringList(config, "jatos.user.authentication.oidc.scope");
         oidcUsernameFrom = config.getString("jatos.user.authentication.oidc.usernameFrom");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
         oidcSigninButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
@@ -217,7 +232,7 @@ public class Common {
         orcidClientId = config.getString("jatos.user.authentication.orcid.clientId");
         orcidClientSecret = config.getString("jatos.user.authentication.orcid.clientSecret");
         orcidPkceMode = readPkceMode(config, "jatos.user.authentication.orcid.pkceMode");
-        orcidScope = config.getStringList("jatos.user.authentication.orcid.scope");
+        orcidScope = getStringList(config, "jatos.user.authentication.orcid.scope");
         orcidUsernameFrom = config.getString("jatos.user.authentication.orcid.usernameFrom");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
         orcidSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
@@ -227,7 +242,7 @@ public class Common {
         sramClientId = config.getString("jatos.user.authentication.sram.clientId");
         sramClientSecret = config.getString("jatos.user.authentication.sram.clientSecret");
         sramPkceMode = readPkceMode(config, "jatos.user.authentication.sram.pkceMode");
-        sramScope = config.getStringList("jatos.user.authentication.sram.scope");
+        sramScope = getStringList(config, "jatos.user.authentication.sram.scope");
         sramUsernameFrom = config.getString("jatos.user.authentication.sram.usernameFrom");
         sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.sram.idTokenSigningAlgorithm");
         sramSigninButtonText = config.getString("jatos.user.authentication.sram.signInButtonText");
@@ -237,7 +252,7 @@ public class Common {
         conextClientId = config.getString("jatos.user.authentication.conext.clientId");
         conextClientSecret = config.getString("jatos.user.authentication.conext.clientSecret");
         conextPkceMode = readPkceMode(config, "jatos.user.authentication.conext.pkceMode");
-        conextScope = config.getStringList("jatos.user.authentication.conext.scope");
+        conextScope = getStringList(config, "jatos.user.authentication.conext.scope");
         conextUsernameFrom = config.getString("jatos.user.authentication.conext.usernameFrom");
         conextIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.conext.idTokenSigningAlgorithm");
         conextSigninButtonText = config.getString("jatos.user.authentication.conext.signInButtonText");
@@ -256,7 +271,7 @@ public class Common {
         showResultFileSizeInStudyManager = config.getBoolean("jatos.studyAdmin.showResultFileSize");
         userRoleAllowSuperuser = config.getBoolean("jatos.user.role.allowSuperuser");
         jatosMcpEnabled = config.getBoolean("jatos.mcp.enabled");
-        jatosMcpAllowedOrigins = List.copyOf(config.getStringList("jatos.mcp.allowedOrigins"));
+        jatosMcpAllowedOrigins = List.copyOf(getStringList(config, "jatos.mcp.allowedOrigins"));
         jatosMcpApiTimeout = config.getDuration("jatos.mcp.apiTimeout");
         jatosMcpMaxResponseSize = config.getBytes("jatos.mcp.maxResponseSize");
         jatosMcpMaxRequestSize = config.getBytes("jatos.mcp.maxRequestSize");
@@ -267,7 +282,7 @@ public class Common {
         LOGGER.info("Path to logs directory is " + logsPath);
         logsFilename = config.getString("jatos.logs.filename");
         logsAppender = config.getString("jatos.logs.appender");
-        logsRequestCategories = config.getStringList("jatos.logs.requestCategories");
+        logsRequestCategories = getStringList(config, "jatos.logs.requestCategories");
         multiNode = config.getBoolean("jatos.multiNode");
         groupMessageAckTimeout = getDurationWithDefaultUnit(config, "jatos.groupMessageAckTimeout");
         tmpPath = config.getIsNull("jatos.tmpPath")
@@ -287,6 +302,16 @@ public class Common {
         openAiUrlBasePath = config.getString("jatos.openai.urlBasePath");
         openAiCallLimit = config.getInt("jatos.openai.callLimit");
         openAiTimeout = config.getInt("jatos.openai.timeout");
+    }
+
+    /**
+     * Reads native config lists or array strings supplied through environment variables.
+     */
+    private static List<String> getStringList(Config config, String path) {
+        if (config.getValue(path).valueType() == ConfigValueType.STRING) {
+            return ConfigFactory.parseString("value = " + config.getString(path)).getStringList("value");
+        }
+        return config.getStringList(path);
     }
 
     /**
@@ -395,6 +420,13 @@ public class Common {
     }
 
     /**
+     * Maximum size of an individual uploaded study asset.
+     */
+    public static long getStudyAssetsMaxFileSize() {
+        return studyAssetsMaxFileSize;
+    }
+
+    /**
      * Is study logging enabled
      */
     public static boolean isStudyLogsEnabled() {
@@ -434,6 +466,34 @@ public class Common {
      */
     public static long getResultUploadsLimitPerStudyRun() {
         return resultUploadsLimitPerStudyRun;
+    }
+
+    /**
+     * Maximum compressed study archive size in bytes.
+     */
+    public static long getStudyArchiveMaxSize() {
+        return studyArchiveMaxSize;
+    }
+
+    /**
+     * Memory threshold before a raw study archive spills to disk.
+     */
+    public static long getStudyArchiveMaxMemoryBuffer() {
+        return studyArchiveMaxMemoryBuffer;
+    }
+
+    /**
+     * Maximum size of ordinary in-memory HTTP request bodies.
+     */
+    public static long getHttpMaxMemoryBuffer() {
+        return httpMaxMemoryBuffer;
+    }
+
+    /**
+     * Maximum size of HTTP uploads backed by temporary files.
+     */
+    public static long getHttpMaxDiskBuffer() {
+        return httpMaxDiskBuffer;
     }
 
     /**
@@ -1007,27 +1067,37 @@ public class Common {
         return userRoleAllowSuperuser;
     }
 
-    /** Whether the embedded MCP endpoint is enabled. */
+    /**
+     * Whether the embedded MCP endpoint is enabled.
+     */
     public static boolean isJatosMcpEnabled() {
         return jatosMcpEnabled;
     }
 
-    /** Exact browser origins allowed to access the MCP endpoint. */
+    /**
+     * Exact browser origins allowed to access the MCP endpoint.
+     */
     public static List<String> getJatosMcpAllowedOrigins() {
         return jatosMcpAllowedOrigins;
     }
 
-    /** Timeout for MCP's internal API requests and response streams. */
+    /**
+     * Timeout for MCP's internal API requests and response streams.
+     */
     public static Duration getJatosMcpApiTimeout() {
         return jatosMcpApiTimeout;
     }
 
-    /** Maximum MCP request body size, including Base64 text for imports. */
+    /**
+     * Maximum MCP request body size, including Base64 text for imports.
+     */
     public static long getJatosMcpMaxRequestSize() {
         return jatosMcpMaxRequestSize;
     }
 
-    /** Maximum internal API response size in bytes. */
+    /**
+     * Maximum internal API response size in bytes.
+     */
     public static long getJatosMcpMaxResponseSize() {
         return jatosMcpMaxResponseSize;
     }

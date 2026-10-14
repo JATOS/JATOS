@@ -17,7 +17,6 @@ import models.common.User;
 import models.gui.BatchProperties;
 import play.libs.Json;
 import play.mvc.BodyParser;
-import play.mvc.BodyParser.Raw;
 import play.mvc.Controller;
 import play.mvc.Result;
 import scala.Option;
@@ -94,7 +93,7 @@ public class BatchApi extends Controller {
 
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     @Transactional
     public Result createBatch(play.mvc.Http.Request request, String studyId) {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
@@ -115,7 +114,7 @@ public class BatchApi extends Controller {
 
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateBatch(play.mvc.Http.Request request, String id) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -162,7 +161,7 @@ public class BatchApi extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateBatchSession(play.mvc.Http.Request request, String id, Option<Long> version) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

@@ -1,5 +1,8 @@
 package controllers.gui;
 
+import general.common.Common;
+import play.mvc.BodyParser;
+import http.common.UploadBodyParsers;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
@@ -46,13 +49,18 @@ public class ImportExport extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER)
+    @BodyParser.Of(UploadBodyParsers.StudyArchive.class)
     public Result importStudy(Http.Request request) {
         // Get file from request
         Http.MultipartFormData<TemporaryFile> body = request.body().asMultipartFormData();
-        Http.MultipartFormData.FilePart<TemporaryFile> filePart = body.getFile(Study.STUDY);
+        Http.MultipartFormData.FilePart<TemporaryFile> filePart = body == null ? null : body.getFile(Study.STUDY);
 
         if (filePart == null) {
             return badRequest(MessagesStrings.FILE_MISSING);
+        }
+
+        if (filePart.getFileSize() > Common.getStudyArchiveMaxSize()) {
+            return status(413, "Uploaded file exceeds the configured size limit");
         }
 
         try {

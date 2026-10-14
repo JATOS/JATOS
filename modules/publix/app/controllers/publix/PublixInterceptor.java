@@ -1,5 +1,6 @@
 package controllers.publix;
 
+import http.common.UploadBodyParsers;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction.Transactional;
@@ -19,6 +20,7 @@ import models.common.StudyResult;
 import models.common.workers.WorkerType;
 import play.Logger;
 import play.mvc.Controller;
+import play.mvc.BodyParser;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.publix.PublixHelpers;
@@ -173,12 +175,14 @@ public class PublixInterceptor extends Controller {
 
     @Async(Executor.IO)
     @Transactional
+    @BodyParser.Of(ResultDataBodyParser.class)
     public Result submitResultData(Http.Request request, String studyResultUuid, String componentUuid) {
         return submitOrAppendResultData(request, studyResultUuid, componentUuid, false);
     }
 
     @Async(Executor.IO)
     @Transactional
+    @BodyParser.Of(ResultDataBodyParser.class)
     public Result appendResultData(Http.Request request, String studyResultUuid, String componentUuid) {
         return submitOrAppendResultData(request, studyResultUuid, componentUuid, true);
     }
@@ -198,6 +202,7 @@ public class PublixInterceptor extends Controller {
 
     @Async(Executor.IO)
     @Transactional
+    @BodyParser.Of(UploadBodyParsers.ResultFile.class)
     public Result uploadResultFile(Http.Request request, String studyResultUuid, String componentUuid,
                                    String filename) {
         StudyResult studyResult = fetchStudyResult(studyResultUuid);

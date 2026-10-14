@@ -107,7 +107,7 @@ public class UserApi extends Controller {
 
     @Async(Executor.IO)
     @Auth(roles = ADMIN, types = {TOKEN, SESSION})
-    @BodyParser.Of(BodyParser.Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result createUser(Request request) {
         JsonNode json = apiService.getJsonFromBody(request);
         NewUserProperties props = strictJson.jsonNodeAsObj(json, NewUserProperties.class);
@@ -121,7 +121,7 @@ public class UserApi extends Controller {
 
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
-    @BodyParser.Of(BodyParser.Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateUser(Request request, Long id) {
         User user = userDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

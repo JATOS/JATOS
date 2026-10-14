@@ -15,7 +15,6 @@ import models.common.User;
 import models.gui.ComponentProperties;
 import play.libs.Json;
 import play.mvc.BodyParser;
-import play.mvc.BodyParser.Raw;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -92,7 +91,7 @@ public class ComponentApi extends Controller {
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
     @Transactional
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result createComponent(Http.Request request, String studyId) {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -111,7 +110,7 @@ public class ComponentApi extends Controller {
 
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateComponent(Http.Request request, String id) {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

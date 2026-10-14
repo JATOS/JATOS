@@ -15,7 +15,6 @@ import models.common.GroupResult;
 import models.common.User;
 import play.libs.Json;
 import play.mvc.BodyParser;
-import play.mvc.BodyParser.Raw;
 import play.mvc.Controller;
 import play.mvc.Result;
 import scala.Option;
@@ -89,7 +88,7 @@ public class GroupApi extends Controller {
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
     @TransactionalAction.Transactional
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateGroupSession(play.mvc.Http.Request request, Long id, Option<Long> version) {
         GroupResult groupResult = groupResultDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

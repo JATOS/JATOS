@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.StudyDao;
 import daos.common.UserDao;
+import exceptions.common.HttpException;
 import exceptions.common.BadRequestException;
 import exceptions.common.JatosException;
 import exceptions.common.NotFoundException;
@@ -28,7 +29,6 @@ import play.core.utils.HttpHeaderParameterEncoding;
 import play.http.HttpEntity;
 import play.libs.Json;
 import play.mvc.BodyParser;
-import play.mvc.BodyParser.Raw;
 import play.mvc.Controller;
 import play.mvc.ResponseHeader;
 import play.mvc.Result;
@@ -48,6 +48,7 @@ import java.util.*;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
+import static general.common.ApiEnvelope.ErrorCode.TOO_LARGE;
 import static general.common.ApiEnvelope.ErrorCode.INVALID_JSON;
 import static general.common.ApiEnvelope.ErrorCode.WRONG_CONTENT_TYPE;
 import static java.lang.Boolean.TRUE;
@@ -124,7 +125,7 @@ public class StudyApi extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     public Result createStudy(play.mvc.Http.Request request) {
         JsonNode json = apiService.getJsonFromBody(request);
         return createStudyFromJson(json, false);
@@ -134,12 +135,12 @@ public class StudyApi extends Controller {
      * Dispatches the request based on the {@code Content-Type} header: 1) ZIP / multipart upload → import a study
      * archive 2) JSON → create a new study from the request body.
      *
-     * This endpoint supports multiple, mutually exclusive body formats, so it cannot be handled by a single fixed
-     * {@link play.mvc.BodyParser} annotation. Body parsing is therefore performed explicitly in the respective
-     * branches.
+     * StudyUploadBodyParser selects the parser by content type, spilling binary archives to disk while
+     * preserving the normal JSON and multipart limits.
      */
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @BodyParser.Of(StudyUploadBodyParser.class)
     public Result importOrCreateStudy(play.mvc.Http.Request request, boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets) {
         String contentType = request.header(CONTENT_TYPE).orElse("");
@@ -160,7 +161,7 @@ public class StudyApi extends Controller {
             return createStudyFromJson(json, renameAssets);
         }
 
-        return status(415, ApiEnvelope.wrap("Wrong 'Content-Type' " + contentType, WRONG_CONTENT_TYPE).asJsonNode());
+        throw new HttpException(UNSUPPORTED_MEDIA_TYPE, "Wrong 'Content-Type' " + contentType, WRONG_CONTENT_TYPE);
     }
 
     private Result createStudyFromJson(JsonNode json, boolean renameAssets) {
@@ -197,10 +198,14 @@ public class StudyApi extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
+    @BodyParser.Of(StudyUploadBodyParser.class)
     public Result importStudy(play.mvc.Http.Request request, boolean keepProperties, boolean keepAssets,
                               boolean keepCurrentAssetsName, boolean renameAssets) {
         List<String> allowedContentTypes = Arrays.asList("application/zip", "application/jzip", "application/octet-stream");
         Path file = apiService.extractFile(request, Study.STUDY, allowedContentTypes);
+        if (file.toFile().length() > Common.getStudyArchiveMaxSize()) {
+            throw new HttpException(REQUEST_ENTITY_TOO_LARGE, "Study archive exceeds the configured size limit", TOO_LARGE);
+        }
 
         try {
             Map<String, Object> importInfo = importExportService.importStudy(file);
@@ -293,7 +298,7 @@ public class StudyApi extends Controller {
      */
     @Async(Executor.IO)
     @Auth(roles = USER, types = {TOKEN, SESSION})
-    @BodyParser.Of(Raw.class)
+    @BodyParser.Of(ApiJsonBodyParser.class)
     @Transactional
     public Result updateStudyProperties(play.mvc.Http.Request request, String id) throws IOException {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
