@@ -88,7 +88,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(10);
+            assertThat(tools.size()).isEqualTo(18);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -99,7 +99,7 @@ public class McpIntegrationTest {
             long componentId = component.path("id").asLong();
             assertThat(componentId).isPositive();
             JsonNode batches = Json.parse(client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/studies/" + studyId + "/batches"))
-                    .header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofString())
+                            .header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofString())
                     .body()).path("data");
             long batchId = batches.get(0).path("id").asLong();
             assertThat(batchId).isPositive();
@@ -127,7 +127,8 @@ public class McpIntegrationTest {
                         "list_studies", "get_study", "get_study_log", "list_study_assets", "read_study_asset"}) {
                     var args = Json.newObject();
                     if (name.equals("get_component")) args.put("component_id", componentId);
-                    else if (name.equals("get_batch") || name.equals("get_batch_session")) args.put("batch_id", batchId);
+                    else if (name.equals("get_batch") || name.equals("get_batch_session"))
+                        args.put("batch_id", batchId);
                     else if (!name.equals("list_studies")) args.put("study_id", studyId);
                     if (name.equals("read_study_asset")) args.put("filepath", "js/my file.js");
                     if (name.equals("get_study_log")) args.put("entry_limit", 5);
@@ -149,6 +150,8 @@ public class McpIntegrationTest {
                 }
             }
 
+            checkWriteTools(client, base, token, studyId);
+
             // Another valid user may discover tools, but cannot access this user's study.
             User other = new User();
             other.setUsername("mcp-other");
@@ -159,6 +162,11 @@ public class McpIntegrationTest {
             assertThat(tool(client, base, otherToken, "list_studies", Json.newObject())
                     .path("structuredContent").path("data").size()).isZero();
             assertThat(tool(client, base, otherToken, "get_study", Json.newObject().put("study_id", studyId))
+                    .path("isError").asBoolean()).isTrue();
+            var forbiddenUpdate = Json.newObject().put("study_id", studyId);
+            forbiddenUpdate.putObject("properties").put("title", "Unauthorized change");
+            assertThat(tool(client, base, otherToken, "update_study", forbiddenUpdate).path("isError").asBoolean()).isTrue();
+            assertThat(tool(client, base, otherToken, "export_study", Json.newObject().put("study_id", studyId))
                     .path("isError").asBoolean()).isTrue();
             assertThat(post(client, base + "/mcp", "invalid", "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}").statusCode()).isEqualTo(401);
             // Origin validation happens before the API call, including when a valid token is present.
@@ -209,6 +217,61 @@ public class McpIntegrationTest {
         JsonNode body = Json.parse(response.body());
         assertThat(body.has("result")).as(response.body()).isTrue();
         return body.get("result");
+    }
+
+    /**
+     * Exercises create/update properties and authenticated archive round trips through MCP.
+     */
+    private void checkWriteTools(HttpClient client, String base, String token, long studyId) throws Exception {
+        JsonNode created = toolData(client, base, token, "create_study",
+                Json.parse("{\"properties\":{\"title\":\"Created through MCP\"}}"));
+        long targetId = created.path("id").asLong();
+        assertThat(targetId).isPositive().isNotEqualTo(studyId);
+        var updateStudy = Json.newObject().put("study_id", targetId);
+        updateStudy.putObject("properties").put("title", "Updated through MCP").putNull("comments");
+        assertThat(toolData(client, base, token, "update_study", updateStudy).path("title").asText())
+                .isEqualTo("Updated through MCP");
+
+        var componentArgs = Json.newObject().put("study_id", targetId);
+        componentArgs.putObject("properties").put("title", "New component").put("htmlFilePath", "index.html");
+        JsonNode component = toolData(client, base, token, "create_component", componentArgs);
+        var componentUpdate = Json.newObject().put("component_id", component.path("id").asLong());
+        componentUpdate.putObject("properties").put("active", false);
+        assertThat(toolData(client, base, token, "update_component", componentUpdate).path("active").asBoolean()).isFalse();
+        var batchArgs = Json.newObject().put("study_id", targetId);
+        batchArgs.putObject("properties").put("title", "New batch");
+        JsonNode batch = toolData(client, base, token, "create_batch", batchArgs);
+        var batchUpdate = Json.newObject().put("batch_id", batch.path("id").asLong());
+        batchUpdate.putObject("properties").put("maxTotalWorkers", 5);
+        assertThat(toolData(client, base, token, "update_batch", batchUpdate).path("maxTotalWorkers").asInt()).isEqualTo(5);
+        JsonNode exported = toolData(client, base, token, "export_study", Json.newObject().put("study_id", studyId));
+        assertThat(exported.path("url").asText()).isEqualTo(base + "/api/v1/studies/" + studyId);
+        assertThat(exported.toString()).doesNotContain(token);
+        URI download = URI.create(exported.path("url").asText());
+        assertThat(client.send(HttpRequest.newBuilder(download).GET().build(), HttpResponse.BodyHandlers.ofString())
+                .statusCode()).isEqualTo(401);
+        HttpResponse<byte[]> archive = client.send(HttpRequest.newBuilder(download).header("Authorization", "Bearer " + token)
+                .GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+        assertThat(archive.statusCode()).isEqualTo(200);
+        var change = Json.newObject().put("study_id", studyId);
+        change.putObject("properties").put("title", "Changed after export");
+        toolData(client, base, token, "update_study", change);
+        var imported = Json.newObject().put("archive_base64", java.util.Base64.getEncoder().encodeToString(archive.body()))
+                .put("keep_properties", true).put("keep_assets", true);
+        JsonNode kept = toolData(client, base, token, "import_study", imported);
+        assertThat(kept.path("id").asLong()).isEqualTo(studyId);
+        assertThat(kept.path("title").asText()).isEqualTo("Changed after export");
+        imported.put("keep_properties", false);
+        assertThat(toolData(client, base, token, "import_study", imported).path("title").asText()).isEqualTo("MCP study");
+    }
+
+    /**
+     * Returns the data from a successful tool call, keeping failures informative in integration assertions.
+     */
+    private JsonNode toolData(HttpClient client, String base, String token, String name, JsonNode args) throws Exception {
+        JsonNode result = tool(client, base, token, name, args);
+        assertThat(result.path("isError").asBoolean()).as(name + ": " + result).isFalse();
+        return result.path("structuredContent").path("data");
     }
 
     /**

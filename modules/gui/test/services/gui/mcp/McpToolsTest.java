@@ -9,6 +9,38 @@ import static org.assertj.core.api.Assertions.*;
  * Unit tests for the tool catalog's API mappings and argument validation.
  */
 public class McpToolsTest {
+    /** Write operations preserve explicit nulls and nested JSON rather than converting them to strings. */
+    @Test
+    public void resolvesMutations() {
+        var args = Json.newObject().put("study_id", 7);
+        var props = args.putObject("properties").put("title", "New").putNull("comments");
+        props.putObject("studyInput").put("x", 1);
+        var update = McpTools.resolveCall("update_study", args);
+        assertThat(update.method()).isEqualTo("PATCH");
+        assertThat(update.path()).isEqualTo("/studies/7/properties");
+        assertThat(update.body()).isEqualTo(props);
+        assertThat(update.body().get("comments").isNull()).isTrue();
+        assertThat(update.body().path("studyInput").isObject()).isTrue();
+
+    }
+
+    /** Prevents accidental identity writes and rejects malformed archives before executing a mutation. */
+    @Test
+    public void validatesWriteArgumentsAndImportOptions() {
+        assertThatThrownBy(() -> McpTools.resolveCall("create_study", Json.parse("{\"properties\":{}}")))
+                .isInstanceOf(InvalidToolInputException.class);
+        assertThatThrownBy(() -> McpTools.resolveCall("update_study", Json.parse("{\"study_id\":1,\"properties\":{\"id\":2}}")))
+                .isInstanceOf(InvalidToolInputException.class);
+        assertThatThrownBy(() -> McpTools.resolveCall("import_study", Json.newObject().put("archive_base64", "%%%")))
+                .isInstanceOf(InvalidToolInputException.class);
+        var imported = McpTools.resolveCall("import_study", Json.newObject().put("archive_base64", "UEs=")
+                .put("keep_properties", true));
+        assertThat(imported.method()).isEqualTo("IMPORT");
+        assertThat(imported.path()).isEqualTo("/studies?keepProperties=true&keepAssets=false&keepCurrentAssetsName=true&renameAssets=true");
+        assertThat(McpTools.resolveCall("export_study", Json.newObject().put("study_id", 1)).format())
+                .isEqualTo(McpApiClient.ResponseFormat.DOWNLOAD_LINK);
+    }
+
     /** Resolved calls select decoding and apply summaries only to the study listing. */
     @Test
     public void resolvesResponseFormatsAndOutputTransformations() {
@@ -42,10 +74,10 @@ public class McpToolsTest {
                 .endsWith("entryLimit=" + maximum);
         assertThatThrownBy(() -> apiPath("get_study_log",
                 Json.newObject().put("study_id", 1).put("entry_limit", maximum + 1)))
-                .isInstanceOf(McpTools.InvalidToolInputException.class);
+                .isInstanceOf(InvalidToolInputException.class);
         assertThatThrownBy(() -> apiPath("get_study_log",
                 Json.newObject().put("study_id", 1).putNull("entry_limit")))
-                .isInstanceOf(McpTools.InvalidToolInputException.class);
+                .isInstanceOf(InvalidToolInputException.class);
     }
 
     /** Extracts the URL from a fully resolved call for endpoint and input validation assertions. */
@@ -111,14 +143,14 @@ public class McpToolsTest {
                 "%2e%2e/a.js", "https://host/a.js", "a\\b.js", "a\nb.js"}) {
             assertThatThrownBy(() -> apiPath("read_study_asset",
                     Json.newObject().put("study_id", 1).put("filepath", path)))
-                    .isInstanceOf(McpTools.InvalidToolInputException.class);
+                    .isInstanceOf(InvalidToolInputException.class);
         }
         assertThat(apiPath("read_study_asset", Json.newObject().put("study_id", 1).put("filepath", "a?#.js")))
                 .isEqualTo("/studies/1/assets/a%3F%23.js");
         for (int limit : new int[]{-1, 0, 1001}) {
             assertThatThrownBy(() -> apiPath("get_study_log",
                     Json.newObject().put("study_id", 1).put("entry_limit", limit)))
-                    .isInstanceOf(McpTools.InvalidToolInputException.class);
+                    .isInstanceOf(InvalidToolInputException.class);
         }
     }
 

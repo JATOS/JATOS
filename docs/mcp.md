@@ -1,16 +1,24 @@
-# Embedded MCP server (initial implementation)
+# Embedded MCP server
 
-The GUI module exposes ten read-only tools through `/jatos/mcp`, grouped like the API routes:
+The GUI module exposes eighteen tools through `/jatos/mcp`, grouped like the API routes:
 
 | Concern | Tool | Arguments |
 | --- | --- | --- |
 | Batches | `list_batches` | `study_id` |
 | Batches | `get_batch` | `batch_id` |
 | Batches | `get_batch_session` | `batch_id` |
+| Batches | `create_batch` | `study_id`, `properties` |
+| Batches | `update_batch` | `batch_id`, `properties` |
 | Components | `list_components` | `study_id` |
 | Components | `get_component` | `component_id` |
+| Components | `create_component` | `study_id`, `properties` |
+| Components | `update_component` | `component_id`, `properties` |
 | Studies | `list_studies` | None |
 | Studies | `get_study` | `study_id` |
+| Studies | `create_study` | `properties` |
+| Studies | `update_study` | `study_id`, `properties` |
+| Studies | `export_study` | `study_id` |
+| Studies | `import_study` | `archive_base64`, optional `keep_properties`, `keep_assets`, `keep_current_assets_name`, `rename_assets` |
 | Studies | `get_study_log` | `study_id`, optional `entry_limit` (1–1000, default 100) |
 | Study assets | `list_study_assets` | `study_id` |
 | Study assets | `read_study_asset` | `study_id`, `filepath` |
@@ -28,6 +36,45 @@ response-size limit applies to all reads, including assets and logs.
 
 Study logs return the API's JSON array in newest-first order, including any API
 truncation notice. Batch sessions retain the API's session data and version fields.
+
+## Creating and updating
+
+`properties` is a JSON object using the API's field names; discovery describes the
+allowed fields. Creation requires `title`. Updates send only supplied fields, including
+explicit nulls for nullable fields. API validation, roles, study locks and membership
+remain authoritative. No delete tools are exposed.
+
+Clone tools are not exposed. Study export/import preserves the study UUID.
+
+Read tools advertise `readOnlyHint=true`; write tools advertise false. Updates and
+imports advertise `destructiveHint=true` because they can replace existing data.
+Writes are not advertised as idempotent and are never retried automatically. If a
+write times out or its response cannot be read, inspect the study before retrying:
+the API may already have applied the change.
+
+## Study archives
+
+`export_study` first reads study properties through the API to check access, then
+returns `url`, `filename`, `mimeType` and authentication instructions. The URL is
+based on the incoming MCP request's host/scheme and the configured context path;
+configure Play's trusted proxy settings correctly when using a reverse proxy.
+The link targets `GET /jatos/api/v1/studies/:id`, which downloads the archive after
+normal API authorization (USER permission is required). The URL contains no token;
+download with an Authorization header or an authenticated JATOS browser session.
+No archive is downloaded into the MCP response, so export is not limited by the
+MCP response-size bound for archive bytes.
+
+`import_study` accepts standard Base64 archive text and posts decoded bytes to the
+existing study API as `application/zip`. An existing UUID is updated, not cloned.
+Defaults match the API: `keep_properties=false`, `keep_assets=false`,
+`keep_current_assets_name=true`, `rename_assets=true`. Set the first two options
+when existing properties or assets should be retained. The API validates the archive.
+
+The full JSON request, including Base64, must fit `jatos.mcp.maxRequestSize`
+(default 64 KiB). Base64 is approximately one third larger than the archive.
+For example, set `jatos.mcp.maxRequestSize = 16MiB` for larger imports and increase
+`jatos.mcp.apiTimeout` for slow imports. The API's own upload limits also apply.
+For very large archives, use the HTTP API directly rather than an MCP text payload.
 
 ## Enable and connect
 
@@ -118,17 +165,17 @@ Modern results include `resultType: "complete"` and server identity metadata.
 Legacy responses omit these fields. March 2025 tool results contain text JSON
 only, because structured tool output was introduced in June 2025.
 
-All revisions expose the same ten tools and ping. Responses are JSON; GET and
+All revisions expose the same eighteen tools and ping. Responses are JSON; GET and
 DELETE return 405 after authentication. There are no session IDs, SSE streams,
 prompts, resources, subscriptions, server-initiated requests or background tasks.
 No legacy HTTP+SSE transport is offered. Optional protocol capabilities beyond
-these read-only tools are not advertised.
+these tools are not advertised.
 
 Protocol references: [modern versioning](https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning),
 [modern HTTP transport](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http),
 and [legacy initialization](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle).
 
-Input messages are limited to 64 KiB. API calls default to a 10-second timeout and
+Input messages default to a 64 KiB limit, configurable with `jatos.mcp.maxRequestSize`. API calls default to a 10-second timeout and
 1 MiB response limit, configurable with `jatos.mcp.apiTimeout` and
 `jatos.mcp.maxResponseSize`. Oversized API responses fail explicitly, rather than
 silently truncating data. Study lists are summarized after reading the bounded
@@ -145,8 +192,8 @@ sbt 'gui/testOnly controllers.gui.mcp.McpTest services.gui.mcp.*Test' \
 ```
 
 The integration tests use real HTTP, API token authentication and isolated H2
-databases at both root and prefixed URLs. They exercise all ten tools across all
-four revisions, plus access isolation, response limits and token revocation.
+databases at both root and prefixed URLs. They exercise the read tools across all four revisions, plus create/update operations,
+archive round trips, access isolation, response limits and token revocation.
 The legacy connection has also been exercised with Codex. Modern native-client
 compatibility remains a separate check after restarting JATOS with this update.
 

@@ -1,6 +1,7 @@
 package controllers.gui.mcp;
 
 import play.http.HttpErrorHandler;
+import general.common.Common;
 import play.mvc.BodyParser;
 
 import javax.inject.Inject;
@@ -11,10 +12,10 @@ import javax.inject.Inject;
 public class McpBodyParser extends BodyParser.TolerantText {
 
     /**
-     * Limits incoming MCP message bodies to 64 KiB and uses Play's standard error handling.
+     * Bounds incoming MCP message bodies using the configured limit and Play's standard error handling.
      */
     @Inject
     public McpBodyParser(HttpErrorHandler errorHandler) {
-        super(65536, errorHandler);
+        super(Common.getJatosMcpMaxRequestSize(), errorHandler);
     }
 }

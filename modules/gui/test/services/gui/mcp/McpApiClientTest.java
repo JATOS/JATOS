@@ -20,6 +20,41 @@ public class McpApiClientTest {
     private final McpApiClient client = new McpApiClient(mock(WSClient.class), mock(Materializer.class),
             new json.common.DefaultJson());
 
+    /** Import sends decoded binary bytes with the archive media type and never retries a failed POST. */
+    @Test
+    public void uploadsArchiveBytesWithoutRetry() {
+        try (var common = mockStatic(Common.class)) {
+            common.when(Common::getJatosHttpAddress).thenReturn("127.0.0.1");
+            common.when(Common::getJatosHttpPort).thenReturn(9000);
+            common.when(Common::getJatosUrlBasePath).thenReturn("/");
+            common.when(Common::getJatosMcpApiTimeout).thenReturn(java.time.Duration.ofSeconds(1));
+            WSClient ws = mock(WSClient.class);
+            var request = mock(play.libs.ws.WSRequest.class, RETURNS_SELF);
+            when(ws.url(anyString())).thenReturn(request);
+            when(request.stream()).thenReturn(java.util.concurrent.CompletableFuture.failedFuture(new TimeoutException()));
+            var api = new McpApiClient(ws, mock(Materializer.class), new json.common.DefaultJson());
+            byte[] archive = new byte[]{0x50, 0x4b, 0, (byte) 0xff};
+            var call = McpTools.resolveCall("import_study", Json.newObject().put("archive_base64",
+                    java.util.Base64.getEncoder().encodeToString(archive)));
+            assertThatThrownBy(() -> api.execute(call, "Bearer test").toCompletableFuture().join())
+                    .isInstanceOf(CompletionException.class).hasCauseInstanceOf(McpApiClient.ApiFailure.class);
+            var body = org.mockito.ArgumentCaptor.forClass(play.libs.ws.SourceBodyWritable.class);
+            verify(request).setBody(body.capture());
+            assertThat(body.getValue().contentType()).isEqualTo("application/zip");
+            verify(request).addHeader("Content-Length", Integer.toString(archive.length));
+            verify(request).setMethod("POST");
+            verify(request).addHeader("Authorization", "Bearer test");
+            verify(request, times(1)).stream();
+        }
+    }
+
+    /** The API returns 201 for newly created/imported studies, with a normal data envelope. */
+    @Test
+    public void acceptsCreatedResponses() {
+        var body = client.decode(ByteString.fromString("{\"data\":{\"id\":9}}"), 201, ENVELOPED_JSON);
+        assertThat(body.path("data").path("id").asInt()).isEqualTo(9);
+    }
+
     /**
      * Preserves source text and wraps the API's raw log array as data.
      */

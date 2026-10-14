@@ -119,6 +119,7 @@ public class Common {
     private static List<String> jatosMcpAllowedOrigins;
     private static Duration jatosMcpApiTimeout;
     private static long jatosMcpMaxResponseSize;
+    private static long jatosMcpMaxRequestSize;
     private static boolean jatosApiAllowed;
     private static boolean jatosApiTokensApiGenerationAllowed;
     private static Duration jatosApiTokensApiGenerationExpiresAfter;
@@ -258,6 +259,7 @@ public class Common {
         jatosMcpAllowedOrigins = List.copyOf(config.getStringList("jatos.mcp.allowedOrigins"));
         jatosMcpApiTimeout = config.getDuration("jatos.mcp.apiTimeout");
         jatosMcpMaxResponseSize = config.getBytes("jatos.mcp.maxResponseSize");
+        jatosMcpMaxRequestSize = config.getBytes("jatos.mcp.maxRequestSize");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
         jatosApiTokensApiGenerationAllowed = config.getBoolean("jatos.api.tokens.apiGeneration.allowed");
         jatosApiTokensApiGenerationExpiresAfter = getDurationWithDefaultUnit(config, "jatos.api.tokens.apiGeneration.expiresAfter");
@@ -1018,6 +1020,11 @@ public class Common {
     /** Timeout for MCP's internal API requests and response streams. */
     public static Duration getJatosMcpApiTimeout() {
         return jatosMcpApiTimeout;
+    }
+
+    /** Maximum MCP request body size, including Base64 text for imports. */
+    public static long getJatosMcpMaxRequestSize() {
+        return jatosMcpMaxRequestSize;
     }
 
     /** Maximum internal API response size in bytes. */

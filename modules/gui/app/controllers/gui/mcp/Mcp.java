@@ -11,6 +11,9 @@ import play.mvc.*;
 import services.gui.mcp.McpApiClient;
 import services.gui.mcp.McpProtocolUtils;
 import services.gui.mcp.McpTools;
+import services.gui.mcp.InvalidToolRequestException;
+import services.gui.mcp.InvalidToolInputException;
+import services.gui.mcp.ResolvedCall;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -83,7 +86,7 @@ public class Mcp extends Controller {
         String version = McpProtocolUtils.version(request);
         String method = message.get("method").asText();
         if (method.equals("tools/call")) {
-            return callTool(id, params, version, request.header("Authorization").orElse(""));
+            return callTool(id, params, version, request);
         }
 
         ObjectNode result = switch (method) {
@@ -150,25 +153,25 @@ public class Mcp extends Controller {
     /**
      * Validates tool arguments and calls the corresponding API endpoint with the caller's token.
      */
-    private CompletionStage<Result> callTool(JsonNode id, JsonNode params, String version, String authorization) {
+    private CompletionStage<Result> callTool(JsonNode id, JsonNode params, String version, Http.Request request) {
         if (!params.path("name").isTextual())
             return completed(invalidParams(id, "Tool name is required", version));
         String name = params.get("name").asText();
-        McpTools.ResolvedCall call;
+        ResolvedCall call;
         try {
             call = McpTools.resolveCall(name, params.get("arguments"));
-        } catch (McpTools.InvalidToolInputException e) {
+        } catch (InvalidToolInputException e) {
             if (VERSION_2026_07_28.equals(version)) {
                 return completed(ok(success(id, toolError(e.getMessage()), version)));
             }
             return completed(invalidParams(id, e.getMessage(), version));
-        } catch (McpTools.InvalidToolRequestException e) {
+        } catch (InvalidToolRequestException e) {
             return completed(invalidParams(id, e.getMessage(), version));
         }
-        return mcpApi.get(call.path(), authorization, call.format())
+        return mcpApi.execute(call, request.header("Authorization").orElse(""))
                 .thenApply(reply -> reply.status() == UNAUTHORIZED
                         ? unauthorized().withHeader("WWW-Authenticate", "Bearer")
-                        : ok(success(id, toolResult(call, reply, version), version)))
+                        : ok(success(id, toolResult(call, reply, version, request), version)))
                 .exceptionally(e -> {
                     Throwable cause = McpApiClient.unwrapFailure(e);
                     if (cause instanceof McpApiClient.ApiFailure) {
@@ -203,8 +206,8 @@ public class Mcp extends Controller {
     /**
      * Converts an API reply to tool content or a tool execution error.
      */
-    private ObjectNode toolResult(McpTools.ResolvedCall call, McpApiClient.Reply reply, String version) {
-        if (reply.status() != 200) {
+    private ObjectNode toolResult(ResolvedCall call, McpApiClient.Reply reply, String version, Http.Request request) {
+        if (!McpApiClient.isSuccess(reply.status())) {
             return toolError("JATOS API returned HTTP " + reply.status() + ": "
                     + reply.body().path("error").path("message").asText("Request failed"));
         }
@@ -212,6 +215,13 @@ public class Mcp extends Controller {
         if (data == null) return toolError("JATOS API response has no data field");
 
         ObjectNode structured = JsonNodeFactory.instance.objectNode();
+        if (call.format() == McpApiClient.ResponseFormat.DOWNLOAD_LINK) {
+            String url = (request.secure() ? "https://" : "http://") + request.host()
+                    + general.common.Common.getJatosUrlBasePath() + "jatos/api/v1/studies/" + data.path("id").asLong();
+            data = JsonNodeFactory.instance.objectNode().put("url", url).put("mimeType", "application/zip")
+                    .put("filename", "jatos_study_" + data.path("uuid").asText() + ".jzip")
+                    .put("authentication", "Use an API Bearer token or a signed-in JATOS session. Export requires USER permission.");
+        }
         structured.set("data", call.postProcess().apply(data));
         ObjectNode result = JsonNodeFactory.instance.objectNode().put("isError", false);
         if (!VERSION_2025_03_26.equals(version)) result.set("structuredContent", structured);

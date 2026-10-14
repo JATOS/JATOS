@@ -9,6 +9,12 @@ import org.apache.pekko.util.ByteString;
 import play.Logger;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import play.libs.ws.WSClient;
+import play.libs.ws.WSRequest;
+import play.libs.ws.SourceBodyWritable;
+import org.apache.pekko.stream.javadsl.Source;
+
+import java.util.Base64;
+
 import play.libs.ws.WSResponse;
 
 import javax.inject.Inject;
@@ -44,7 +50,7 @@ public class McpApiClient {
     /**
      * How a successful API response is decoded before it is passed to the MCP controller.
      */
-    public enum ResponseFormat {ENVELOPED_JSON, RAW_JSON, RAW_TEXT}
+    public enum ResponseFormat {ENVELOPED_JSON, RAW_JSON, RAW_TEXT, DOWNLOAD_LINK}
 
     /**
      * Expected API failures with messages safe to show to an MCP client.
@@ -106,16 +112,39 @@ public class McpApiClient {
      * Fetches a bounded API response, wrapping raw JSON or UTF-8 text in the usual data envelope.
      */
     public CompletionStage<Reply> get(String path, String authorization, ResponseFormat format) {
-        // Starting construction inside a callback also captures synchronous client/configuration errors.
+        return request("GET", path, authorization, format, null);
+    }
+
+    /**
+     * Executes one resolved tool request through the API.
+     */
+    public CompletionStage<Reply> execute(ResolvedCall call, String authorization) {
+        return request(call.method(), call.path(), authorization, call.format(), call.body());
+    }
+
+    /**
+     * Sends one API request without retrying mutations; JSON values and archive bytes keep their original types.
+     */
+    private CompletionStage<Reply> request(String method, String path, String authorization, ResponseFormat format, JsonNode body) {
+        // Capture synchronous request construction failures in the same completion stage as transport failures.
         return CompletableFuture.completedFuture((Void) null).thenCompose(ignored -> {
             String baseUrl = HttpUtils.getJatosLoopbackBaseUrl() + "jatos/api/v1";
-            return ws.url(baseUrl + path)
+            WSRequest request = ws.url(baseUrl + path)
                     .setFollowRedirects(false)
                     .setRequestTimeout(Common.getJatosMcpApiTimeout())
                     .addHeader("Authorization", authorization)
-                    .addHeader("Accept", format == ResponseFormat.RAW_TEXT ? "*/*" : "application/json")
-                    .setMethod("GET").stream()
-                    .thenCompose(response -> readReply(response, path, format));
+                    .addHeader("Accept", format == ResponseFormat.RAW_TEXT ? "*/*" : "application/json");
+            if (method.equals("IMPORT")) {
+                byte[] archive = Base64.getDecoder().decode(body.asText());
+                // Play WS treats non-JSON InMemoryBodyWritable payloads as text; stream ZIP bytes unchanged.
+                request.setBody(new SourceBodyWritable(Source.single(ByteString.fromArray(archive)), "application/zip"));
+                request.addHeader("Content-Length", Integer.toString(archive.length));
+                request.setMethod("POST");
+            } else {
+                if (body != null) request.setContentType("application/json").setBody(defaultJson.objAsJson(body));
+                request.setMethod(method);
+            }
+            return request.stream().thenCompose(response -> readReply(response, path, format));
         }).handle((reply, failure) -> {
             if (failure == null) return reply;
             Throwable cause = classifyFailure(failure);
@@ -124,7 +153,9 @@ public class McpApiClient {
         });
     }
 
-    /** Reads a bounded response body while preserving an HTTP error status if its body cannot be read. */
+    /**
+     * Reads a bounded response body while preserving an HTTP error status if its body cannot be read.
+     */
     private CompletionStage<Reply> readReply(WSResponse response, String path, ResponseFormat format) {
         int status = response.getStatus();
         return response.getBodyAsSource()
@@ -134,7 +165,7 @@ public class McpApiClient {
                 .thenApply(bytes -> new Reply(status, decode(bytes, status, format)))
                 .exceptionally(failure -> {
                     Throwable cause = classifyFailure(failure);
-                    if (status != 200 && cause instanceof ApiFailure) {
+                    if (!isSuccess(status) && cause instanceof ApiFailure) {
                         logFailure(path, cause);
                         return new Reply(status, errorBody());
                     }
@@ -143,10 +174,17 @@ public class McpApiClient {
     }
 
     /**
+     * Accepts all successful API statuses, including 201 for study creation and import.
+     */
+    public static boolean isSuccess(int status) {
+        return status >= 200 && status < 300;
+    }
+
+    /**
      * Decodes successful payloads by format and keeps API error envelopes unchanged.
      */
     JsonNode decode(ByteString bytes, int status, ResponseFormat format) {
-        if (status != 200) {
+        if (!isSuccess(status)) {
             try {
                 JsonNode body = parseJson(bytes);
                 return body.isObject() ? body : errorBody();
@@ -154,7 +192,7 @@ public class McpApiClient {
                 return errorBody();
             }
         }
-        if (format == ResponseFormat.ENVELOPED_JSON) return parseJson(bytes);
+        if (format == ResponseFormat.ENVELOPED_JSON || format == ResponseFormat.DOWNLOAD_LINK) return parseJson(bytes);
         var envelope = JsonNodeFactory.instance.objectNode();
         if (format == ResponseFormat.RAW_JSON) {
             envelope.set("data", parseJson(bytes));
@@ -226,6 +264,6 @@ public class McpApiClient {
         while (cause.getCause() != null && cause.getCause() != cause) {
             cause = cause.getCause();
         }
-        LOGGER.warn("MCP loopback API GET {} failed: {}", path, cause.getClass().getName());
+        LOGGER.warn("MCP loopback API request {} failed: {}", path, cause.getClass().getName());
     }
 }
