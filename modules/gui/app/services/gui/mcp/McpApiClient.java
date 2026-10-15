@@ -10,10 +10,7 @@ import play.Logger;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSRequest;
-import play.libs.ws.SourceBodyWritable;
-import org.apache.pekko.stream.javadsl.Source;
 
-import java.util.Base64;
 
 import play.libs.ws.WSResponse;
 
@@ -123,7 +120,7 @@ public class McpApiClient {
     }
 
     /**
-     * Sends one API request without retrying mutations; JSON values and archive bytes keep their original types.
+     * Sends one API request without retrying mutations; JSON properties retain their original types.
      */
     private CompletionStage<Reply> request(String method, String path, String authorization, ResponseFormat format, JsonNode body) {
         // Capture synchronous request construction failures in the same completion stage as transport failures.
@@ -134,16 +131,8 @@ public class McpApiClient {
                     .setRequestTimeout(Common.getJatosMcpApiTimeout())
                     .addHeader("Authorization", authorization)
                     .addHeader("Accept", format == ResponseFormat.RAW_TEXT ? "*/*" : "application/json");
-            if (method.equals("IMPORT")) {
-                byte[] archive = Base64.getDecoder().decode(body.asText());
-                // Play WS treats non-JSON InMemoryBodyWritable payloads as text; stream ZIP bytes unchanged.
-                request.setBody(new SourceBodyWritable(Source.single(ByteString.fromArray(archive)), "application/zip"));
-                request.addHeader("Content-Length", Integer.toString(archive.length));
-                request.setMethod("POST");
-            } else {
-                if (body != null) request.setContentType("application/json").setBody(defaultJson.objAsJson(body));
-                request.setMethod(method);
-            }
+            if (body != null) request.setContentType("application/json").setBody(defaultJson.objAsJson(body));
+            request.setMethod(method);
             return request.stream().thenCompose(response -> readReply(response, path, format));
         }).handle((reply, failure) -> {
             if (failure == null) return reply;

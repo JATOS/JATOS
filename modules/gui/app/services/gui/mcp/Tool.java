@@ -23,7 +23,7 @@ import static services.gui.mcp.McpApiClient.ResponseFormat.ENVELOPED_JSON;
  * @param path        constructs an API-relative URL from validated, normalized arguments
  * @param format      describes how to decode the API response
  * @param postProcess transforms successful API data into the tool's output
- * @param method      HTTP verb or IMPORT for a binary archive upload
+ * @param method      HTTP verb
  */
 record Tool(String name, String description, List<ToolParam> params,
             Function<Map<String, String>, String> path, McpApiClient.ResponseFormat format,
@@ -46,7 +46,7 @@ record Tool(String name, String description, List<ToolParam> params,
     }
 
     /**
-     * Write tools send properties as JSON or upload an archive.
+     * Write tools send properties as JSON.
      */
     Tool(String name, String description, List<ToolParam> params,
          Function<Map<String, String>, String> path, String method) {
@@ -67,7 +67,7 @@ record Tool(String name, String description, List<ToolParam> params,
         }
         boolean readOnly = method().equals("GET");
         node.putObject("annotations").put("readOnlyHint", readOnly)
-                .put("destructiveHint", method().equals("PATCH") || method().equals("IMPORT"))
+                .put("destructiveHint", method().equals("PATCH"))
                 .put("idempotentHint", readOnly).put("openWorldHint", false);
         return node;
     }
@@ -86,7 +86,7 @@ record Tool(String name, String description, List<ToolParam> params,
         for (ToolParam param : params()) {
             normalized.put(param.name(), param.validate(arguments.get(param.name())));
         }
-        JsonNode body = method().equals("IMPORT") ? arguments.get("archive_base64") : arguments.get("properties");
+        JsonNode body = arguments.get("properties");
         return new ResolvedCall(path().apply(normalized), format(), postProcess(), method(), body);
     }
 

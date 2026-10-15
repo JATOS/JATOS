@@ -107,18 +107,67 @@ public class McpTest {
     }
 
     /**
-     * Checks version negotiation and that initialization advertises only the tools capability.
+     * Checks version negotiation and that initialization advertises tools and resources.
      */
     @Test
-    public void initializeNegotiatesVersionAndAdvertisesOnlyTools() {
+    public void initializeNegotiatesVersionAndAdvertisesToolsAndResources() {
         JsonNode result = json(call("""
                 {"jsonrpc":"2.0","id":"init","method":"initialize","params":{
                 "protocolVersion":"future-version","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}
                 """));
         assertThat(result.path("id").asText()).isEqualTo("init");
         assertThat(result.path("result").path("protocolVersion").asText()).isEqualTo(VERSION_2025_11_25);
-        assertThat(result.path("result").path("capabilities").size()).isEqualTo(1);
+        assertThat(result.path("result").path("capabilities").size()).isEqualTo(2);
         assertThat(result.path("result").path("capabilities").has("tools")).isTrue();
+        assertThat(result.path("result").path("capabilities").has("resources")).isTrue();
+    }
+
+    /** Checks resource discovery and deployment-specific instructions across all supported revisions. */
+    @Test
+    public void readsApiUsageResourceAcrossVersions() {
+        commonMock.when(Common::getJatosUrlBasePath).thenReturn("/prefix/");
+        commonMock.when(Common::getStudyArchiveMaxSize).thenReturn(2147483648L);
+        commonMock.when(Common::getStudyAssetsMaxFileSize).thenReturn(104857600L);
+        for (String version : VERSIONS) {
+            for (String method : java.util.List.of("resources/list", "resources/read")) {
+                var params = Json.newObject();
+                if (method.equals("resources/read")) params.put("uri", "jatos://docs/api-usage");
+                var message = Json.newObject().put("jsonrpc", "2.0").put("id", 1).put("method", method);
+                message.set("params", params);
+                var builder = version.equals(VERSION_2026_07_28) ? modern(method, params)
+                        : request(Json.stringify(message)).header("MCP-Protocol-Version", version);
+                Result response = post(builder.build()).toCompletableFuture().join();
+                assertThat(response.status()).isEqualTo(200);
+                JsonNode result = json(response).path("result");
+                assertThat(result.has("resultType")).isEqualTo(version.equals(VERSION_2026_07_28));
+                if (method.equals("resources/list")) {
+                    assertThat(result.path("resources").size()).isEqualTo(1);
+                    assertThat(result.path("resources").get(0).path("uri").asText()).isEqualTo("jatos://docs/api-usage");
+                } else {
+                    JsonNode content = result.path("contents").get(0);
+                    assertThat(content.path("mimeType").asText()).isEqualTo("text/markdown");
+                    assertThat(content.path("text").asText()).contains("/prefix/jatos/api/v1", "/prefix/openapi.yaml", "GB",
+                            "MB", "studyAssetsFile", "--data-binary").doesNotContain(AUTH);
+                }
+            }
+        }
+        verify(api, times(8)).get("/admin/token", AUTH);
+        verifyNoMoreInteractions(api);
+    }
+
+    /** Rejects unsupported resource requests instead of treating arbitrary URIs as fetch targets. */
+    @Test
+    public void rejectsInvalidResourceRequests() {
+        assertThat(json(call("""
+                {"jsonrpc":"2.0","id":1,"method":"resources/read","params":{}}
+                """)).path("error").path("code").asInt()).isEqualTo(INVALID_PARAMS);
+        assertThat(json(call("""
+                {"jsonrpc":"2.0","id":1,"method":"resources/list","params":{"cursor":"next"}}
+                """)).path("error").path("code").asInt()).isEqualTo(INVALID_PARAMS);
+        Result response = post(modern("resources/read", Json.newObject().put("uri", "https://example.org/"))
+                .build()).toCompletableFuture().join();
+        assertThat(response.status()).isEqualTo(404);
+        assertThat(json(response).path("error").path("code").asInt()).isEqualTo(RESOURCE_NOT_FOUND);
     }
 
     /**
@@ -128,11 +177,11 @@ public class McpTest {
     public void listsReadAndWriteTools() {
         JsonNode tools = json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
                 .path("result").path("tools");
-        assertThat(tools.size()).isEqualTo(18);
+        assertThat(tools.size()).isEqualTo(20);
         for (JsonNode tool : tools) {
             String name = tool.path("name").asText();
             boolean write = name.startsWith("create_") || name.startsWith("update_")
-                    || name.equals("import_study");
+                    || name.equals("get_or_generate_study_codes") || name.equals("set_study_code_active");
             assertThat(tool.path("annotations").path("readOnlyHint").asBoolean()).isEqualTo(!write);
             assertThat(tool.path("inputSchema").path("additionalProperties").asBoolean()).isFalse();
         }
@@ -239,6 +288,7 @@ public class McpTest {
         var request = request(Json.stringify(message)).header("MCP-Protocol-Version", VERSION_2026_07_28)
                 .header("Mcp-Method", method);
         if (params.has("name")) request.header("Mcp-Name", params.get("name").asText());
+        if (params.has("uri")) request.header("Mcp-Name", params.get("uri").asText());
         return request;
     }
 

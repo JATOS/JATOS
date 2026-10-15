@@ -90,7 +90,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(18);
+            assertThat(tools.size()).isEqualTo(20);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -153,7 +153,6 @@ public class McpIntegrationTest {
             }
 
             checkWriteTools(client, base, token, studyId);
-
             // Another valid user may discover tools, but cannot access this user's study.
             User other = new User();
             other.setUsername("mcp-other");
@@ -170,6 +169,7 @@ public class McpIntegrationTest {
             assertThat(tool(client, base, otherToken, "update_study", forbiddenUpdate).path("isError").asBoolean()).isTrue();
             assertThat(tool(client, base, otherToken, "export_study", Json.newObject().put("study_id", studyId))
                     .path("isError").asBoolean()).isTrue();
+            checkStudyCodeTools(client, base, token, otherToken, studyId, batchId);
             assertThat(post(client, base + "/mcp", "invalid", "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}").statusCode()).isEqualTo(401);
             // Origin validation happens before the API call, including when a valid token is present.
             HttpResponse<String> origin = client.send(HttpRequest.newBuilder(URI.create(base + "/mcp"))
@@ -222,7 +222,7 @@ public class McpIntegrationTest {
     }
 
     /**
-     * Exercises create/update properties and authenticated archive round trips through MCP.
+     * Exercises create/update properties and authenticated archive downloads through MCP.
      */
     private void checkWriteTools(HttpClient client, String base, String token, long studyId) throws Exception {
         JsonNode created = toolData(client, base, token, "create_study",
@@ -255,16 +255,40 @@ public class McpIntegrationTest {
         HttpResponse<byte[]> archive = client.send(HttpRequest.newBuilder(download).header("Authorization", "Bearer " + token)
                 .GET().build(), HttpResponse.BodyHandlers.ofByteArray());
         assertThat(archive.statusCode()).isEqualTo(200);
-        var change = Json.newObject().put("study_id", studyId);
-        change.putObject("properties").put("title", "Changed after export");
-        toolData(client, base, token, "update_study", change);
-        var imported = Json.newObject().put("archive_base64", java.util.Base64.getEncoder().encodeToString(archive.body()))
-                .put("keep_properties", true).put("keep_assets", true);
-        JsonNode kept = toolData(client, base, token, "import_study", imported);
-        assertThat(kept.path("id").asLong()).isEqualTo(studyId);
-        assertThat(kept.path("title").asText()).isEqualTo("Changed after export");
-        imported.put("keep_properties", false);
-        assertThat(toolData(client, base, token, "import_study", imported).path("title").asText()).isEqualTo("MCP study");
+    }
+
+    /** Generates personal links, inspects their paths, toggles access and checks study membership. */
+    private void checkStudyCodeTools(HttpClient client, String base, String token, String otherToken,
+                                     long studyId, long batchId) throws Exception {
+        var args = Json.newObject().put("study_id", studyId);
+        args.putObject("properties").put("type", "PersonalSingle").put("batchId", batchId)
+                .put("amount", 2).put("comment", "MCP participants");
+        JsonNode codes = toolData(client, base, token, "get_or_generate_study_codes", args);
+        assertThat(codes.size()).isEqualTo(2);
+        assertThat(codes.get(0).asText()).isNotEqualTo(codes.get(1).asText());
+        var codeArgs = Json.newObject().put("code", codes.get(0).asText());
+        JsonNode info = toolData(client, base, token, "get_study_code", codeArgs);
+        assertThat(info.path("batchId").asLong()).isEqualTo(batchId);
+        assertThat(info.path("comment").asText()).isEqualTo("MCP participants");
+        assertThat(info.path("studyLinkPath").asText())
+                .isEqualTo(Common.getJatosUrlBasePath() + "publix/" + codes.get(0).asText());
+        for (boolean active : new boolean[]{false, true}) {
+            var toggle = codeArgs.deepCopy();
+            toggle.putObject("properties").put("active", active);
+            assertThat(toolData(client, base, token, "set_study_code_active", toggle).path("active").asBoolean())
+                    .isEqualTo(active);
+            assertThat(toolData(client, base, token, "get_study_code", codeArgs).path("active").asBoolean())
+                    .isEqualTo(active);
+        }
+        assertThat(tool(client, base, otherToken, "get_or_generate_study_codes", args).path("isError").asBoolean()).isTrue();
+        assertThat(tool(client, base, otherToken, "get_study_code", codeArgs).path("isError").asBoolean()).isTrue();
+        var toggle = codeArgs.deepCopy();
+        toggle.putObject("properties").put("active", false);
+        assertThat(tool(client, base, otherToken, "set_study_code_active", toggle).path("isError").asBoolean()).isTrue();
+        assertThat(toolData(client, base, token, "get_study_code", codeArgs).path("active").asBoolean()).isTrue();
+        args.putObject("properties").put("type", "GeneralMultiple");
+        JsonNode general = toolData(client, base, token, "get_or_generate_study_codes", args);
+        assertThat(toolData(client, base, token, "get_or_generate_study_codes", args)).isEqualTo(general);
     }
 
     /**

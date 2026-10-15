@@ -11,6 +11,7 @@ import play.mvc.*;
 import services.gui.mcp.McpApiClient;
 import services.gui.mcp.McpProtocolUtils;
 import services.gui.mcp.McpTools;
+import services.gui.mcp.McpResources;
 import services.gui.mcp.InvalidToolRequestException;
 import services.gui.mcp.InvalidToolInputException;
 import services.gui.mcp.ResolvedCall;
@@ -94,12 +95,14 @@ public class Mcp extends Controller {
             case "initialize" -> initialize(id, params, version);
             case "ping" -> success(id, JsonNodeFactory.instance.objectNode(), version);
             case "tools/list" -> listTools(id, params, version);
+            case "resources/list" -> McpResources.list(id, params, version);
+            case "resources/read" -> McpResources.read(id, params, version);
             default -> error(id, METHOD_NOT_FOUND, "Method not found");
         };
         int statusCode = OK;
         if (result.has("error") && VERSION_2026_07_28.equals(version)) {
             int errorCode = result.path("error").path("code").asInt();
-            statusCode = errorCode == METHOD_NOT_FOUND ? NOT_FOUND : BAD_REQUEST;
+            statusCode = errorCode == METHOD_NOT_FOUND || errorCode == RESOURCE_NOT_FOUND ? NOT_FOUND : BAD_REQUEST;
         }
         return completed(status(statusCode, result));
     }

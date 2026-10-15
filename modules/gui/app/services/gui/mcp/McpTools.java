@@ -131,19 +131,7 @@ public final class McpTools {
                     DOWNLOAD_LINK,
                     UnaryOperator.identity()
             ),
-            new Tool(
-                    "import_study",
-                    "Import a Base64 JATOS study archive. An existing study with the same UUID is updated, "
-                    + "not cloned. By default existing properties and assets are overwritten. "
-                    + "Inspect keep_properties and keep_assets before importing over an existing study.",
-                    List.of(ARCHIVE, booleanParam("keep_properties", false, "Keep existing study properties on UUID match."),
-                            booleanParam("keep_assets", false, "Keep existing study assets on UUID match."),
-                            booleanParam("keep_current_assets_name", true, "Keep the existing assets directory name when replacing assets."),
-                            booleanParam("rename_assets", true, "Rename the imported assets directory if its name belongs to a different study.")),
-                    args -> "/studies?keepProperties=%s&keepAssets=%s&keepCurrentAssetsName=%s&renameAssets=%s".formatted(
-                            args.get("keep_properties"), args.get("keep_assets"), args.get("keep_current_assets_name"), args.get("rename_assets")),
-                    "IMPORT"
-            ),
+
             // Study assets
             new Tool(
                     "list_study_assets",
@@ -160,6 +148,31 @@ public final class McpTools {
                     args -> "/studies/%s/assets/%s".formatted(args.get("study_id"), args.get("filepath")),
                     RAW_TEXT,
                     UnaryOperator.identity()
+            ),
+            // Study codes (participation links)
+            new Tool(
+                    "get_or_generate_study_codes",
+                    "Obtain study codes for a study and optional batch. Personal types create new codes on every call; "
+                    + "general and MTurk types reuse existing links or create them if needed. Requires USER permission. "
+                    + "Use get_study_code to obtain participation paths. Do not retry blindly after a timeout.",
+                    List.of(STUDY_ID, studyCodeProperties(true)),
+                    args -> "/studies/%s/studyCodes".formatted(args.get("study_id")),
+                    "POST"
+            ),
+            new Tool(
+                    "get_study_code",
+                    "Inspect a study code's type, batch, active flag, comment and participation paths. "
+                    + "Resolve returned paths against the public JATOS origin, preserving any deployment prefix.",
+                    List.of(STUDY_CODE),
+                    args -> "/studyCodes/%s".formatted(args.get("code"))
+            ),
+            new Tool(
+                    "set_study_code_active",
+                    "Enable or disable participation through a study code by setting properties.active. "
+                    + "Returns the updated code settings. Requires USER permission.",
+                    List.of(STUDY_CODE, studyCodeProperties(false)),
+                    args -> "/studyCodes/%s".formatted(args.get("code")),
+                    "PATCH"
             )
     );
 

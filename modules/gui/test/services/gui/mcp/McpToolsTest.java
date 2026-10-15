@@ -9,6 +9,46 @@ import static org.assertj.core.api.Assertions.*;
  * Unit tests for the tool catalog's API mappings and argument validation.
  */
 public class McpToolsTest {
+    /** Study-code operations preserve API JSON options and encode code path segments. */
+    @Test
+    public void resolvesStudyCodeOperations() {
+        var args = Json.newObject().put("study_id", 7);
+        var properties = args.putObject("properties").put("type", "PersonalSingle")
+                .put("batchId", 3).put("amount", 2).put("comment", "Participant group");
+        var generate = McpTools.resolveCall("get_or_generate_study_codes", args);
+        assertThat(generate.method()).isEqualTo("POST");
+        assertThat(generate.path()).isEqualTo("/studies/7/studyCodes");
+        assertThat(generate.body()).isEqualTo(properties);
+        var read = McpTools.resolveCall("get_study_code", Json.newObject().put("code", "abc?x#y"));
+        assertThat(read.path()).isEqualTo("/studyCodes/abc%3Fx%23y");
+        assertThat(read.method()).isEqualTo("GET");
+        var toggleArgs = Json.newObject().put("code", "abc");
+        toggleArgs.putObject("properties").put("active", false);
+        var toggle = McpTools.resolveCall("set_study_code_active", toggleArgs);
+        assertThat(toggle.method()).isEqualTo("PATCH");
+        assertThat(toggle.body()).isEqualTo(Json.parse("{\"active\":false}"));
+        for (String code : java.util.List.of("", "../other", "%2f", "..")) {
+            assertThatThrownBy(() -> McpTools.resolveCall("get_study_code", Json.newObject().put("code", code)))
+                    .isInstanceOf(InvalidToolInputException.class);
+        }
+        toggleArgs.putObject("properties").put("active", "false");
+        assertThatThrownBy(() -> McpTools.resolveCall("set_study_code_active", toggleArgs))
+                .isInstanceOf(InvalidToolInputException.class);
+        properties.remove("type");
+        assertThatThrownBy(() -> McpTools.resolveCall("get_or_generate_study_codes", args))
+                .isInstanceOf(InvalidToolInputException.class);
+    }
+
+    /** Removed upload tools cannot be discovered or invoked. */
+    @Test
+    public void excludesUploadTools() {
+        for (String name : java.util.List.of("import_study", "write_study_asset")) {
+            assertThat(McpTools.list().toString()).doesNotContain(name);
+            assertThatThrownBy(() -> McpTools.resolveCall(name, Json.newObject()))
+                    .isInstanceOf(InvalidToolRequestException.class);
+        }
+    }
+
     /** Write operations preserve explicit nulls and nested JSON rather than converting them to strings. */
     @Test
     public void resolvesMutations() {
@@ -24,19 +64,13 @@ public class McpToolsTest {
 
     }
 
-    /** Prevents accidental identity writes and rejects malformed archives before executing a mutation. */
+    /** Prevents accidental identity writes and preserves archive download links. */
     @Test
-    public void validatesWriteArgumentsAndImportOptions() {
+    public void validatesWriteArgumentsAndExport() {
         assertThatThrownBy(() -> McpTools.resolveCall("create_study", Json.parse("{\"properties\":{}}")))
                 .isInstanceOf(InvalidToolInputException.class);
         assertThatThrownBy(() -> McpTools.resolveCall("update_study", Json.parse("{\"study_id\":1,\"properties\":{\"id\":2}}")))
                 .isInstanceOf(InvalidToolInputException.class);
-        assertThatThrownBy(() -> McpTools.resolveCall("import_study", Json.newObject().put("archive_base64", "%%%")))
-                .isInstanceOf(InvalidToolInputException.class);
-        var imported = McpTools.resolveCall("import_study", Json.newObject().put("archive_base64", "UEs=")
-                .put("keep_properties", true));
-        assertThat(imported.method()).isEqualTo("IMPORT");
-        assertThat(imported.path()).isEqualTo("/studies?keepProperties=true&keepAssets=false&keepCurrentAssetsName=true&renameAssets=true");
         assertThat(McpTools.resolveCall("export_study", Json.newObject().put("study_id", 1)).format())
                 .isEqualTo(McpApiClient.ResponseFormat.DOWNLOAD_LINK);
     }

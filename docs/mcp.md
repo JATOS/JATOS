@@ -1,6 +1,6 @@
 # Embedded MCP server
 
-The GUI module exposes eighteen tools through `/jatos/mcp`, grouped like the API routes:
+The GUI module exposes twenty tools through `/jatos/mcp`, grouped like the API routes:
 
 | Concern | Tool | Arguments |
 | --- | --- | --- |
@@ -18,10 +18,12 @@ The GUI module exposes eighteen tools through `/jatos/mcp`, grouped like the API
 | Studies | `create_study` | `properties` |
 | Studies | `update_study` | `study_id`, `properties` |
 | Studies | `export_study` | `study_id` |
-| Studies | `import_study` | `archive_base64`, optional `keep_properties`, `keep_assets`, `keep_current_assets_name`, `rename_assets` |
 | Studies | `get_study_log` | `study_id`, optional `entry_limit` (1–1000, default 100) |
 | Study assets | `list_study_assets` | `study_id` |
 | Study assets | `read_study_asset` | `study_id`, `filepath` |
+| Study codes | `get_or_generate_study_codes` | `study_id`, `properties` (`type`, optional `batchId`, `amount`, `comment`) |
+| Study codes | `get_study_code` | `code` |
+| Study codes | `set_study_code_active` | `code`, `properties` (`active`) |
 
 Each tool calls the existing JATOS HTTP API using the caller's personal API token.
 API permissions, study membership and token expiry/revocation still apply.
@@ -44,13 +46,19 @@ allowed fields. Creation requires `title`. Updates send only supplied fields, in
 explicit nulls for nullable fields. API validation, roles, study locks and membership
 remain authoritative. No delete tools are exposed.
 
-Clone tools are not exposed. Study export/import preserves the study UUID.
+Clone tools are not exposed. Study export preserves the study UUID.
 
-Read tools advertise `readOnlyHint=true`; write tools advertise false. Updates and
-imports advertise `destructiveHint=true` because they can replace existing data.
+Read tools advertise `readOnlyHint=true`; write tools advertise false. Updates advertise `destructiveHint=true` because they can replace
+existing data.
 Writes are not advertised as idempotent and are never retried automatically. If a
 write times out or its response cannot be read, inspect the study before retrying:
 the API may already have applied the change.
+
+## File uploads
+
+Study archive imports and study asset uploads use JATOS' HTTP API directly; no MCP
+upload tools are exposed. Read `jatos://docs/api-usage` for endpoints, authentication,
+and streaming transfer guidance. Clients need their own HTTP capability and credentials.
 
 ## Study archives
 
@@ -63,18 +71,6 @@ normal API authorization (USER permission is required). The URL contains no toke
 download with an Authorization header or an authenticated JATOS browser session.
 No archive is downloaded into the MCP response, so export is not limited by the
 MCP response-size bound for archive bytes.
-
-`import_study` accepts standard Base64 archive text and posts decoded bytes to the
-existing study API as `application/zip`. An existing UUID is updated, not cloned.
-Defaults match the API: `keep_properties=false`, `keep_assets=false`,
-`keep_current_assets_name=true`, `rename_assets=true`. Set the first two options
-when existing properties or assets should be retained. The API validates the archive.
-
-The full JSON request, including Base64, must fit `jatos.mcp.maxRequestSize`
-(default 64 KiB). Base64 is approximately one third larger than the archive.
-For example, set `jatos.mcp.maxRequestSize = 16MiB` for larger imports and increase
-`jatos.mcp.apiTimeout` for slow imports. The API's own upload limits also apply.
-For very large archives, use the HTTP API directly rather than an MCP text payload.
 
 ## Enable and connect
 
@@ -165,11 +161,11 @@ Modern results include `resultType: "complete"` and server identity metadata.
 Legacy responses omit these fields. March 2025 tool results contain text JSON
 only, because structured tool output was introduced in June 2025.
 
-All revisions expose the same eighteen tools and ping. Responses are JSON; GET and
+All revisions expose the same twenty tools, API usage resource, and ping. Responses are JSON; GET and
 DELETE return 405 after authentication. There are no session IDs, SSE streams,
-prompts, resources, subscriptions, server-initiated requests or background tasks.
+prompts, subscriptions, server-initiated requests or background tasks.
 No legacy HTTP+SSE transport is offered. Optional protocol capabilities beyond
-these tools are not advertised.
+tools and resources are not advertised.
 
 Protocol references: [modern versioning](https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning),
 [modern HTTP transport](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http),
@@ -210,3 +206,30 @@ retain a valid request ID once the message has been parsed. Before parsing, the 
 is null. Expected API failures are logged once by the API client; unexpected failures
 are logged once by the controller with the exception type and stack trace. Raw exception
 messages, response bodies and authorization headers are excluded from these logs.
+
+## API usage resource
+
+The server advertises a read-only resource, `jatos://docs/api-usage` (`text/markdown`).
+Discover it with `resources/list` and retrieve it with `resources/read`, passing
+`{"uri":"jatos://docs/api-usage"}`. The same token authentication as tools applies.
+The resource describes the deployment's API base path, authentication, response
+formats, the installation’s `/openapi.yaml` route (including its deployment prefix),
+and streaming HTTP transfers for archives and assets,
+including the configured API file-size limits. It never returns the caller's token.
+Clients still need their own HTTP execution capability and credentials to perform
+these transfers. Resource subscriptions and pagination are not supported.
+
+## Participation links
+
+`get_or_generate_study_codes` uses the API's POST endpoint. PersonalSingle and
+PersonalMultiple create new codes; GeneralSingle, GeneralMultiple and MTurk reuse
+existing links or create them if needed. `properties.type` is required. Omit
+`batchId` to use the default batch; `amount` defaults to 1 (maximum 1000), and
+`comment` is limited to 255 characters. Amount and comment apply to personal types.
+Generation requires USER permission and must not be blindly retried after a timeout.
+
+Pass a returned code to `get_study_code` to inspect its settings and participation
+paths. The paths include the deployment prefix and resolve against the public
+JATOS origin. To disable or enable the link, call `set_study_code_active` with
+`{"code":"...","properties":{"active":false}}` or `active:true`. Updates require
+USER permission. API study membership checks apply to all three tools.

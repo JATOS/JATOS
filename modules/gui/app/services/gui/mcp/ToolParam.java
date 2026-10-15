@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -53,12 +52,44 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
                     .put("description", "Unencoded path relative to the study assets directory; no traversal or URL."),
             ToolParam::encodeAssetPath);
 
-    static final ToolParam ARCHIVE = new ToolParam("archive_base64", true,
-            schema -> schema.put("type", "string")
-                    .put("minLength", 1)
-                    .put("contentEncoding", "base64")
-                    .put("description", "Base64-encoded JATOS .jzip/ZIP archive; subject to jatos.mcp.maxRequestSize."),
-            ToolParam::validateArchive);
+    static final ToolParam STUDY_CODE = new ToolParam(
+            "code",
+            true,
+            schema -> schema.put("type", "string").put("minLength", 1)
+                    .put("description", "Study code returned by get_or_generate_study_codes; not a full participation URL."),
+            value -> {
+                if (value == null || !value.isTextual() || value.asText().isBlank()
+                        || value.asText().equals(".") || value.asText().equals("..")
+                        || value.asText().codePoints().anyMatch(c -> Character.isISOControl(c)
+                        || c == '/' || c == '\\' || c == '%')) {
+                    throw new InvalidToolInputException("code must be a non-empty study code, not a path or URL");
+                }
+                return URLEncoder.encode(value.asText(), StandardCharsets.UTF_8).replace("+", "%20");
+            });
+
+    /**
+     * Defines study-code request bodies while leaving domain validation to the API.
+     */
+    static ToolParam studyCodeProperties(boolean generate) {
+        ToolParam properties = properties(generate ? List.of("type", "batchId", "comment", "amount")
+                : List.of("active"), false);
+        String requiredField = generate ? "type" : "active";
+        return new ToolParam("properties", true, schema -> {
+            properties.describe(schema);
+            schema.put("description", generate
+                    ? "Study-code options. Omit batchId for the default batch. amount and comment apply only to personal types."
+                    : "Set active to true to enable participation or false to disable it.");
+            schema.putArray("required").add(requiredField);
+        }, value -> {
+            properties.validate(value);
+            JsonNode field = value.get(requiredField);
+            if (field == null || (generate ? !field.isTextual() : !field.isBoolean())) {
+                throw new InvalidToolInputException("properties." + requiredField
+                        + (generate ? " must be a string" : " must be a boolean"));
+            }
+            return "";
+        });
+    }
 
     /**
      * Describes this parameter in the tool's input schema.
@@ -130,22 +161,18 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
             case "allowedWorkerTypes" -> {
                 schema.put("type", "array").putObject("items").put("type", "string");
             }
+            case "type" -> {
+                schema.put("type", "string");
+                var values = schema.putArray("enum");
+                List.of("PersonalSingle", "PersonalMultiple", "GeneralSingle", "GeneralMultiple", "MTurk",
+                        "ps", "pm", "gs", "gm", "mt").forEach(values::add);
+            }
+            case "batchId" -> schema.put("type", "integer").put("minimum", 1);
+            case "amount" -> schema.put("type", "integer").put("minimum", 1).put("maximum", 1000).put("default", 1);
+            case "comment" -> schema.put("type", "string").put("maxLength", 255);
             case "title", "dirName" -> schema.put("type", "string");
             default -> schema.putArray("type").add("string").add("null");
         }
-    }
-
-    /**
-     * Defines an optional boolean API query parameter with an explicit default.
-     */
-    static ToolParam booleanParam(String name, boolean defaultValue, String description) {
-        return new ToolParam(name, false,
-                schema -> schema.put("type", "boolean").put("default", defaultValue).put("description", description),
-                value -> {
-                    if (value == null) return Boolean.toString(defaultValue);
-                    if (!value.isBoolean()) throw new InvalidToolInputException(name + " must be a boolean");
-                    return value.asText();
-                });
     }
 
     /**
@@ -181,18 +208,4 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
                 .replace("+", "%20")).collect(Collectors.joining("/"));
     }
 
-    /**
-     * Validates a Base64 archive before it is passed to the API client.
-     */
-    private static String validateArchive(JsonNode value) {
-        if (value == null || !value.isTextual() || value.asText().isEmpty()) {
-            throw new InvalidToolInputException("archive_base64 must be a non-empty Base64 string");
-        }
-        try {
-            Base64.getDecoder().decode(value.asText());
-        } catch (IllegalArgumentException e) {
-            throw new InvalidToolInputException("archive_base64 is not valid Base64");
-        }
-        return value.asText();
-    }
 }

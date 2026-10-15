@@ -20,9 +20,9 @@ public class McpApiClientTest {
     private final McpApiClient client = new McpApiClient(mock(WSClient.class), mock(Materializer.class),
             new json.common.DefaultJson());
 
-    /** Import sends decoded binary bytes with the archive media type and never retries a failed POST. */
+    /** Study creation sends JSON properties and never retries a failed POST. */
     @Test
-    public void uploadsArchiveBytesWithoutRetry() {
+    public void sendsJsonWithoutRetry() {
         try (var common = mockStatic(Common.class)) {
             common.when(Common::getJatosHttpAddress).thenReturn("127.0.0.1");
             common.when(Common::getJatosHttpPort).thenReturn(9000);
@@ -33,22 +33,20 @@ public class McpApiClientTest {
             when(ws.url(anyString())).thenReturn(request);
             when(request.stream()).thenReturn(java.util.concurrent.CompletableFuture.failedFuture(new TimeoutException()));
             var api = new McpApiClient(ws, mock(Materializer.class), new json.common.DefaultJson());
-            byte[] archive = new byte[]{0x50, 0x4b, 0, (byte) 0xff};
-            var call = McpTools.resolveCall("import_study", Json.newObject().put("archive_base64",
-                    java.util.Base64.getEncoder().encodeToString(archive)));
+            var args = Json.newObject();
+            args.putObject("properties").put("title", "Test").put("dirName", "test");
+            var call = McpTools.resolveCall("create_study", args);
             assertThatThrownBy(() -> api.execute(call, "Bearer test").toCompletableFuture().join())
                     .isInstanceOf(CompletionException.class).hasCauseInstanceOf(McpApiClient.ApiFailure.class);
-            var body = org.mockito.ArgumentCaptor.forClass(play.libs.ws.SourceBodyWritable.class);
-            verify(request).setBody(body.capture());
-            assertThat(body.getValue().contentType()).isEqualTo("application/zip");
-            verify(request).addHeader("Content-Length", Integer.toString(archive.length));
+            verify(request).setContentType("application/json");
+            verify(request).setBody(Json.stringify(args.get("properties")));
             verify(request).setMethod("POST");
             verify(request).addHeader("Authorization", "Bearer test");
             verify(request, times(1)).stream();
         }
     }
 
-    /** The API returns 201 for newly created/imported studies, with a normal data envelope. */
+    /** The API returns 201 for newly created studies, with a normal data envelope. */
     @Test
     public void acceptsCreatedResponses() {
         var body = client.decode(ByteString.fromString("{\"data\":{\"id\":9}}"), 201, ENVELOPED_JSON);
