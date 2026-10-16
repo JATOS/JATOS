@@ -10,6 +10,29 @@ import static org.assertj.core.api.Assertions.*;
  */
 public class McpToolsTest {
     /**
+     * Membership tools use bodyless API requests; user listings expose only IDs.
+     */
+    @Test
+    public void resolvesMembershipTools() {
+        var args = Json.newObject().put("study_id", 3).put("user_id", 7);
+        for (String name : java.util.List.of("add_study_member", "remove_study_member")) {
+            var call = McpTools.resolveCall(name, args);
+            assertThat(call.path()).isEqualTo("/studies/3/members/7");
+            assertThat(call.method()).isEqualTo(name.startsWith("add") ? "PUT" : "DELETE");
+            assertThat(call.body()).isNull();
+        }
+        assertThat(McpTools.resolveCall("list_study_members", Json.newObject().put("study_id", 3)).path())
+                .isEqualTo("/studies/3/members");
+        var list = McpTools.resolveCall("list_users", null);
+        assertThat(list.path()).isEqualTo("/users");
+        assertThat(list.postProcess().apply(Json.parse("[{\"id\":7,\"email\":\"private@example.org\"}]")))
+                .isEqualTo(Json.parse("[7]"));
+        args.put("user_id", 0);
+        assertThatThrownBy(() -> McpTools.resolveCall("add_study_member", args))
+                .isInstanceOf(InvalidToolInputException.class);
+    }
+
+    /**
      * Session writes send the complete object and expected version, including empty sessions.
      */
     @Test

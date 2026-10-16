@@ -1,6 +1,6 @@
 # Embedded MCP server
 
-The GUI module exposes twenty-eight tools through `/jatos/mcp`, grouped like the API routes:
+The GUI module exposes thirty-two tools through `/jatos/mcp`, grouped like the API routes:
 
 | Concern | Tool | Arguments |
 | --- | --- | --- |
@@ -22,6 +22,9 @@ The GUI module exposes twenty-eight tools through `/jatos/mcp`, grouped like the
 | Studies | `get_study_log` | `study_id`, optional `entry_limit` (1–1000, default 100) |
 | Study assets | `list_study_assets` | `study_id` |
 | Study assets | `read_study_asset` | `study_id`, `filepath` |
+| Study membership | `list_study_members` | `study_id` |
+| Study membership | `add_study_member` | `study_id`, `user_id` |
+| Study membership | `remove_study_member` | `study_id`, `user_id` |
 | Groups | `list_groups` | `batch_id` |
 | Groups | `get_group_session` | `group_id` |
 | Groups | `update_group_session` | `group_id`, `version`, `properties` |
@@ -32,6 +35,7 @@ The GUI module exposes twenty-eight tools through `/jatos/mcp`, grouped like the
 | Results | `get_result_data` | `properties` (result selectors) |
 | Results | `get_result_files` | `properties` (result selectors) |
 | Results | `get_results` | `properties` (result selectors) |
+| Users | `list_users` | none (ADMIN permission required) |
 
 Tools use the existing JATOS HTTP API with the caller's personal API token; result
 export tools return authenticated request instructions for direct downloads.
@@ -53,12 +57,12 @@ truncation notice. Batch sessions retain the API's session data and version fiel
 `properties` is a JSON object using the API's field names; discovery describes the
 allowed fields. Creation requires `title`. Updates send only supplied fields, including
 explicit nulls for nullable fields. API validation, roles, study locks and membership
-remain authoritative. No delete tools are exposed.
+remain authoritative. The only DELETE operation exposed removes study membership; it does not delete the user or study.
 
 Clone tools are not exposed. Study export preserves the study UUID.
 
-Read tools advertise `readOnlyHint=true`; write tools advertise false. Updates advertise `destructiveHint=true` because they can replace
-existing data.
+Read tools advertise `readOnlyHint=true`; write tools advertise false. Updates and membership removal advertise `destructiveHint=true` because they can
+replace data or revoke access.
 Writes are not advertised as idempotent and are never retried automatically. If a
 write times out or its response cannot be read, inspect the study before retrying:
 the API may already have applied the change.
@@ -170,7 +174,7 @@ Modern results include `resultType: "complete"` and server identity metadata.
 Legacy responses omit these fields. March 2025 tool results contain text JSON
 only, because structured tool output was introduced in June 2025.
 
-All revisions expose the same twenty-eight tools, API usage resource, and ping. Responses are JSON; GET and
+All revisions expose the same thirty-two tools, API usage resource, and ping. Responses are JSON; GET and
 DELETE return 405 after authentication. There are no session IDs, SSE streams,
 prompts, subscriptions, server-initiated requests or background tasks.
 No legacy HTTP+SSE transport is offered. Optional protocol capabilities beyond
@@ -280,3 +284,13 @@ optional version parameter, these tools require a version to prevent accidental
 concurrent overwrites. A stale version returns the API's conflict error; reread
 and reconcile before trying again. Successful updates return the new version.
 Updates require USER permission; API access checks apply to both reads and writes.
+
+## Study membership
+
+`list_users` returns only numeric user IDs and requires ADMIN permission, as does
+the underlying API. `list_study_members` returns `{id, uuid, members}` for a study.
+`add_study_member` and `remove_study_member` accept `study_id` and `user_id` and
+return the updated membership object. They require USER permission and access to
+the study. Adding an existing member or removing a non-member leaves membership
+unchanged. Removal revokes membership-based access; API safeguards remain authoritative.
+These tools do not create or delete user accounts.

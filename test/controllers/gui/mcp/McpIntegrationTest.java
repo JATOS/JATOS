@@ -90,7 +90,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(28);
+            assertThat(tools.size()).isEqualTo(32);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -231,6 +231,7 @@ public class McpIntegrationTest {
             assertThat(tool(client, base, token, "get_result_data", resultArgs).path("isError").asBoolean()).isTrue();
             checkStudyCodeTools(client, base, token, otherToken, studyId, batchId);
             checkGroupAndSessionTools(app, client, base, token, otherToken);
+            checkMembershipTools(client, base, token, otherToken, studyId, other.getId());
             assertThat(post(client, base + "/mcp", "invalid", "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}").statusCode()).isEqualTo(401);
             // Origin validation happens before the API call, including when a valid token is present.
             HttpResponse<String> origin = client.send(HttpRequest.newBuilder(URI.create(base + "/mcp"))
@@ -354,7 +355,9 @@ public class McpIntegrationTest {
         assertThat(toolData(client, base, token, "get_or_generate_study_codes", args)).isEqualTo(general);
     }
 
-    /** Exercises group discovery and versioned session replacement against the real API. */
+    /**
+     * Exercises group discovery and versioned session replacement against the real API.
+     */
     private void checkGroupAndSessionTools(Application app, HttpClient client, String base, String token,
                                            String otherToken) throws Exception {
         var create = Json.newObject();
@@ -397,6 +400,34 @@ public class McpIntegrationTest {
             toolData(client, base, token, update, writeArgs);
             assertThat(toolData(client, base, token, read, readArgs).path("sessionData").size()).isZero();
         }
+    }
+
+    /**
+     * Membership changes grant/revoke access, while user listing remains admin-only.
+     */
+    private void checkMembershipTools(HttpClient client, String base, String token, String otherToken,
+                                      long studyId, long userId) throws Exception {
+        JsonNode users = toolData(client, base, token, "list_users", Json.newObject());
+        assertThat(users.isArray()).isTrue();
+        assertThat(java.util.stream.StreamSupport.stream(users.spliterator(), false)
+                .allMatch(JsonNode::isIntegralNumber)).isTrue();
+        assertThat(java.util.stream.StreamSupport.stream(users.spliterator(), false).map(JsonNode::asLong).toList()).contains(userId);
+        assertThat(tool(client, base, otherToken, "list_users", Json.newObject()).path("isError").asBoolean()).isTrue();
+        var studyArgs = Json.newObject().put("study_id", studyId);
+        var memberArgs = studyArgs.deepCopy().put("user_id", userId);
+        assertThat(tool(client, base, otherToken, "list_study_members", studyArgs).path("isError").asBoolean()).isTrue();
+        for (String name : new String[]{"add_study_member", "remove_study_member"}) {
+            assertThat(tool(client, base, otherToken, name, memberArgs).path("isError").asBoolean()).isTrue();
+        }
+        JsonNode added = toolData(client, base, token, "add_study_member", memberArgs);
+        assertThat(java.util.stream.StreamSupport.stream(added.path("members").spliterator(), false).map(JsonNode::asLong).toList()).contains(userId);
+        assertThat(toolData(client, base, token, "add_study_member", memberArgs)).isEqualTo(added);
+        assertThat(toolData(client, base, otherToken, "list_study_members", studyArgs)).isEqualTo(added);
+        assertThat(toolData(client, base, otherToken, "get_study", studyArgs).path("id").asLong()).isEqualTo(studyId);
+        JsonNode removed = toolData(client, base, token, "remove_study_member", memberArgs);
+        assertThat(java.util.stream.StreamSupport.stream(removed.path("members").spliterator(), false).map(JsonNode::asLong).toList()).doesNotContain(userId);
+        assertThat(toolData(client, base, token, "remove_study_member", memberArgs)).isEqualTo(removed);
+        assertThat(tool(client, base, otherToken, "get_study", studyArgs).path("isError").asBoolean()).isTrue();
     }
 
     /**

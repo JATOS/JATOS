@@ -76,7 +76,7 @@ record Tool(String name, String description, List<ToolParam> params,
             if (param.required()) required.add(param.name());
         }
         node.putObject("annotations").put("readOnlyHint", readOnly)
-                .put("destructiveHint", method().equals("PATCH"))
+                .put("destructiveHint", method().equals("PATCH") || method().equals("DELETE"))
                 .put("idempotentHint", readOnly).put("openWorldHint", false);
         return node;
     }

@@ -32,6 +32,7 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
     static final List<String> BATCH_FIELDS = List.of("title", "active", "maxActiveMembers", "maxTotalMembers",
             "maxTotalWorkers", "allowedWorkerTypes", "comments", "batchInput");
 
+    static final ToolParam USER_ID = positiveId("user_id");
     static final ToolParam STUDY_ID = positiveId("study_id");
     static final ToolParam BATCH_ID = positiveId("batch_id");
     static final ToolParam COMPONENT_ID = positiveId("component_id");

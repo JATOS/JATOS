@@ -157,6 +157,29 @@ public final class McpTools {
                     RAW_TEXT,
                     UnaryOperator.identity()
             ),
+            // Study membership
+            new Tool(
+                    "list_study_members",
+                    "List the user IDs belonging to a study. Returns the study ID, UUID and members array.",
+                    List.of(STUDY_ID),
+                    args -> "/studies/%s/members".formatted(args.get("study_id"))
+            ),
+            new Tool(
+                    "add_study_member",
+                    "Grant an existing user membership in a study. Requires USER permission and study access. "
+                            + "Already-existing membership is unchanged. Returns the updated members list.",
+                    List.of(STUDY_ID, USER_ID),
+                    args -> "/studies/%s/members/%s".formatted(args.get("study_id"), args.get("user_id")),
+                    "PUT"
+            ),
+            new Tool(
+                    "remove_study_member",
+                    "Remove a user's membership in a study, revoking membership-based access. "
+                            + "Requires USER permission and study access. Returns the updated members list; API membership safeguards apply.",
+                    List.of(STUDY_ID, USER_ID),
+                    args -> "/studies/%s/members/%s".formatted(args.get("study_id"), args.get("user_id")),
+                    "DELETE"
+            ),
             // Groups
             new Tool(
                     "list_groups",
@@ -250,6 +273,15 @@ public final class McpTools {
                     UnaryOperator.identity(),
                     "POST",
                     true
+            ),
+            // Users
+            new Tool(
+                    "list_users",
+                    "List all JATOS user IDs for membership operations. Requires ADMIN permission. Returns only numeric IDs.",
+                    List.of(),
+                    args -> "/users",
+                    ENVELOPED_JSON,
+                    McpTools::userIds
             )
     );
 
@@ -278,6 +310,13 @@ public final class McpTools {
         Tool tool = TOOLS_BY_NAME.get(name);
         if (tool == null) throw new InvalidToolRequestException("Unknown tool: " + name);
         return tool.resolve(arguments);
+    }
+
+    /** Extracts user IDs from the API user listing without exposing additional profile fields. */
+    private static JsonNode userIds(JsonNode data) {
+        ArrayNode ids = JsonNodeFactory.instance.arrayNode();
+        for (JsonNode user : data) ids.add(user.get("id"));
+        return ids;
     }
 
     /**
