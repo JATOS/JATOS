@@ -32,6 +32,16 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
     static final List<String> BATCH_FIELDS = List.of("title", "active", "maxActiveMembers", "maxTotalMembers",
             "maxTotalWorkers", "allowedWorkerTypes", "comments", "batchInput");
 
+    static final ToolParam COMPONENT_RESULT_ID = positiveId("component_result_id");
+    static final ToolParam FILENAME = new ToolParam("filename", true,
+            schema -> schema.put("type", "string").put("minLength", 1)
+                    .put("description", "Exact filename from result metadata, without directory segments."),
+            value -> {
+                String encoded = encodeAssetPath(value);
+                if (encoded.contains("/")) throw new InvalidToolInputException("filename must be a single filename");
+                return encoded;
+            });
+
     static final ToolParam USER_ID = positiveId("user_id");
     static final ToolParam STUDY_ID = positiveId("study_id");
     static final ToolParam BATCH_ID = positiveId("batch_id");
@@ -92,6 +102,28 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
             });
 
     /**
+     * Defines account fields while leaving password policy and account rules to the API.
+     */
+    static ToolParam userProperties(boolean create) {
+        ToolParam properties = properties(create
+                ? List.of("username", "name", "email", "password", "authMethod", "role")
+                : List.of("name", "email", "password", "active"), false);
+        return new ToolParam("properties", true, schema -> {
+            properties.describe(schema);
+            if (create) schema.putArray("required").add("username").add("name");
+        }, value -> {
+            properties.validate(value);
+            if (create) {
+                for (String field : List.of("username", "name")) {
+                    if (!value.path(field).isTextual() || value.path(field).asText().isBlank())
+                        throw new InvalidToolInputException("properties." + field + " must be a non-empty string");
+                }
+            }
+            return "";
+        });
+    }
+
+    /**
      * Defines study-code request bodies while leaving domain validation to the API.
      */
     static ToolParam studyCodeProperties(boolean generate) {
@@ -102,7 +134,7 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
             properties.describe(schema);
             schema.put("description", generate
                     ? "Study-code options. Omit batchId for the default batch. amount and comment apply only to personal types."
-                    : "Set active to true to enable participation or false to disable it.");
+                    : "Set active to true to enable or false to disable.");
             schema.putArray("required").add(requiredField);
         }, value -> {
             properties.validate(value);
@@ -172,6 +204,26 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
     }
 
     /**
+     * Defines an optional boolean query flag, defaulting to false.
+     */
+    static ToolParam optionalBoolean(String name, String description) {
+        return optionalBoolean(name, description, false);
+    }
+
+    /**
+     * Defines an optional boolean query flag with the API's default.
+     */
+    static ToolParam optionalBoolean(String name, String description, boolean defaultValue) {
+        return new ToolParam(name, false,
+                schema -> schema.put("type", "boolean").put("default", defaultValue).put("description", description),
+                value -> {
+                    if (value == null) return Boolean.toString(defaultValue);
+                    if (!value.isBoolean()) throw new InvalidToolInputException(name + " must be a boolean");
+                    return Boolean.toString(value.asBoolean());
+                });
+    }
+
+    /**
      * Defines a required positive JATOS ID with matching discovery and validation rules.
      */
     static ToolParam positiveId(String name) {
@@ -234,7 +286,14 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
             case "batchId" -> schema.put("type", "integer").put("minimum", 1);
             case "amount" -> schema.put("type", "integer").put("minimum", 1).put("maximum", 1000).put("default", 1);
             case "comment" -> schema.put("type", "string").put("maxLength", 255);
-            case "title", "dirName" -> schema.put("type", "string");
+            case "authMethod", "role" -> {
+                schema.put("type", "string").put("default", field.equals("role") ? "USER" : "DB");
+                var values = schema.putArray("enum");
+                (field.equals("role") ? List.of("VIEWER", "USER") : List.of("DB", "LDAP")).forEach(values::add);
+            }
+            case "password" -> schema.put("type", "string").put("writeOnly", true)
+                    .put("description", "Required for new DB accounts; omit on update to retain the current password. API password policy applies.");
+            case "username", "name", "title", "dirName" -> schema.put("type", "string");
             default -> schema.putArray("type").add("string").add("null");
         }
     }

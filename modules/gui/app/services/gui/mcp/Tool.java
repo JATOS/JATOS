@@ -24,11 +24,18 @@ import static services.gui.mcp.McpApiClient.ResponseFormat.ENVELOPED_JSON;
  * @param format      describes how to decode the API response
  * @param postProcess transforms successful API data into the tool's output
  * @param method      HTTP verb
+ * @param adminOnly   whether MCP requires ADMIN permission before executing this operation
  * @param readOnly    whether the operation only reads data, regardless of its HTTP verb
  */
 record Tool(String name, String description, List<ToolParam> params,
             Function<Map<String, String>, String> path, McpApiClient.ResponseFormat format,
-            UnaryOperator<JsonNode> postProcess, String method, boolean readOnly) {
+            UnaryOperator<JsonNode> postProcess, String method, boolean readOnly, boolean adminOnly) {
+    Tool(String name, String description, List<ToolParam> params,
+         Function<Map<String, String>, String> path, McpApiClient.ResponseFormat format,
+         UnaryOperator<JsonNode> postProcess, String method, boolean readOnly) {
+        this(name, description, params, path, format, postProcess, method, readOnly, false);
+    }
+
     /**
      * Defaults existing operations to read-only for GET and mutating for other verbs.
      */
@@ -96,7 +103,7 @@ record Tool(String name, String description, List<ToolParam> params,
             normalized.put(param.name(), param.validate(arguments.get(param.name())));
         }
         JsonNode body = arguments.get("properties");
-        return new ResolvedCall(path().apply(normalized), format(), postProcess(), method(), body);
+        return new ResolvedCall(path().apply(normalized), format(), postProcess(), method(), body, adminOnly);
     }
 
 }

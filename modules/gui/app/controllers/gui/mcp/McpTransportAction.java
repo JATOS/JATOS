@@ -1,6 +1,7 @@
 package controllers.gui.mcp;
 
 import general.common.Common;
+import play.libs.typedmap.TypedKey;
 import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -10,6 +11,7 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.StreamSupport;
 
 import static play.mvc.Http.Status.*;
 
@@ -17,6 +19,8 @@ import static play.mvc.Http.Status.*;
  * Applies MCP access gates and token authentication before invoking either endpoint.
  */
 public class McpTransportAction extends Action.Simple {
+
+    static final TypedKey<Boolean> IS_ADMIN = TypedKey.create("mcpAdmin");
     private final McpApiClient api;
 
     /**
@@ -56,7 +60,9 @@ public class McpTransportAction extends Action.Simple {
             return CompletableFuture.completedFuture(unauthorized().withHeader("WWW-Authenticate", "Bearer"));
         }
         return api.get("/admin/token", authorizationHeader).thenCompose(reply -> switch (reply.status()) {
-            case 200 -> handleAuthenticated(request);
+            case 200 -> handleAuthenticated(request.addAttr(IS_ADMIN,
+                    StreamSupport.stream(reply.body().path("data").path("roles").spliterator(), false)
+                            .anyMatch(role -> "ADMIN".equals(role.asText()))));
             case 401 -> CompletableFuture.completedFuture(unauthorized().withHeader("WWW-Authenticate", "Bearer"));
             case 403 -> CompletableFuture.completedFuture(forbidden());
             default -> CompletableFuture.completedFuture(status(BAD_GATEWAY));

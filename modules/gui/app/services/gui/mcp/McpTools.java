@@ -21,6 +21,14 @@ public final class McpTools {
 
     // Keep discovery in the same concern order as the API endpoints.
     private static final List<Tool> TOOLS = List.of(
+            // Current token
+            new Tool(
+                    "get_current_token",
+                    "Read metadata of the current API token, including its owner, roles and expiry. Does not return the"
+                            + " token secret or hash.",
+                    List.of(),
+                    args -> "/admin/token"
+            ),
             // Batches
             new Tool(
                     "list_batches",
@@ -42,8 +50,9 @@ public final class McpTools {
             ),
             new Tool(
                     "update_batch_session",
-                    "Replace the entire shared batch session with properties. Read get_batch_session first and supply its version. "
-                            + "Omitted keys are removed; {} clears the session. A stale version is rejected. Requires USER permission.",
+                    "Replace the entire shared batch session with properties. Read get_batch_session first and supply "
+                            + "its version. Omitted keys are removed; {} clears the session. A stale version is rejected. "
+                            + "Requires USER permission.",
                     List.of(BATCH_ID, SESSION_VERSION, SESSION_PROPERTIES),
                     args -> "/batches/%s/session?version=%s".formatted(args.get("batch_id"), args.get("version")),
                     "PATCH"
@@ -54,6 +63,17 @@ public final class McpTools {
                     List.of(STUDY_ID, properties(BATCH_FIELDS, true)),
                     args -> "/studies/%s/batches".formatted(args.get("study_id")),
                     "POST"
+            ),
+            new Tool(
+                    "set_batch_active",
+                    "Enable or disable a batch using properties.active. Requires USER permission and study access.",
+                    List.of(BATCH_ID, studyCodeProperties(false)),
+                    args -> "/batches/%s".formatted(args.get("batch_id")),
+                    ENVELOPED_JSON,
+                    UnaryOperator.identity(),
+                    "PATCH",
+                    false,
+                    false
             ),
             new Tool(
                     "update_batch",
@@ -83,6 +103,17 @@ public final class McpTools {
                     "POST"
             ),
             new Tool(
+                    "set_component_active",
+                    "Enable or disable a component using properties.active. Requires USER permission and study access.",
+                    List.of(COMPONENT_ID, studyCodeProperties(false)),
+                    args -> "/components/%s".formatted(args.get("component_id")),
+                    ENVELOPED_JSON,
+                    UnaryOperator.identity(),
+                    "PATCH",
+                    false,
+                    false
+            ),
+            new Tool(
                     "update_component",
                     "Update only the supplied component properties. htmlFileRename=true also renames the HTML file.",
                     List.of(COMPONENT_ID, properties(java.util.stream.Stream.concat(COMPONENT_FIELDS.stream(),
@@ -102,9 +133,13 @@ public final class McpTools {
             ),
             new Tool(
                     "get_study",
-                    "Read a study's properties and configuration.",
-                    List.of(STUDY_ID),
-                    args -> "/studies/%s/properties".formatted(args.get("study_id"))
+                    "Read a study's properties and configuration. Optionally include full component and batch properties; "
+                            + "does not include assets, results or session data.",
+                    List.of(STUDY_ID,
+                            optionalBoolean("with_components", "Include full component properties in execution order."),
+                            optionalBoolean("with_batches", "Include full batch properties.")),
+                    args -> "/studies/%s/properties?withComponentProperties=%s&withBatchProperties=%s"
+                            .formatted(args.get("study_id"), args.get("with_components"), args.get("with_batches"))
             ),
             new Tool(
                     "get_study_log",
@@ -124,6 +159,17 @@ public final class McpTools {
                     "POST"
             ),
             new Tool(
+                    "set_study_active",
+                    "Enable or disable a study using properties.active. Requires ADMIN permission.",
+                    List.of(STUDY_ID, studyCodeProperties(false)),
+                    args -> "/studies/%s/properties".formatted(args.get("study_id")),
+                    ENVELOPED_JSON,
+                    UnaryOperator.identity(),
+                    "PATCH",
+                    false,
+                    true
+            ),
+            new Tool(
                     "update_study",
                     "Update only the supplied study properties. Changing dirName can rename the assets directory.",
                     List.of(STUDY_ID, properties(STUDY_FIELDS, false)),
@@ -131,15 +177,42 @@ public final class McpTools {
                     "PATCH"
             ),
             new Tool(
+                    "study_import",
+                    "Return HTTP instructions to import a local .jzip archive. Does not upload or import it. "
+                            + "The client must send the binary file directly to the API with USER permission. "
+                            + "Existing study properties and assets are overwritten unless the keep options are enabled.",
+                    List.of(optionalBoolean("keep_properties", "Preserve existing study properties on overwrite."),
+                            optionalBoolean("keep_assets", "Preserve existing study assets on overwrite."),
+                            optionalBoolean("keep_current_assets_name", "Keep the existing assets directory name on overwrite.", true),
+                            optionalBoolean("rename_assets", "Rename the assets directory if its name belongs to another study.", true)),
+                    args -> "/studies?keepProperties=%s&keepAssets=%s&keepCurrentAssetsName=%s&renameAssets=%s"
+                            .formatted(args.get("keep_properties"), args.get("keep_assets"),
+                                    args.get("keep_current_assets_name"), args.get("rename_assets")),
+                    UPLOAD_REQUEST,
+                    McpTools::studyImportInstructions,
+                    "POST",
+                    true
+            ),
+            new Tool(
                     "export_study",
                     "Return an authenticated API download link for a study and its assets (.jzip archive), not results. "
-                            + "Download with your API Bearer token or signed-in JATOS session; credentials are not included in the link.",
+                            + "Download with your API Bearer token or signed-in JATOS session; credentials are not "
+                            + "included in the link.",
                     List.of(STUDY_ID),
                     args -> "/studies/%s/properties".formatted(args.get("study_id")),
                     DOWNLOAD_LINK,
                     UnaryOperator.identity()
             ),
 
+            new Tool(
+                    "download_study_log",
+                    "Return an authenticated GET download URL for the complete study log. Download directly through the API; "
+                            + "permissions and file existence are checked when downloading.",
+                    List.of(STUDY_ID),
+                    args -> "/studies/%s/log?download=true".formatted(args.get("study_id")),
+                    DOWNLOAD_REQUEST,
+                    UnaryOperator.identity()
+            ),
             // Study assets
             new Tool(
                     "list_study_assets",
@@ -156,6 +229,28 @@ public final class McpTools {
                     args -> "/studies/%s/assets/%s".formatted(args.get("study_id"), args.get("filepath")),
                     RAW_TEXT,
                     UnaryOperator.identity()
+            ),
+            new Tool(
+                    "download_study_asset",
+                    "Return an authenticated GET download URL for any study asset, including binary and large files. "
+                            + "Use an unencoded relative filepath from list_study_assets. Permissions and existence are "
+                            + "checked when downloading.",
+                    List.of(STUDY_ID, FILEPATH),
+                    args -> "/studies/%s/assets/%s".formatted(args.get("study_id"), args.get("filepath")),
+                    DOWNLOAD_REQUEST,
+                    UnaryOperator.identity()
+            ),
+            new Tool(
+                    "upload_study_asset",
+                    "Return multipart HTTP upload instructions for a study asset. Does not upload a file. "
+                            + "The client must execute the request with USER permission and study access. "
+                            + "Use an unencoded relative filepath including the destination filename. Existing files are overwritten.",
+                    List.of(STUDY_ID, FILEPATH),
+                    args -> "/studies/%s/assets/%s".formatted(args.get("study_id"), args.get("filepath")),
+                    UPLOAD_REQUEST,
+                    McpTools::assetUploadInstructions,
+                    "POST",
+                    true
             ),
             // Study membership
             new Tool(
@@ -175,7 +270,8 @@ public final class McpTools {
             new Tool(
                     "remove_study_member",
                     "Remove a user's membership in a study, revoking membership-based access. "
-                            + "Requires USER permission and study access. Returns the updated members list; API membership safeguards apply.",
+                            + "Requires USER permission and study access. Returns the updated members list; API "
+                            + "membership safeguards apply.",
                     List.of(STUDY_ID, USER_ID),
                     args -> "/studies/%s/members/%s".formatted(args.get("study_id"), args.get("user_id")),
                     "DELETE"
@@ -228,6 +324,15 @@ public final class McpTools {
                     "PATCH"
             ),
             // Results
+            new Tool(
+                    "get_result_file",
+                    "Return an authenticated GET download URL for one result file. Supply the component-result ID and exact filename "
+                            + "from get_result_metadata. Permissions and file existence are checked when downloading.",
+                    List.of(COMPONENT_RESULT_ID, FILENAME),
+                    args -> "/results/files/%s?componentResultId=%s".formatted(args.get("filename"), args.get("component_result_id")),
+                    DOWNLOAD_REQUEST,
+                    UnaryOperator.identity()
+            ),
             new Tool(
                     "get_result_metadata",
                     "Inspect metadata of selected study runs and component results, including uploaded-file metadata. "
@@ -282,6 +387,40 @@ public final class McpTools {
                     args -> "/users",
                     ENVELOPED_JSON,
                     McpTools::userIds
+            ),
+            new Tool(
+                    "add_user",
+                    "Create a JATOS account. Requires ADMIN permission. Supports DB (password required) and LDAP accounts; "
+                            + "role is USER (default) or VIEWER. Password arguments may be retained by the MCP client.",
+                    List.of(userProperties(true)),
+                    args -> "/users",
+                    "POST"
+            ),
+            new Tool(
+                    "get_user",
+                    "Read a user's profile and roles. Requires ADMIN permission or the user's own token.",
+                    List.of(USER_ID),
+                    args -> "/users/%s".formatted(args.get("user_id"))
+            ),
+            new Tool(
+                    "set_user_active",
+                    "Enable or disable a user using properties.active. Requires ADMIN permission.",
+                    List.of(USER_ID, studyCodeProperties(false)),
+                    args -> "/users/%s".formatted(args.get("user_id")),
+                    ENVELOPED_JSON,
+                    UnaryOperator.identity(),
+                    "PATCH",
+                    false,
+                    true
+            ),
+            new Tool(
+                    "update_user",
+                    "Update supplied user profile fields (name, email, password, active). Requires ADMIN permission or self. "
+                            + "Does not change username, authentication method or roles. Password arguments may be "
+                            + "retained by the MCP client.",
+                    List.of(USER_ID, userProperties(false)),
+                    args -> "/users/%s".formatted(args.get("user_id")),
+                    "PATCH"
             )
     );
 
@@ -312,7 +451,26 @@ public final class McpTools {
         return tool.resolve(arguments);
     }
 
-    /** Extracts user IDs from the API user listing without exposing additional profile fields. */
+    /** Adds raw archive upload requirements and the configured API file limit. */
+    private static JsonNode studyImportInstructions(JsonNode request) {
+        return ((ObjectNode) request).put("contentType", "application/zip")
+                .put("bodyInstructions", "Send the local .jzip file as the raw binary request body, not JSON or Base64. No import has been performed.")
+                .put("maxFileSizeBytes", general.common.Common.getStudyArchiveMaxSize())
+                .put("overwriteBehavior", "An existing study is overwritten; keepProperties and keepAssets preserve the corresponding existing content.");
+    }
+
+    /** Adds the multipart field required by the asset API and its configured file limit. */
+    private static JsonNode assetUploadInstructions(JsonNode request) {
+        return ((ObjectNode) request).put("contentType", "multipart/form-data")
+                .put("fileField", "studyAssetsFile")
+                .put("bodyInstructions", "Attach the local file to the studyAssetsFile multipart field. Let the HTTP client generate the Content-Type boundary. No upload has been performed.")
+                .put("maxFileSizeBytes", general.common.Common.getStudyAssetsMaxFileSize())
+                .put("overwriteBehavior", "Existing files at the destination are overwritten; missing parent directories are created.");
+    }
+
+    /**
+     * Extracts user IDs from the API user listing without exposing additional profile fields.
+     */
     private static JsonNode userIds(JsonNode data) {
         ArrayNode ids = JsonNodeFactory.instance.arrayNode();
         for (JsonNode user : data) ids.add(user.get("id"));

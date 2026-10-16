@@ -68,7 +68,7 @@ public class Mcp extends Controller {
      * Returns 405 after the transport action has authenticated the request.
      */
     @BodyParser.Of(BodyParser.Empty.class)
-    public CompletionStage<Result> unsupported(Http.Request request) {
+    public CompletionStage<Result> unsupported() {
         return completed(status(METHOD_NOT_ALLOWED).withHeader("Allow", "POST"));
     }
 
@@ -171,15 +171,21 @@ public class Mcp extends Controller {
         } catch (InvalidToolRequestException e) {
             return completed(invalidParams(id, e.getMessage(), version));
         }
-        if (call.format() == McpApiClient.ResponseFormat.DOWNLOAD_REQUEST) {
+        if (call.adminOnly() && !request.attrs().getOptional(McpTransportAction.IS_ADMIN).orElse(false)) {
+            return completed(ok(success(id, toolError("Requires ADMIN permission"), version)));
+        }
+        if (call.format() == McpApiClient.ResponseFormat.DOWNLOAD_REQUEST
+                || call.format() == McpApiClient.ResponseFormat.UPLOAD_REQUEST) {
             ObjectNode download = JsonNodeFactory.instance.objectNode()
                     .put("url", (request.secure() ? "https://" : "http://") + request.host()
                             + general.common.Common.getJatosUrlBasePath() + "jatos/api/v1" + call.path())
-                    .put("method", call.method()).put("contentType", "application/json")
-                    .put("mimeType", "application/zip")
-                    .put("authentication", "Use an API Bearer token or signed-in JATOS session. Permissions are checked when downloading; only authorized results can be exported.");
-            download.set("body", call.body());
-            return completed(ok(success(id, contentResult(download, version), version)));
+                    .put("method", call.method())
+                    .put("authentication", "Use an API Bearer token or signed-in JATOS session. Permissions and request validity are checked when executing the HTTP request.");
+            if (call.body() != null) {
+                download.put("contentType", "application/json").put("mimeType", "application/zip");
+                download.set("body", call.body());
+            }
+            return completed(ok(success(id, contentResult(call.postProcess().apply(download), version), version)));
         }
         return mcpApi.execute(call, request.header("Authorization").orElse(""))
                 .thenApply(reply -> reply.status() == UNAUTHORIZED

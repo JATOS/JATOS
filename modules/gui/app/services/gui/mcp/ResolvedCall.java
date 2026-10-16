@@ -11,7 +11,8 @@ import java.util.function.UnaryOperator;
  * @param format      response decoding mode
  * @param postProcess transformation applied to successful response data
  * @param method      HTTP method
+ * @param adminOnly   whether MCP requires ADMIN permission
  * @param body        JSON request body; null when no body is needed
  */
 public record ResolvedCall(String path, McpApiClient.ResponseFormat format, UnaryOperator<JsonNode> postProcess,
-                           String method, JsonNode body) {}
+                           String method, JsonNode body, boolean adminOnly) {}

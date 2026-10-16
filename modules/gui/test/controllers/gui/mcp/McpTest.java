@@ -56,7 +56,7 @@ public class McpTest {
      * Exercises authentication before the controller rejects an unsupported HTTP method.
      */
     private java.util.concurrent.CompletionStage<Result> unsupported(Http.Request request) {
-        return throughTransport(request, controller::unsupported);
+        return throughTransport(request, req -> controller.unsupported());
     }
 
     /**
@@ -186,11 +186,11 @@ public class McpTest {
     public void listsReadAndWriteTools() {
         JsonNode tools = json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
                 .path("result").path("tools");
-        assertThat(tools.size()).isEqualTo(32);
+        assertThat(tools.size()).isEqualTo(45);
         for (JsonNode tool : tools) {
             String name = tool.path("name").asText();
             boolean write = name.startsWith("create_") || name.startsWith("update_") || name.startsWith("add_") || name.startsWith("remove_")
-                    || name.equals("get_or_generate_study_codes") || name.equals("set_study_code_active");
+                    || name.equals("get_or_generate_study_codes") || name.startsWith("set_");
             assertThat(tool.path("annotations").path("readOnlyHint").asBoolean()).isEqualTo(!write);
             assertThat(tool.path("inputSchema").path("additionalProperties").asBoolean()).isFalse();
         }
@@ -199,6 +199,29 @@ public class McpTest {
     /**
      * Export instructions include public URLs and selectors without fetching ZIPs or revealing credentials.
      */
+    @Test
+    public void uploadInstructionsDoNotExecuteUploads() {
+        commonMock.when(Common::getJatosUrlBasePath).thenReturn("/prefix/");
+        commonMock.when(Common::getStudyArchiveMaxSize).thenReturn(123456L);
+        commonMock.when(Common::getStudyAssetsMaxFileSize).thenReturn(654321L);
+        for (String name : java.util.List.of("study_import", "upload_study_asset")) {
+            var message = Json.newObject().put("jsonrpc", "2.0").put("id", 1).put("method", "tools/call");
+            var args = message.putObject("params").put("name", name).putObject("arguments");
+            if (name.equals("upload_study_asset")) args.put("study_id", 7).put("filepath", "media/my file.bin");
+            var response = post(request(Json.stringify(message)).header("Host", "jatos.example.org").build())
+                    .toCompletableFuture().join();
+            JsonNode data = json(response).path("result").path("structuredContent").path("data");
+            assertThat(data.path("url").asText()).startsWith("http://jatos.example.org/prefix/jatos/api/v1/studies");
+            assertThat(data.path("method").asText()).isEqualTo("POST");
+            assertThat(data.path("maxFileSizeBytes").asLong()).isEqualTo(name.equals("study_import") ? 123456L : 654321L);
+            assertThat(data.path("contentType").asText()).isEqualTo(name.equals("study_import") ? "application/zip" : "multipart/form-data");
+            assertThat(data.toString()).doesNotContain(AUTH);
+            assertThat(data.has("body")).isFalse();
+        }
+        verify(api, times(2)).get("/admin/token", AUTH);
+        verifyNoMoreInteractions(api);
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void resultDownloadsAreAuthenticatedPostInstructions() {
@@ -260,7 +283,7 @@ public class McpTest {
      */
     @Test
     public void apiPermissionErrorsAreToolErrors() {
-        when(api.execute(argThat(call -> call.path().equals("/studies/7/properties")), eq(AUTH))).thenReturn(CompletableFuture.completedFuture(
+        when(api.execute(argThat(call -> call.path().equals("/studies/7/properties?withComponentProperties=false&withBatchProperties=false")), eq(AUTH))).thenReturn(CompletableFuture.completedFuture(
                 new McpApiClient.Reply(403, Json.parse("{\"error\":{\"message\":\"Access denied\"}}"))));
         JsonNode result = json(call("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"get_study\",\"arguments\":{\"study_id\":7}}}"))
                 .path("result");

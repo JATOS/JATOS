@@ -9,6 +9,92 @@ import static org.assertj.core.api.Assertions.*;
  * Unit tests for the tool catalog's API mappings and argument validation.
  */
 public class McpToolsTest {
+    @Test
+    public void resolvesUploadInstructions() {
+        var defaults = McpTools.resolveCall("study_import", null);
+        assertThat(defaults.path()).isEqualTo("/studies?keepProperties=false&keepAssets=false&keepCurrentAssetsName=true&renameAssets=true");
+        var options = Json.newObject().put("keep_properties", true).put("keep_assets", true)
+                .put("keep_current_assets_name", false).put("rename_assets", false);
+        assertThat(McpTools.resolveCall("study_import", options).path())
+                .isEqualTo("/studies?keepProperties=true&keepAssets=true&keepCurrentAssetsName=false&renameAssets=false");
+        options.put("keep_assets", "true");
+        assertThatThrownBy(() -> McpTools.resolveCall("study_import", options)).isInstanceOf(InvalidToolInputException.class);
+        var asset = McpTools.resolveCall("upload_study_asset", Json.newObject().put("study_id", 7).put("filepath", "media/my file.bin"));
+        assertThat(asset.path()).isEqualTo("/studies/7/assets/media/my%20file.bin");
+        for (var call : java.util.List.of(defaults, asset)) {
+            assertThat(call.format()).isEqualTo(McpApiClient.ResponseFormat.UPLOAD_REQUEST);
+            assertThat(call.method()).isEqualTo("POST");
+            assertThat(call.body()).isNull();
+        }
+    }
+
+    @Test
+    public void resolvesReadConveniences() {
+        var study = Json.newObject().put("study_id", 7).put("with_components", true).put("with_batches", true);
+        assertThat(apiPath("get_study", study)).isEqualTo("/studies/7/properties?withComponentProperties=true&withBatchProperties=true");
+        study.put("with_components", "true");
+        assertThatThrownBy(() -> McpTools.resolveCall("get_study", study)).isInstanceOf(InvalidToolInputException.class);
+        assertThat(apiPath("get_current_token", null)).isEqualTo("/admin/token");
+        var args = Json.newObject().put("study_id", 7);
+        var log = McpTools.resolveCall("download_study_log", args);
+        assertThat(log.path()).isEqualTo("/studies/7/log?download=true");
+        args.put("filepath", "media/my file.bin");
+        var asset = McpTools.resolveCall("download_study_asset", args);
+        assertThat(asset.path()).isEqualTo("/studies/7/assets/media/my%20file.bin");
+        for (var call : java.util.List.of(log, asset)) {
+            assertThat(call.method()).isEqualTo("GET");
+            assertThat(call.body()).isNull();
+            assertThat(call.format()).isEqualTo(McpApiClient.ResponseFormat.DOWNLOAD_REQUEST);
+        }
+        args.put("filepath", "../secret");
+        assertThatThrownBy(() -> McpTools.resolveCall("download_study_asset", args)).isInstanceOf(InvalidToolInputException.class);
+    }
+
+    @Test
+    public void resolvesActivationAndSingleFileTools() {
+        for (String entity : java.util.List.of("study", "component", "batch", "user")) {
+            var args = Json.newObject().put(entity + "_id", 7);
+            args.putObject("properties").put("active", false);
+            var call = McpTools.resolveCall("set_" + entity + "_active", args);
+            assertThat(call.method()).isEqualTo("PATCH");
+            assertThat(call.adminOnly()).isEqualTo(entity.equals("study") || entity.equals("user"));
+            assertThat(call.body()).isEqualTo(Json.parse("{\"active\":false}"));
+            args.withObject("properties").put("active", "false");
+            assertThatThrownBy(() -> McpTools.resolveCall("set_" + entity + "_active", args))
+                    .isInstanceOf(InvalidToolInputException.class);
+        }
+        var args = Json.newObject().put("component_result_id", 7).put("filename", "my file#.bin");
+        var call = McpTools.resolveCall("get_result_file", args);
+        assertThat(call.path()).isEqualTo("/results/files/my%20file%23.bin?componentResultId=7");
+        assertThat(call.method()).isEqualTo("GET");
+        assertThat(call.body()).isNull();
+        for (String bad : java.util.List.of("../file", "a/b", "%2F", "..")) {
+            args.put("filename", bad);
+            assertThatThrownBy(() -> McpTools.resolveCall("get_result_file", args)).isInstanceOf(InvalidToolInputException.class);
+        }
+    }
+
+    @Test
+    public void resolvesUserTools() {
+        var args = Json.newObject();
+        var properties = args.putObject("properties").put("username", "test").put("name", "Test")
+                .put("password", "example-password").put("authMethod", "DB").put("role", "VIEWER");
+        var create = McpTools.resolveCall("add_user", args);
+        assertThat(create.path()).isEqualTo("/users");
+        assertThat(create.method()).isEqualTo("POST");
+        assertThat(create.body()).isEqualTo(properties);
+        assertThat(McpTools.resolveCall("get_user", Json.newObject().put("user_id", 7)).path()).isEqualTo("/users/7");
+        var updateArgs = Json.newObject().put("user_id", 7);
+        updateArgs.putObject("properties").put("active", false).putNull("email");
+        var update = McpTools.resolveCall("update_user", updateArgs);
+        assertThat(update.method()).isEqualTo("PATCH");
+        assertThat(update.body()).isEqualTo(updateArgs.get("properties"));
+        updateArgs.withObject("properties").put("role", "ADMIN");
+        assertThatThrownBy(() -> McpTools.resolveCall("update_user", updateArgs)).isInstanceOf(InvalidToolInputException.class);
+        properties.remove("username");
+        assertThatThrownBy(() -> McpTools.resolveCall("add_user", args)).isInstanceOf(InvalidToolInputException.class);
+    }
+
     /**
      * Membership tools use bodyless API requests; user listings expose only IDs.
      */
@@ -225,7 +311,7 @@ public class McpToolsTest {
     @Test
     public void mapsEveryToolToItsReadOnlyApiPath() {
         assertThat(apiPath("list_studies", null)).isEqualTo("/studies/properties");
-        assertThat(apiPath("get_study", Json.parse("{\"study_id\":1}"))).isEqualTo("/studies/1/properties");
+        assertThat(apiPath("get_study", Json.parse("{\"study_id\":1}"))).isEqualTo("/studies/1/properties?withComponentProperties=false&withBatchProperties=false");
         assertThat(apiPath("list_components", Json.parse("{\"study_id\":1}"))).isEqualTo("/studies/1/components");
         assertThat(apiPath("get_component", Json.parse("{\"component_id\":2}"))).isEqualTo("/components/2");
         assertThat(apiPath("list_batches", Json.parse("{\"study_id\":1}"))).isEqualTo("/studies/1/batches");

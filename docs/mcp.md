@@ -1,26 +1,34 @@
 # Embedded MCP server
 
-The GUI module exposes thirty-two tools through `/jatos/mcp`, grouped like the API routes:
+The GUI module exposes forty-five tools through `/jatos/mcp`, grouped like the API routes:
 
 | Concern | Tool | Arguments |
 | --- | --- | --- |
+| Current token | `get_current_token` | None |
 | Batches | `list_batches` | `study_id` |
 | Batches | `get_batch` | `batch_id` |
 | Batches | `get_batch_session` | `batch_id` |
 | Batches | `update_batch_session` | `batch_id`, `version`, `properties` |
 | Batches | `create_batch` | `study_id`, `properties` |
+| Batches | `set_batch_active` | `batch_id`, `properties` (`active`) |
 | Batches | `update_batch` | `batch_id`, `properties` |
 | Components | `list_components` | `study_id` |
 | Components | `get_component` | `component_id` |
 | Components | `create_component` | `study_id`, `properties` |
+| Components | `set_component_active` | `component_id`, `properties` (`active`) |
 | Components | `update_component` | `component_id`, `properties` |
 | Studies | `list_studies` | None |
-| Studies | `get_study` | `study_id` |
+| Studies | `get_study` | `study_id`, optional `with_components`, `with_batches` |
 | Studies | `create_study` | `properties` |
+| Studies | `set_study_active` | `study_id`, `properties` (`active`) |
 | Studies | `update_study` | `study_id`, `properties` |
+| Studies | `study_import` | Optional `keep_properties`, `keep_assets`, `keep_current_assets_name`, `rename_assets` |
 | Studies | `export_study` | `study_id` |
+| Studies | `download_study_log` | `study_id` |
 | Studies | `get_study_log` | `study_id`, optional `entry_limit` (1–1000, default 100) |
 | Study assets | `list_study_assets` | `study_id` |
+| Study assets | `upload_study_asset` | `study_id`, `filepath` |
+| Study assets | `download_study_asset` | `study_id`, `filepath` |
 | Study assets | `read_study_asset` | `study_id`, `filepath` |
 | Study membership | `list_study_members` | `study_id` |
 | Study membership | `add_study_member` | `study_id`, `user_id` |
@@ -33,9 +41,14 @@ The GUI module exposes thirty-two tools through `/jatos/mcp`, grouped like the A
 | Study codes | `set_study_code_active` | `code`, `properties` (`active`) |
 | Results | `get_result_metadata` | `properties` (result selectors) |
 | Results | `get_result_data` | `properties` (result selectors) |
+| Results | `get_result_file` | `component_result_id`, `filename` |
 | Results | `get_result_files` | `properties` (result selectors) |
 | Results | `get_results` | `properties` (result selectors) |
 | Users | `list_users` | none (ADMIN permission required) |
+| Users | `add_user` | `properties` (ADMIN permission required) |
+| Users | `get_user` | `user_id` (ADMIN or self) |
+| Users | `set_user_active` | `user_id`, `properties` (`active`) |
+| Users | `update_user` | `user_id`, `properties` (ADMIN or self) |
 
 Tools use the existing JATOS HTTP API with the caller's personal API token; result
 export tools return authenticated request instructions for direct downloads.
@@ -69,8 +82,19 @@ the API may already have applied the change.
 
 ## File uploads
 
-Study archive imports and study asset uploads use JATOS' HTTP API directly; no MCP
-upload tools are exposed. Read `jatos://docs/api-usage` for endpoints, authentication,
+`study_import` and `upload_study_asset` return HTTP upload instructions; calling them
+does not transfer files or mutate JATOS. Their read-only annotations describe this
+preparation step. The subsequent HTTP POST can overwrite existing content.
+
+`study_import` returns an `application/zip` request for a raw .jzip file body.
+Optional `keep_properties` and `keep_assets` default to false (overwrite);
+`keep_current_assets_name` and `rename_assets` default to true, matching the API.
+`upload_study_asset` returns a multipart request with file field `studyAssetsFile`;
+the HTTP client must generate the multipart boundary. Existing destination files
+are overwritten. Each response includes `maxFileSizeBytes` from the configured API
+limit. File bodies bypass MCP size limits. Neither tool accepts file bytes or Base64.
+
+Both transfers require USER permission, with study access checked by the API. Read `jatos://docs/api-usage` for endpoints, authentication,
 and streaming transfer guidance. Clients need their own HTTP capability and credentials.
 
 ## Study archives
@@ -174,7 +198,7 @@ Modern results include `resultType: "complete"` and server identity metadata.
 Legacy responses omit these fields. March 2025 tool results contain text JSON
 only, because structured tool output was introduced in June 2025.
 
-All revisions expose the same thirty-two tools, API usage resource, and ping. Responses are JSON; GET and
+All revisions expose the same forty-five tools, API usage resource, and ping. Responses are JSON; GET and
 DELETE return 405 after authentication. There are no session IDs, SSE streams,
 prompts, subscriptions, server-initiated requests or background tasks.
 No legacy HTTP+SSE transport is offered. Optional protocol capabilities beyond
@@ -294,3 +318,37 @@ return the updated membership object. They require USER permission and access to
 the study. Adding an existing member or removing a non-member leaves membership
 unchanged. Removal revokes membership-based access; API safeguards remain authoritative.
 These tools do not create or delete user accounts.
+
+### User accounts
+
+`add_user` accepts `properties` with required `username` and `name`, optional `email`,
+`authMethod` (`DB` by default or `LDAP`) and `role` (`USER` by default or `VIEWER`).
+DB accounts require a `password` satisfying the server's password policy.
+`update_user` accepts only `name`, `email`, `password` and `active`; omitted fields
+are unchanged. Roles, usernames and authentication methods cannot be changed by
+this tool. API rules prevent self-deactivation and protect the built-in admin account.
+Passwords are not returned, but MCP clients may retain supplied passwords in their
+conversation or tool-call history.
+
+### Activation and single result files
+
+- `set_study_active(study_id, properties)` and `set_user_active(user_id, properties)` require ADMIN permission in MCP.
+- `set_component_active(component_id, properties)` and `set_batch_active(batch_id, properties)` use the API's USER and study-access checks.
+- All four accept exactly `properties: {"active": true}` or `properties: {"active": false}` and return the updated API data.
+- Existing general update tools retain their existing API permissions.
+- `get_result_file(component_result_id, filename)` returns an authenticated GET download URL for a single file, without loading its bytes into MCP. Use the exact filename from result metadata; directories are not accepted. Access and existence are checked by the API when downloaded.
+
+### Read conveniences
+
+`get_study` accepts optional `with_components` and `with_batches` booleans (both
+false by default). Enabled flags include the full properties instead of the
+usual ID/UUID references. They do not include files, results or session data.
+
+`download_study_asset` and `download_study_log` return authenticated GET download
+instructions. The asset can be any file format; the log download contains the
+complete log. Files are transferred directly through the API, outside MCP response
+size limits. The API checks access and existence at download time. Credentials
+are not embedded in the URLs. `export_study` remains unchanged.
+
+`get_current_token` returns the caller's token metadata, including owner, roles,
+expiry and active status. It does not return the token secret or hash.

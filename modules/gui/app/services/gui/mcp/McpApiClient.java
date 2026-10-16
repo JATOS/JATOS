@@ -48,7 +48,7 @@ public class McpApiClient {
     /**
      * How API data is decoded or delivered. DOWNLOAD_REQUEST returns instructions without fetching the export.
      */
-    public enum ResponseFormat {ENVELOPED_JSON, RAW_JSON, RAW_TEXT, DOWNLOAD_LINK, DOWNLOAD_REQUEST}
+    public enum ResponseFormat {ENVELOPED_JSON, RAW_JSON, RAW_TEXT, DOWNLOAD_LINK, DOWNLOAD_REQUEST, UPLOAD_REQUEST}
 
     /**
      * Expected API failures with messages safe to show to an MCP client.

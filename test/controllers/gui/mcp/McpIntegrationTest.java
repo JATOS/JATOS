@@ -90,7 +90,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(32);
+            assertThat(tools.size()).isEqualTo(45);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -109,6 +109,40 @@ public class McpIntegrationTest {
             Files.createDirectories(assetDir.resolve("js"));
             String assetText = "const message = '你好';\n";
             Files.writeString(assetDir.resolve("js/my file.js"), assetText);
+            JsonNode tokenMetadata = toolData(client, base, token, "get_current_token", Json.newObject());
+            assertThat(tokenMetadata.path("userId").asLong()).isPositive();
+            assertThat(tokenMetadata.path("roles").isArray()).isTrue();
+            assertThat(tokenMetadata.has("expirationDate")).isTrue();
+            assertThat(tokenMetadata.has("tokenHash")).isFalse();
+            assertThat(tokenMetadata.toString()).doesNotContain(token);
+            var studyArgs = Json.newObject().put("study_id", studyId);
+            JsonNode compact = toolData(client, base, token, "get_study", studyArgs);
+            assertThat(compact.path("components").get(0).has("title")).isFalse();
+            assertThat(compact.path("batches").get(0).has("title")).isFalse();
+            JsonNode expanded = toolData(client, base, token, "get_study",
+                    studyArgs.deepCopy().put("with_components", true).put("with_batches", true));
+            assertThat(expanded.path("components").get(0).path("title").asText()).isEqualTo("MCP component");
+            assertThat(expanded.path("batches").get(0).has("title")).isTrue();
+            byte[] assetBytes = new byte[]{0, (byte) 255, 42};
+            Files.write(assetDir.resolve("js/my binary.bin"), assetBytes);
+            for (String name : new String[]{"download_study_asset", "download_study_log"}) {
+                var args = studyArgs.deepCopy();
+                if (name.equals("download_study_asset")) args.put("filepath", "js/my binary.bin");
+                JsonNode download = toolData(client, base, token, name, args);
+                assertThat(download.path("method").asText()).isEqualTo("GET");
+                assertThat(download.has("body")).isFalse();
+                assertThat(download.toString()).doesNotContain(token);
+                String url = download.path("url").asText();
+                assertThat(url).startsWith(base + "/api/v1/studies/" + studyId + "/");
+                var response = client.send(HttpRequest.newBuilder(URI.create(url))
+                        .header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+                assertThat(response.statusCode()).isEqualTo(200);
+                if (name.equals("download_study_asset")) assertThat(response.body()).isEqualTo(assetBytes);
+                else assertThat(response.body()).isNotEmpty();
+                assertThat(client.send(HttpRequest.newBuilder(URI.create(url)).GET().build(),
+                        HttpResponse.BodyHandlers.ofByteArray()).statusCode()).isEqualTo(401);
+            }
+
 
             for (String version : new String[]{VERSION_2025_03_26, VERSION_2025_06_18, VERSION_2025_11_25, VERSION_2026_07_28}) {
                 if (version.equals(VERSION_2026_07_28)) {
@@ -172,6 +206,17 @@ public class McpIntegrationTest {
             Files.createDirectories(uploadDir);
             byte[] uploadedBytes = new byte[]{0, 1, (byte) 255, 42};
             Files.write(uploadDir.resolve("fixture.bin"), uploadedBytes);
+            Files.write(uploadDir.resolve("my file.bin"), uploadedBytes);
+            JsonNode singleFile = toolData(client, base, token, "get_result_file",
+                    Json.newObject().put("component_result_id", resultIds[1]).put("filename", "my file.bin"));
+            assertThat(singleFile.path("method").asText()).isEqualTo("GET");
+            assertThat(singleFile.has("body")).isFalse();
+            var fileRequest = HttpRequest.newBuilder(URI.create(singleFile.path("url").asText()))
+                    .header("Authorization", "Bearer " + token).GET().build();
+            var fileReply = client.send(fileRequest, HttpResponse.BodyHandlers.ofByteArray());
+            assertThat(fileReply.statusCode()).isEqualTo(200);
+            assertThat(fileReply.body()).isEqualTo(uploadedBytes);
+
             var resultArgs = Json.newObject();
             resultArgs.putObject("properties").put("studyIds", studyId);
             JsonNode metadata = toolData(client, base, token, "get_result_metadata", resultArgs);
@@ -232,6 +277,25 @@ public class McpIntegrationTest {
             checkStudyCodeTools(client, base, token, otherToken, studyId, batchId);
             checkGroupAndSessionTools(app, client, base, token, otherToken);
             checkMembershipTools(client, base, token, otherToken, studyId, other.getId());
+            for (String entity : new String[]{"study", "component", "batch", "user"}) {
+                long target = switch (entity) {
+                    case "study" -> studyId;
+                    case "component" -> componentId;
+                    case "batch" -> batchId;
+                    default -> other.getId();
+                };
+                var activeArgs = Json.newObject().put(entity + "_id", target);
+                for (boolean active : new boolean[]{false, true}) {
+                    activeArgs.putObject("properties").put("active", active);
+                    if (!active) {
+                        assertThat(tool(client, base, otherToken, "set_" + entity + "_active", activeArgs)
+                                .path("isError").asBoolean()).isTrue();
+                    }
+                    assertThat(toolData(client, base, token, "set_" + entity + "_active", activeArgs)
+                            .path("active").asBoolean()).isEqualTo(active);
+                }
+            }
+
             assertThat(post(client, base + "/mcp", "invalid", "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}").statusCode()).isEqualTo(401);
             // Origin validation happens before the API call, including when a valid token is present.
             HttpResponse<String> origin = client.send(HttpRequest.newBuilder(URI.create(base + "/mcp"))
@@ -317,6 +381,34 @@ public class McpIntegrationTest {
         HttpResponse<byte[]> archive = client.send(HttpRequest.newBuilder(download).header("Authorization", "Bearer " + token)
                 .GET().build(), HttpResponse.BodyHandlers.ofByteArray());
         assertThat(archive.statusCode()).isEqualTo(200);
+        JsonNode importRequest = toolData(client, base, token, "study_import",
+                Json.newObject().put("keep_properties", true).put("keep_assets", true));
+        assertThat(importRequest.path("maxFileSizeBytes").asLong()).isEqualTo(Common.getStudyArchiveMaxSize());
+        var imported = client.send(HttpRequest.newBuilder(URI.create(importRequest.path("url").asText()))
+                .header("Authorization", "Bearer " + token).header("Content-Type", importRequest.path("contentType").asText())
+                .POST(HttpRequest.BodyPublishers.ofByteArray(archive.body())).build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(imported.statusCode()).as(imported.body()).isEqualTo(200);
+        assertThat(Json.parse(imported.body()).path("data").path("id").asLong()).isEqualTo(studyId);
+
+        JsonNode upload = toolData(client, base, token, "upload_study_asset",
+                Json.newObject().put("study_id", targetId).put("filepath", "media/my file.bin"));
+        assertThat(upload.path("maxFileSizeBytes").asLong()).isEqualTo(Common.getStudyAssetsMaxFileSize());
+        byte[] bytes = new byte[]{0, (byte) 255, 42};
+        String boundary = "McpUploadTestBoundary";
+        var multipart = HttpRequest.BodyPublishers.concat(
+                HttpRequest.BodyPublishers.ofString("--" + boundary + "\r\nContent-Disposition: form-data; name=\""
+                        + upload.path("fileField").asText() + "\"; filename=\"file.bin\"\r\nContent-Type: application/octet-stream\r\n\r\n"),
+                HttpRequest.BodyPublishers.ofByteArray(bytes),
+                HttpRequest.BodyPublishers.ofString("\r\n--" + boundary + "--\r\n"));
+        var uploaded = client.send(HttpRequest.newBuilder(URI.create(upload.path("url").asText()))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", upload.path("contentType").asText() + "; boundary=" + boundary)
+                .POST(multipart).build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(uploaded.statusCode()).as(uploaded.body()).isEqualTo(201);
+        var downloaded = client.send(HttpRequest.newBuilder(URI.create(upload.path("url").asText()))
+                .header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+        assertThat(downloaded.statusCode()).isEqualTo(200);
+        assertThat(downloaded.body()).isEqualTo(bytes);
     }
 
     /**
@@ -413,6 +505,25 @@ public class McpIntegrationTest {
                 .allMatch(JsonNode::isIntegralNumber)).isTrue();
         assertThat(java.util.stream.StreamSupport.stream(users.spliterator(), false).map(JsonNode::asLong).toList()).contains(userId);
         assertThat(tool(client, base, otherToken, "list_users", Json.newObject()).path("isError").asBoolean()).isTrue();
+        var selfArgs = Json.newObject().put("user_id", userId);
+        assertThat(toolData(client, base, otherToken, "get_user", selfArgs).path("id").asLong()).isEqualTo(userId);
+        var createArgs = Json.newObject();
+        createArgs.putObject("properties").put("username", "mcp-created-user").put("name", "MCP User")
+                .put("password", "McpTest-Password-42!").put("role", "VIEWER");
+        assertThat(tool(client, base, otherToken, "add_user", createArgs).path("isError").asBoolean()).isTrue();
+        JsonNode created = toolData(client, base, token, "add_user", createArgs);
+        assertThat(created.has("password")).isFalse();
+        assertThat(created.has("passwordHash")).isFalse();
+        var userArgs = Json.newObject().put("user_id", created.path("id").asLong());
+        assertThat(tool(client, base, otherToken, "get_user", userArgs).path("isError").asBoolean()).isTrue();
+        assertThat(toolData(client, base, token, "get_user", userArgs).path("name").asText()).isEqualTo("MCP User");
+        userArgs.putObject("properties").put("name", "Updated MCP User").put("active", false);
+        assertThat(tool(client, base, otherToken, "update_user", userArgs).path("isError").asBoolean()).isTrue();
+        JsonNode updated = toolData(client, base, token, "update_user", userArgs);
+        assertThat(updated.path("name").asText()).isEqualTo("Updated MCP User");
+        assertThat(updated.path("active").asBoolean()).isFalse();
+        selfArgs.putObject("properties").put("name", "Updated self");
+        assertThat(toolData(client, base, otherToken, "update_user", selfArgs).path("name").asText()).isEqualTo("Updated self");
         var studyArgs = Json.newObject().put("study_id", studyId);
         var memberArgs = studyArgs.deepCopy().put("user_id", userId);
         assertThat(tool(client, base, otherToken, "list_study_members", studyArgs).path("isError").asBoolean()).isTrue();
@@ -424,6 +535,11 @@ public class McpIntegrationTest {
         assertThat(toolData(client, base, token, "add_study_member", memberArgs)).isEqualTo(added);
         assertThat(toolData(client, base, otherToken, "list_study_members", studyArgs)).isEqualTo(added);
         assertThat(toolData(client, base, otherToken, "get_study", studyArgs).path("id").asLong()).isEqualTo(studyId);
+        var activation = studyArgs.deepCopy();
+        activation.putObject("properties").put("active", false);
+        assertThat(tool(client, base, otherToken, "set_study_active", activation)
+                .path("content").get(0).path("text").asText()).contains("Requires ADMIN");
+
         JsonNode removed = toolData(client, base, token, "remove_study_member", memberArgs);
         assertThat(java.util.stream.StreamSupport.stream(removed.path("members").spliterator(), false).map(JsonNode::asLong).toList()).doesNotContain(userId);
         assertThat(toolData(client, base, token, "remove_study_member", memberArgs)).isEqualTo(removed);
