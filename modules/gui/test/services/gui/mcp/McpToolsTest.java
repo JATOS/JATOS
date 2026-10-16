@@ -10,6 +10,40 @@ import static org.assertj.core.api.Assertions.*;
  */
 public class McpToolsTest {
     /**
+     * Session writes send the complete object and expected version, including empty sessions.
+     */
+    @Test
+    public void resolvesGroupAndSessionTools() {
+        assertThat(McpTools.resolveCall("list_groups", Json.newObject().put("batch_id", 3)).path())
+                .isEqualTo("/batches/3/groups");
+        for (String kind : java.util.List.of("batch", "group")) {
+            String id = kind + "_id";
+            String path = kind.equals("batch") ? "/batches/3/session" : "/groups/3/session";
+            assertThat(McpTools.resolveCall("get_" + kind + "_session", Json.newObject().put(id, 3)).path()).isEqualTo(path);
+            var args = Json.newObject().put(id, 3).put("version", 0);
+            var data = args.putObject("properties").putNull("nullable");
+            data.putObject("nested").putArray("values").add("你好").add(1);
+            var call = McpTools.resolveCall("update_" + kind + "_session", args);
+            assertThat(call.path()).isEqualTo(path + "?version=0");
+            assertThat(call.method()).isEqualTo("PATCH");
+            assertThat(call.body()).isEqualTo(data);
+            args.putObject("properties");
+            assertThat(McpTools.resolveCall("update_" + kind + "_session", args).body().isEmpty()).isTrue();
+            for (String invalid : java.util.List.of("null", "-1", "1.5", "\"1\"")) {
+                args.set("version", Json.parse(invalid));
+                assertThatThrownBy(() -> McpTools.resolveCall("update_" + kind + "_session", args))
+                        .isInstanceOf(InvalidToolInputException.class);
+            }
+            args.remove("version");
+            assertThatThrownBy(() -> McpTools.resolveCall("update_" + kind + "_session", args))
+                    .isInstanceOf(InvalidToolInputException.class);
+            args.put("version", 1).set("properties", Json.parse("[]"));
+            assertThatThrownBy(() -> McpTools.resolveCall("update_" + kind + "_session", args))
+                    .isInstanceOf(InvalidToolInputException.class);
+        }
+    }
+
+    /**
      * Result selectors retain JSON types and reject empty or malformed selections.
      */
     @Test

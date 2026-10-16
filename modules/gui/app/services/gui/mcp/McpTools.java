@@ -41,6 +41,14 @@ public final class McpTools {
                     args -> "/batches/%s/session".formatted(args.get("batch_id"))
             ),
             new Tool(
+                    "update_batch_session",
+                    "Replace the entire shared batch session with properties. Read get_batch_session first and supply its version. "
+                            + "Omitted keys are removed; {} clears the session. A stale version is rejected. Requires USER permission.",
+                    List.of(BATCH_ID, SESSION_VERSION, SESSION_PROPERTIES),
+                    args -> "/batches/%s/session?version=%s".formatted(args.get("batch_id"), args.get("version")),
+                    "PATCH"
+            ),
+            new Tool(
                     "create_batch",
                     "Create a batch in a study. Does not create study runs or participants.",
                     List.of(STUDY_ID, properties(BATCH_FIELDS, true)),
@@ -148,6 +156,28 @@ public final class McpTools {
                     args -> "/studies/%s/assets/%s".formatted(args.get("study_id"), args.get("filepath")),
                     RAW_TEXT,
                     UnaryOperator.identity()
+            ),
+            // Groups
+            new Tool(
+                    "list_groups",
+                    "List all groups belonging to a batch, including active and finished groups. "
+                            + "Use list_batches first and call this for each batch to inspect all groups of a study.",
+                    List.of(BATCH_ID),
+                    args -> "/batches/%s/groups".formatted(args.get("batch_id"))
+            ),
+            new Tool(
+                    "get_group_session",
+                    "Read a group's shared sessionData JSON and current version.",
+                    List.of(GROUP_ID),
+                    args -> "/groups/%s/session".formatted(args.get("group_id"))
+            ),
+            new Tool(
+                    "update_group_session",
+                    "Replace the entire shared group session with properties. Read get_group_session first and supply its version. "
+                            + "Omitted keys are removed; {} clears the session. A stale version is rejected. Requires USER permission.",
+                    List.of(GROUP_ID, SESSION_VERSION, SESSION_PROPERTIES),
+                    args -> "/groups/%s/session?version=%s".formatted(args.get("group_id"), args.get("version")),
+                    "PATCH"
             ),
             // Study codes (participation links)
             new Tool(

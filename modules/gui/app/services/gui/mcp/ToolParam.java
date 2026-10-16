@@ -35,6 +35,29 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
     static final ToolParam STUDY_ID = positiveId("study_id");
     static final ToolParam BATCH_ID = positiveId("batch_id");
     static final ToolParam COMPONENT_ID = positiveId("component_id");
+    static final ToolParam GROUP_ID = positiveId("group_id");
+    static final ToolParam SESSION_VERSION = new ToolParam(
+            "version",
+            true,
+            schema -> schema.put("type", "integer").put("minimum", 0)
+                    .put("description", "Current session version from the read tool. A stale version is rejected by the API."),
+            value -> {
+                if (value == null || !value.isIntegralNumber() || !value.canConvertToLong() || value.asLong() < 0) {
+                    throw new InvalidToolInputException("version must be a non-negative integer from the current session");
+                }
+                return Long.toString(value.asLong());
+            });
+    static final ToolParam SESSION_PROPERTIES = new ToolParam(
+            "properties",
+            true,
+            schema -> schema.put("type", "object").put("additionalProperties", true)
+                    .put("description", "Complete replacement session JSON object. Existing keys omitted here are removed; use {} to clear."),
+            value -> {
+                if (value == null || !value.isObject()) {
+                    throw new InvalidToolInputException("properties must be a session JSON object");
+                }
+                return "";
+            });
     static final ToolParam ENTRY_LIMIT = new ToolParam(
             "entry_limit",
             false,

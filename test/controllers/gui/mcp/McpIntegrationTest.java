@@ -90,7 +90,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(24);
+            assertThat(tools.size()).isEqualTo(28);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -230,6 +230,7 @@ public class McpIntegrationTest {
             resultDao.replaceData(resultIds[1], "x".repeat(9000));
             assertThat(tool(client, base, token, "get_result_data", resultArgs).path("isError").asBoolean()).isTrue();
             checkStudyCodeTools(client, base, token, otherToken, studyId, batchId);
+            checkGroupAndSessionTools(app, client, base, token, otherToken);
             assertThat(post(client, base + "/mcp", "invalid", "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}").statusCode()).isEqualTo(401);
             // Origin validation happens before the API call, including when a valid token is present.
             HttpResponse<String> origin = client.send(HttpRequest.newBuilder(URI.create(base + "/mcp"))
@@ -351,6 +352,51 @@ public class McpIntegrationTest {
         args.putObject("properties").put("type", "GeneralMultiple");
         JsonNode general = toolData(client, base, token, "get_or_generate_study_codes", args);
         assertThat(toolData(client, base, token, "get_or_generate_study_codes", args)).isEqualTo(general);
+    }
+
+    /** Exercises group discovery and versioned session replacement against the real API. */
+    private void checkGroupAndSessionTools(Application app, HttpClient client, String base, String token,
+                                           String otherToken) throws Exception {
+        var create = Json.newObject();
+        create.putObject("properties").put("title", "Group session test").put("groupStudy", true);
+        long studyId = toolData(client, base, token, "create_study", create).path("id").asLong();
+        long batchId = toolData(client, base, token, "list_batches", Json.newObject().put("study_id", studyId))
+                .get(0).path("id").asLong();
+        var batchArgs = Json.newObject().put("batch_id", batchId);
+        assertThat(toolData(client, base, token, "list_groups", batchArgs).size()).isZero();
+        long groupId = app.injector().instanceOf(daos.common.GroupResultDao.class).withTransaction(em -> {
+            var batch = em.find(models.common.Batch.class, batchId);
+            var active = new models.common.GroupResult(batch);
+            em.persist(active);
+            var finished = new models.common.GroupResult(batch);
+            finished.setGroupState(models.common.GroupResult.GroupState.FINISHED);
+            em.persist(finished);
+            em.flush();
+            return active.getId();
+        });
+        JsonNode groups = toolData(client, base, token, "list_groups", batchArgs);
+        assertThat(groups.size()).isEqualTo(2);
+        assertThat(tool(client, base, otherToken, "list_groups", batchArgs).path("isError").asBoolean()).isTrue();
+        for (String kind : new String[]{"batch", "group"}) {
+            var readArgs = Json.newObject().put(kind + "_id", kind.equals("batch") ? batchId : groupId);
+            String read = "get_" + kind + "_session";
+            String update = "update_" + kind + "_session";
+            long version = toolData(client, base, token, read, readArgs).path("version").asLong();
+            var writeArgs = readArgs.deepCopy().put("version", version);
+            var replacement = writeArgs.putObject("properties").put("removedLater", true).putNull("nullable");
+            replacement.putObject("nested").putArray("values").add("你好").add(7);
+            long updatedVersion = toolData(client, base, token, update, writeArgs).path("version").asLong();
+            assertThat(updatedVersion).isGreaterThan(version);
+            assertThat(toolData(client, base, token, read, readArgs).path("sessionData")).isEqualTo(replacement);
+            assertThat(tool(client, base, token, update, writeArgs).path("isError").asBoolean()).isTrue();
+            assertThat(toolData(client, base, token, read, readArgs).path("sessionData")).isEqualTo(replacement);
+            writeArgs.put("version", updatedVersion);
+            assertThat(tool(client, base, otherToken, read, readArgs).path("isError").asBoolean()).isTrue();
+            assertThat(tool(client, base, otherToken, update, writeArgs).path("isError").asBoolean()).isTrue();
+            writeArgs.putObject("properties");
+            toolData(client, base, token, update, writeArgs);
+            assertThat(toolData(client, base, token, read, readArgs).path("sessionData").size()).isZero();
+        }
     }
 
     /**

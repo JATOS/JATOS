@@ -1,12 +1,13 @@
 # Embedded MCP server
 
-The GUI module exposes twenty-four tools through `/jatos/mcp`, grouped like the API routes:
+The GUI module exposes twenty-eight tools through `/jatos/mcp`, grouped like the API routes:
 
 | Concern | Tool | Arguments |
 | --- | --- | --- |
 | Batches | `list_batches` | `study_id` |
 | Batches | `get_batch` | `batch_id` |
 | Batches | `get_batch_session` | `batch_id` |
+| Batches | `update_batch_session` | `batch_id`, `version`, `properties` |
 | Batches | `create_batch` | `study_id`, `properties` |
 | Batches | `update_batch` | `batch_id`, `properties` |
 | Components | `list_components` | `study_id` |
@@ -21,6 +22,9 @@ The GUI module exposes twenty-four tools through `/jatos/mcp`, grouped like the 
 | Studies | `get_study_log` | `study_id`, optional `entry_limit` (1–1000, default 100) |
 | Study assets | `list_study_assets` | `study_id` |
 | Study assets | `read_study_asset` | `study_id`, `filepath` |
+| Groups | `list_groups` | `batch_id` |
+| Groups | `get_group_session` | `group_id` |
+| Groups | `update_group_session` | `group_id`, `version`, `properties` |
 | Study codes | `get_or_generate_study_codes` | `study_id`, `properties` (`type`, optional `batchId`, `amount`, `comment`) |
 | Study codes | `get_study_code` | `code` |
 | Study codes | `set_study_code_active` | `code`, `properties` (`active`) |
@@ -166,7 +170,7 @@ Modern results include `resultType: "complete"` and server identity metadata.
 Legacy responses omit these fields. March 2025 tool results contain text JSON
 only, because structured tool output was introduced in June 2025.
 
-All revisions expose the same twenty-four tools, API usage resource, and ping. Responses are JSON; GET and
+All revisions expose the same twenty-eight tools, API usage resource, and ping. Responses are JSON; GET and
 DELETE return 405 after authentication. There are no session IDs, SSE streams,
 prompts, subscriptions, server-initiated requests or background tasks.
 No legacy HTTP+SSE transport is offered. Optional protocol capabilities beyond
@@ -261,3 +265,18 @@ session. Credentials are never embedded. Permission filtering occurs when the AP
 handles that download; obtaining instructions does not confirm access to selected
 results. Archives do not pass through MCP and are not constrained by its size limit.
 All four tools are read-only, despite the API's use of POST.
+
+## Groups and shared sessions
+
+`list_groups` returns all groups in one batch, including active and finished groups.
+To inspect a whole group study, call `list_batches` and list the groups of each batch.
+An empty batch returns an empty list.
+
+`get_batch_session` and `get_group_session` return `sessionData` and `version`.
+`update_batch_session` and `update_group_session` accept the corresponding ID,
+the `version` just read, and `properties` containing the **entire replacement JSON
+object**. Omitted keys are removed; `{}` clears the session. Unlike the API's
+optional version parameter, these tools require a version to prevent accidental
+concurrent overwrites. A stale version returns the API's conflict error; reread
+and reconcile before trying again. Successful updates return the new version.
+Updates require USER permission; API access checks apply to both reads and writes.

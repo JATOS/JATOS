@@ -186,7 +186,7 @@ public class McpTest {
     public void listsReadAndWriteTools() {
         JsonNode tools = json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
                 .path("result").path("tools");
-        assertThat(tools.size()).isEqualTo(24);
+        assertThat(tools.size()).isEqualTo(28);
         for (JsonNode tool : tools) {
             String name = tool.path("name").asText();
             boolean write = name.startsWith("create_") || name.startsWith("update_")
