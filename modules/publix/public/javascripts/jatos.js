@@ -1051,30 +1051,73 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
      * element is an object representing one row (entries may have differing keys)
      * @param {string} [csvSeparator=','] - the delimiter to use between fields
      *    (e.g. ',' for CSV, '\t' for TSV)
+     * @param {string} [encoding='UTF8'] - Output encoding: 'UTF8' or 'UTF8BOM'.
+     *    Use 'UTF8BOM' to include a Byte Order Mark for compatibility with Excel.
      * @return {string} csvData - the resulting CSV-formatted string, with a header
      *   row containing all keys found across the input objects
      */
-    jatos.convertToCSV = function(dataArray, csvSeparator = ",") {
+    jatos.convertToCSV = function(dataArray, csvSeparator = ",", encoding = "UTF8") {
+    	// validates dataArray
+    	if (!Array.isArray(dataArray)) {
+    		throw new Error('ERROR: dataArray must be an array');
+    	}
+    	
+    	// return blank if empty
     	if (dataArray.length === 0) return '';      
+
+    	// validates each row is an object and not null/undefined
+    	for (let i = 0; i < dataArray.length; i++) {
+    		const row = dataArray[i];
+    		if (row == null || typeof row !== 'object') {
+    			throw new Error(`ERROR: Row at index ${i} must be a non-null object`);
+    		}
+    	}
+
+    	// validates csvSeparator
+    	const isInvalidSeparator = 
+    		csvSeparator.length === 0 ||
+    		typeof csvSeparator !== 'string' ||
+    		csvSeparator.includes('"') ||
+    		csvSeparator.includes('\r') ||
+    		csvSeparator.includes('\n');
+    	if (isInvalidSeparator) {
+    		throw new Error('ERROR: csvSeparator must be a non-empty string without quotes or newline');
+    	}
+
+    	// validates encoding
+    	if (encoding !== "UTF8" && encoding !== "UTF8BOM") {
+    		throw new Error('encoding must be "UTF8" or "UTF8BOM"');
+    	}
+    	
     	// Collect all unique keys across every row
     	const headersSet = new Set();
     	dataArray.forEach(row => Object.keys(row).forEach(key => headersSet.add(key)));
     	const headers = Array.from(headersSet);
         const csvRows = [];
-        
-    	const escape = (val) => {
-    		val = (val === undefined || val === null) ? '' : String(val);
-    		if (val.includes(csvSeparator) || val.includes('"') || val.includes('\n')) {
-    			return `"${val.replace(/"/g, '""')}"`;
-    		}
-    		return val;
-    	};
+
+        const escape = (val) => {
+        	val = (val === undefined || val === null) ? '' : String(val);
+        	const containsSeparator = val.includes(csvSeparator);
+        	const containsNewline = /[\n\r\u2028\u2029]/.test(val); // All line breaks
+        	const containsQuote = val.includes('"');
+        	const needsQuotes = containsSeparator || containsNewline || containsQuote;
+
+        	if (needsQuotes) {
+        		return `"${val.replace(/"/g, '""')}"`;
+        	}
+        	return val;
+        };
     	csvRows.push(headers.map(escape).join(csvSeparator));
     
     	for (const row of dataArray) {
     		csvRows.push(headers.map(header => escape(row[header])).join(csvSeparator));
     	}
-    	return csvRows.join('\n');
+
+    	if (encoding === "UTF8BOM") {
+    		return '\ufeff' + csvRows.join('\n');
+    	} else {
+    		return csvRows.join('\n');
+    	}
     };
 
     /**
