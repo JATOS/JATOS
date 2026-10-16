@@ -1,6 +1,6 @@
 # Embedded MCP server
 
-The GUI module exposes twenty tools through `/jatos/mcp`, grouped like the API routes:
+The GUI module exposes twenty-four tools through `/jatos/mcp`, grouped like the API routes:
 
 | Concern | Tool | Arguments |
 | --- | --- | --- |
@@ -24,8 +24,13 @@ The GUI module exposes twenty tools through `/jatos/mcp`, grouped like the API r
 | Study codes | `get_or_generate_study_codes` | `study_id`, `properties` (`type`, optional `batchId`, `amount`, `comment`) |
 | Study codes | `get_study_code` | `code` |
 | Study codes | `set_study_code_active` | `code`, `properties` (`active`) |
+| Results | `get_result_metadata` | `properties` (result selectors) |
+| Results | `get_result_data` | `properties` (result selectors) |
+| Results | `get_result_files` | `properties` (result selectors) |
+| Results | `get_results` | `properties` (result selectors) |
 
-Each tool calls the existing JATOS HTTP API using the caller's personal API token.
+Tools use the existing JATOS HTTP API with the caller's personal API token; result
+export tools return authenticated request instructions for direct downloads.
 API permissions, study membership and token expiry/revocation still apply.
 
 Asset paths are unencoded and relative to the study assets directory. Traversal,
@@ -161,7 +166,7 @@ Modern results include `resultType: "complete"` and server identity metadata.
 Legacy responses omit these fields. March 2025 tool results contain text JSON
 only, because structured tool output was introduced in June 2025.
 
-All revisions expose the same twenty tools, API usage resource, and ping. Responses are JSON; GET and
+All revisions expose the same twenty-four tools, API usage resource, and ping. Responses are JSON; GET and
 DELETE return 405 after authentication. There are no session IDs, SSE streams,
 prompts, subscriptions, server-initiated requests or background tasks.
 No legacy HTTP+SSE transport is offered. Optional protocol capabilities beyond
@@ -233,3 +238,26 @@ paths. The paths include the deployment prefix and resolve against the public
 JATOS origin. To disable or enable the link, call `set_study_code_active` with
 `{"code":"...","properties":{"active":false}}` or `active:true`. Updates require
 USER permission. API study membership checks apply to all three tools.
+
+## Result inspection and downloads
+
+All four result tools accept a required `properties` object containing at least
+one of `studyIds`, `studyUuids`, `componentIds`, `componentUuids`, `studyResultIds`,
+`componentResultIds`, `batchIds`, or `groupIds`. Each accepts a single ID/UUID or a
+non-empty array. Numeric IDs must be positive. Range strings are not supported by
+these tools. Multiple selectors are combined as a **union**, not an intersection.
+JATOS omits missing results. Its endpoints may omit inaccessible results or return
+an access error; the MCP tools preserve that behavior.
+
+`get_result_metadata` returns JSON metadata; `get_result_data` returns text with
+one result per line. Both are bounded by the MCP response limit: narrow selections
+or use `get_results` for larger exports. Metadata includes uploaded-file information.
+
+`get_results` (metadata, data and files) and `get_result_files` (files only) return
+ZIP download instructions: `url`, `method: POST`, `contentType: application/json`,
+`body`, `mimeType`, and authentication guidance. These are not ordinary browser GET
+links. Use an HTTP client to POST the supplied JSON with the caller's API token or
+session. Credentials are never embedded. Permission filtering occurs when the API
+handles that download; obtaining instructions does not confirm access to selected
+results. Archives do not pass through MCP and are not constrained by its size limit.
+All four tools are read-only, despite the API's use of POST.

@@ -86,7 +86,7 @@ public final class McpTools {
             new Tool(
                     "list_studies",
                     "List accessible studies as compact summaries with IDs, UUIDs and titles. "
-                    + "Use get_study to inspect a study's configuration.",
+                            + "Use get_study to inspect a study's configuration.",
                     List.of(),
                     args -> "/studies/properties",
                     ENVELOPED_JSON,
@@ -101,7 +101,7 @@ public final class McpTools {
             new Tool(
                     "get_study_log",
                     "Read recent study log entries, newest first. Defaults to %d entries; maximum %d."
-                    .formatted(DEFAULT_STUDY_LOG_ENTRIES, MAX_STUDY_LOG_ENTRIES),
+                            .formatted(DEFAULT_STUDY_LOG_ENTRIES, MAX_STUDY_LOG_ENTRIES),
                     List.of(STUDY_ID, ENTRY_LIMIT),
                     args -> "/studies/%s/log?download=false&entryLimit=%s"
                             .formatted(args.get("study_id"), args.get("entry_limit")),
@@ -125,7 +125,7 @@ public final class McpTools {
             new Tool(
                     "export_study",
                     "Return an authenticated API download link for a study and its assets (.jzip archive), not results. "
-                    + "Download with your API Bearer token or signed-in JATOS session; credentials are not included in the link.",
+                            + "Download with your API Bearer token or signed-in JATOS session; credentials are not included in the link.",
                     List.of(STUDY_ID),
                     args -> "/studies/%s/properties".formatted(args.get("study_id")),
                     DOWNLOAD_LINK,
@@ -142,8 +142,8 @@ public final class McpTools {
             new Tool(
                     "read_study_asset",
                     "Read a UTF-8 text asset. Use an unencoded relative filepath from list_study_assets. "
-                    + "Any filename or extension is accepted. The entire file must decode as UTF-8 and fit "
-                    + "within the configured response size limit.",
+                            + "Any filename or extension is accepted. The entire file must decode as UTF-8 and fit "
+                            + "within the configured response size limit.",
                     List.of(STUDY_ID, FILEPATH),
                     args -> "/studies/%s/assets/%s".formatted(args.get("study_id"), args.get("filepath")),
                     RAW_TEXT,
@@ -153,8 +153,8 @@ public final class McpTools {
             new Tool(
                     "get_or_generate_study_codes",
                     "Obtain study codes for a study and optional batch. Personal types create new codes on every call; "
-                    + "general and MTurk types reuse existing links or create them if needed. Requires USER permission. "
-                    + "Use get_study_code to obtain participation paths. Do not retry blindly after a timeout.",
+                            + "general and MTurk types reuse existing links or create them if needed. Requires USER permission. "
+                            + "Use get_study_code to obtain participation paths. Do not retry blindly after a timeout.",
                     List.of(STUDY_ID, studyCodeProperties(true)),
                     args -> "/studies/%s/studyCodes".formatted(args.get("study_id")),
                     "POST"
@@ -162,17 +162,64 @@ public final class McpTools {
             new Tool(
                     "get_study_code",
                     "Inspect a study code's type, batch, active flag, comment and participation paths. "
-                    + "Resolve returned paths against the public JATOS origin, preserving any deployment prefix.",
+                            + "Resolve returned paths against the public JATOS origin, preserving any deployment prefix.",
                     List.of(STUDY_CODE),
                     args -> "/studyCodes/%s".formatted(args.get("code"))
             ),
             new Tool(
                     "set_study_code_active",
                     "Enable or disable participation through a study code by setting properties.active. "
-                    + "Returns the updated code settings. Requires USER permission.",
+                            + "Returns the updated code settings. Requires USER permission.",
                     List.of(STUDY_CODE, studyCodeProperties(false)),
                     args -> "/studyCodes/%s".formatted(args.get("code")),
                     "PATCH"
+            ),
+            // Results
+            new Tool(
+                    "get_result_metadata",
+                    "Inspect metadata of selected study runs and component results, including uploaded-file metadata. "
+                            + "Bounded by the MCP response limit; narrow the selection or use get_results for large exports.",
+                    List.of(resultSelection()),
+                    args -> "/results/metadata?download=false",
+                    ENVELOPED_JSON,
+                    UnaryOperator.identity(),
+                    "POST",
+                    true
+            ),
+            new Tool(
+                    "get_result_data",
+                    "Read selected component-result data as text, one result per line. Data need not be JSON. "
+                            + "Bounded by the MCP response limit; use get_results for larger exports.",
+                    List.of(resultSelection()),
+                    args -> "/results/data?asPlainText=true&download=false",
+                    RAW_TEXT,
+                    UnaryOperator.identity(),
+                    "POST",
+                    true
+            ),
+            new Tool(
+                    "get_result_files",
+                    "Return an authenticated POST download request for a ZIP of selected result files. "
+                            + "Includes URL and JSON body; requires an HTTP-capable client. Access is checked when downloaded. "
+                            + "Use get_result_metadata to inspect file information.",
+                    List.of(resultSelection()),
+                    args -> "/results/files",
+                    DOWNLOAD_REQUEST,
+                    UnaryOperator.identity(),
+                    "POST",
+                    true
+            ),
+            new Tool(
+                    "get_results",
+                    "Return an authenticated POST download request for a ZIP containing selected result metadata, data and files. "
+                            + "Includes URL and JSON body; requires an HTTP-capable client. Access is checked when downloaded. "
+                            + "The archive bypasses MCP response-size limits.",
+                    List.of(resultSelection()),
+                    args -> "/results",
+                    DOWNLOAD_REQUEST,
+                    UnaryOperator.identity(),
+                    "POST",
+                    true
             )
     );
 

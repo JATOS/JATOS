@@ -9,7 +9,38 @@ import static org.assertj.core.api.Assertions.*;
  * Unit tests for the tool catalog's API mappings and argument validation.
  */
 public class McpToolsTest {
-    /** Study-code operations preserve API JSON options and encode code path segments. */
+    /**
+     * Result selectors retain JSON types and reject empty or malformed selections.
+     */
+    @Test
+    public void resolvesResultInspection() {
+        var args = Json.newObject();
+        var selection = args.putObject("properties");
+        selection.putArray("studyResultIds").add(3).add(4);
+        selection.put("studyIds", 1);
+        for (String name : java.util.List.of("get_result_metadata", "get_result_data", "get_result_files", "get_results")) {
+            var call = McpTools.resolveCall(name, args);
+            assertThat(call.method()).isEqualTo("POST");
+            assertThat(call.body()).isEqualTo(selection);
+            var schema = java.util.stream.StreamSupport.stream(McpTools.list().spliterator(), false)
+                    .filter(t -> t.path("name").asText().equals(name)).findFirst().orElseThrow();
+            assertThat(schema.path("annotations").path("readOnlyHint").asBoolean()).isTrue();
+            assertThat(schema.path("annotations").path("destructiveHint").asBoolean()).isFalse();
+        }
+        assertThat(McpTools.resolveCall("get_result_data", args).path())
+                .isEqualTo("/results/data?asPlainText=true&download=false");
+        assertThat(McpTools.resolveCall("get_results", args).format()).isEqualTo(McpApiClient.ResponseFormat.DOWNLOAD_REQUEST);
+        for (String invalid : java.util.List.of("{}", "{\"studyIds\":[]}", "{\"studyIds\":0}",
+                "{\"studyIds\":\"1-10\"}", "{\"studyUuids\":\"bad\"}", "{\"unknown\":1}")) {
+            args.set("properties", Json.parse(invalid));
+            assertThatThrownBy(() -> McpTools.resolveCall("get_result_metadata", args))
+                    .isInstanceOf(InvalidToolInputException.class);
+        }
+    }
+
+    /**
+     * Study-code operations preserve API JSON options and encode code path segments.
+     */
     @Test
     public void resolvesStudyCodeOperations() {
         var args = Json.newObject().put("study_id", 7);
@@ -39,7 +70,9 @@ public class McpToolsTest {
                 .isInstanceOf(InvalidToolInputException.class);
     }
 
-    /** Removed upload tools cannot be discovered or invoked. */
+    /**
+     * Removed upload tools cannot be discovered or invoked.
+     */
     @Test
     public void excludesUploadTools() {
         for (String name : java.util.List.of("import_study", "write_study_asset")) {
@@ -49,7 +82,9 @@ public class McpToolsTest {
         }
     }
 
-    /** Write operations preserve explicit nulls and nested JSON rather than converting them to strings. */
+    /**
+     * Write operations preserve explicit nulls and nested JSON rather than converting them to strings.
+     */
     @Test
     public void resolvesMutations() {
         var args = Json.newObject().put("study_id", 7);
@@ -64,7 +99,9 @@ public class McpToolsTest {
 
     }
 
-    /** Prevents accidental identity writes and preserves archive download links. */
+    /**
+     * Prevents accidental identity writes and preserves archive download links.
+     */
     @Test
     public void validatesWriteArgumentsAndExport() {
         assertThatThrownBy(() -> McpTools.resolveCall("create_study", Json.parse("{\"properties\":{}}")))
@@ -75,7 +112,9 @@ public class McpToolsTest {
                 .isEqualTo(McpApiClient.ResponseFormat.DOWNLOAD_LINK);
     }
 
-    /** Resolved calls select decoding and apply summaries only to the study listing. */
+    /**
+     * Resolved calls select decoding and apply summaries only to the study listing.
+     */
     @Test
     public void resolvesResponseFormatsAndOutputTransformations() {
         var studies = McpTools.resolveCall("list_studies", null);
@@ -94,7 +133,9 @@ public class McpToolsTest {
         assertThat(asset.postProcess().apply(data)).isSameAs(data);
     }
 
-    /** Discovery's advertised log defaults and bounds agree with argument validation. */
+    /**
+     * Discovery's advertised log defaults and bounds agree with argument validation.
+     */
     @Test
     public void logSchemaMatchesResolvedLimits() {
         var catalog = McpTools.list();
@@ -114,7 +155,9 @@ public class McpToolsTest {
                 .isInstanceOf(InvalidToolInputException.class);
     }
 
-    /** Extracts the URL from a fully resolved call for endpoint and input validation assertions. */
+    /**
+     * Extracts the URL from a fully resolved call for endpoint and input validation assertions.
+     */
     private String apiPath(String name, com.fasterxml.jackson.databind.JsonNode arguments) {
         return McpTools.resolveCall(name, arguments).path();
     }
@@ -146,7 +189,10 @@ public class McpToolsTest {
         assertThatThrownBy(() -> apiPath("list_studies", Json.parse("{\"extra\":true}")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
-    /** Checks the new API routes, bounded log queries and URL-safe asset paths. */
+
+    /**
+     * Checks the new API routes, bounded log queries and URL-safe asset paths.
+     */
     @Test
     public void mapsBatchLogAndAssetTools() {
         assertThat(apiPath("get_batch", Json.parse("{\"batch_id\":2}"))).isEqualTo("/batches/2");
@@ -161,7 +207,9 @@ public class McpToolsTest {
                 .isEqualTo("/studies/1/assets/js/my%20file.js");
     }
 
-    /** Accepts any suffix or no suffix; the API client validates the downloaded bytes as UTF-8. */
+    /**
+     * Accepts any suffix or no suffix; the API client validates the downloaded bytes as UTF-8.
+     */
     @Test
     public void acceptsAssetPathsRegardlessOfExtension() {
         for (String path : new String[]{"README", ".settings", "source.ts", "image.png", "data.custom"}) {
@@ -170,7 +218,9 @@ public class McpToolsTest {
         }
     }
 
-    /** Ensures filepaths cannot traverse or inject URL parameters, and log limits stay bounded. */
+    /**
+     * Ensures filepaths cannot traverse or inject URL parameters, and log limits stay bounded.
+     */
     @Test
     public void rejectsUnsafeAssetPathsAndLogLimits() {
         for (String path : new String[]{"", "/a.js", "../a.js", "a/../b.js", "./a.js", "a//b.js",

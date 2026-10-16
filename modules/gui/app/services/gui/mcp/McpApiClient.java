@@ -16,6 +16,7 @@ import play.libs.ws.WSResponse;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.Serial;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -45,9 +46,9 @@ public class McpApiClient {
     public record Reply(int status, JsonNode body) {}
 
     /**
-     * How a successful API response is decoded before it is passed to the MCP controller.
+     * How API data is decoded or delivered. DOWNLOAD_REQUEST returns instructions without fetching the export.
      */
-    public enum ResponseFormat {ENVELOPED_JSON, RAW_JSON, RAW_TEXT, DOWNLOAD_LINK}
+    public enum ResponseFormat {ENVELOPED_JSON, RAW_JSON, RAW_TEXT, DOWNLOAD_LINK, DOWNLOAD_REQUEST}
 
     /**
      * Expected API failures with messages safe to show to an MCP client.
@@ -55,7 +56,7 @@ public class McpApiClient {
     public enum FailureReason {
         TIMEOUT("JATOS API request timed out"),
         TOO_LARGE("JATOS API response exceeds the configured size limit"),
-        INVALID_UTF8("Asset is not valid UTF-8 text"),
+        INVALID_UTF8("API response is not valid UTF-8 text"),
         INVALID_JSON("JATOS API returned invalid JSON"),
         UNAVAILABLE("JATOS API connection failed");
 
@@ -73,6 +74,7 @@ public class McpApiClient {
      * Separates expected transport and decoding failures from programming errors.
      */
     public static final class ApiFailure extends RuntimeException {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         /**

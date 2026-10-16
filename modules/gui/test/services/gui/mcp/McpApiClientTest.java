@@ -5,9 +5,12 @@ import org.junit.Test;
 import general.common.Common;
 import org.apache.pekko.stream.Materializer;
 import play.libs.ws.WSClient;
+
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
+
 import static org.mockito.Mockito.*;
+
 import play.libs.Json;
 
 import static org.assertj.core.api.Assertions.*;
@@ -20,7 +23,10 @@ public class McpApiClientTest {
     private final McpApiClient client = new McpApiClient(mock(WSClient.class), mock(Materializer.class),
             new json.common.DefaultJson());
 
-    /** Study creation sends JSON properties and never retries a failed POST. */
+    /**
+     * Study creation sends JSON properties and never retries a failed POST.
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void sendsJsonWithoutRetry() {
         try (var common = mockStatic(Common.class)) {
@@ -46,7 +52,9 @@ public class McpApiClientTest {
         }
     }
 
-    /** The API returns 201 for newly created studies, with a normal data envelope. */
+    /**
+     * The API returns 201 for newly created studies, with a normal data envelope.
+     */
     @Test
     public void acceptsCreatedResponses() {
         var body = client.decode(ByteString.fromString("{\"data\":{\"id\":9}}"), 201, ENVELOPED_JSON);
@@ -81,7 +89,7 @@ public class McpApiClientTest {
     @Test
     public void rejectsMalformedContentAndKeepsApiErrors() {
         assertThatThrownBy(() -> client.decode(ByteString.fromArray(new byte[]{(byte) 0xff}), 200, RAW_TEXT))
-                .isInstanceOf(McpApiClient.ApiFailure.class).hasMessage("Asset is not valid UTF-8 text");
+                .isInstanceOf(McpApiClient.ApiFailure.class).hasMessage("API response is not valid UTF-8 text");
         assertThatThrownBy(() -> client.decode(ByteString.fromString("not JSON"), 200, RAW_JSON))
                 .isInstanceOf(RuntimeException.class);
         String error = "{\"error\":{\"message\":\"Access denied\"}}";
@@ -89,7 +97,10 @@ public class McpApiClientTest {
             assertThat(client.decode(ByteString.fromString(error), 403, format)).isEqualTo(Json.parse(error));
         }
     }
-    /** Error status handling must not depend on a valid JSON response body. */
+
+    /**
+     * Error status handling must not depend on a valid JSON response body.
+     */
     @Test
     public void acceptsNonJsonHttpErrorBodies() {
         for (int status : new int[]{401, 403, 404, 500}) {
@@ -100,7 +111,10 @@ public class McpApiClientTest {
         }
     }
 
-    /** Request construction exceptions are returned as failed stages rather than thrown to the caller. */
+    /**
+     * Request construction exceptions are returned as failed stages rather than thrown to the caller.
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void capturesSynchronousConstructionFailures() {
         try (var common = mockStatic(Common.class)) {
@@ -116,7 +130,9 @@ public class McpApiClientTest {
         }
     }
 
-    /** Expected transport failures get controlled messages; programming errors retain their identity. */
+    /**
+     * Expected transport failures get controlled messages; programming errors retain their identity.
+     */
     @Test
     public void distinguishesExpectedFailuresFromBugs() {
         assertThat(McpApiClient.classifyFailure(new CompletionException(new TimeoutException())))

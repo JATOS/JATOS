@@ -90,7 +90,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(20);
+            assertThat(tools.size()).isEqualTo(24);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -152,6 +152,62 @@ public class McpIntegrationTest {
                 }
             }
 
+            var resultDao = app.injector().instanceOf(daos.common.ComponentResultDao.class);
+            long[] resultIds = resultDao.withTransaction(em -> {
+                var worker = new models.common.workers.PersonalSingleWorker("MCP result fixture");
+                em.persist(worker);
+                var link = new models.common.StudyLink(em.find(models.common.Batch.class, batchId), worker);
+                em.persist(link);
+                var run = new models.common.StudyResult(link, worker);
+                var result = new models.common.ComponentResult(em.find(models.common.Component.class, componentId));
+                result.setStudyResult(run);
+                run.addComponentResult(result);
+                em.persist(run);
+                worker.addStudyResult(run);
+                em.flush();
+                return new long[]{run.getId(), result.getId()};
+            });
+            resultDao.replaceData(resultIds[1], "answer=42; café");
+            Path uploadDir = utils.common.IOUtils.getResultUploadsDir(resultIds[0], resultIds[1]);
+            Files.createDirectories(uploadDir);
+            byte[] uploadedBytes = new byte[]{0, 1, (byte) 255, 42};
+            Files.write(uploadDir.resolve("fixture.bin"), uploadedBytes);
+            var resultArgs = Json.newObject();
+            resultArgs.putObject("properties").put("studyIds", studyId);
+            JsonNode metadata = toolData(client, base, token, "get_result_metadata", resultArgs);
+            assertThat(metadata.isArray()).isTrue();
+            assertThat(metadata.toString()).contains("fixture.bin");
+            assertThat(toolData(client, base, token, "get_result_data", resultArgs).asText()).contains("answer=42; café");
+            for (String name : new String[]{"get_results", "get_result_files"}) {
+                JsonNode download = toolData(client, base, token, name, resultArgs);
+                assertThat(download.path("url").asText()).startsWith(base + "/api/v1/results");
+                var builder = HttpRequest.newBuilder(URI.create(download.path("url").asText()))
+                        .header("Content-Type", download.path("contentType").asText())
+                        .POST(HttpRequest.BodyPublishers.ofString(Json.stringify(download.get("body"))));
+                assertThat(client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray()).statusCode()).isEqualTo(401);
+                var archive = client.send(builder.header("Authorization", "Bearer " + token).build(), HttpResponse.BodyHandlers.ofByteArray());
+                assertThat(archive.statusCode()).isEqualTo(200);
+                assertThat(archive.headers().firstValue("Content-Type").orElse("")).contains("application/zip");
+                boolean foundFile = false;
+                boolean foundData = false;
+                try (var zip = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(archive.body()))) {
+                    java.util.zip.ZipEntry entry;
+                    while ((entry = zip.getNextEntry()) != null) {
+                        byte[] bytes = zip.readAllBytes();
+                        if (entry.getName().endsWith("fixture.bin")) {
+                            assertThat(bytes).isEqualTo(uploadedBytes);
+                            foundFile = true;
+                        }
+                        if (entry.getName().endsWith("data.txt")) {
+                            assertThat(new String(bytes, java.nio.charset.StandardCharsets.UTF_8)).contains("answer=42; café");
+                            foundData = true;
+                        }
+                    }
+                }
+                assertThat(foundFile).isTrue();
+                assertThat(foundData).isEqualTo(name.equals("get_results"));
+            }
+
             checkWriteTools(client, base, token, studyId);
             // Another valid user may discover tools, but cannot access this user's study.
             User other = new User();
@@ -169,6 +225,10 @@ public class McpIntegrationTest {
             assertThat(tool(client, base, otherToken, "update_study", forbiddenUpdate).path("isError").asBoolean()).isTrue();
             assertThat(tool(client, base, otherToken, "export_study", Json.newObject().put("study_id", studyId))
                     .path("isError").asBoolean()).isTrue();
+            assertThat(tool(client, base, otherToken, "get_result_metadata", resultArgs).path("isError").asBoolean()).isTrue();
+            assertThat(tool(client, base, otherToken, "get_result_data", resultArgs).path("isError").asBoolean()).isTrue();
+            resultDao.replaceData(resultIds[1], "x".repeat(9000));
+            assertThat(tool(client, base, token, "get_result_data", resultArgs).path("isError").asBoolean()).isTrue();
             checkStudyCodeTools(client, base, token, otherToken, studyId, batchId);
             assertThat(post(client, base + "/mcp", "invalid", "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}").statusCode()).isEqualTo(401);
             // Origin validation happens before the API call, including when a valid token is present.
@@ -257,7 +317,9 @@ public class McpIntegrationTest {
         assertThat(archive.statusCode()).isEqualTo(200);
     }
 
-    /** Generates personal links, inspects their paths, toggles access and checks study membership. */
+    /**
+     * Generates personal links, inspects their paths, toggles access and checks study membership.
+     */
     private void checkStudyCodeTools(HttpClient client, String base, String token, String otherToken,
                                      long studyId, long batchId) throws Exception {
         var args = Json.newObject().put("study_id", studyId);

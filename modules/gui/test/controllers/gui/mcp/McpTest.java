@@ -3,25 +3,23 @@ package controllers.gui.mcp;
 import com.fasterxml.jackson.databind.JsonNode;
 import general.common.Common;
 import org.junit.After;
-import org.mockito.MockedStatic;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
 import services.gui.mcp.McpApiClient;
-import services.gui.mcp.McpTools;
 import services.gui.mcp.ResolvedCall;
 
 import java.util.concurrent.CompletableFuture;
-
-import static services.gui.mcp.McpProtocolUtils.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static play.test.Helpers.contentAsString;
 import static play.test.Helpers.fakeRequest;
+import static services.gui.mcp.McpProtocolUtils.*;
 
 /**
  * Unit tests for MCP protocol handling, authentication gates and API result mapping.
@@ -47,19 +45,25 @@ public class McpTest {
         controller = new Mcp(api, new json.common.DefaultJson());
     }
 
-    /** Exercises the transport action as Play would before invoking the POST controller. */
+    /**
+     * Exercises the transport action as Play would before invoking the POST controller.
+     */
     private java.util.concurrent.CompletionStage<Result> post(Http.Request request) {
         return throughTransport(request, controller::post);
     }
 
-    /** Exercises authentication before the controller rejects an unsupported HTTP method. */
+    /**
+     * Exercises authentication before the controller rejects an unsupported HTTP method.
+     */
     private java.util.concurrent.CompletionStage<Result> unsupported(Http.Request request) {
         return throughTransport(request, controller::unsupported);
     }
 
-    /** Composes the real transport action with a controller endpoint without starting Play. */
+    /**
+     * Composes the real transport action with a controller endpoint without starting Play.
+     */
     private java.util.concurrent.CompletionStage<Result> throughTransport(Http.Request request,
-            java.util.function.Function<Http.Request, java.util.concurrent.CompletionStage<Result>> endpoint) {
+                                                                          java.util.function.Function<Http.Request, java.util.concurrent.CompletionStage<Result>> endpoint) {
         McpTransportAction action = new McpTransportAction(api);
         action.delegate = new play.mvc.Action.Simple() {
             @Override
@@ -122,7 +126,10 @@ public class McpTest {
         assertThat(result.path("result").path("capabilities").has("resources")).isTrue();
     }
 
-    /** Checks resource discovery and deployment-specific instructions across all supported revisions. */
+    /**
+     * Checks resource discovery and deployment-specific instructions across all supported revisions.
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void readsApiUsageResourceAcrossVersions() {
         commonMock.when(Common::getJatosUrlBasePath).thenReturn("/prefix/");
@@ -155,7 +162,9 @@ public class McpTest {
         verifyNoMoreInteractions(api);
     }
 
-    /** Rejects unsupported resource requests instead of treating arbitrary URIs as fetch targets. */
+    /**
+     * Rejects unsupported resource requests instead of treating arbitrary URIs as fetch targets.
+     */
     @Test
     public void rejectsInvalidResourceRequests() {
         assertThat(json(call("""
@@ -177,13 +186,54 @@ public class McpTest {
     public void listsReadAndWriteTools() {
         JsonNode tools = json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
                 .path("result").path("tools");
-        assertThat(tools.size()).isEqualTo(20);
+        assertThat(tools.size()).isEqualTo(24);
         for (JsonNode tool : tools) {
             String name = tool.path("name").asText();
             boolean write = name.startsWith("create_") || name.startsWith("update_")
                     || name.equals("get_or_generate_study_codes") || name.equals("set_study_code_active");
             assertThat(tool.path("annotations").path("readOnlyHint").asBoolean()).isEqualTo(!write);
             assertThat(tool.path("inputSchema").path("additionalProperties").asBoolean()).isFalse();
+        }
+    }
+
+    /**
+     * Export instructions include public URLs and selectors without fetching ZIPs or revealing credentials.
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
+    public void resultDownloadsAreAuthenticatedPostInstructions() {
+        commonMock.when(Common::getJatosUrlBasePath).thenReturn("/prefix/");
+        for (String name : java.util.List.of("get_results", "get_result_files")) {
+            var message = Json.newObject().put("jsonrpc", "2.0").put("id", 1).put("method", "tools/call");
+            message.putObject("params").put("name", name).putObject("arguments")
+                    .putObject("properties").put("studyIds", 9);
+            Result response = post(request(Json.stringify(message)).header("Host", "jatos.example.org").build())
+                    .toCompletableFuture().join();
+            JsonNode data = json(response).path("result").path("structuredContent").path("data");
+            assertThat(data.path("url").asText()).startsWith("http://jatos.example.org/prefix/jatos/api/v1/results");
+            assertThat(data.path("method").asText()).isEqualTo("POST");
+            assertThat(data.path("body").path("studyIds").asInt()).isEqualTo(9);
+            assertThat(data.toString()).doesNotContain(AUTH);
+        }
+        verify(api, times(2)).get("/admin/token", AUTH);
+        verifyNoMoreInteractions(api);
+    }
+
+    /**
+     * Result text and nested metadata retain their original API contents.
+     */
+    @Test
+    public void resultInspectionPreservesApiData() {
+        for (String name : java.util.List.of("get_result_metadata", "get_result_data")) {
+            JsonNode data = name.equals("get_result_data") ? com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.textNode("answer=42\n")
+                    : Json.parse("[{\"studyResults\":[{\"id\":7}]}]");
+            when(api.execute(any(), eq(AUTH))).thenReturn(CompletableFuture.completedFuture(
+                    new McpApiClient.Reply(200, Json.newObject().set("data", data))));
+            var message = Json.newObject().put("jsonrpc", "2.0").put("id", 1).put("method", "tools/call");
+            message.putObject("params").put("name", name).putObject("arguments")
+                    .putObject("properties").put("studyResultIds", 7);
+            assertThat(json(call(Json.stringify(message))).path("result").path("structuredContent").path("data"))
+                    .isEqualTo(data);
         }
     }
 
@@ -412,7 +462,9 @@ public class McpTest {
         assertThat(result.path("resultType").asText()).isEqualTo("complete");
     }
 
-    /** Preserves tool endpoint authentication failures even after the initial token lookup succeeds. */
+    /**
+     * Preserves tool endpoint authentication failures even after the initial token lookup succeeds.
+     */
     @Test
     public void toolEndpointAuthenticationFailuresRemainUnauthorized() {
         when(api.execute(argThat(call -> call.path().equals("/studies/properties")), eq(AUTH))).thenReturn(CompletableFuture.completedFuture(
@@ -432,7 +484,9 @@ public class McpTest {
         verifyNoMoreInteractions(api);
     }
 
-    /** Rejects invalid tokens before validating tool arguments. */
+    /**
+     * Rejects invalid tokens before validating tool arguments.
+     */
     @Test
     public void invalidToolArgumentsAuthenticateFirst() {
         when(api.get("/admin/token", AUTH)).thenReturn(CompletableFuture.completedFuture(
@@ -445,7 +499,9 @@ public class McpTest {
         verifyNoMoreInteractions(api);
     }
 
-    /** Authenticates malformed messages and local protocol errors before returning them. */
+    /**
+     * Authenticates malformed messages and local protocol errors before returning them.
+     */
     @Test
     public void localProtocolErrorsAuthenticateFirst() {
         Result malformed = call("{");
@@ -460,7 +516,9 @@ public class McpTest {
         verifyNoMoreInteractions(api);
     }
 
-    /** Invalid credentials take precedence over HTTP and JSON-RPC errors, and prevent tool execution. */
+    /**
+     * Invalid credentials take precedence over HTTP and JSON-RPC errors, and prevent tool execution.
+     */
     @Test
     public void failedAuthenticationStopsAllRequestProcessing() {
         when(api.get("/admin/token", AUTH)).thenReturn(CompletableFuture.completedFuture(
@@ -481,7 +539,9 @@ public class McpTest {
         verifyNoMoreInteractions(api);
     }
 
-    /** Unexpected tool response bugs retain the known request ID and are not reported as API failures. */
+    /**
+     * Unexpected tool response bugs retain the known request ID and are not reported as API failures.
+     */
     @Test
     public void unexpectedToolFailurePreservesId() {
         when(api.execute(argThat(call -> call.path().equals("/studies/properties")), eq(AUTH))).thenReturn(CompletableFuture.completedFuture(
@@ -494,7 +554,9 @@ public class McpTest {
         assertThat(json(result).path("error").path("message").asText()).isEqualTo("Internal error");
     }
 
-    /** Expected API failures provide actionable tool messages without exposing their underlying cause. */
+    /**
+     * Expected API failures provide actionable tool messages without exposing their underlying cause.
+     */
     @Test
     public void expectedToolFailureHasSafeSpecificMessage() {
         when(api.execute(argThat(call -> call.path().equals("/studies/properties")), eq(AUTH))).thenReturn(CompletableFuture.failedFuture(

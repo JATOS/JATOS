@@ -24,10 +24,20 @@ import static services.gui.mcp.McpApiClient.ResponseFormat.ENVELOPED_JSON;
  * @param format      describes how to decode the API response
  * @param postProcess transforms successful API data into the tool's output
  * @param method      HTTP verb
+ * @param readOnly    whether the operation only reads data, regardless of its HTTP verb
  */
 record Tool(String name, String description, List<ToolParam> params,
             Function<Map<String, String>, String> path, McpApiClient.ResponseFormat format,
-            UnaryOperator<JsonNode> postProcess, String method) {
+            UnaryOperator<JsonNode> postProcess, String method, boolean readOnly) {
+    /**
+     * Defaults existing operations to read-only for GET and mutating for other verbs.
+     */
+    Tool(String name, String description, List<ToolParam> params,
+         Function<Map<String, String>, String> path, McpApiClient.ResponseFormat format,
+         UnaryOperator<JsonNode> postProcess, String method) {
+        this(name, description, params, path, format, postProcess, method, method.equals("GET"));
+    }
+
     /**
      * Standard read tools return the API data unchanged.
      */
@@ -65,7 +75,6 @@ record Tool(String name, String description, List<ToolParam> params,
             param.describe(properties.putObject(param.name()));
             if (param.required()) required.add(param.name());
         }
-        boolean readOnly = method().equals("GET");
         node.putObject("annotations").put("readOnlyHint", readOnly)
                 .put("destructiveHint", method().equals("PATCH"))
                 .put("idempotentHint", readOnly).put("openWorldHint", false);

@@ -92,6 +92,48 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
     }
 
     /**
+     * Defines explicit result selectors. Multiple fields are combined as a union by the API.
+     */
+    static ToolParam resultSelection() {
+        List<String> fields = List.of("studyIds", "studyUuids", "componentIds", "componentUuids",
+                "studyResultIds", "componentResultIds", "batchIds", "groupIds");
+        return new ToolParam("properties", true, schema -> {
+            schema.put("type", "object").put("minProperties", 1).put("additionalProperties", false)
+                    .put("description", "Select results by one or more ID/UUID fields. Selections are combined (union), not intersected. "
+                            + "Missing results are omitted; the API may omit inaccessible results or reject access. Use IDs or non-empty arrays; ranges are not supported here.");
+            var props = schema.putObject("properties");
+            for (String field : fields) {
+                boolean uuid = field.endsWith("Uuids");
+                var alternatives = props.putObject(field).putArray("oneOf");
+                var scalar = alternatives.addObject().put("type", uuid ? "string" : "integer");
+                if (uuid) scalar.put("format", "uuid");
+                else scalar.put("minimum", 1);
+                alternatives.addObject().put("type", "array").put("minItems", 1).set("items", scalar.deepCopy());
+            }
+        }, value -> {
+            if (value == null || !value.isObject() || value.isEmpty()) {
+                throw new InvalidToolInputException("properties must contain at least one result selector");
+            }
+            value.fields().forEachRemaining(entry -> {
+                if (!fields.contains(entry.getKey()))
+                    throw new InvalidToolInputException("Unknown result selector: " + entry.getKey());
+                JsonNode values = entry.getValue();
+                if (values.isArray() && values.isEmpty())
+                    throw new InvalidToolInputException("Result selector arrays must not be empty");
+                for (JsonNode item : values.isArray() ? values : List.of(values)) {
+                    if (entry.getKey().endsWith("Uuids")) {
+                        if (!item.isTextual() || !item.asText().matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"))
+                            throw new InvalidToolInputException("Expected a UUID in " + entry.getKey());
+                    } else if (!item.isIntegralNumber() || !item.canConvertToLong() || item.asLong() < 1) {
+                        throw new InvalidToolInputException("Expected a positive integer in " + entry.getKey());
+                    }
+                }
+            });
+            return "";
+        });
+    }
+
+    /**
      * Describes this parameter in the tool's input schema.
      */
     void describe(ObjectNode propertySchema) {
@@ -158,9 +200,7 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
                 schema.putArray("type").add("object").add("string").add("null");
                 schema.put("description", "JSON input data as an object or JSON string, or null to clear.");
             }
-            case "allowedWorkerTypes" -> {
-                schema.put("type", "array").putObject("items").put("type", "string");
-            }
+            case "allowedWorkerTypes" -> schema.put("type", "array").putObject("items").put("type", "string");
             case "type" -> {
                 schema.put("type", "string");
                 var values = schema.putArray("enum");
