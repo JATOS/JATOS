@@ -10,6 +10,23 @@ import static org.assertj.core.api.Assertions.*;
  */
 public class McpToolsTest {
     @Test
+    public void resolvesTextAssetWrites() {
+        var args = Json.newObject().put("study_id", 7).put("filepath", "js/my script.js").put("content", "你好\n");
+        var call = McpTools.resolveCall("write_study_asset", args);
+        assertThat(call.path()).isEqualTo("/studies/7/assets/js/my%20script.js");
+        assertThat(call.method()).isEqualTo("POST");
+        assertThat(call.body().asText()).isEqualTo("你好\n");
+        args.put("content", "");
+        assertThat(McpTools.resolveCall("write_study_asset", args).body().asText()).isEmpty();
+        args.put("content", 42);
+        assertThatThrownBy(() -> McpTools.resolveCall("write_study_asset", args)).isInstanceOf(InvalidToolInputException.class);
+        args.remove("content");
+        assertThatThrownBy(() -> McpTools.resolveCall("write_study_asset", args)).isInstanceOf(InvalidToolInputException.class);
+        args.put("content", "text").put("filepath", "../secret");
+        assertThatThrownBy(() -> McpTools.resolveCall("write_study_asset", args)).isInstanceOf(InvalidToolInputException.class);
+    }
+
+    @Test
     public void resolvesUploadInstructions() {
         var defaults = McpTools.resolveCall("study_import", null);
         assertThat(defaults.path()).isEqualTo("/studies?keepProperties=false&keepAssets=false&keepCurrentAssetsName=true&renameAssets=true");
@@ -214,11 +231,11 @@ public class McpToolsTest {
     }
 
     /**
-     * Removed upload tools cannot be discovered or invoked.
+     * The removed inline archive import cannot be discovered or invoked.
      */
     @Test
-    public void excludesUploadTools() {
-        for (String name : java.util.List.of("import_study", "write_study_asset")) {
+    public void excludesInlineArchiveImport() {
+        for (String name : java.util.List.of("import_study")) {
             assertThat(McpTools.list().toString()).doesNotContain(name);
             assertThatThrownBy(() -> McpTools.resolveCall(name, Json.newObject()))
                     .isInstanceOf(InvalidToolRequestException.class);

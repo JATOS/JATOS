@@ -78,6 +78,18 @@ record ToolParam(String name, boolean required, Consumer<ObjectNode> schema,
                     .put("default", DEFAULT_STUDY_LOG_ENTRIES)
                     .put("description", "Maximum number of recent log entries to read."),
             value -> Integer.toString(studyLogEntryLimit(value)));
+    static final ToolParam CONTENT = new ToolParam(
+            "content",
+            true,
+            schema -> schema.put("type", "string")
+                    .put("description", "Complete UTF-8 text to write. Empty text creates or truncates the file. The MCP request size limit applies."),
+            value -> {
+                if (value == null || !value.isTextual())
+                    throw new InvalidToolInputException("content must be a string");
+                if (!StandardCharsets.UTF_8.newEncoder().canEncode(value.asText()))
+                    throw new InvalidToolInputException("content must be valid Unicode text");
+                return "";
+            });
     static final ToolParam FILEPATH = new ToolParam(
             "filepath",
             true,

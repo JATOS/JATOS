@@ -35,7 +35,8 @@ public final class UploadBodyParsers {
     public static class StudyAsset extends BodyParser.MultipartFormData {
         @Inject
         public StudyAsset(PlayBodyParsers parsers) {
-            super(parsers, Common.getStudyAssetsMaxFileSize() + MULTIPART_OVERHEAD_ALLOWANCE);
+            // Empty assets are valid, including text files intentionally cleared through the API.
+            super(parsers, Common.getStudyAssetsMaxFileSize() + MULTIPART_OVERHEAD_ALLOWANCE, true);
         }
     }
 

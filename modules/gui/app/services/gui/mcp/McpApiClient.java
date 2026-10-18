@@ -5,6 +5,9 @@ import general.common.Common;
 import json.common.DefaultJson;
 import http.common.HttpUtils;
 import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.Source;
+import play.mvc.Http;
+import play.libs.ws.WSBodyWritables;
 import org.apache.pekko.util.ByteString;
 import play.Logger;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -36,7 +39,7 @@ import java.nio.charset.StandardCharsets;
  *
  */
 @Singleton
-public class McpApiClient {
+public class McpApiClient implements WSBodyWritables {
 
     private static final Logger.ALogger LOGGER = Logger.of(McpApiClient.class);
 
@@ -133,7 +136,15 @@ public class McpApiClient {
                     .setRequestTimeout(Common.getJatosMcpApiTimeout())
                     .addHeader("Authorization", authorization)
                     .addHeader("Accept", format == ResponseFormat.RAW_TEXT ? "*/*" : "application/json");
-            if (body != null) request.setContentType("application/json").setBody(defaultJson.objAsJson(body));
+            if (body != null && body.isTextual()) {
+                var bytes = ByteString.fromString(body.asText(), StandardCharsets.UTF_8);
+                Http.MultipartFormData.Part<Source<ByteString, ?>> file =
+                        new Http.MultipartFormData.FilePart<>("studyAssetsFile", "asset.txt", "text/plain; charset=utf-8",
+                                Source.single(bytes));
+                request.setBody(multipartBody(Source.single(file)));
+            } else if (body != null) {
+                request.setContentType("application/json").setBody(defaultJson.objAsJson(body));
+            }
             request.setMethod(method);
             return request.stream().thenCompose(response -> readReply(response, path, format));
         }).handle((reply, failure) -> {

@@ -231,6 +231,10 @@ public class Mcp extends Controller {
                     + reply.body().path("error").path("message").asText("Request failed"));
         }
         JsonNode data = reply.body().get("data");
+        // Some successful mutations, including asset uploads, return only an API message.
+        if (data == null && reply.body().path("message").isTextual()) {
+            data = JsonNodeFactory.instance.objectNode().set("message", reply.body().get("message"));
+        }
         if (data == null) return toolError("JATOS API response has no data field");
 
         if (call.format() == McpApiClient.ResponseFormat.DOWNLOAD_LINK) {

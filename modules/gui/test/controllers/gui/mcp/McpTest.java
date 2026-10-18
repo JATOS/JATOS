@@ -186,10 +186,10 @@ public class McpTest {
     public void listsReadAndWriteTools() {
         JsonNode tools = json(call("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
                 .path("result").path("tools");
-        assertThat(tools.size()).isEqualTo(45);
+        assertThat(tools.size()).isEqualTo(46);
         for (JsonNode tool : tools) {
             String name = tool.path("name").asText();
-            boolean write = name.startsWith("create_") || name.startsWith("update_") || name.startsWith("add_") || name.startsWith("remove_")
+            boolean write = name.startsWith("write_") || name.startsWith("create_") || name.startsWith("update_") || name.startsWith("add_") || name.startsWith("remove_")
                     || name.equals("get_or_generate_study_codes") || name.startsWith("set_");
             assertThat(tool.path("annotations").path("readOnlyHint").asBoolean()).isEqualTo(!write);
             assertThat(tool.path("inputSchema").path("additionalProperties").asBoolean()).isFalse();

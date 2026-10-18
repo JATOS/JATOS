@@ -241,6 +241,15 @@ public final class McpTools {
                     UnaryOperator.identity()
             ),
             new Tool(
+                    "write_study_asset",
+                    "Write UTF-8 text to a study asset through the API. Creates missing parent directories and overwrites existing files. "
+                            + "Send the complete content; empty content truncates the file. Requires USER permission and study access. "
+                            + "The MCP request and API asset size limits apply; use upload_study_asset for large or binary files.",
+                    List.of(STUDY_ID, FILEPATH, CONTENT),
+                    args -> "/studies/%s/assets/%s".formatted(args.get("study_id"), args.get("filepath")),
+                    "POST"
+            ),
+            new Tool(
                     "upload_study_asset",
                     "Return multipart HTTP upload instructions for a study asset. Does not upload a file. "
                             + "The client must execute the request with USER permission and study access. "

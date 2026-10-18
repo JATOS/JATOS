@@ -83,7 +83,7 @@ record Tool(String name, String description, List<ToolParam> params,
             if (param.required()) required.add(param.name());
         }
         node.putObject("annotations").put("readOnlyHint", readOnly)
-                .put("destructiveHint", method().equals("PATCH") || method().equals("DELETE"))
+                .put("destructiveHint", method().equals("PATCH") || method().equals("DELETE") || params().contains(ToolParam.CONTENT))
                 .put("idempotentHint", readOnly).put("openWorldHint", false);
         return node;
     }
@@ -102,7 +102,7 @@ record Tool(String name, String description, List<ToolParam> params,
         for (ToolParam param : params()) {
             normalized.put(param.name(), param.validate(arguments.get(param.name())));
         }
-        JsonNode body = arguments.get("properties");
+        JsonNode body = arguments.has("content") ? arguments.get("content") : arguments.get("properties");
         return new ResolvedCall(path().apply(normalized), format(), postProcess(), method(), body, adminOnly);
     }
 

@@ -90,7 +90,7 @@ public class McpIntegrationTest {
             assertThat(post(client, base + "/mcp", token, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}").statusCode()).isEqualTo(202);
             JsonNode tools = Json.parse(post(client, base + "/mcp", token,
                     "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\"}").body()).path("result").path("tools");
-            assertThat(tools.size()).isEqualTo(45);
+            assertThat(tools.size()).isEqualTo(46);
 
             HttpResponse<String> created = post(client, base + "/api/v1/studies", token,
                     "{\"title\":\"MCP study\",\"dirName\":\"mcp_study\",\"studyInput\":{}}");
@@ -276,6 +276,15 @@ public class McpIntegrationTest {
             assertThat(tool(client, base, token, "get_result_data", resultArgs).path("isError").asBoolean()).isTrue();
             checkStudyCodeTools(client, base, token, otherToken, studyId, batchId);
             checkGroupAndSessionTools(app, client, base, token, otherToken);
+            var textAsset = Json.newObject().put("study_id", studyId).put("filepath", "new folder/script.js");
+            for (String content : new String[]{"const greeting = '你好 café 😀';\r\n", "replacement\n", ""}) {
+                textAsset.put("content", content);
+                toolData(client, base, token, "write_study_asset", textAsset);
+                assertThat(Files.readString(assetDir.resolve("new folder/script.js"))).isEqualTo(content);
+            }
+            textAsset.put("content", "unauthorized replacement");
+            assertThat(tool(client, base, otherToken, "write_study_asset", textAsset).path("isError").asBoolean()).isTrue();
+            assertThat(Files.readString(assetDir.resolve("new folder/script.js"))).isEmpty();
             checkMembershipTools(client, base, token, otherToken, studyId, other.getId());
             for (String entity : new String[]{"study", "component", "batch", "user"}) {
                 long target = switch (entity) {
