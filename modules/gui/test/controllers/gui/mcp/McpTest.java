@@ -199,6 +199,7 @@ public class McpTest {
     /**
      * Export instructions include public URLs and selectors without fetching ZIPs or revealing credentials.
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void uploadInstructionsDoNotExecuteUploads() {
         commonMock.when(Common::getJatosUrlBasePath).thenReturn("/prefix/");
