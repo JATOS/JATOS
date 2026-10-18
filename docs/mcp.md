@@ -1,6 +1,6 @@
 # Embedded MCP server
 
-The GUI module exposes forty-five tools through `/jatos/mcp`, grouped like the API routes:
+The GUI module exposes forty-six tools through `/jatos/mcp`, grouped like the API routes:
 
 | Concern | Tool | Arguments |
 | --- | --- | --- |
@@ -27,6 +27,7 @@ The GUI module exposes forty-five tools through `/jatos/mcp`, grouped like the A
 | Studies | `download_study_log` | `study_id` |
 | Studies | `get_study_log` | `study_id`, optional `entry_limit` (1–1000, default 100) |
 | Study assets | `list_study_assets` | `study_id` |
+| Study assets | `write_study_asset` | `study_id`, `filepath`, `content` |
 | Study assets | `upload_study_asset` | `study_id`, `filepath` |
 | Study assets | `download_study_asset` | `study_id`, `filepath` |
 | Study assets | `read_study_asset` | `study_id`, `filepath` |
@@ -81,6 +82,13 @@ write times out or its response cannot be read, inspect the study before retryin
 the API may already have applied the change.
 
 ## File uploads
+
+`write_study_asset` writes supplied `content` directly as UTF-8 text through the
+asset API. It creates missing parent directories and overwrites existing files;
+empty content truncates the file. It requires USER permission and study access.
+The entire JSON request must fit `jatos.mcp.maxRequestSize`, and the uploaded file
+must fit `jatos.studyAssets.maxFileSize`. Use `upload_study_asset` for large or
+binary files instead.
 
 `study_import` and `upload_study_asset` return HTTP upload instructions; calling them
 does not transfer files or mutate JATOS. Their read-only annotations describe this
@@ -198,7 +206,7 @@ Modern results include `resultType: "complete"` and server identity metadata.
 Legacy responses omit these fields. March 2025 tool results contain text JSON
 only, because structured tool output was introduced in June 2025.
 
-All revisions expose the same forty-five tools, API usage resource, and ping. Responses are JSON; GET and
+All revisions expose the same forty-six tools, API usage resource, and ping. Responses are JSON; GET and
 DELETE return 405 after authentication. There are no session IDs, SSE streams,
 prompts, subscriptions, server-initiated requests or background tasks.
 No legacy HTTP+SSE transport is offered. Optional protocol capabilities beyond
