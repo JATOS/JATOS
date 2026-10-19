@@ -33,6 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Real HTTP MCP -> loopback API -> database, including Play routes and filters.
  */
 public class McpIntegrationTest {
+    private static final int MAX_REQUEST_BYTES = 64 * 1024;
+
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
@@ -65,6 +67,7 @@ public class McpIntegrationTest {
                 .configure("jatos.mcp.enabled", true)
                 .configure("play.server.http.port", port)
                 .configure("jatos.mcp.maxResponseSize", "8KiB")
+                .configure("jatos.mcp.maxRequestSize", MAX_REQUEST_BYTES)
                 .configure("jatos.user.admin.password", "Mcp-Test-Only-42!")
                 .configure("jatos.studyAssets.rootPath", root + "/assets")
                 .configure("jatos.studyLogs.path", root + "/study-logs")
@@ -320,7 +323,11 @@ public class McpIntegrationTest {
                     .build(), HttpResponse.BodyHandlers.ofString());
             assertThat(anonymous.statusCode()).isEqualTo(401);
             assertThat(anonymous.headers().firstValue("WWW-Authenticate")).contains("Bearer");
-            assertThat(post(client, base + "/mcp", token, " ".repeat(65537)).statusCode()).isEqualTo(413);
+            // ASCII JSON padded to the exact byte limit: size rejection must precede JSON parsing.
+            String ping = "{\"jsonrpc\":\"2.0\",\"id\":30,\"method\":\"ping\"}";
+            String atLimit = ping + " ".repeat(MAX_REQUEST_BYTES - ping.length());
+            assertThat(post(client, base + "/mcp", token, atLimit).statusCode()).isEqualTo(200);
+            assertThat(post(client, base + "/mcp", token, atLimit + " ").statusCode()).isEqualTo(413);
 
             var largeProps = Json.newObject();
             largeProps.putObject("studyInput").put("large", "x".repeat(10000));
