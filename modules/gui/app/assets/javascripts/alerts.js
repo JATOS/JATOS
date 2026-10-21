@@ -55,7 +55,7 @@ function info(msg, delay = 5000) {
     showToast(msg, "info", delay)
 }
 
-function warning(msg, delay = 0) {
+function warning(msg, delay = 10000) {
     showToast(msg, "warning", delay)
 }
 
