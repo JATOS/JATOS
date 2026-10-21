@@ -7,7 +7,6 @@ import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.*;
 import daos.common.worker.WorkerDao;
-import models.common.workers.WorkerType;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import http.common.Http.Context;
@@ -17,6 +16,7 @@ import messaging.common.RequestScopeMessaging;
 import models.common.*;
 import models.common.GroupResult.GroupState;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import models.gui.BatchProperties;
 import play.data.Form;
 import play.data.FormFactory;
@@ -34,8 +34,7 @@ import java.util.Objects;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 /**
  * Controller for all actions regarding study links, batches, and workers within the JATOS GUI.
@@ -93,7 +92,7 @@ public class StudyLinks extends Controller {
      * GET request to get the Study Links page
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     public Result studyLinks(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
@@ -109,7 +108,7 @@ public class StudyLinks extends Controller {
      * StudyResults and GroupResults.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result batchById(Long studyId, Long batchId) {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -127,7 +126,7 @@ public class StudyLinks extends Controller {
      * StudyResults, the count of their GroupResults, and the count of their Workers.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result batchesByStudy(Long studyId) {
         Study study = studyDao.findByIdWithBatches(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -145,7 +144,7 @@ public class StudyLinks extends Controller {
      * POST request to submit a newly created Batch
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result submitCreatedBatch(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
@@ -167,7 +166,7 @@ public class StudyLinks extends Controller {
      * GET request to toggle the group state FIXED / STARTED
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @SuppressWarnings("unused")
     public Result toggleGroupFixed(Long studyId, Long groupResultId, boolean fixed) {
         GroupResult groupResult = groupResultDao.findByIdWithBatch(groupResultId);
@@ -182,7 +181,7 @@ public class StudyLinks extends Controller {
      * GET request that returns Batch properties as JSON
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result batchProperties(Long studyId, Long batchId) {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -198,7 +197,7 @@ public class StudyLinks extends Controller {
      * POST request to submit changed Batch properties
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result submitEditedBatchProperties(Http.Request request, Long studyId, Long batchId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -224,7 +223,7 @@ public class StudyLinks extends Controller {
      * POST request to allow or deny a worker type in a batch.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result toggleAllowedWorkerType(Long studyId, Long batchId, String workerType,
                                           Boolean allow) {
         Study study = studyDao.findById(studyId);
@@ -249,7 +248,7 @@ public class StudyLinks extends Controller {
      * DELETE request to remove a Batch
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result removeBatch(Long studyId, Long batchId) {
         Study study = studyDao.findById(studyId);
@@ -268,7 +267,7 @@ public class StudyLinks extends Controller {
      * Worker, and Batch
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result studyLinksSetupData(Long studyId, Long batchId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -290,7 +289,7 @@ public class StudyLinks extends Controller {
      * Personal type workers
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result studyLinksData(Long studyId, Long batchId, String workerType) {
         Study study = studyDao.findById(studyId);
         Batch batch = batchDao.findById(batchId);
@@ -307,7 +306,7 @@ public class StudyLinks extends Controller {
      * POST request to change the property 'active' of a StudyLink.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result toggleStudyLinkActive(Long studyId, Long batchId, String studyCode, Boolean active) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -330,7 +329,7 @@ public class StudyLinks extends Controller {
      * StudyLink.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result editWorkerComment(Http.Request request, Long workerId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

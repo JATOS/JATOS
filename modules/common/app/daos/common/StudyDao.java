@@ -1,5 +1,6 @@
 package daos.common;
 
+import jakarta.persistence.LockModeType;
 import models.common.AdminStudyData;
 import models.common.AdminStudyMemberData;
 import models.common.Study;
@@ -41,6 +42,12 @@ public class StudyDao extends AbstractDao {
 
     public Study findById(Long id) {
         return withReadOnlyTransaction((EntityManager em) -> em.find(Study.class, id));
+    }
+
+    public Study findByIdWithLock(Long id) {
+        return withReadOnlyTransaction(em -> {
+            return em.find(Study.class, id, LockModeType.PESSIMISTIC_WRITE);
+        });
     }
 
     /**
@@ -293,6 +300,7 @@ public class StudyDao extends AbstractDao {
             String studyQueryStr = """
                     SELECT s.id AS id,
                     s.uuid AS uuid,
+                    s.owner.username AS ownerUsername,
                     s.title AS title,
                     s.active AS active,
                     s.dirName AS dirName,
@@ -340,6 +348,7 @@ public class StudyDao extends AbstractDao {
                     ? Collections.emptyMap()
                     : em.createQuery("""
                             SELECT s.id AS studyId,
+                            u.id AS userId,
                             u.username AS username,
                             u.name AS name,
                             u.authMethod AS authMethod
@@ -353,10 +362,11 @@ public class StudyDao extends AbstractDao {
                     .stream()
                     .map(t -> new AdminStudyMemberData(
                             ((Number) t.get("studyId")).longValue(),
+                            ((Number) t.get("userId")).longValue(),
                             (String) t.get("username"),
                             (String) t.get("name"),
                             String.valueOf(t.get("authMethod"))))
-                    .collect(Collectors.groupingBy(AdminStudyMemberData::getStudyId));
+                    .collect(Collectors.groupingBy(AdminStudyMemberData::studyId));
 
             Function<Tuple, AdminStudyData> toAdminStudyData = t -> {
                 Long studyId = ((Number) t.get("id")).longValue();
@@ -369,7 +379,8 @@ public class StudyDao extends AbstractDao {
                         ((Number) t.get("studyResultCount")).longValue(),
                         resultDataSizeByStudyId.getOrDefault(studyId, 0L),
                         (Date) t.get("lastStarted"),
-                        membersByStudyId.getOrDefault(studyId, Collections.emptyList()));
+                        membersByStudyId.getOrDefault(studyId, Collections.emptyList()),
+                        (String) t.get("ownerUsername"));
             };
 
             return studyTuples.stream()
@@ -393,6 +404,14 @@ public class StudyDao extends AbstractDao {
 
             return result.isEmpty() ? null : result.getFirst();
         });
+    }
+
+    public boolean isOwner(Study study, User user) {
+        if (study == null || user == null) return false;
+        return withReadOnlyTransaction(em -> em.createQuery(
+                        "select count(s) from Study s where s.id = :id and s.owner.username = :username", Long.class)
+                .setParameter("id", study.getId()).setParameter("username", user.getUsername())
+                .getSingleResult() == 1);
     }
 
 }

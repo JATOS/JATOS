@@ -64,7 +64,7 @@ public class ApiTokenApi extends Controller {
      * Returns metadata of the API token used in this request
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = TOKEN)
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = TOKEN)
     public Result currentApiTokenMetadata() {
         Object token = Context.current().args().get(API_TOKEN);
         return ok(ApiEnvelope.wrap(token).asJsonNode());
@@ -75,7 +75,7 @@ public class ApiTokenApi extends Controller {
      * Generate API tokens. It returns the token and the token metadata.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(Json.class)
     public Result generateApiToken(play.mvc.Http.Request request, Long userId) {
         if (!Common.isJatosApiTokensApiGenerationAllowed()) {
@@ -104,7 +104,7 @@ public class ApiTokenApi extends Controller {
      * List the metadata of all tokens that belong to a user.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     public Result allApiTokenMetadataByUser(Long userId) {
         User user = userDao.findById(userId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -119,7 +119,7 @@ public class ApiTokenApi extends Controller {
      * Get the metadata of an API token specified by its ID.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     public Result apiTokenMetadata(Long id) {
         ApiToken apiToken = apiTokenDao.find(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -133,7 +133,7 @@ public class ApiTokenApi extends Controller {
      * admins) can update their own tokens.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(Json.class)
     public Result toggleApiTokenActive(play.mvc.Http.Request request, Long id) {
         ApiToken token = apiTokenDao.find(id);
@@ -155,7 +155,7 @@ public class ApiTokenApi extends Controller {
      * Admins can delete tokens of non-admin users. Users (including admins) can delete their own tokens.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result deleteApiToken(Long id) {
         ApiToken token = apiTokenDao.find(id);

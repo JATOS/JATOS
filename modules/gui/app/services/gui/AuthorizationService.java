@@ -34,6 +34,28 @@ public class AuthorizationService {
         this.studyDao = studyDao;
     }
 
+    /**
+     * Enabled superusers have owner privileges. Admin override is reserved for ownership transfer.
+     */
+    public void checkStudyOwner(Study study, User user, boolean adminAllowed) {
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        if (user == null
+                || !(adminAllowed && user.isAdmin())
+                && !isAllowedSuperuser(user)
+                && !studyDao.isOwner(study, user)) {
+            throw new ForbiddenException("Only the study owner or an enabled superuser" + (adminAllowed ? " or an administrator" : "")
+                    + " can perform this action.", ErrorCode.NO_ACCESS);
+        }
+    }
+
+    /**
+     * Members may leave; changing anyone else's membership requires ownership privileges.
+     */
+    public void checkMembershipChange(Study study, User actingUser, User member, boolean adding) {
+        if (!adding && actingUser.equals(member) && studyDao.hasUser(study, actingUser)) return;
+        checkStudyOwner(study, actingUser, false);
+    }
+
     public boolean isAllowedSuperuser(User user) {
         return Common.isUserRoleAllowSuperuser() && user.isSuperuser();
     }
@@ -179,7 +201,7 @@ public class AuthorizationService {
         if (worker == null) {
             throw new NotFoundException("Worker doesn't exist");
         }
-        boolean allowed = studyDao.findAllByUser(user).stream()
+        boolean allowed = (isAllowedSuperuser(user) ? studyDao.findAll() : studyDao.findAllByUser(user)).stream()
                 .map(Study::getBatchList)
                 .flatMap(List::stream)
                 .map(Batch::getWorkerList)

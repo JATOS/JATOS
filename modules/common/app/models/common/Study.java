@@ -167,6 +167,15 @@ public class Study {
     private Set<User> userList = new HashSet<>();
 
     /**
+     * Instance-local ownership; never imported or exported with the study properties.
+     */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_username", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_study_owner_user"))
+    private User owner;
+
+    /**
      * Ordered list of components of this study. The relationship is bidirectional.
      */
     @JsonView({JsonForIO.class})
@@ -356,6 +365,18 @@ public class Study {
 
     public void removeAllUsers(List<User> userList) {
         userList.forEach(this::removeUser);
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        Objects.requireNonNull(owner, "Study owner must not be null");
+        if (this.owner != null) this.owner.getOwnedStudies().remove(this);
+        this.owner = owner;
+        owner.getOwnedStudies().add(this);
+        addUser(owner);
     }
 
     public List<Component> getComponentList() {

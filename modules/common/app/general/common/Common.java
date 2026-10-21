@@ -113,7 +113,7 @@ public class Common {
     private static String termsOfUseUrl;
     private static String brandingUrl;
     private static String locale;
-    private static boolean studyMembersAllowedToAddAllUsers;
+    private static boolean studyOwnerAllowedToAddAllUsers;
     private static boolean idCookiesSecure;
     private static Http.Cookie.SameSite idCookiesSameSite;
     private static int idCookiesLimit;
@@ -262,7 +262,7 @@ public class Common {
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
         locale = config.getString("jatos.locale");
-        studyMembersAllowedToAddAllUsers = config.getBoolean("jatos.studyMembers.allowAddAllUsers");
+        studyOwnerAllowedToAddAllUsers = config.getBoolean("jatos.studyOwner.allowAddAllUsers");
         idCookiesSecure = config.getBoolean("jatos.idCookies.secure");
         idCookiesSameSite = fillIdCookiesSameSite(config);
         idCookiesLimit = config.getInt("jatos.idCookies.limit");
@@ -1009,10 +1009,10 @@ public class Common {
     }
 
     /**
-     * If true, it's allowed to add all users that exist on this JATOS server to be added at once as members of a study
+     * If true, a study owner is allowed to add all users that exist on this JATOS server to be added at once as members of a study
      */
-    public static boolean isStudyMembersAllowedToAddAllUsers() {
-        return studyMembersAllowedToAddAllUsers;
+    public static boolean isStudyOwnerAllowedToAddAllUsers() {
+        return studyOwnerAllowedToAddAllUsers;
     }
 
     /**

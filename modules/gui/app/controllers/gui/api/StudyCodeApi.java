@@ -30,8 +30,7 @@ import java.util.List;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 @Singleton
 public class StudyCodeApi extends Controller {
@@ -74,7 +73,7 @@ public class StudyCodeApi extends Controller {
      * @param amountOption  Number of study codes that have to be generated. If empty, 1 is assumed.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result getOrGenerateStudyCodes(Http.Request request, String studyId, Option<Long> batchIdOption, String type,
                                           String comment, Option<Integer> amountOption) {
@@ -111,7 +110,7 @@ public class StudyCodeApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getStudyCode(String code) {
         StudyLink studyLink = studyLinkDao.findByStudyCode(code);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -122,7 +121,7 @@ public class StudyCodeApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(Json.class)
     public Result toggleStudyCodeActive(Http.Request request, String code) {
         StudyLink studyLink = studyLinkDao.findByStudyCode(code);

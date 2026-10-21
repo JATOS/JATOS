@@ -35,7 +35,7 @@
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
 
     if (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser) {
-        Alerts.info("As a Superuser you have access to all studies like a study member.", 0);
+        Alerts.info("As a Superuser you have owner privileges on all studies without needing membership.", 0);
     }
 
     if(window.common.termsOfUseUrl) {

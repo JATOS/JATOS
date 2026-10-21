@@ -113,7 +113,7 @@ public class Users extends Controller {
      * GET request that returns user data of the signed-in user
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     public Result signedinUserData() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         return ok(domainJsonMapper.getSingleUserData(signedinUser));
@@ -136,7 +136,7 @@ public class Users extends Controller {
      * themselves or from an admin user to edit another user.
      */
     @Async(Executor.IO)
-    @Auth(roles = {USER, ADMIN})
+    @Auth(roles = {USER, ADMIN, SUPERUSER})
     public Result edit(Http.Request request) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         DynamicForm requestData = formFactory.form().bindFromRequest(request);
@@ -202,7 +202,7 @@ public class Users extends Controller {
      * Handles POST request to change a password form initiated by a user themselves
      */
     @Async(Executor.IO)
-    @Auth(roles = {USER, ADMIN})
+    @Auth(roles = {USER, ADMIN, SUPERUSER})
     public Result changePasswordByUser(Http.Request request) {
         DynamicForm dynForm = formFactory.form().bindFromRequest(request);
         ChangePasswordProperties props = new ChangePasswordProperties();
@@ -239,7 +239,7 @@ public class Users extends Controller {
      * It can't be a HTTP DELETE because it contains form data and Play doesn't handle body data in a DELETE request.
      */
     @Async(Executor.IO)
-    @Auth(roles = {USER, ADMIN})
+    @Auth(roles = {USER, ADMIN, SUPERUSER})
     public Result remove(Http.Request request) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String normalizedSignedinUsername = signedinUser.getUsername();
@@ -274,14 +274,14 @@ public class Users extends Controller {
                 throw new AuthException("Unknown auth method");
         }
 
-        userService.removeUser(normalizedUsernameOfUserToRemove);
+        var reassignments = userService.removeUser(normalizedUsernameOfUserToRemove);
 
         // If the user removes himself: sign out by removing the session cookie
         if (normalizedUsernameOfUserToRemove.equals(normalizedSignedinUsername)) {
             Context.current().response().clearSession();
             return ok(" ");
         } else {
-            return ok();
+            return ok(defaultJson.objAsJsonNode(java.util.Map.of("ownershipReassignments", reassignments)));
         }
     }
 

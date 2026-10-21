@@ -82,7 +82,7 @@ public class AdminServiceTest {
     public void getAllStudiesData_mapsFieldsAndCalculatesEnabledSizes() {
         Date lastStarted = Date.from(Instant.parse("2023-04-05T06:07:08Z"));
         AdminStudyMemberData member = new AdminStudyMemberData(
-                1L,
+                1L, 11L,
                 "alice",
                 "Alice",
                 AuthMethod.DB.name());
@@ -95,7 +95,8 @@ public class AdminServiceTest {
                 2L,
                 120L,
                 lastStarted,
-                Collections.singletonList(member));
+                Collections.singletonList(member),
+                "alice");
 
         when(studyDao.findAllAdminStudyData(true)).thenReturn(Collections.singletonList(studyData));
         when(ioUtils.getStudyAssetsDirSize("study-dir")).thenReturn(100L);
@@ -108,6 +109,7 @@ public class AdminServiceTest {
         assertThat(studiesData).hasSize(1);
         Map<String, Object> study = studiesData.getFirst();
         assertThat(study.get("id")).isEqualTo(1L);
+        assertThat(study.get("ownerUsername")).isEqualTo("alice");
         assertThat(study.get("uuid")).isEqualTo("study-uuid");
         assertThat(study.get("title")).isEqualTo("Study Title");
         assertThat(study.get("active")).isEqualTo(true);
@@ -117,6 +119,7 @@ public class AdminServiceTest {
         @SuppressWarnings("unchecked") List<Map<String, Object>> members = (List<Map<String, Object>>) study.get("members");
         assertThat(members).hasSize(1);
         assertThat(members.getFirst().get("username")).isEqualTo("alice");
+        assertThat(members.getFirst().get("id")).isEqualTo(11L);
         assertThat(members.getFirst().get("name")).isEqualTo("Alice");
         assertThat(members.getFirst().get("authMethod")).isEqualTo(AuthMethod.DB.name());
 
@@ -138,7 +141,7 @@ public class AdminServiceTest {
     public void getStudiesDataByUser_usesUsernameAndReturnsDisabledSizes() {
         Date lastStarted = Date.from(Instant.parse("2023-05-06T07:08:09Z"));
         AdminStudyMemberData member = new AdminStudyMemberData(
-                2L,
+                2L, 22L,
                 "bob",
                 "Bob",
                 User.AuthMethod.LDAP.name());
@@ -151,7 +154,8 @@ public class AdminServiceTest {
                 0L,
                 null,
                 lastStarted,
-                Collections.singletonList(member));
+                Collections.singletonList(member),
+                "bob");
 
         when(studyDao.findAdminStudyDataByUsername("bob", false)).thenReturn(Collections.singletonList(studyData));
 

@@ -24,6 +24,91 @@ import static play.test.Helpers.*;
  */
 public class StudyApiTest extends JatosTest {
 
+    @Test
+    public void membershipGuiIdentifiesOwnerAndRestrictsControls() throws Exception {
+        Study study = importAndGetExampleStudy();
+        User member = createUser("gui-member");
+        assertThat(api("/jatos/api/v1/studies/" + study.getId() + "/members/" + member.getId())
+                .put(Json.newObject()).getStatus()).isEqualTo(OK);
+        User superuser = createUser("gui-superuser");
+        superuser.updateRoles(User.Role.SUPERUSER);
+        superuser.updateRoles(User.Role.VIEWER);
+        application.injector().instanceOf(daos.common.UserDao.class).merge(superuser);
+        var enabledField = Common.class.getDeclaredField("userRoleAllowSuperuser");
+        enabledField.setAccessible(true);
+        boolean previouslyEnabled = enabledField.getBoolean(null);
+        enabledField.setBoolean(null, true);
+        try {
+        for (User user : java.util.List.of(admin, member, superuser)) {
+            var request = fakeRequest(GET, "/jatos/" + study.getId() + "/memberUsers")
+                    .cookie(play.mvc.Http.Cookie.builder("PLAY_SESSION", "test-session").build())
+                    .session("username", user.getUsername())
+                    .session("signinTime", String.valueOf(System.currentTimeMillis()))
+                    .session("lastActivityTime", String.valueOf(System.currentTimeMillis()));
+            var result = route(application, request);
+            assertThat(result.status()).isEqualTo(OK);
+            JsonNode body = Json.parse(contentAsString(result));
+            assertThat(body.path("isOwner").asBoolean()).isEqualTo(!user.equals(member));
+            for (JsonNode row : body.path("data")) {
+                assertThat(row.path("isOwner").asBoolean())
+                        .isEqualTo(row.path("username").asText().equals(admin.getUsername()));
+                assertThat(row.path("id").asLong()).isPositive();
+            }
+            request.uri("/jatos/" + study.getId());
+            String html = contentAsString(route(application, request));
+            assertThat(html.contains("id=\"removeStudy\"" )).isEqualTo(!user.equals(member));
+        }
+        } finally {
+            enabledField.setBoolean(null, previouslyEnabled);
+        }
+    }
+
+    @Test
+    public void ownershipControlsDeletionMembershipAndTransfer() {
+        Study study = importAndGetExampleStudy();
+        User owner = createUser("owner");
+        User member = createUser("member");
+        User outsider = createUser("outsider");
+        String adminToken = apiToken;
+        String path = "/jatos/api/v1/studies/" + study.getId();
+        assertThat(api(path + "/members/" + owner.getId()).put(Json.newObject()).getStatus()).isEqualTo(OK);
+        assertThat(api(path + "/members/" + member.getId()).put(Json.newObject()).getStatus()).isEqualTo(OK);
+        assertThat(api(path + "/owner/" + owner.getId()).put(Json.newObject()).getStatus()).isEqualTo(OK);
+
+        // An administrator who is not the owner cannot manage membership.
+        assertThat(api(path + "/members/" + outsider.getId()).put(Json.newObject()).getStatus()).isEqualTo(FORBIDDEN);
+        assertThat(api(path + "/members/" + member.getId()).delete().getStatus()).isEqualTo(FORBIDDEN);
+        apiToken = createApiToken(member);
+        assertThat(api(path).delete().getStatus()).isEqualTo(FORBIDDEN);
+        assertThat(api(path + "/members/" + outsider.getId()).put(Json.newObject()).getStatus()).isEqualTo(FORBIDDEN);
+        assertThat(api(path + "/members/" + member.getId()).delete().getStatus()).isEqualTo(OK);
+        assertThat(api(path + "/members/" + member.getId()).put(Json.newObject()).getStatus()).isEqualTo(FORBIDDEN);
+        apiToken = createApiToken(owner);
+        assertThat(api(path + "/members/" + member.getId()).put(Json.newObject()).getStatus()).isEqualTo(OK);
+        apiToken = createApiToken(member);
+        assertThat(api(path + "/members/" + owner.getId()).delete().getStatus()).isEqualTo(FORBIDDEN);
+        assertThat(api(path + "/owner/" + member.getId()).put(Json.newObject()).getStatus()).isEqualTo(FORBIDDEN);
+
+        apiToken = createApiToken(owner);
+        assertThat(api(path + "/members/" + owner.getId()).delete().getStatus()).isEqualTo(FORBIDDEN);
+        assertThat(api(path + "/owner/" + outsider.getId()).put(Json.newObject()).getStatus()).isEqualTo(FORBIDDEN);
+        assertThat(api(path + "/members/" + outsider.getId()).put(Json.newObject()).getStatus()).isEqualTo(OK);
+        assertThat(api(path + "/members/" + outsider.getId()).delete().getStatus()).isEqualTo(OK);
+        assertThat(api(path + "/members/" + admin.getId()).delete().getStatus()).isEqualTo(OK);
+        assertThat(api(path + "/owner/" + member.getId()).put(Json.newObject()).getStatus()).isEqualTo(OK);
+        assertThat(api(path + "/members").get().asJson().path("data").path("members").toString())
+                .contains(owner.getId().toString());
+        assertThat(api(path).delete().getStatus()).isEqualTo(FORBIDDEN);
+
+        // Administrators can recover ownership without membership, but cannot delete directly.
+        apiToken = adminToken;
+        assertThat(api(path).delete().getStatus()).isEqualTo(FORBIDDEN);
+        assertThat(api(path + "/owner/" + owner.getId()).put(Json.newObject()).getStatus()).isEqualTo(OK);
+        assertThat(api(path).delete().getStatus()).isEqualTo(FORBIDDEN);
+        apiToken = createApiToken(owner);
+        assertThat(api(path).delete().getStatus()).isEqualTo(OK);
+    }
+
     // ---------- /jatos/api/v1/studies/:id (HEAD) ----------
 
     @Test

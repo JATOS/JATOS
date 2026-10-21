@@ -71,6 +71,7 @@ PATCH    /jatos/api/v1/studies/:id/properties                               @con
 GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.api.StudyApi.allMembersOfStudy(id)
 PUT      /jatos/api/v1/studies/:id/members/:userId                          @controllers.gui.api.StudyApi.addMemberToStudy(id, userId: Long)
 DELETE   /jatos/api/v1/studies/:id/members/:userId                          @controllers.gui.api.StudyApi.removeMemberFromStudy(id, userId: Long)
+PUT      /jatos/api/v1/studies/:id/owner/:userId                            @controllers.gui.api.StudyApi.changeOwner(id, userId: Long)
 GET      /jatos/api/v1/studies/:id/log                                      @controllers.gui.api.StudyApi.studyLog(id, entryLimit: Integer ?= -1, download: Boolean ?= true)
 
 # API study assets

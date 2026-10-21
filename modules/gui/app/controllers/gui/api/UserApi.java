@@ -95,7 +95,7 @@ public class UserApi extends Controller {
      * Get info of a user.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getUser(Long id) {
         User user = userDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -120,7 +120,7 @@ public class UserApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateUser(Request request, Long id) {
         User user = userDao.findById(id);
@@ -161,7 +161,7 @@ public class UserApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     public Result deleteUser(Long id) {
         User user = userDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

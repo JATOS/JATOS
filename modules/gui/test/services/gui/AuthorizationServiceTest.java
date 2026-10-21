@@ -47,6 +47,72 @@ public class AuthorizationServiceTest {
     }
 
     @Test
+    public void ordinaryMemberMayOnlyRemoveThemselves() {
+        Study study = new Study();
+        User member = user("member", Role.USER);
+        User other = user("other", Role.USER);
+        when(studyDao.hasUser(study, member)).thenReturn(true);
+        authorizationService.checkMembershipChange(study, member, member, false);
+        assertThatThrownBy(() -> authorizationService.checkMembershipChange(study, member, member, true))
+                .isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> authorizationService.checkMembershipChange(study, member, other, false))
+                .isInstanceOf(ForbiddenException.class);
+        when(studyDao.hasUser(study, member)).thenReturn(false);
+        assertThatThrownBy(() -> authorizationService.checkMembershipChange(study, member, member, false))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    public void enabledSuperuserCanAccessWorkersInStudiesWithoutMembership() {
+        User superuser = user("super", Role.SUPERUSER);
+        var worker = mock(models.common.workers.Worker.class);
+        Study study = new Study();
+        Batch batch = new Batch();
+        study.addBatch(batch);
+        batch.addWorker(worker);
+        when(studyDao.findAll()).thenReturn(java.util.List.of(study));
+        commonStatic.when(Common::isUserRoleAllowSuperuser).thenReturn(true);
+        authorizationService.canUserAccessWorker(superuser, worker);
+        commonStatic.when(Common::isUserRoleAllowSuperuser).thenReturn(false);
+        assertThatThrownBy(() -> authorizationService.canUserAccessWorker(superuser, worker))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    public void ownershipPrivilegesAreExplicit() {
+        Study study = new Study();
+        User owner = user("owner", Role.USER);
+        User member = user("member", Role.USER);
+        User admin = user("administrator", Role.ADMIN);
+        User superuser = user("superuser", Role.SUPERUSER);
+        when(studyDao.isOwner(study, owner)).thenReturn(true);
+        when(studyDao.hasUser(study, member)).thenReturn(true);
+        commonStatic.when(Common::isUserRoleAllowSuperuser).thenReturn(true);
+        authorizationService.checkStudyOwner(study, owner, false);
+        authorizationService.checkStudyOwner(study, owner, true);
+        authorizationService.checkStudyOwner(study, admin, true);
+        authorizationService.checkStudyOwner(study, superuser, false);
+        authorizationService.checkStudyOwner(study, superuser, true);
+        commonStatic.when(Common::isUserRoleAllowSuperuser).thenReturn(false);
+        assertThatThrownBy(() -> authorizationService.checkStudyOwner(study, superuser, false))
+                .isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> authorizationService.checkStudyOwner(study, superuser, true))
+                .isInstanceOf(ForbiddenException.class);
+        for (User denied : java.util.List.of(member, admin)) {
+            assertThatThrownBy(() -> authorizationService.checkStudyOwner(study, denied, false))
+                    .isInstanceOf(ForbiddenException.class);
+        }
+        for (User denied : java.util.List.of(member)) {
+            assertThatThrownBy(() -> authorizationService.checkStudyOwner(study, denied, true))
+                    .isInstanceOf(ForbiddenException.class);
+        }
+        assertThatThrownBy(() -> authorizationService.checkStudyOwner(study, null, true))
+                .isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> authorizationService.checkStudyOwner(null, owner, true))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
     public void isAllowedSuperuser_returnsFalse_whenSuperuserRoleIsDisabled() {
         User user = user("superuser", Role.SUPERUSER);
 

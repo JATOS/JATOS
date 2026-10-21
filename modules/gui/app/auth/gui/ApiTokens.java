@@ -46,7 +46,7 @@ public class ApiTokens extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     public Result allTokenDataByUser() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         List<ApiToken> tokenList = apiTokenDao.findByUser(signedinUser);
@@ -59,7 +59,7 @@ public class ApiTokens extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     public Result generate(String name, Integer expires) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (Strings.isNullOrEmpty(name)) return badRequest("Name must not be empty");
@@ -71,7 +71,7 @@ public class ApiTokens extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     @Transactional
     public Result remove(Long id) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -84,7 +84,7 @@ public class ApiTokens extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     public Result toggleActive(Long id, Boolean active) {
         if (active == null) return badRequest("Active must be true or false");
 

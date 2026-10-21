@@ -39,6 +39,7 @@ public class StudyService {
 
     private static final ALogger LOGGER = Logger.of(StudyService.class);
 
+    private final AuthorizationService authorizationService;
     private final BatchService batchService;
     private final ComponentService componentService;
     private final StudyDao studyDao;
@@ -56,7 +57,8 @@ public class StudyService {
                  BatchDao batchDao,
                  IOUtils ioUtils,
                  StudyLogger studyLogger,
-                 ResultRemover resultRemover) {
+                 ResultRemover resultRemover,
+                 AuthorizationService authorizationService) {
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -65,6 +67,7 @@ public class StudyService {
         this.ioUtils = ioUtils;
         this.studyLogger = studyLogger;
         this.resultRemover = resultRemover;
+        this.authorizationService = authorizationService;
     }
 
     /**
@@ -115,10 +118,31 @@ public class StudyService {
     }
 
     /**
+     * Transfers ownership to an existing member, retaining the previous owner's membership.
+     */
+    public void changeOwner(Study study, User newOwner) {
+        studyDao.withTransaction(em -> {
+            Study managedStudy = studyDao.findByIdWithLock(study.getId());
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            authorizationService.checkStudyOwner(managedStudy, signedinUser, true);
+            authorizationService.checkUserExists(newOwner);
+            if (!studyDao.hasUser(managedStudy, newOwner)) {
+                throw new ForbiddenException("The new owner must already be a study member.");
+            }
+            managedStudy.setOwner(newOwner);
+        });
+    }
+
+    /**
      * Changes the member user in the study. Additionally, changes the user's worker in all of the study's batches.
      * Persisting. The batch-worker relationship is updated in the database only - not in memory.
      */
     public void changeUserMember(Study study, User userToChange, boolean isMember) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.checkMembershipChange(study, signedinUser, userToChange, isMember);
+        if (!isMember && studyDao.isOwner(study, userToChange)) {
+            throw new ForbiddenException("Transfer ownership before removing the study owner.");
+        }
         Set<User> userList = study.getUserList();
         if (isMember) {
             if (userList.contains(userToChange)) {
@@ -146,6 +170,7 @@ public class StudyService {
      * The batch-worker relationship is updated in the database only - not in memory.
      */
     public void addAllUserMembers(Study study) {
+        authorizationService.checkStudyOwner(study, Context.current().args().get(SIGNEDIN_USER), false);
         List<User> userList = userDao.findAll();
         study.addAllUsers(userList);
 
@@ -160,15 +185,15 @@ public class StudyService {
     }
 
     /**
-     * Removes all member users from the given study except the signed-in user. Additionally, removes all user's Jatos
-     * workers from the study's batches (except the signed-in user's workers).
+     * Removes all member users except the owner, including their workers, from the study's batches.
      */
     public void removeAllUserMembers(Study study) {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.checkStudyOwner(study, signedinUser, false);
         List<User> usersToRemove = userDao.findAll();
 
-        // Never remove the signed-in user
-        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        usersToRemove.remove(signedinUser);
+        // Never remove the owner. A superuser may perform this operation without being the study owner.
+        usersToRemove.remove(study.getOwner());
 
         List<Worker> usersWorkerList = usersToRemove.stream().map(User::getWorker).collect(Collectors.toList());
         study.getBatchList().forEach(batch ->
@@ -232,9 +257,8 @@ public class StudyService {
         return studyDao.withTransaction(em -> {
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             User managedSignedinUser = userDao.merge(signedinUser);
+            study.setOwner(managedSignedinUser);
             Study managedStudy = studyDao.merge(study);
-
-            managedStudy.addUser(managedSignedinUser);
 
             if (managedStudy.getBatchList().isEmpty()) {
                 // Create a default batch if we have no batch
@@ -300,6 +324,10 @@ public class StudyService {
      * Update Study with given properties and persist.
      */
     public void updateStudyAndRenameAssets(Study study, StudyProperties studyProperties) throws IOException {
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+        if (study.isActive() != studyProperties.isActive() && !signedinUser.isAdmin()) {
+            throw new ForbiddenException("Only administrators can activate or deactivate studies.");
+        }
         if (Strings.isNullOrEmpty(studyProperties.getDirName())) {
             // In case the dirName was updated to null or empty, don't use it
             studyProperties.setDirName(study.getDirName());
@@ -312,7 +340,6 @@ public class StudyService {
         bindToStudy(study, studyProperties);
         studyDao.merge(study);
 
-        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (isDescriptionHashChanged) studyLogger.logStudyDescriptionHash(study, signedinUser);
     }
 

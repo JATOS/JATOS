@@ -25,6 +25,8 @@
     window.routes.Api.exportResultFiles = `${basePath}jatos/api/v1/results/files`;
     window.routes.Api.exportResultMetadata = (isApiCall) => `${basePath}jatos/api/v1/results/metadata?isApiCall=${isApiCall}`;
     window.routes.Api.getStudyCodes = (studyId, batchId, workerType, comment, amount) => `${basePath}jatos/api/v1/studies/${studyId}/studyCodes?batchId=${batchId}&type=${workerType}&comment=${comment}&amount=${amount}`;
+    window.routes.Api.removeStudyMember = (id, userId) => `${basePath}jatos/api/v1/studies/${id}/members/${userId}`;
+    window.routes.Api.changeStudyOwner = (id, userId) => `${basePath}jatos/api/v1/studies/${id}/owner/${userId}`;
     window.routes.Api.updateStudy = (id) => `${basePath}jatos/api/v1/studies/${id}/properties`;
     window.routes.Api.updateComponent = (id) => `${basePath}jatos/api/v1/components/${id}`;
     window.routes.Api.updateBatch = (id) => `${basePath}jatos/api/v1/batches/${id}`;

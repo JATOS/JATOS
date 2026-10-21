@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import models.common.workers.JatosWorker;
 
 import jakarta.persistence.*;
+
 import java.sql.Timestamp;
 import java.text.Normalizer;
 import java.util.EnumSet;
@@ -30,7 +31,7 @@ public class User {
         USER, // Normal JATOS user. Can view studies and their results and change them.
         VIEWER, // Can only view studies and their results but cannot change them
         ADMIN, // Allows creating/changing/deleting other users (don't confuse role ADMIN with user 'admin')
-        SUPERUSER, // Makes this user a member of ALL studies with all rights of a normal member
+        SUPERUSER, // Grants owner privileges on all studies when enabled, without adding membership
     }
 
     /**
@@ -67,8 +68,8 @@ public class User {
     private String email;
 
     /**
-     * A list of Roles used for authorization. It has to be fetched eagerly
-     * otherwise Hibernate has problems with the Worker's inheritance.
+     * A list of Roles used for authorization. It has to be fetched eagerly otherwise Hibernate has problems with the
+     * Worker's inheritance.
      */
     @JsonView({JsonForApi.class})
     @JsonProperty("roles")
@@ -100,13 +101,20 @@ public class User {
     private AuthMethod authMethod;
 
     /**
-     * List of studies this user has access rights to. This relationship is
-     * bidirectional.
+     * List of studies this user has access rights to. This relationship is bidirectional.
      */
     @JsonIgnore
     @ManyToMany(mappedBy = "userList", fetch = FetchType.LAZY)
     @SuppressWarnings("FieldMayBeFinal")
     private Set<Study> studyList = new HashSet<>();
+
+    /**
+     * Inverse ownership relationship. Deleting a user must not cascade to owned studies.
+     */
+    @JsonIgnore
+    @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
+    @SuppressWarnings("FieldMayBeFinal")
+    private Set<Study> ownedStudies = new HashSet<>();
 
     /**
      * Time of last successful sign-in
@@ -157,12 +165,8 @@ public class User {
     }
 
     /**
-     * Normalise username:
-     * 1) remove accents
-     * 2) turn to lower case
-     * 3) trim
-     * 4) return the composed form NFKC (combining character sequences are mapped to composites)
-     * (see https://stackoverflow.com/a/1598365/1278769)
+     * Normalise username: 1) remove accents 2) turn to lower case 3) trim 4) return the composed form NFKC (combining
+     * character sequences are mapped to composites) (see https://stackoverflow.com/a/1598365/1278769)
      */
     public static String normalizeUsername(String username) {
         if (username == null) return null;
@@ -238,6 +242,9 @@ public class User {
         return roleList.contains(role);
     }
 
+    /**
+     * Determines whether a User possesses at least one of the roles specified in the provided roles set.
+     */
     public boolean hasRole(Set<Role> roles) {
         return roleList.stream().anyMatch(roles::contains);
     }
@@ -246,10 +253,12 @@ public class User {
     public boolean isUser() {
         return hasRole(Role.USER);
     }
+
     @JsonIgnore
     public boolean isViewer() {
         return hasRole(Role.VIEWER);
     }
+
     @JsonIgnore
     public boolean isAdmin() {
         return hasRole(Role.ADMIN);
@@ -340,6 +349,10 @@ public class User {
 
     public boolean hasStudy(Study study) {
         return this.studyList.contains(study);
+    }
+
+    public Set<Study> getOwnedStudies() {
+        return ownedStudies;
     }
 
     public Timestamp getLastLogin() {

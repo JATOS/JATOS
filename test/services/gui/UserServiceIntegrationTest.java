@@ -42,6 +42,32 @@ public class UserServiceIntegrationTest extends JatosTest {
     private ApiTokenDao apiTokenDao;
 
     @Test
+    public void deletionReportsOwnershipTransfersAndAdminDataShowsNewOwner() {
+        Long studyId = importExampleStudy();
+        User owner = createUser("departing-owner");
+        Http.Context.current().args().put(SIGNEDIN_USER, admin);
+        jpaApi.withTransaction(em -> {
+            Study study = studyDao.findById(studyId);
+            User managedOwner = userDao.findById(owner.getId());
+            studyService.changeUserMember(study, managedOwner, true);
+            studyService.changeOwner(study, managedOwner);
+        });
+        var adminService = application.injector().instanceOf(AdminService.class);
+        var before = adminService.getAllStudiesData(false, false, false).stream()
+                .filter(row -> row.get("id").equals(studyId)).findFirst().orElseThrow();
+        assertThat(before.get("ownerUsername")).isEqualTo(owner.getUsername());
+        var changes = userService.removeUser(owner.getId());
+        assertThat(changes).hasSize(1);
+        assertThat(changes.getFirst().studyId()).isEqualTo(studyId);
+        assertThat(changes.getFirst().newOwnerUsername()).isEqualTo("admin");
+        var json = play.libs.Json.toJson(changes);
+        assertThat(json.get(0).path("newOwnerUsername").asText()).isEqualTo("admin");
+        var after = adminService.getAllStudiesData(false, false, false).stream()
+                .filter(row -> row.get("id").equals(studyId)).findFirst().orElseThrow();
+        assertThat(after.get("ownerUsername")).isEqualTo("admin");
+    }
+
+    @Test
     public void checkRetrieveUser() {
         User user = userService.retrieveUser("admin");
         assertThat(user).isEqualTo(admin);
@@ -231,10 +257,14 @@ public class UserServiceIntegrationTest extends JatosTest {
         User user = createUser("foo@foo.org");
         Long studyId = importExampleStudy();
 
+        Http.Context.current().args().put(SIGNEDIN_USER, admin);
+
         // Make the new user the only member of the study
         jpaApi.withTransaction(em -> {
             Study study = studyDao.findById(studyId);
             studyService.changeUserMember(study, user, true);
+            studyService.changeOwner(study, userDao.findById(user.getId()));
+            Http.Context.current().args().put(SIGNEDIN_USER, user);
             studyService.changeUserMember(study, admin, false);
         });
 
@@ -246,6 +276,7 @@ public class UserServiceIntegrationTest extends JatosTest {
 
         // User is removed from the database
         assertThat(userDao.findByUsername("foo@foo.org")).isNull();
+        assertThat(studyDao.findById(studyId)).isNull();
         // User's studies are removed (the user object is still the old before removal)
         user.getStudyList().forEach(s -> assertThat(studyDao.findById(s.getId())).isNull());
         // User's API tokens are removed

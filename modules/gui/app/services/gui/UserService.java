@@ -1,6 +1,7 @@
 package services.gui;
 
 import daos.common.StudyDao;
+import daos.common.BatchDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
@@ -16,6 +17,7 @@ import models.common.workers.JatosWorker;
 import models.gui.NewUserProperties;
 import models.gui.UserProperties;
 import org.hibernate.Hibernate;
+import play.Logger;
 import play.data.Form;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
@@ -25,6 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +40,8 @@ import static auth.gui.AuthAction.SIGNEDIN_USER;
 @Singleton
 public class UserService {
 
+    private static final Logger.ALogger LOGGER = Logger.of(UserService.class);
+
     /**
      * Default admin username; the admin user is created during the first initialization of JATOS; don't confuse the
      * admin user with the Role ADMIN
@@ -47,16 +52,18 @@ public class UserService {
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
+    private final BatchDao batchDao;
 
     @Inject
     UserService(StudyService studyService,
                 UserDao userDao,
                 StudyDao studyDao,
-                WorkerDao workerDao) {
+                WorkerDao workerDao, BatchDao batchDao) {
         this.studyService = studyService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
+        this.batchDao = batchDao;
     }
 
     /**
@@ -226,17 +233,18 @@ public class UserService {
      * Removes a user and any studies that have no more users after removal. Studies with no users are deleted
      * completely (including assets and results).
      */
-    public void removeUser(String normalizedUsername) {
+    public List<OwnershipReassignment> removeUser(String normalizedUsername) {
         User user = userDao.findByUsername(normalizedUsername);
-        removeUser(user.getId());
+        return removeUser(user.getId());
     }
 
     /**
      * Removes a user and any studies that have no more users after removal. Studies with no users are deleted
      * completely (including assets and results).
      */
-    public void removeUser(Long id) {
-        userDao.withTransaction(em -> {
+    public List<OwnershipReassignment> removeUser(Long id) {
+        return userDao.withTransaction(em -> {
+            List<OwnershipReassignment> reassignments = new ArrayList<>();
             User user = userDao.findById(id);
             if (user == null) {
                 throw new NotFoundException("An user with id \"" + id + "\" doesn't exist.");
@@ -254,6 +262,11 @@ public class UserService {
                 if (study.getUserList().size() <= 1) {
                     studyService.removeStudyInclAssets(study);
                 } else {
+                    User nextOwner = setNextOwner(study, user);
+                    if (nextOwner != null) reassignments.add(new OwnershipReassignment(
+                            study.getId(), study.getTitle(), nextOwner.getUsername()));
+                    study.getBatchList().forEach(batch ->
+                            batchDao.removeWorkerFromBatch(batch.getId(), user.getWorker().getId()));
                     study.removeUser(user);
                     studyDao.merge(study);
                 }
@@ -261,7 +274,24 @@ public class UserService {
 
             // Remove user (cascades delete ApiTokens, LoginAttempts, JatosWorker)
             userDao.remove(user);
+            return reassignments;
         });
+    }
+
+    public record OwnershipReassignment(Long studyId, String studyTitle, String newOwnerUsername) {}
+
+    public User setNextOwner(Study study, User currentMember) {
+        if (studyDao.isOwner(study, currentMember)) {
+            User nextOwner = study.getUserList().stream()
+                    .filter(member -> !member.equals(currentMember))
+                    .min(Comparator.comparing(User::getUsername))
+                    .orElseThrow();
+            study.setOwner(nextOwner);
+            LOGGER.info("Transferred study " + study.getId() + " ownership to "
+                    + nextOwner.getUsername() + " while deleting user " + currentMember.getUsername());
+            return nextOwner;
+        }
+        return null;
     }
 
     /**

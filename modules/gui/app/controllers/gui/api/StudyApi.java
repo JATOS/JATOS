@@ -3,17 +3,14 @@ package controllers.gui.api;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction.Transactional;
-import org.apache.pekko.stream.javadsl.FileIO;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import exceptions.common.HttpException;
 import exceptions.common.BadRequestException;
+import exceptions.common.HttpException;
 import exceptions.common.JatosException;
 import exceptions.common.NotFoundException;
 import general.common.ApiEnvelope;
@@ -25,6 +22,9 @@ import json.common.StrictJson;
 import models.common.Study;
 import models.common.User;
 import models.gui.StudyProperties;
+import org.apache.pekko.stream.javadsl.FileIO;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.http.HttpEntity;
 import play.libs.Json;
@@ -48,9 +48,7 @@ import java.util.*;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static general.common.ApiEnvelope.ErrorCode.TOO_LARGE;
-import static general.common.ApiEnvelope.ErrorCode.INVALID_JSON;
-import static general.common.ApiEnvelope.ErrorCode.WRONG_CONTENT_TYPE;
+import static general.common.ApiEnvelope.ErrorCode.*;
 import static java.lang.Boolean.TRUE;
 import static models.common.User.Role.*;
 
@@ -107,11 +105,12 @@ public class StudyApi extends Controller {
      * @return All study properties the user has access to (is member of) in JSON
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result getAllStudyPropertiesOfSignedinUser(Boolean withComponentProperties, Boolean withBatchProperties) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        List<Study> studies = studyDao.findAllByUser(signedinUser);
+        List<Study> studies = authorizationService.isAllowedSuperuser(signedinUser)
+                ? studyDao.findAll() : studyDao.findAllByUser(signedinUser);
 
         ArrayNode studiesArray = Json.mapper().createArrayNode();
         for (Study s : studies) {
@@ -124,7 +123,7 @@ public class StudyApi extends Controller {
      * Handels deprecated endpoint to create a new study
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result createStudy(play.mvc.Http.Request request) {
         JsonNode json = apiService.getJsonFromBody(request);
@@ -139,7 +138,7 @@ public class StudyApi extends Controller {
      * preserving the normal JSON and multipart limits.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(StudyUploadBodyParser.class)
     public Result importOrCreateStudy(play.mvc.Http.Request request, boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets) {
@@ -197,7 +196,7 @@ public class StudyApi extends Controller {
      *                              Default is `true`.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(StudyUploadBodyParser.class)
     public Result importStudy(play.mvc.Http.Request request, boolean keepProperties, boolean keepAssets,
                               boolean keepCurrentAssetsName, boolean renameAssets) {
@@ -228,7 +227,7 @@ public class StudyApi extends Controller {
      * Returns the study archive (.jzip) as a file
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result exportStudy(String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -259,12 +258,13 @@ public class StudyApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result deleteStudy(String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.canUserAccessStudy(study, signedinUser, true);
+        authorizationService.checkStudyOwner(study, signedinUser, false);
+        authorizationService.checkStudyNotLocked(study);
 
         studyService.removeStudyInclAssets(study);
         return ok(ApiEnvelope.wrap("Study deleted successfully").asJsonNode());
@@ -279,7 +279,7 @@ public class StudyApi extends Controller {
      * @return The study properties in JSON
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result getStudyProperties(String id, Boolean withComponentProperties, Boolean withBatchProperties) {
         Study study = studyService.getStudyFromIdOrUuid(id);
@@ -292,11 +292,11 @@ public class StudyApi extends Controller {
 
 
     /**
-     * Updates the study properties. Regular users may update only studies they own. Admins may update only the
-     * activation status of any study.
+     * Updates study properties for members and enabled superusers. Only admins may change activation status;
+     * admins without study access may update only that status.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     @Transactional
     public Result updateStudyProperties(play.mvc.Http.Request request, String id) throws IOException {
@@ -339,7 +339,7 @@ public class StudyApi extends Controller {
      * Get user IDs of all members of a study.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result allMembersOfStudy(String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -355,27 +355,37 @@ public class StudyApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result addMemberToStudy(String id, Long userId) {
         return changeMemberOfStudy(id, userId, true);
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result removeMemberFromStudy(String id, Long userId) {
         return changeMemberOfStudy(id, userId, false);
     }
 
+    @Async(Executor.IO)
+    @Auth(roles = {USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
+    @Transactional
+    public Result changeOwner(String id, Long userId) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        authorizationService.checkStudyOwner(study, Context.current().args().get(SIGNEDIN_USER), true);
+        studyService.changeOwner(study, userDao.findById(userId));
+        return ok(ApiEnvelope.wrap("Study ownership transferred successfully").asJsonNode());
+    }
+
     public Result changeMemberOfStudy(String id, Long userId, boolean isMember) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.canUserAccessStudy(study, signedinUser);
 
         User user = userDao.findById(userId);
         authorizationService.checkUserExists(user);
 
+        authorizationService.checkMembershipChange(study, signedinUser, user, isMember);
         studyService.changeUserMember(study, user, isMember);
 
         List<Long> userIds = studyDao.findAllMembersByStudyId(study.getId());
@@ -396,7 +406,7 @@ public class StudyApi extends Controller {
      * application/json array of log entries in reverse chronological order, limited by entryLimit.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result studyLog(String id, int entryLimit, boolean download) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

@@ -362,13 +362,15 @@ public class DomainJsonMapper {
     /**
      * Returns JsonNode with all users that are members of this study.
      */
-    public JsonNode memberUserArrayOfStudy(List<User> userList) {
+    public JsonNode memberUserArrayOfStudy(List<User> userList, Study study) {
         ArrayNode userArrayNode = defaultMapper.createArrayNode();
         for (User user : userList) {
             ObjectNode userNode = defaultMapper.createObjectNode();
             userNode.put("name", user.getName());
             userNode.put("username", user.getUsername());
             userNode.put("isMember", true);
+            userNode.put("id", user.getId());
+            userNode.put("isOwner", study.getOwner().getUsername().equals(user.getUsername()));
             userArrayNode.add(userNode);
         }
         return wrapAsDataEnvelope(userArrayNode);
@@ -382,6 +384,8 @@ public class DomainJsonMapper {
         userNode.put("name", user.getName());
         userNode.put("username", user.getUsername());
         userNode.put("isMember", studyDao.hasUser(study, user));
+        userNode.put("id", user.getId());
+        userNode.put("isOwner", study.getOwner().getUsername().equals(user.getUsername()));
         return userNode;
     }
 
@@ -393,7 +397,8 @@ public class DomainJsonMapper {
             ObjectNode studyNode = Json.newObject()
                     .put("id", study.getId())
                     .put("title", study.getTitle())
-                    .put("userSize", studyDao.countUsersByStudy(study));
+                    .put("userSize", studyDao.countUsersByStudy(study))
+                    .put("isOwner", study.getOwner().getUsername().equals(user.getUsername()));
             studyArray.add(studyNode);
         }
         userNode.set("studyList", studyArray);

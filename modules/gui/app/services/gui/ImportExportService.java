@@ -98,7 +98,7 @@ public class ImportExportService {
         Optional<Study> currentStudy = studyDao.findByUuid(uploadedStudy.getUuid());
         boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(uploadedStudy.getDirName());
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        if (currentStudy.isPresent() && !studyDao.hasUser(currentStudy.get(), signedinUser)) {
+        if (currentStudy.isPresent() && !authorizationService.isMemberOrSuperuser(currentStudy.get(), signedinUser)) {
             throw new ForbiddenException("Import failed: the study already exists, but you are not a member and " +
                     "therefore cannot overwrite it. You may import the study into another JATOS instance, clone it " +
                     "there, then export and re-import it here.");

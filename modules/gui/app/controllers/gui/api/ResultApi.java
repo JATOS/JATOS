@@ -3,8 +3,6 @@ package controllers.gui.api;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import daos.common.ComponentResultDao;
 import exceptions.common.NotFoundException;
@@ -15,6 +13,8 @@ import http.common.Http.Context;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -40,8 +40,7 @@ import static actions.common.TransactionalAction.Mode.READ_ONLY;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 @Singleton
 public class ResultApi extends Controller {
@@ -79,7 +78,7 @@ public class ResultApi extends Controller {
      * @param isApiCall If true, the response JSON gets an additional 'apiVersion' field
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result exportResults(Http.Request request, Boolean isApiCall) {
         Map<String, Object> wrapperObject = isApiCall
                 ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
@@ -105,7 +104,7 @@ public class ResultApi extends Controller {
      * @param download  If true, the response JSON is in a file, otherwise in the response body
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result exportResultMetadata(Http.Request request, boolean download, Boolean isApiCall) throws IOException {
         Map<String, Object> wrapperObject = isApiCall
                 ? Collections.singletonMap("apiVersion", Common.getJatosApiVersion())
@@ -136,7 +135,7 @@ public class ResultApi extends Controller {
      * @param isApiCall   If true, the response JSON gets an additional 'apiVersion' field
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result exportResultData(Http.Request request, boolean asPlainText, boolean download, boolean isApiCall) {
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         if (asPlainText) {
@@ -169,7 +168,7 @@ public class ResultApi extends Controller {
      * memory and disk usage.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result exportResultFiles(Http.Request request) {
         // The check if the signedin user is a member of the study or a superuser is done in the ResultStreamer
         Source<ByteString, ?> dataSource = resultStreamer.streamResults(request, ResultStreamer.ResultType.FILES_ONLY);
@@ -187,7 +186,7 @@ public class ResultApi extends Controller {
      * @param filename          Filename of the file to be exported
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @TransactionalAction.Transactional(READ_ONLY)
     public Result exportSingleResultFile(Long componentResultId, String filename) throws IOException {
         ComponentResult componentResult = componentResultDao.findById(componentResultId);
@@ -210,7 +209,7 @@ public class ResultApi extends Controller {
      * StudyResult becomes empty (no more ComponentResults), it will be deleted too.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result removeResults(Http.Request request) {
         List<Long> crids = componentResultIdsExtractor.extract(request.body().asJson());
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));

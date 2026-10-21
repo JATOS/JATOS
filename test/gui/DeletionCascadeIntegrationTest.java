@@ -2,6 +2,7 @@ package gui;
 
 import daos.common.StudyDao;
 import general.common.StudyLogger;
+import general.common.Common;
 import http.common.Http.Context;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Synchronization;
@@ -78,13 +79,14 @@ public class DeletionCascadeIntegrationTest {
                 .configure("db.default.driver", driver).configure("db.default.url", url)
                 .configure("db.default.username", username).configure("db.default.password", password)
                 .configure("jatos.multiNode", false)
-                .configure("jatos.studyAssetsRootPath", root + "/assets")
+                .configure("jatos.studyAssets.rootPath", root + "/assets")
                 .configure("jatos.studyLogs.path", root + "/study-logs")
                 .configure("jatos.resultUploads.path", root + "/uploads")
                 .configure("jatos.logs.path", root + "/logs").configure("jatos.tmpPath", root + "/tmp")
                 .build();
         try {
             Helpers.start(app);
+            assertEquals(Path.of(root, "assets"), Path.of(Common.getStudyAssetsRootPath()));
             JPAApi jpa = app.injector().instanceOf(JPAApi.class);
             StudyService studies = app.injector().instanceOf(StudyService.class);
             BatchService batches = app.injector().instanceOf(BatchService.class);
@@ -147,6 +149,16 @@ public class DeletionCascadeIntegrationTest {
                     assertEntity(jpa, Batch.class, f.batch, !committed);
                     assertEntity(jpa, Batch.class, f.sibling, !(committed && wholeStudy));
                     assertEntity(jpa, Study.class, f.otherStudy, true);
+                    jpa.withTransaction((EntityManager em) -> {
+                        User owner = em.find(User.class, "admin");
+                        assertNotNull("Deleting a study must not delete its owner", owner);
+                        assertEquals(owner, em.find(Study.class, f.otherStudy).getOwner());
+                        if (!(committed && wholeStudy)) {
+                            Study retained = em.find(Study.class, f.study);
+                            assertEquals(owner, retained.getOwner());
+                            assertTrue(retained.getUserList().contains(owner));
+                        }
+                    });
                     assertEntity(jpa, PersonalMultipleWorker.class, f.worker, true);
                     assertEquals(!(committed && wholeStudy), Files.exists(Path.of(root, "assets", f.dir)));
                     assertEquals(!(committed && wholeStudy), Files.exists(Path.of(root, "study-logs", f.uuid + ".log")));
@@ -214,6 +226,7 @@ public class DeletionCascadeIntegrationTest {
 
     private Study study(EntityManager em, String title) {
         Study study = new Study();
+        study.setOwner(em.find(User.class, "admin"));
         study.setTitle(title);
         study.setGroupStudy(true);
         em.persist(study);

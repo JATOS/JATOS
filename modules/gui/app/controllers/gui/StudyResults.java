@@ -3,8 +3,6 @@ package controllers.gui;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction.Transactional;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import com.google.common.base.Strings;
 import daos.common.BatchDao;
@@ -19,6 +17,8 @@ import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.Worker;
 import models.common.workers.WorkerType;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -36,8 +36,7 @@ import static actions.common.TransactionalAction.Mode.READ_ONLY;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 import static messaging.common.FlashMessagingHelper.ERROR;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 /**
  * Controller for actions around StudyResults in the JATOS GUI.
@@ -82,7 +81,7 @@ public class StudyResults extends Controller {
      * Shows the study results view
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     public Result studysStudyResults(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
@@ -103,7 +102,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a batch.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     public Result batchesStudyResults(Http.Request request, Long studyId, Long batchId, String workerType) {
         Batch batch = batchDao.findById(batchId);
@@ -128,7 +127,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a group.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     public Result groupsStudyResults(Http.Request request, Long studyId, Long groupId) {
         Study study = studyDao.findById(studyId);
@@ -153,7 +152,7 @@ public class StudyResults extends Controller {
      * Shows view with all StudyResults of a worker.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     @Transactional(READ_ONLY)
     public Result workersStudyResults(Http.Request request, Long workerId) {
@@ -175,7 +174,7 @@ public class StudyResults extends Controller {
      * StudyResults IDs as a String. Removing a StudyResult always removes it's ComponentResults.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result remove(Http.Request request) {
         if (request.body().asJson() == null) return badRequest("Malformed request body");
@@ -192,7 +191,7 @@ public class StudyResults extends Controller {
      * GET request that returns StudyResults of a study in JSON format. It streams in chunks (reduces memory usage)
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result tableDataByStudy(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -207,7 +206,7 @@ public class StudyResults extends Controller {
      * specified and the results will only be of this type. It streams in chunks (reduces memory usage)
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result tableDataByBatch(Long batchId, String workerType) {
         Batch batch = batchDao.findById(batchId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -222,7 +221,7 @@ public class StudyResults extends Controller {
      * GET request that returns all StudyResults of a group in JSON format. It streams in chunks (reduces memory usage)
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result tableDataByGroup(Long groupResultId) {
         GroupResult groupResult = groupResultDao.findByIdWithBatch(groupResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -237,7 +236,7 @@ public class StudyResults extends Controller {
      * usage)
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result tableDataByWorker(Long workerId) {
         Worker worker = workerDao.findById(workerId);
         if (worker == null) {
@@ -253,7 +252,7 @@ public class StudyResults extends Controller {
      */
     @Async(Executor.IO)
     @Transactional(READ_ONLY)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result tableDataComponentResultsByStudyResult(Long studyResultId) {
         StudyResult studyResult = studyResultDao.findById(studyResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

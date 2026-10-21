@@ -18,7 +18,7 @@
                 <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC, ORCID, SRAM or CONEXT">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Roles, e.g. Viewer, User, Admin, Superuser, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Switch between role Viewer and User">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="If enabled, superusers have owner privileges on EVERY study without being members, including managing members, transferring ownership, and deleting studies and result data. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
             </tr>
@@ -624,7 +624,7 @@
                     <tr class="info">
                         <td>${study.id}</td>
                         <td>${Helpers.trimTextWithThreeDots(study.title, 40)}</td>
-                        <td>${Helpers.generateMembersHtml(study.members)}</td>
+                        <td>${Helpers.generateMembersHtml(study.members, { ownerUsername: study.ownerUsername })}</td>
                         <td>${study.studyAssetsSize.humanReadable}</td>
                         <td>${study.studyResultCount}</td>
                         <td>${study.resultDataSize.humanReadable}</td>
@@ -854,6 +854,13 @@
                     row.remove().draw();
                     $('#deleteUserModal').modal('hide');
                     Alerts.success(`User "${user.username}" was deleted successfully.`);
+                    const reassignments = response.ownershipReassignments ?? [];
+                    if (reassignments.length) {
+                        const items = reassignments.map(change => `
+                            <li>${change.studyTitle} (ID: ${change.studyId}) — new owner is ${change.newOwnerUsername}</li>
+                        `).join('');
+                        Alerts.info(`Study ownership reassigned:<ul>${items}</ul>`, 0);
+                    }
                 },
                 error: function(err) {
                     FormValidation.clear("#deleteUserForm");
@@ -872,14 +879,15 @@
 
     function generateDeleteUserConfirmationHtml(user) {
         let confirmationText = `<p>You are about to delete the user <b>"${user.name}" (${user.username})</b>.</p>`;
-        confirmationText += generateStudyList(user);
+        confirmationText += generateStudiesToBeRemoved(user);
+        confirmationText += generateStudiesToBeReassigned(user);
         confirmationText += `<p><b class="text-danger">This cannot be undone.</b></p>`;
         return confirmationText;
     }
 
-    function generateStudyList(user) {
+    function generateStudiesToBeRemoved(user) {
         // Only add the studies that have a user size of 1 (means this user is the only
-        // member and the study would be abandoned after user deletion) .
+        // member and the study would be abandoned after user deletion).
         let studyList = "";
         $.each(user.studyList, function(index, study) {
             if (study.userSize === 1) {
@@ -890,6 +898,20 @@
         if (studyList !== "") {
             text += "<p>All studies with this user as the only member user will be deleted too. <b>This would automatically delete the following studies with all their results</b>.";
             text += "<ul>" + studyList + "</ul>";
+        }
+        return text;
+    }
+
+    function generateStudiesToBeReassigned(user) {
+        // ONly add the studies that have this user as an owner and more than one member
+        const reassignedStudies = user.studyList
+            .filter(study => study.isOwner && study.userSize > 1)
+            .map(study => `<li>${study.title} (ID: ${study.id})</li>`)
+            .join('');
+        let text = "";
+        if (reassignedStudies) {
+            text += "<p>All the following studies are owned by this user but have other members and ownership will be reassigned to a remaining member. The new owners will be shown after deletion.</p>";
+            text += `<ul>${reassignedStudies}</ul>`;
         }
         return text;
     }

@@ -51,7 +51,7 @@ public class UserServiceTest {
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
 
-        userService = new UserService(studyService, userDao, studyDao, workerDao);
+        userService = new UserService(studyService, userDao, studyDao, workerDao, mock(daos.common.BatchDao.class));
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
         JPAMocker.mockDaoTransactions(entityManager, userDao, studyDao, workerDao);
@@ -235,7 +235,7 @@ public class UserServiceTest {
 
         userService.removeUser("foo@ex.org");
 
-        // On sole membership: removeStudyInclAssets(study, user) was called
+        // Sole-member studies are deleted with the user.
         verify(studyService, times(1)).removeStudyInclAssets(eq(s));
         // Finally, user removed
         verify(userDao, times(1)).remove(u);
@@ -251,11 +251,18 @@ public class UserServiceTest {
         Study s = new Study();
         User other = new User("other@ex.org", "Other", "other@ex.org");
         s.addAllUsers(List.of(u, other));
+        s.setOwner(u);
+        when(studyDao.isOwner(s, u)).thenReturn(true);
 
-        userService.removeUser("foo2@ex.org");
+        var reassignments = userService.removeUser("foo2@ex.org");
+        assertThat(reassignments).hasSize(1);
+        assertThat(reassignments.getFirst().newOwnerUsername()).isEqualTo("other@ex.org");
 
+        // Shared studies survive deletion of one member.
+        verify(studyService, never()).removeStudyInclAssets(any());
         // For multi-member study, service removes user from study and updates it
         assertThat(s.getUserList().contains(u)).isFalse();
+        assertThat(s.getOwner()).isEqualTo(other);
         verify(studyDao, times(1)).merge(eq(s));
         verify(userDao, times(1)).remove(u);
     }

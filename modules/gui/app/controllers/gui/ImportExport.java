@@ -1,18 +1,18 @@
 package controllers.gui;
 
-import general.common.Common;
-import play.mvc.BodyParser;
-import http.common.UploadBodyParsers;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
+import general.common.Common;
 import general.common.MessagesStrings;
+import http.common.UploadBodyParsers;
 import json.common.DefaultJson;
 import models.common.Study;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Files.TemporaryFile;
+import play.mvc.BodyParser;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -23,6 +23,7 @@ import javax.inject.Singleton;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static models.common.User.Role.SUPERUSER;
 import static models.common.User.Role.USER;
 
 /**
@@ -48,7 +49,7 @@ public class ImportExport extends Controller {
      * directory already exists. The actual import happens in the method importStudyConfirmed().
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @BodyParser.Of(UploadBodyParsers.StudyArchive.class)
     public Result importStudy(Http.Request request) {
         // Get file from request
@@ -93,7 +94,7 @@ public class ImportExport extends Controller {
      *                   Default is `true`.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result importStudyConfirmed(Http.Request request) {
         // Get confirmation: overwrite study's properties and/or study assets
         JsonNode json = request.body().asJson();

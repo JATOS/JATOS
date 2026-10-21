@@ -225,17 +225,22 @@ function generateFullUserString(name, username, authMethod) {
  *
  * @param {string[]} members - Array of usernames
  */
-function generateMembersHtml(members) {
+function generateMembersHtml(members, options = {}) {
+    const memberHtml = member => {
+        const ownerBadge = member.username === options.ownerUsername
+            ? ' <span class="badge bg-secondary no-info-icon">Owner</span>' : '';
+        return generateFullUserString(member.name, member.username, member.authMethod) + ownerBadge;
+    };
     if (members.length === 1) {
         const m = members[0];
-        return `${generateFullUserString(m.name, m.username, m.authMethod)}`;
+        return memberHtml(m);
     } else if (members.length < 4 ) {
         // Show the users in a list
-        const memberList = members.map((m) => `<li>${generateFullUserString(m.name, m.username, m.authMethod)}</li>`).join("");
+        const memberList = members.map((m) => `<li>${memberHtml(m)}</li>`).join("");
         return `<ol class="mb-0 ps-3">${memberList}</ol>`;
     } else {
         // Show a popover with the users. You still have to activate the popovers with activatePopovers()
-        const memberList = members.map((m) => `<li>${generateFullUserString(m.name, m.username, m.authMethod)}</li>`).join("");
+        const memberList = members.map((m) => `<li>${memberHtml(m)}</li>`).join("");
         const membersHtml = `<b>This study has ${members.length} member users</b>:<ol class="mb-0">${memberList}</ol>`;
         return`<button class="btn btn-nav btn-sm" type="button" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-container="body" data-bs-html="true" data-bs-content="${escapeHtml(membersHtml)}">Show All</button>`;
     }

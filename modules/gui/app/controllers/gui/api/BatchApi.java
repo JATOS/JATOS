@@ -33,8 +33,7 @@ import static actions.common.AsyncAction.Executor;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 @Singleton
 public class BatchApi extends Controller {
@@ -65,7 +64,7 @@ public class BatchApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result getBatchesByStudy(String studyId) {
         Study study = studyService.getStudyFromIdOrUuid(studyId);
@@ -80,7 +79,7 @@ public class BatchApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result getBatch(String id) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
@@ -92,7 +91,7 @@ public class BatchApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     @Transactional
     public Result createBatch(play.mvc.Http.Request request, String studyId) {
@@ -113,7 +112,7 @@ public class BatchApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateBatch(play.mvc.Http.Request request, String id) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
@@ -134,7 +133,7 @@ public class BatchApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result deleteBatch(String id) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
@@ -145,7 +144,7 @@ public class BatchApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getBatchSession(String id, boolean asText) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -160,7 +159,7 @@ public class BatchApi extends Controller {
      * gracefully and give detailed error messages to the user.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateBatchSession(play.mvc.Http.Request request, String id, Option<Long> version) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);

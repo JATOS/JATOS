@@ -85,37 +85,39 @@ public class AdminService {
             boolean resultDataSizeFlag,
             boolean resultFileSizeFlag) {
         return studyDataList.stream().map(studyData -> {
-            long studyResultCount = studyData.getStudyResultCount();
+            long studyResultCount = studyData.studyResultCount();
 
             Map<String, Object> studyInfo = new HashMap<>();
-            studyInfo.put("id", studyData.getId());
-            studyInfo.put("uuid", studyData.getUuid());
-            studyInfo.put("title", studyData.getTitle());
-            studyInfo.put("active", studyData.isActive());
+            studyInfo.put("id", studyData.id());
+            studyInfo.put("uuid", studyData.uuid());
+            studyInfo.put("title", studyData.title());
+            studyInfo.put("active", studyData.active());
+            studyInfo.put("ownerUsername", studyData.ownerUsername());
             studyInfo.put("studyResultCount", studyResultCount);
-            studyInfo.put("members", studyData.getMembers().stream().map(u -> ImmutableMap.of(
-                    "username", u.getUsername(),
-                    "name", u.getName(),
-                    "authMethod", u.getAuthMethod()
+            studyInfo.put("members", studyData.members().stream().map(u -> ImmutableMap.of(
+                    "id", u.userId(),
+                    "username", u.username(),
+                    "name", u.name(),
+                    "authMethod", u.authMethod()
             )).collect(Collectors.toList()));
 
             if (studyAssetsSizeFlag) {
-                studyInfo.put("studyAssetsSize", getStudyAssetDirSize(studyData.getDirName()));
+                studyInfo.put("studyAssetsSize", getStudyAssetDirSize(studyData.dirName()));
             } else {
                 studyInfo.put("studyAssetsSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
             if (resultDataSizeFlag) {
-                studyInfo.put("resultDataSize", getResultDataSize(studyData.getResultDataSize(), studyResultCount));
+                studyInfo.put("resultDataSize", getResultDataSize(studyData.resultDataSize(), studyResultCount));
             } else {
                 studyInfo.put("resultDataSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
             if (resultFileSizeFlag) {
-                studyInfo.put("resultFileSize", getResultFileSize(studyData.getId(), studyResultCount));
+                studyInfo.put("resultFileSize", getResultFileSize(studyData.id(), studyResultCount));
             } else {
                 studyInfo.put("resultFileSize", ImmutableMap.of("humanReadable", "disabled", "size", 0));
             }
 
-            studyInfo.put("lastStarted", studyData.getLastStarted());
+            studyInfo.put("lastStarted", studyData.lastStarted());
             return studyInfo;
         }).collect(Collectors.toList());
     }

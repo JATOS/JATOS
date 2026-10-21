@@ -58,16 +58,18 @@
                     <li class="no-info-icon" data-bs-tooltip="Clone this study without its results">
                         <a class="dropdown-item" id="cloneStudy" href="#"><i class="bi-copy pe-1"></i>Clone</a>
                     </li>
-                    <li class="no-info-icon" data-bs-tooltip="Change which users can access this study">
-                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyMemberUsersModal"><i class="bi-people-fill pe-1"></i>Change users</a>
+                    <li class="no-info-icon" data-bs-tooltip="View study members and manage access if you are the owner">
+                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyMemberUsersModal"><i class="bi-people-fill pe-1"></i>Members</a>
                     </li>
                     <li class="no-info-icon" data-bs-tooltip="Show this study's study log">
                         <a class="dropdown-item" data-bs-toggle="modal" href="#studyLogModal"><i class="bi-journal-text pe-1"></i>Study log</a>
                     </li>
+                    @if(study.getOwner().getUsername() == signedinUser.getUsername() || (general.common.Common.isUserRoleAllowSuperuser() && signedinUser.isSuperuser())) {
                     <li><hr class="dropdown-divider"></li>
                     <li class="no-info-icon" data-bs-tooltip="Delete this study including its components, assets and results">
                         <a class="dropdown-item" id="removeStudy" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
                     </li>
+                    }
                 </ul>
             </div>
             <button class="btn btn-component me-3" data-bs-toggle="modal" data-bs-target="#componentCreatorModal" type="button" data-bs-tooltip="Add a new component">

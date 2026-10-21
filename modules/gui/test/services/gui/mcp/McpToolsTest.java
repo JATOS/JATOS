@@ -74,7 +74,7 @@ public class McpToolsTest {
             args.putObject("properties").put("active", false);
             var call = McpTools.resolveCall("set_" + entity + "_active", args);
             assertThat(call.method()).isEqualTo("PATCH");
-            assertThat(call.adminOnly()).isEqualTo(entity.equals("study") || entity.equals("user"));
+            assertThat(call.adminOnly()).isEqualTo(entity.equals("user") || entity.equals("study"));
             assertThat(call.body()).isEqualTo(Json.parse("{\"active\":false}"));
             args.withObject("properties").put("active", "false");
             assertThatThrownBy(() -> McpTools.resolveCall("set_" + entity + "_active", args))

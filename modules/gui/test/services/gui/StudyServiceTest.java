@@ -46,6 +46,7 @@ public class StudyServiceTest {
     private StudyLogger studyLogger;
 
     private StudyService studyService;
+    private AuthorizationService authorizationService;
 
     @Before
     public void setUp() {
@@ -57,13 +58,15 @@ public class StudyServiceTest {
         ioUtils = mock(IOUtils.class);
         studyLogger = mock(StudyLogger.class);
 
-        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao, ioUtils, studyLogger, mock(ResultRemover.class));
+        authorizationService = mock(AuthorizationService.class);
+        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao, ioUtils, studyLogger, mock(ResultRemover.class), authorizationService);
 
         callbacks = new JPAMocker.TransactionCallbacks();
         entityManager = callbacks.em;
         JPAMocker.mockDaoTransactions(entityManager, batchDao, userDao, studyDao);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
+        Context.current().args().put(SIGNEDIN_USER, new User("owner", "Owner", "owner@example.org"));
     }
 
     private Study newStudyWithComponents(String title, String dirName, int numberOfComponents) {
@@ -88,6 +91,50 @@ public class StudyServiceTest {
         return s;
     }
 
+
+    @Test
+    public void bulkRemovalBySuperuserPreservesActualOwner() {
+        Study study = new Study();
+        User owner = new User("owner", "Owner", "owner@example.org");
+        User superuser = new User("superuser", "Superuser", "superuser@example.org");
+        study.setOwner(owner);
+        study.addUser(superuser);
+        Context.current().args().put(SIGNEDIN_USER, superuser);
+        when(userDao.findAll()).thenReturn(new ArrayList<>(List.of(owner, superuser)));
+        studyService.removeAllUserMembers(study);
+        assertThat(study.getUserList()).containsExactly(owner);
+    }
+
+    @Test
+    public void deniedOwnershipActionsDoNotModifyStudy() {
+        Study study = new Study();
+        User actor = Context.current().args().get(SIGNEDIN_USER);
+        doThrow(new ForbiddenException("Not owner"))
+                .when(authorizationService).checkStudyOwner(eq(study), eq(actor), anyBoolean());
+        doThrow(new ForbiddenException("Not owner"))
+                .when(authorizationService).checkMembershipChange(eq(study), eq(actor), eq(actor), anyBoolean());
+        for (Runnable action : List.<Runnable>of(
+                () -> studyService.changeUserMember(study, actor, true),
+                () -> studyService.changeUserMember(study, actor, false),
+                () -> studyService.addAllUserMembers(study),
+                () -> studyService.removeAllUserMembers(study))) {
+            org.junit.Assert.assertThrows(ForbiddenException.class, action::run);
+        }
+        verifyNoInteractions(studyDao, batchDao, userDao, ioUtils);
+    }
+
+    @Test
+    public void removingOwnerIsRejectedEvenWithOtherMembers() {
+        Study study = new Study();
+        User owner = new User("owner", "Owner", "owner@example.org");
+        study.setOwner(owner);
+        study.addUser(new User("member", "Member", "member@example.org"));
+        when(studyDao.isOwner(study, owner)).thenReturn(true);
+        org.junit.Assert.assertThrows(ForbiddenException.class,
+                () -> studyService.changeUserMember(study, owner, false));
+        assertThat(study.getUserList()).contains(owner);
+        verify(studyDao, never()).merge(any());
+    }
 
     @Test
     public void changeComponentPosition_valid_reorders_andUpdates() {
@@ -180,6 +227,39 @@ public class StudyServiceTest {
 
         verify(studyDao).merge(existing);
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
+    }
+
+    @Test
+    public void updateStudy_activationRequiresAdminEvenForOwnerOrSuperuser() throws IOException {
+        for (User.Role role : List.of(User.Role.USER, User.Role.SUPERUSER)) {
+            User user = new User("u", "U", "u@example.org");
+            user.updateRoles(role);
+            Context.current().args().put(SIGNEDIN_USER, user);
+            Study study = new Study();
+            study.setOwner(user);
+            for (boolean active : List.of(true, false)) {
+                study.setActive(active);
+                StudyProperties props = new StudyProperties();
+                props.setActive(!active);
+                props.setDirName("changed-directory");
+                org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        studyService.updateStudyAndRenameAssets(study, props))
+                        .isInstanceOf(ForbiddenException.class);
+                assertThat(study.isActive()).isEqualTo(active);
+            }
+        }
+        verifyNoInteractions(ioUtils, studyDao);
+
+        User admin = new User("admin", "Admin", "admin@example.org");
+        admin.updateRoles(User.Role.ADMIN);
+        Context.current().args().put(SIGNEDIN_USER, admin);
+        Study study = new Study();
+        for (boolean active : List.of(false, true)) {
+            StudyProperties props = new StudyProperties();
+            props.setActive(active);
+            studyService.updateStudyAndRenameAssets(study, props);
+            assertThat(study.isActive()).isEqualTo(active);
+        }
     }
 
     @Test
@@ -315,7 +395,7 @@ public class StudyServiceTest {
         when(toRemove.getWorker()).thenReturn(worker);
 
         // ensure size > 1 to allow removal
-        study.addUser(remaining);
+        study.setOwner(remaining);
         study.addUser(toRemove);
 
         Batch b = mock(Batch.class);
@@ -332,7 +412,7 @@ public class StudyServiceTest {
     public void changeUserMember_removeLastMember_throwsForbidden() {
         Study study = new Study();
         User onlyUser = mock(User.class);
-        study.addUser(onlyUser);
+        study.setOwner(onlyUser);
 
         studyService.changeUserMember(study, onlyUser, false);
     }
@@ -373,7 +453,7 @@ public class StudyServiceTest {
         when(other.getWorker()).thenReturn(otherWorker);
 
         // Make a study contain both users beforehand
-        study.addUser(signedIn);
+        study.setOwner(signedIn);
         study.addUser(other);
 
         Context.current().args().put(SIGNEDIN_USER, signedIn);

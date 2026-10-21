@@ -31,8 +31,7 @@ import static auth.gui.AuthAction.Auth;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 @Singleton
 public class GroupApi extends Controller {
@@ -57,7 +56,7 @@ public class GroupApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getGroupsOfBatch(String id) {
         Batch batch = batchService.getBatchFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -70,7 +69,7 @@ public class GroupApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @TransactionalAction.Transactional(READ_ONLY)
     public Result getGroupSession(Long id, boolean asText) {
         GroupResult groupResult = groupResultDao.findById(id);
@@ -86,7 +85,7 @@ public class GroupApi extends Controller {
      * gracefully and give detailed error messages to the user.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @TransactionalAction.Transactional
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateGroupSession(play.mvc.Http.Request request, Long id, Option<Long> version) {

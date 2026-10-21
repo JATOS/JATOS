@@ -4,6 +4,7 @@ import auth.gui.AuthAction.Auth;
 import auth.gui.AuthAction.AuthMethod.AuthResult;
 import auth.gui.AuthAction.AuthMethod.Type;
 import exceptions.common.AuthException;
+import general.common.Common;
 import http.common.Http.Context;
 import http.common.HttpUtils;
 import models.common.User;
@@ -29,8 +30,8 @@ import java.util.concurrent.CompletionStage;
 import static messaging.common.FlashMessagingHelper.ERROR;
 
 /**
- * This class defines the {@link Auth} annotation used in JATOS GUI and JATOS API. Authentication methods are
- * 1) via session cookies, and 2) via personal access tokens (API tokens).
+ * This class defines the {@link Auth} annotation used in JATOS GUI and JATOS API. Authentication methods are 1) via
+ * session cookies and 2) via personal access tokens (API tokens).
  *
  * The actual session cookie authentication is done in {@link AuthSessionCookie}. The actual authentication with API
  * tokens is in {@link AuthApiToken}.
@@ -39,20 +40,23 @@ import static messaging.common.FlashMessagingHelper.ERROR;
  *
  * Authentication via DB, LDAP, OIDC and Google Sign-In use the session cookie authentication.
  *
- * IMPORTANT: Since this annotation accesses the database, the annotated method has to be within a transaction.
- * This means the {@link javax.transaction.Transactional} annotation has to be BEFORE the {@link Auth} annotation.
+ * IMPORTANT: Since this annotation accesses the database, the annotated method has to be within a transaction. This
+ * means the {@link javax.transaction.Transactional} annotation has to be BEFORE the {@link Auth} annotation.
  */
 public class AuthAction extends Action<Auth> {
 
     /**
-     * This @Auth annotation can be used on every controller action (GUI or API) where authentication
-     * and authorization are required. If no Role is added, then the default Role 'NONE' is assumed.
+     * This @Auth annotation can be used on every controller action (GUI or API) where authentication and authorization
+     * are required. If no Role is added, then the default Role 'NONE' is assumed. Roles are alternatives, not an
+     * inheritance hierarchy. SUPERUSER must be listed explicitly and is effective only when enabled in configuration.
+     * Study-specific access checks remain in services.
      */
     @With(AuthAction.class)
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Auth {
         Role[] roles() default {Role.NONE};
+
         Type[] types() default {Type.SESSION};
     }
 
@@ -73,7 +77,7 @@ public class AuthAction extends Action<Auth> {
         Type type();
 
         /**
-         * @param allowedRoles   Roles that are allowed to access the resource
+         * @param allowedRoles Roles that are allowed to access the resource
          * @return Returns an {@link AuthResult}.
          */
         AuthResult authenticate(EnumSet<Role> allowedRoles);
@@ -84,11 +88,9 @@ public class AuthAction extends Action<Auth> {
         class AuthResult {
 
             /**
-             * An AuthResult always has a state. It can be either
-             * 1) AUTHENTICATED for a successful authentication,
-             * 2) DENIED for an unsuccessful authentication, or
-             * 3) WRONG_METHOD if the authentication method does not apply (e.g., if there is no session cookie in a
-             * session cookie authentication).
+             * An AuthResult always has a state. It can be either 1) AUTHENTICATED for a successful authentication, 2)
+             * DENIED for an unsuccessful authentication, or 3) WRONG_METHOD if the authentication method does not apply
+             * (e.g., if there is no session cookie in a session cookie authentication).
              */
             enum State {AUTHENTICATED, DENIED, WRONG_METHOD}
 
@@ -149,6 +151,15 @@ public class AuthAction extends Action<Auth> {
 
         // No authentication method worked
         return denied();
+    }
+
+    /**
+     * Global role gate only. Resource membership, ownership and lock checks remain in services.
+     */
+    static boolean hasAllowedRole(User user, EnumSet<Role> allowedRoles) {
+        EnumSet<Role> enabledRoles = allowedRoles.clone();
+        if (!Common.isUserRoleAllowSuperuser()) enabledRoles.remove(Role.SUPERUSER);
+        return user.hasRole(enabledRoles);
     }
 
     static CompletionStage<Result> denied() {
