@@ -355,6 +355,16 @@ public class StudyApi extends Controller {
     }
 
     @Async(Executor.IO)
+    @Auth(roles = {USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
+    @Transactional
+    public Result changeOwner(String id, Long userId) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        authorizationService.checkStudyOwner(study, Context.current().args().get(SIGNEDIN_USER), true);
+        studyService.changeOwner(study, userDao.findById(userId));
+        return ok(ApiEnvelope.wrap("Study ownership transferred successfully").asJsonNode());
+    }
+
+    @Async(Executor.IO)
     @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result addMemberToStudy(String id, Long userId) {
@@ -366,16 +376,6 @@ public class StudyApi extends Controller {
     @Transactional
     public Result removeMemberFromStudy(String id, Long userId) {
         return changeMemberOfStudy(id, userId, false);
-    }
-
-    @Async(Executor.IO)
-    @Auth(roles = {USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
-    @Transactional
-    public Result changeOwner(String id, Long userId) {
-        Study study = studyService.getStudyFromIdOrUuid(id);
-        authorizationService.checkStudyOwner(study, Context.current().args().get(SIGNEDIN_USER), true);
-        studyService.changeOwner(study, userDao.findById(userId));
-        return ok(ApiEnvelope.wrap("Study ownership transferred successfully").asJsonNode());
     }
 
     public Result changeMemberOfStudy(String id, Long userId, boolean isMember) {
