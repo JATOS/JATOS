@@ -415,6 +415,7 @@ public class DomainJsonMapper {
             sidebarStudy.id = study.getId();
             sidebarStudy.uuid = study.getUuid();
             sidebarStudy.title = study.getTitle();
+            sidebarStudy.ownerUsername = study.getOwner().getUsername();
             sidebarStudy.isLocked = study.isLocked();
             sidebarStudy.isGroupStudy = study.isGroupStudy();
             sidebarStudy.isActive = study.isActive();
@@ -449,6 +450,7 @@ public class DomainJsonMapper {
      * Little model class to store some study data for the UI's sidebar.
      */
     static class SidebarStudy {
+        public String ownerUsername;
         public Long id;
         public String uuid;
         public String title;

@@ -72,6 +72,9 @@
             const componentBadgeTooltipHtml = study.componentList.length > 0
                     ? `<div class="text-start"><b>This study has ${study.componentList.length} component(s)</b>:<ol class="mb-0">${componentListTooltip}</ol></div>`
                     : "This study has no components yet.";
+            const ownerBadge = study.ownerUsername === window.signedinUser.username
+                    ? renderBadge('<i class="bi-person-check-fill"></i>', "text-bg-secondary", "You own this study.")
+                    : "";
             const componentsBadge = renderBadge(study.componentList.length, "text-bg-component", componentBadgeTooltipHtml);
             const deactivatedBadge = !study.isActive
                     ? renderBadge(
@@ -107,7 +110,7 @@
                     <a href="${window.routes.Studies.study(study.id)}" class="list-group-item no-info-icon ${isSelectedStudy}">
                         <div class="d-flex w-100 align-items-center">
                             <div class="fw-bold no-info-icon d-inline-block flex-grow-1" data-bs-tooltip="${studyTooltip}" data-bs-delay="0" data-bs-html="true" data-bs-custom-class="study-sidebar-tooltip">${study.title}</div>
-                            <div class="d-inline-flex gap-1 text-nowrap">${componentsBadge}${deactivatedBadge}${lockedBadge}${groupStudyBadge}${allowPreviewBadge}${linearStudyBadge}</div>
+                            <div class="d-inline-flex gap-1 text-nowrap">${ownerBadge}${componentsBadge}${deactivatedBadge}${lockedBadge}${groupStudyBadge}${allowPreviewBadge}${linearStudyBadge}</div>
                         </div>
                     </a>`;
 
