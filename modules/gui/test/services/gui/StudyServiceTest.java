@@ -64,6 +64,8 @@ public class StudyServiceTest {
         callbacks = new JPAMocker.TransactionCallbacks();
         entityManager = callbacks.em;
         JPAMocker.mockDaoTransactions(entityManager, batchDao, userDao, studyDao);
+        when(studyDao.findAndLock(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(userDao.findByUsernameAndLock(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
         Context.current().args().put(SIGNEDIN_USER, new User("owner", "Owner", "owner@example.org"));
@@ -100,7 +102,7 @@ public class StudyServiceTest {
         study.setOwner(owner);
         study.addUser(superuser);
         Context.current().args().put(SIGNEDIN_USER, superuser);
-        when(userDao.findAll()).thenReturn(new ArrayList<>(List.of(owner, superuser)));
+        when(userDao.findAllAndLock()).thenReturn(new ArrayList<>(List.of(owner, superuser)));
         studyService.removeAllUserMembers(study);
         assertThat(study.getUserList()).containsExactly(owner);
     }
@@ -110,9 +112,7 @@ public class StudyServiceTest {
         Study study = new Study();
         User actor = Context.current().args().get(SIGNEDIN_USER);
         doThrow(new ForbiddenException("Not owner"))
-                .when(authorizationService).checkStudyOwner(eq(study), eq(actor), anyBoolean());
-        doThrow(new ForbiddenException("Not owner"))
-                .when(authorizationService).checkMembershipChange(eq(study), eq(actor), eq(actor), anyBoolean());
+                .when(authorizationService).checkLockedStudyOwner(eq(study), eq(actor), anyBoolean());
         for (Runnable action : List.<Runnable>of(
                 () -> studyService.changeUserMember(study, actor, true),
                 () -> studyService.changeUserMember(study, actor, false),
@@ -120,7 +120,8 @@ public class StudyServiceTest {
                 () -> studyService.removeAllUserMembers(study))) {
             org.junit.Assert.assertThrows(ForbiddenException.class, action::run);
         }
-        verifyNoInteractions(studyDao, batchDao, userDao, ioUtils);
+        verifyNoInteractions(batchDao, ioUtils);
+        verify(studyDao, never()).merge(any());
     }
 
     @Test
@@ -431,7 +432,7 @@ public class StudyServiceTest {
         when(u1.getWorker()).thenReturn(w1);
         when(u2.getWorker()).thenReturn(w2);
 
-        when(userDao.findAll()).thenReturn(Arrays.asList(u1, u2));
+        when(userDao.findAllAndLock()).thenReturn(Arrays.asList(u1, u2));
 
         studyService.addAllUserMembers(study);
 
@@ -457,7 +458,7 @@ public class StudyServiceTest {
         study.addUser(other);
 
         Context.current().args().put(SIGNEDIN_USER, signedIn);
-        when(userDao.findAll()).thenReturn(new ArrayList<>(Arrays.asList(signedIn, other)));
+        when(userDao.findAllAndLock()).thenReturn(new ArrayList<>(Arrays.asList(signedIn, other)));
 
         studyService.removeAllUserMembers(study);
 
@@ -500,7 +501,7 @@ public class StudyServiceTest {
 
         User signedInUser = new User("alice", "Alice", "alice@example.org");
         Context.current().args().put(SIGNEDIN_USER, signedInUser);
-        when(userDao.merge(signedInUser)).thenReturn(signedInUser);
+        when(userDao.findByUsernameAndLock(signedInUser)).thenReturn(signedInUser);
 
         Batch defaultBatch = mock(Batch.class);
         when(batchService.createDefaultBatch()).thenReturn(defaultBatch);
@@ -536,7 +537,7 @@ public class StudyServiceTest {
 
         User signedInUser = new User("alice", "Alice", "alice@example.org");
         Context.current().args().put(SIGNEDIN_USER, signedInUser);
-        when(userDao.merge(signedInUser)).thenReturn(signedInUser);
+        when(userDao.findByUsernameAndLock(signedInUser)).thenReturn(signedInUser);
 
         Study returned = studyService.createAndPersistStudy(study);
 
@@ -565,7 +566,7 @@ public class StudyServiceTest {
 
         User signedInUser = new User("alice", "Alice", "alice@example.org");
         Context.current().args().put(SIGNEDIN_USER, signedInUser);
-        when(userDao.merge(signedInUser)).thenReturn(signedInUser);
+        when(userDao.findByUsernameAndLock(signedInUser)).thenReturn(signedInUser);
 
         Batch defaultBatch = mock(Batch.class);
         when(batchService.createDefaultBatch()).thenReturn(defaultBatch);

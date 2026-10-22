@@ -62,6 +62,7 @@ public class AuthorizationServiceTest {
                 .isInstanceOf(ForbiddenException.class);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void enabledSuperuserCanAccessWorkersInStudiesWithoutMembership() {
         User superuser = user("super", Role.SUPERUSER);
@@ -78,6 +79,7 @@ public class AuthorizationServiceTest {
                 .isInstanceOf(ForbiddenException.class);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void ownershipPrivilegesAreExplicit() {
         Study study = new Study();
@@ -110,6 +112,41 @@ public class AuthorizationServiceTest {
                 .isInstanceOf(ForbiddenException.class);
         assertThatThrownBy(() -> authorizationService.checkStudyOwner(null, owner, true))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
+    public void lockedOwnershipPrivilegesUseRefreshedStudy() {
+        Study study = new Study();
+        User owner = user("owner", Role.USER);
+        User member = user("member", Role.USER);
+        User admin = user("administrator", Role.ADMIN);
+        User superuser = user("superuser", Role.SUPERUSER);
+        study.setOwner(owner);
+        commonStatic.when(Common::isUserRoleAllowSuperuser).thenReturn(true);
+        authorizationService.checkLockedStudyOwner(study, owner, false);
+        authorizationService.checkLockedStudyOwner(study, owner, true);
+        authorizationService.checkLockedStudyOwner(study, admin, true);
+        authorizationService.checkLockedStudyOwner(study, superuser, false);
+        authorizationService.checkLockedStudyOwner(study, superuser, true);
+        commonStatic.when(Common::isUserRoleAllowSuperuser).thenReturn(false);
+        assertThatThrownBy(() -> authorizationService.checkLockedStudyOwner(study, superuser, false))
+                .isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> authorizationService.checkLockedStudyOwner(study, superuser, true))
+                .isInstanceOf(ForbiddenException.class);
+        for (User denied : java.util.List.of(member, admin)) {
+            assertThatThrownBy(() -> authorizationService.checkLockedStudyOwner(study, denied, false))
+                    .isInstanceOf(ForbiddenException.class);
+        }
+        for (User denied : java.util.List.of(member)) {
+            assertThatThrownBy(() -> authorizationService.checkLockedStudyOwner(study, denied, true))
+                    .isInstanceOf(ForbiddenException.class);
+        }
+        assertThatThrownBy(() -> authorizationService.checkLockedStudyOwner(study, null, true))
+                .isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> authorizationService.checkLockedStudyOwner(null, owner, true))
+                .isInstanceOf(NotFoundException.class);
+        org.mockito.Mockito.verifyNoInteractions(studyDao);
     }
 
     @Test

@@ -38,11 +38,23 @@ public class AuthorizationService {
      * Enabled superusers have owner privileges. Admin override is reserved for ownership transfer.
      */
     public void checkStudyOwner(Study study, User user, boolean adminAllowed) {
+        boolean isOwner = studyDao.isOwner(study, user);
+        checkStudyOwner(study, user, adminAllowed, isOwner);
+    }
+
+    /**
+     * Checks owner privileges using a study refreshed under a lock held by the current transaction.
+     */
+    public void checkLockedStudyOwner(Study study, User user, boolean adminAllowed) {
+        boolean isOwner = study != null && user != null && user.equals(study.getOwner());
+        checkStudyOwner(study, user, adminAllowed, isOwner);
+    }
+
+    private void checkStudyOwner(Study study, User user, boolean adminAllowed, boolean isOwner) {
         if (study == null) throw new NotFoundException("Study doesn't exist.");
-        if (user == null
-                || !(adminAllowed && user.isAdmin())
+        if (user == null || !(adminAllowed && user.isAdmin())
                 && !isAllowedSuperuser(user)
-                && !studyDao.isOwner(study, user)) {
+                && !isOwner) {
             throw new ForbiddenException("Only the study owner or an enabled superuser" + (adminAllowed ? " or an administrator" : "")
                     + " can perform this action.", ErrorCode.NO_ACCESS);
         }

@@ -55,6 +55,9 @@ public class UserServiceTest {
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
         JPAMocker.mockDaoTransactions(entityManager, userDao, studyDao, workerDao);
+        when(userDao.findByUsernameAndLock(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(studyDao.findAllByUserWithLock(any())).thenAnswer(inv ->
+                new java.util.ArrayList<>(((User) inv.getArgument(0)).getStudyList()));
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }

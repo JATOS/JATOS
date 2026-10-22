@@ -122,14 +122,15 @@ public class StudyService {
      */
     public void changeOwner(Study study, User newOwner) {
         studyDao.withTransaction(em -> {
-            Study managedStudy = studyDao.findByIdWithLock(study.getId());
-            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            authorizationService.checkStudyOwner(managedStudy, signedinUser, true);
             authorizationService.checkUserExists(newOwner);
-            if (!studyDao.hasUser(managedStudy, newOwner)) {
+            User managedNewOwner = userDao.findByUsernameAndLock(newOwner);
+            Study managedStudy = studyDao.findAndLock(study);
+            User signedinUser = Context.current().args().get(SIGNEDIN_USER);
+            authorizationService.checkLockedStudyOwner(managedStudy, signedinUser, true);
+            if (!managedStudy.getUserList().contains(managedNewOwner)) {
                 throw new ForbiddenException("The new owner must already be a study member.");
             }
-            managedStudy.setOwner(newOwner);
+            managedStudy.setOwner(managedNewOwner);
         });
     }
 
@@ -138,9 +139,22 @@ public class StudyService {
      * Persisting. The batch-worker relationship is updated in the database only - not in memory.
      */
     public void changeUserMember(Study study, User userToChange, boolean isMember) {
+        studyDao.withTransaction(em -> {
+            User managedUser = userDao.findByUsernameAndLock(userToChange);
+            Study managedStudy = studyDao.findAndLock(study);
+            changeLockedUserMember(managedStudy, managedUser, isMember);
+        });
+    }
+
+    private void changeLockedUserMember(Study study, User userToChange, boolean isMember) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.checkMembershipChange(study, signedinUser, userToChange, isMember);
-        if (!isMember && studyDao.isOwner(study, userToChange)) {
+        boolean leavingStudy = !isMember
+                && signedinUser.equals(userToChange)
+                && study.getUserList().contains(signedinUser);
+        if (!leavingStudy) {
+            authorizationService.checkLockedStudyOwner(study, signedinUser, false);
+        }
+        if (!isMember && study.getOwner().equals(userToChange)) {
             throw new ForbiddenException("Transfer ownership before removing the study owner.");
         }
         Set<User> userList = study.getUserList();
@@ -170,8 +184,14 @@ public class StudyService {
      * The batch-worker relationship is updated in the database only - not in memory.
      */
     public void addAllUserMembers(Study study) {
-        authorizationService.checkStudyOwner(study, Context.current().args().get(SIGNEDIN_USER), false);
-        List<User> userList = userDao.findAll();
+        studyDao.withTransaction(em -> {
+            List<User> users = userDao.findAllAndLock();
+            addAllLockedUserMembers(studyDao.findAndLock(study), users);
+        });
+    }
+
+    private void addAllLockedUserMembers(Study study, List<User> userList) {
+        authorizationService.checkLockedStudyOwner(study, Context.current().args().get(SIGNEDIN_USER), false);
         study.addAllUsers(userList);
 
         List<Worker> usersWorkerList = userList.stream()
@@ -188,9 +208,15 @@ public class StudyService {
      * Removes all member users except the owner, including their workers, from the study's batches.
      */
     public void removeAllUserMembers(Study study) {
+        studyDao.withTransaction(em -> {
+            removeAllLockedUserMembers(studyDao.findAndLock(study));
+        });
+    }
+
+    private void removeAllLockedUserMembers(Study study) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.checkStudyOwner(study, signedinUser, false);
-        List<User> usersToRemove = userDao.findAll();
+        authorizationService.checkLockedStudyOwner(study, signedinUser, false);
+        List<User> usersToRemove = new ArrayList<>(study.getUserList());
 
         // Never remove the owner. A superuser may perform this operation without being the study owner.
         usersToRemove.remove(study.getOwner());
@@ -256,7 +282,7 @@ public class StudyService {
     public Study createAndPersistStudy(Study study) {
         return studyDao.withTransaction(em -> {
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            User managedSignedinUser = userDao.merge(signedinUser);
+            User managedSignedinUser = userDao.findByUsernameAndLock(signedinUser);
             study.setOwner(managedSignedinUser);
             Study managedStudy = studyDao.merge(study);
 
@@ -425,7 +451,7 @@ public class StudyService {
     public void removeStudyInclAssets(Study study) {
         studyDao.withTransaction(em -> {
             // Remove study from all member users
-            Study managedStudy = studyDao.merge(study);
+            Study managedStudy = studyDao.findAndLock(study);
             for (User user : new ArrayList<>(managedStudy.getUserList())) {
                 managedStudy.removeUser(user);
             }

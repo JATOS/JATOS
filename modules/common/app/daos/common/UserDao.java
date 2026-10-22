@@ -1,5 +1,6 @@
 package daos.common;
 
+import exceptions.common.NotFoundException;
 import models.common.Study;
 import models.common.User;
 import play.db.jpa.JPAApi;
@@ -8,6 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,6 +63,21 @@ public class UserDao extends AbstractDao {
     }
 
     /**
+     * User locks precede study locks. Adding members/creating studies and account deletion share this lock, preventing
+     * an account from acquiring new memberships while it is being deleted.
+     */
+    public User findByUsernameAndLock(User user) {
+        return withTransaction(em -> {
+            User managed = em.find(User.class, user.getUsername());
+            if (managed == null) throw new NotFoundException("User doesn't exist.");
+            if (em.getLockMode(managed) != LockModeType.PESSIMISTIC_WRITE) {
+                em.refresh(managed, LockModeType.PESSIMISTIC_WRITE);
+            }
+            return managed;
+        });
+    }
+
+    /**
      * Finds a user by username and eagerly fetches their studyList.
      */
     public User findByUsernameWithStudies(String normalizedUsername) {
@@ -90,6 +107,14 @@ public class UserDao extends AbstractDao {
     public List<User> findAll() {
         return withReadOnlyTransaction(em -> {
             return em.createQuery("SELECT u FROM User u", User.class).getResultList();
+        });
+    }
+
+
+    public List<User> findAllAndLock() {
+        return withTransaction(em -> {
+            return em.createQuery("SELECT u FROM User u ORDER BY u.username", User.class)
+                    .setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
         });
     }
 

@@ -244,7 +244,6 @@ public class UserService {
      */
     public List<OwnershipReassignment> removeUser(Long id) {
         return userDao.withTransaction(em -> {
-            List<OwnershipReassignment> reassignments = new ArrayList<>();
             User user = userDao.findById(id);
             if (user == null) {
                 throw new NotFoundException("An user with id \"" + id + "\" doesn't exist.");
@@ -253,35 +252,45 @@ public class UserService {
                 throw new ForbiddenException("It's not possible to remove user 'admin'.");
             }
 
-            List<Study> studiesBeforeRemoval = new ArrayList<>(user.getStudyList());
-
-            // Remove user from all studies and delete studies with no users
-            for (Study study : studiesBeforeRemoval) {
-                // Only remove study if user is the last member
-                assert study != null;
-                if (study.getUserList().size() <= 1) {
-                    studyService.removeStudyInclAssets(study);
-                } else {
-                    User nextOwner = setNextOwner(study, user);
-                    if (nextOwner != null) reassignments.add(new OwnershipReassignment(
-                            study.getId(), study.getTitle(), nextOwner.getUsername()));
-                    study.getBatchList().forEach(batch ->
-                            batchDao.removeWorkerFromBatch(batch.getId(), user.getWorker().getId()));
-                    study.removeUser(user);
-                    studyDao.merge(study);
-                }
-            }
-
-            // Remove user (cascades delete ApiTokens, LoginAttempts, JatosWorker)
-            userDao.remove(user);
-            return reassignments;
+            User lockedUser = userDao.findByUsernameAndLock(user);
+            return removeLockedUser(lockedUser);
         });
+    }
+
+    /**
+     * Removes a locked user within the caller's transaction.
+     */
+    private List<OwnershipReassignment> removeLockedUser(User user) {
+        List<OwnershipReassignment> reassignments = new ArrayList<>();
+        // Lock and refresh studies in ascending ID order, after the user, before making any changes.
+        List<Study> studiesBeforeRemoval = studyDao.findAllByUserWithLock(user);
+
+        // Remove user from all studies and delete studies with no users
+        for (Study study : studiesBeforeRemoval) {
+            if (!study.getUserList().contains(user)) continue;
+            // Only remove study if user is the last member
+            if (study.getUserList().size() <= 1) {
+                studyService.removeStudyInclAssets(study);
+            } else {
+                User nextOwner = setNextOwner(study, user);
+                if (nextOwner != null) reassignments.add(new OwnershipReassignment(
+                        study.getId(), study.getTitle(), nextOwner.getUsername()));
+                study.getBatchList().forEach(batch ->
+                        batchDao.removeWorkerFromBatch(batch.getId(), user.getWorker().getId()));
+                study.removeUser(user);
+                studyDao.merge(study);
+            }
+        }
+
+        // Remove user (cascades delete ApiTokens, LoginAttempts, JatosWorker)
+        userDao.remove(user);
+        return reassignments;
     }
 
     public record OwnershipReassignment(Long studyId, String studyTitle, String newOwnerUsername) {}
 
-    public User setNextOwner(Study study, User currentMember) {
-        if (studyDao.isOwner(study, currentMember)) {
+    private User setNextOwner(Study study, User currentMember) {
+        if (study.getOwner().equals(currentMember)) {
             User nextOwner = study.getUserList().stream()
                     .filter(member -> !member.equals(currentMember))
                     .min(Comparator.comparing(User::getUsername))

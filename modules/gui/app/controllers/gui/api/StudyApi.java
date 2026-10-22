@@ -134,8 +134,8 @@ public class StudyApi extends Controller {
      * Dispatches the request based on the {@code Content-Type} header: 1) ZIP / multipart upload → import a study
      * archive 2) JSON → create a new study from the request body.
      *
-     * StudyUploadBodyParser selects the parser by content type, spilling binary archives to disk while
-     * preserving the normal JSON and multipart limits.
+     * StudyUploadBodyParser selects the parser by content type, spilling binary archives to disk while preserving the
+     * normal JSON and multipart limits.
      */
     @Async(Executor.IO)
     @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
@@ -261,9 +261,9 @@ public class StudyApi extends Controller {
     @Auth(roles = {USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result deleteStudy(String id) {
-        Study study = studyService.getStudyFromIdOrUuid(id);
+        Study study = studyDao.findAndLock(studyService.getStudyFromIdOrUuid(id));
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.checkStudyOwner(study, signedinUser, false);
+        authorizationService.checkLockedStudyOwner(study, signedinUser, false);
         authorizationService.checkStudyNotLocked(study);
 
         studyService.removeStudyInclAssets(study);
@@ -292,8 +292,8 @@ public class StudyApi extends Controller {
 
 
     /**
-     * Updates study properties for members and enabled superusers. Only admins may change activation status;
-     * admins without study access may update only that status.
+     * Updates study properties for members and enabled superusers. Only admins may change activation status; admins
+     * without study access may update only that status.
      */
     @Async(Executor.IO)
     @Auth(roles = {USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
@@ -402,8 +402,8 @@ public class StudyApi extends Controller {
      * @param id         Study's ID or UUID
      * @param entryLimit It cuts the log after the number of lines given in entryLimit. Only if 'download' is false.
      * @param download   If true streams the whole study log file - if not only until entryLimit
-     * @return The complete log file as application/octet-stream when downloading, otherwise a chunked
-     * application/json array of log entries in reverse chronological order, limited by entryLimit.
+     * @return The complete log file as application/octet-stream when downloading, otherwise a chunked application/json
+     * array of log entries in reverse chronological order, limited by entryLimit.
      */
     @Async(Executor.IO)
     @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
