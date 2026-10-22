@@ -130,7 +130,16 @@ public class StudyService {
             if (!managedStudy.getUserList().contains(managedNewOwner)) {
                 throw new ForbiddenException("The new owner must already be a study member.");
             }
-            managedStudy.setOwner(managedNewOwner);
+            String previousOwner = managedStudy.getOwner().getUsername();
+            String nextOwner = managedNewOwner.getUsername();
+            if (!previousOwner.equals(nextOwner)) {
+                managedStudy.setOwner(managedNewOwner);
+                String signedinUserUsername = signedinUser.getUsername();
+                Long studyId = managedStudy.getId();
+                studyDao.afterCommit("Log ownership transfer for study " + studyId,
+                        () -> LOGGER.info("User {} transferred study {} ownership from {} to {}",
+                                signedinUserUsername, studyId, previousOwner, nextOwner));
+            }
         });
     }
 

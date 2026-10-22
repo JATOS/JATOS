@@ -168,9 +168,9 @@ public class UserApi extends Controller {
         authorizationService.checkAdminOrSelf(signedinUser, user);
         authorizationService.checkNotUserAdmin(user);
 
-        userService.removeUser(user.getId());
-
-        return ok(ApiEnvelope.wrap("User deleted successfully").asJsonNode());
+        var reassignments = userService.removeUser(user.getId());
+        JsonNode data = Json.toJson(Map.of("ownershipReassignments", reassignments));
+        return ok(ApiEnvelope.wrap("User deleted successfully", data).asJsonNode());
     }
 
 }
