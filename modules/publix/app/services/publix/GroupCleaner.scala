@@ -1,7 +1,7 @@
 package services.publix
 
 import daos.common.StudyResultDao
-import general.common.Common
+import general.common.{Common, JpaTransactions}
 import group.GroupDispatcher
 import jakarta.persistence.EntityManager
 import org.apache.pekko.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Cancellable, Props}
@@ -9,7 +9,6 @@ import org.apache.pekko.cluster.singleton.{ClusterSingletonManager, ClusterSingl
 import org.apache.pekko.pattern.pipe
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
-import play.db.jpa.JPAApi
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
@@ -90,7 +89,7 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
                              groupDispatcher: GroupDispatcher,
                              studyResultDao: StudyResultDao,
                              publixUtils: PublixUtils,
-                             jpa: JPAApi) {
+                             jpa: JpaTransactions) {
 
   private val logger: Logger = Logger(this.getClass)
 

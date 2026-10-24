@@ -1,22 +1,20 @@
 package daos.common;
 
 import exceptions.common.NotFoundException;
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import models.common.AdminStudyData;
 import models.common.AdminStudyMemberData;
 import models.common.Study;
 import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import org.hibernate.Hibernate;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Tuple;
-import jakarta.persistence.TypedQuery;
-
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,7 +26,7 @@ import java.util.stream.Collectors;
 public class StudyDao extends AbstractDao {
 
     @Inject
-    StudyDao(JPAApi jpa) {
+    StudyDao(JpaTransactions jpa) {
         super(jpa);
     }
 

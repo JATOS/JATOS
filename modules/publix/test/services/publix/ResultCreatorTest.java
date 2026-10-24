@@ -3,6 +3,8 @@ package services.publix;
 import daos.common.ComponentResultDao;
 import daos.common.StudyResultDao;
 import daos.common.worker.WorkerDao;
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
 import models.common.*;
 import models.common.StudyResult.StudyState;
 import models.common.workers.GeneralSingleWorker;
@@ -12,8 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import testutils.publix.JPAMocker;
-
-import jakarta.persistence.EntityManager;
 
 import java.util.function.Function;
 
@@ -25,10 +25,10 @@ import static org.mockito.Mockito.*;
  */
 public class ResultCreatorTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
     private WorkerDao workerDao;
-
     private ResultCreator resultCreator;
 
     @Before
@@ -36,10 +36,10 @@ public class ResultCreatorTest {
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         workerDao = mock(WorkerDao.class);
-        resultCreator = new ResultCreator(componentResultDao, studyResultDao, workerDao);
+        resultCreator = new ResultCreator(transactions, componentResultDao, studyResultDao, workerDao);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
-        JPAMocker.mockDaoTransactions(entityManager, componentResultDao, studyResultDao, workerDao);
+        JPAMocker.mockTransactions(entityManager, transactions);
     }
 
     @Test
@@ -60,7 +60,7 @@ public class ResultCreatorTest {
         assertEquals(study, sr.getStudy());
         assertEquals(StudyState.PRE, sr.getStudyState());
         assertTrue(worker.getStudyResultList().contains(sr));
-        verify(studyResultDao).withTransaction(Mockito.<Function<EntityManager, Object>>any());
+        verify(transactions).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(studyResultDao).persist(sr);
         verify(workerDao).merge(worker);
         verifyNoMoreInteractions(studyResultDao, workerDao, componentResultDao);
@@ -93,7 +93,7 @@ public class ResultCreatorTest {
         assertEquals(StudyState.STARTED, sr2.getStudyState());
 
         // DAO interactions happened for both calls
-        verify(studyResultDao, times(2)).withTransaction(Mockito.<Function<EntityManager, Object>>any());
+        verify(transactions, times(2)).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(studyResultDao, times(2)).persist(any(StudyResult.class));
         verify(workerDao).merge(mtWorker);
         verify(workerDao).merge(previewWorker);
@@ -122,7 +122,7 @@ public class ResultCreatorTest {
         assertTrue(studyResult.getComponentResultList().contains(componentResult));
 
         verify(componentResultDao).persist(componentResult);
-        verify(studyResultDao, times(2)).withTransaction(Mockito.<Function<EntityManager, Object>>any());
+        verify(transactions, times(2)).withTransaction(Mockito.<Function<EntityManager, Object>>any());
         verify(studyResultDao, atLeastOnce()).persist(any(StudyResult.class));
         verify(studyResultDao).merge(studyResult);
         verify(workerDao).merge(worker);

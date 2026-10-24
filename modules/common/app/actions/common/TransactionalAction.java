@@ -1,6 +1,6 @@
 package actions.common;
 
-import play.db.jpa.JPAApi;
+import general.common.JpaTransactions;
 import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -31,10 +31,10 @@ public class TransactionalAction extends Action<TransactionalAction.Transactiona
         Mode value() default Mode.READ_WRITE;
     }
 
-    private final JPAApi jpa;
+    private final JpaTransactions jpa;
 
     @Inject
-    public TransactionalAction(JPAApi jpa) {
+    public TransactionalAction(JpaTransactions jpa) {
         this.jpa = jpa;
     }
 

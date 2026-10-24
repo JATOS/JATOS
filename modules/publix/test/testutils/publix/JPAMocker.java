@@ -1,8 +1,9 @@
 package testutils.publix;
 
-import daos.common.AbstractDao;
+import general.common.JpaTransactions;
 
 import jakarta.persistence.EntityManager;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -11,48 +12,28 @@ import static org.mockito.Mockito.doAnswer;
 
 public class JPAMocker {
 
+    /**
+     * Execute service transaction blocks against a supplied test EntityManager.
+     */
     @SuppressWarnings("unchecked")
-    public static void mockDaoTransactions(EntityManager entityManager, AbstractDao... daos) {
-        for (AbstractDao dao : daos) {
-            doAnswer(invocation -> {
-                Function<EntityManager, Object> block = invocation.getArgument(0);
-                return block.apply(entityManager);
-            }).when(dao).withReadOnlyTransaction(any(Function.class));
-
-            doAnswer(invocation -> {
-                Consumer<EntityManager> block = invocation.getArgument(0);
-                block.accept(entityManager);
-                return null;
-            }).when(dao).withReadOnlyTransaction(any(Consumer.class));
-
-            doAnswer(invocation -> {
-                Function<EntityManager, Object> block = invocation.getArgument(0);
-                return block.apply(entityManager);
-            }).when(dao).withTransaction(any(Function.class));
-
-            doAnswer(invocation -> {
-                Consumer<EntityManager> block = invocation.getArgument(0);
-                block.accept(entityManager);
-                return null;
-            }).when(dao).withTransaction(any(Consumer.class));
-
-            doAnswer(invocation -> {
-                Consumer<EntityManager> block = invocation.getArgument(0);
-                block.accept(entityManager);
-                return null;
-            }).when(dao).withTransaction(any(Consumer.class));
-
-            doAnswer(invocation -> {
-                Function<EntityManager, Object> block = invocation.getArgument(0);
-                return block.apply(entityManager);
-            }).when(dao).withNewTransaction(any(Function.class));
-
-            doAnswer(invocation -> {
-                Consumer<EntityManager> block = invocation.getArgument(0);
-                block.accept(entityManager);
-                return null;
-            }).when(dao).withNewTransaction(any(Consumer.class));
-        }
+    public static void mockTransactions(EntityManager entityManager, JpaTransactions transactions) {
+        doAnswer(call -> ((Function<EntityManager, ?>) call.getArgument(0)).apply(entityManager))
+                .when(transactions).withTransaction(any(Function.class));
+        doAnswer(call -> {
+            ((Consumer<EntityManager>) call.getArgument(0)).accept(entityManager);
+            return null;
+        }).when(transactions).withTransaction(any(Consumer.class));
+        doAnswer(call -> ((Function<EntityManager, ?>) call.getArgument(0)).apply(entityManager))
+                .when(transactions).withReadOnlyTransaction(any(Function.class));
+        doAnswer(call -> {
+            ((Consumer<EntityManager>) call.getArgument(0)).accept(entityManager);
+            return null;
+        }).when(transactions).withReadOnlyTransaction(any(Consumer.class));
+        doAnswer(call -> ((Function<EntityManager, ?>) call.getArgument(0)).apply(entityManager))
+                .when(transactions).withNewTransaction(any(Function.class));
+        doAnswer(call -> {
+            ((Consumer<EntityManager>) call.getArgument(0)).accept(entityManager);
+            return null;
+        }).when(transactions).withNewTransaction(any(Consumer.class));
     }
-
 }

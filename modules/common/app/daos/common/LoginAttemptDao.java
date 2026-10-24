@@ -1,11 +1,11 @@
 package daos.common;
 
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
 import models.common.LoginAttempt;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import jakarta.persistence.EntityManager;
 import java.util.Calendar;
 
 /**
@@ -15,7 +15,7 @@ import java.util.Calendar;
 public class LoginAttemptDao extends AbstractDao {
 
     @Inject
-    LoginAttemptDao(JPAApi jpa) {
+    LoginAttemptDao(JpaTransactions jpa) {
         super(jpa);
     }
 

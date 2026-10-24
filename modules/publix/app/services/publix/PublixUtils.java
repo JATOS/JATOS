@@ -12,6 +12,7 @@ import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import http.common.Http.Context;
@@ -38,6 +39,7 @@ public class PublixUtils {
 
     private static final Logger.ALogger LOGGER = Logger.of(PublixUtils.class);
 
+    private final JpaTransactions transactions;
     private final ResultCreator resultCreator;
     private final IdCookieService idCookieService;
     private final BatchDispatcher batchDispatcher;
@@ -52,7 +54,8 @@ public class PublixUtils {
     private final DefaultJson defaultJson;
 
     @Inject
-    public PublixUtils(ResultCreator resultCreator,
+    public PublixUtils(JpaTransactions transactions,
+                       ResultCreator resultCreator,
                        IdCookieService idCookieService,
                        BatchDispatcher batchDispatcher,
                        GroupAdministration groupAdministration,
@@ -64,6 +67,7 @@ public class PublixUtils {
                        StudyLogger studyLogger,
                        IOUtils ioUtils,
                        DefaultJson defaultJson) {
+        this.transactions = transactions;
         this.resultCreator = resultCreator;
         this.idCookieService = idCookieService;
         this.batchDispatcher = batchDispatcher;
@@ -93,7 +97,7 @@ public class PublixUtils {
      * Start or restart a component. It either returns a newly started component or an exception but never null.
      */
     public ComponentResult startComponentRun(Component component, StudyResult studyResult, String message) {
-        return componentResultDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             // Deal with the last component
             Optional<ComponentResult> lastResultOpt = componentResultDao.findLastByStudyResult(studyResult);
             if (lastResultOpt.isPresent()) {
@@ -135,7 +139,7 @@ public class PublixUtils {
     }
 
     private void finishComponentResult(ComponentResult componentResult, ComponentState state, String message) {
-        componentResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             componentResult.setComponentState(state);
             componentResult.setEndDate(new Timestamp(new Date().getTime()));
             componentResult.setMessage(message);
@@ -153,7 +157,7 @@ public class PublixUtils {
      * message.
      */
     public void abortStudyResult(String message, StudyResult studyResult) {
-        studyResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             // Put the current ComponentResult into state ABORTED and set the end date
             Timestamp endDate = new Timestamp(new Date().getTime());
             retrieveCurrentComponentResult(studyResult).ifPresent(currentComponentResult -> {
@@ -190,14 +194,14 @@ public class PublixUtils {
      * Finishes a StudyResult (includes ComponentResults) and returns a confirmation code if it was successful.
      *
      * @param successful  If true, finishes all ComponentResults, generates a confirmation code and set the
-     *                    StudyResult's and current ComponentResult's state to FINISHED. If false, it sets both states to
-     *                    FAIL and doesn't generate a confirmation code.
+     *                    StudyResult's and current ComponentResult's state to FINISHED. If false, it sets both states
+     *                    to FAIL and doesn't generate a confirmation code.
      * @param message     Will be set in the StudyResult. Can be null.
      * @param studyResult A StudyResult
      * @return The confirmation code or null if it was unsuccessful
      */
     String finishStudyResult(Boolean successful, String message, StudyResult studyResult) {
-        return studyResultDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             String confirmationCode;
             StudyState studyState;
             ComponentState componentState;
@@ -255,7 +259,7 @@ public class PublixUtils {
     public String finishStudyRun(Long studyResultId, boolean successful, String studyResultMsg, String studyLoggerMsg) {
         // We need separate transactions for leaving the group and finishing the study result.
         groupAdministration.leave(studyResultId);
-        return studyResultDao.withTransaction((em -> {
+        return transactions.withTransaction((em -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             batchDispatcher.poisonChannel(studyResult.getBatch().getId(), studyResultId);
             String confirmationCode = finishStudyResult(successful, studyResultMsg, studyResult);
@@ -267,7 +271,7 @@ public class PublixUtils {
     public void abortStudyRun(Long studyResultId, String studyResultMsg, String studyLoggerMsg) {
         // We need separate transactions for leaving the group and finishing the study result.
         groupAdministration.leave(studyResultId);
-        studyResultDao.withNewTransaction((em -> {
+        transactions.withNewTransaction((em -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
             batchDispatcher.poisonChannel(studyResult.getBatch().getId(), studyResultId);
             abortStudyResult(studyResultMsg, studyResult);

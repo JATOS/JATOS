@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.flipkart.zjsonpatch.JsonPatch
 import com.google.common.base.Strings
 import daos.common.GroupResultDao
-import group.GroupProtocol.{GroupErrorCode, GroupAction, GroupActionJsonKey, GroupMsg, TellWhom}
+import general.common.JpaTransactions
+import group.GroupProtocol._
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
 import models.common.Study.GroupSessionWriteScope
@@ -20,7 +21,8 @@ import scala.annotation.tailrec
  * a GroupChannelActor.
  */
 @Singleton
-class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
+class GroupActionHandler @Inject()(transactions: JpaTransactions,
+                                   groupResultDao: GroupResultDao,
                                    msgBuilder: GroupActionMsgBuilder) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -241,7 +243,7 @@ class GroupActionHandler @Inject()(groupResultDao: GroupResultDao,
    * members
    */
   private def handleActionFix(groupResultId: Long): List[GroupMsg] = {
-    groupResultDao.withTransaction(_ => {
+    transactions.withTransaction(_ => {
       val groupResult = groupResultDao.findById(groupResultId)
       if (groupResult != null) {
         groupResult.setGroupState(GroupState.FIXED)

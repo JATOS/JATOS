@@ -1,18 +1,16 @@
 package daos.common;
 
-import models.common.Batch;
-import models.common.GroupResult;
-import models.common.GroupResult.GroupState;
-import play.db.jpa.JPAApi;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
+import general.common.JpaTransactions;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
+import models.common.Batch;
+import models.common.GroupResult;
+import models.common.GroupResult.GroupState;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +21,7 @@ import java.util.Optional;
 public class GroupResultDao extends AbstractDao {
 
     @Inject
-    GroupResultDao(JPAApi jpa) {
+    GroupResultDao(JpaTransactions jpa) {
         super(jpa);
     }
 

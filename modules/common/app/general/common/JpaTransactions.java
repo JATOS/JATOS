@@ -1,12 +1,17 @@
 package general.common;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl;
+import org.hibernate.resource.transaction.spi.TransactionStatus;
 import play.Logger;
 import play.db.jpa.JPAApi;
 
 import javax.inject.Singleton;
-
-import jakarta.persistence.EntityManager;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Consumer;
@@ -22,7 +27,7 @@ import java.util.function.Function;
  * The outermost withTransaction call opens, commits, and rolls back the actual transaction. Any nested withTransaction
  * call on the same thread receives the same EntityManager and does not create an independent transaction.
  *
- * Ff REQUIRES_NEW propagation:
+ * If REQUIRES_NEW propagation:
  * Any nested transaction call opens, commits, and rolls back.
  *
  * Limitations:
@@ -32,20 +37,72 @@ import java.util.function.Function;
  */
 // @formatter:on
 @Singleton
-public class TransactionPropagatingJPAApi implements JPAApi {
+public class JpaTransactions implements JPAApi {
 
     public enum Propagation {
         JOIN_EXISTING,
         REQUIRES_NEW
     }
 
-    private static final Logger.ALogger LOGGER = Logger.of(TransactionPropagatingJPAApi.class);
+    private static final Logger.ALogger LOGGER = Logger.of(JpaTransactions.class);
 
     private final JPAApi delegate;
     private static final ThreadLocal<Deque<EntityManager>> emStack = ThreadLocal.withInitial(ArrayDeque::new);
 
-    public TransactionPropagatingJPAApi(JPAApi delegate) {
+    public JpaTransactions(JPAApi delegate) {
         this.delegate = delegate;
+    }
+
+    @FunctionalInterface
+    public interface Cleanup {
+        void run() throws Exception;
+    }
+
+    /**
+     * Runs after a successful commit, including a joined outer transaction. Does not open a transaction. Capture
+     * immutable values rather than lazy entities. Callback failures are logged, not propagated: the database has
+     * already completed, and other callbacks must still be allowed to run.
+     */
+    public void afterCommit(String description, Cleanup cleanup) {
+        afterCompletion(description, cleanup, () -> {});
+    }
+
+    /**
+     * Registers callbacks on the active Hibernate transaction. REQUIRES_NEW callbacks belong to the inner transaction.
+     * An unknown completion outcome is logged for manual recovery; it must not be treated as a rollback, since
+     * restoring files in that case could contradict committed data.
+     */
+    public void afterCompletion(String description, Cleanup committed, Cleanup rolledBack) {
+        EntityManager manager = emStack.get().peek();
+        if (manager == null) throw new IllegalStateException("An active transaction is required");
+        Transaction transaction = manager.unwrap(Session.class).getTransaction();
+        if (!transaction.isActive()) throw new IllegalStateException("An active transaction is required");
+
+        transaction.registerSynchronization(new Synchronization() {
+            @Override
+            public void beforeCompletion() {
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                try {
+                    if (status == Status.STATUS_COMMITTED) committed.run();
+                    else if (status == Status.STATUS_ROLLEDBACK
+                            // Hibernate 6 JDBC reports UNKNOWN after a completed rollback and resets
+                            // the transaction to NOT_ACTIVE. It does not notify on JDBC rollback failure.
+                            || (status == Status.STATUS_UNKNOWN
+                            && transaction.getStatus() == TransactionStatus.NOT_ACTIVE
+                            && manager.unwrap(SessionImplementor.class).getTransactionCoordinator()
+                            instanceof JdbcResourceLocalTransactionCoordinatorImpl))
+                        rolledBack.run();
+                    else LOGGER.error("Unknown transaction outcome (" + status + "): " + description
+                                + ". Manual recovery may be required.");
+                } catch (Exception e) {
+                    LOGGER.error("Transaction completion callback failed: " + description
+                            + ". Manual recovery may be required.", e);
+                }
+            }
+        });
     }
 
     /**
@@ -93,6 +150,24 @@ public class TransactionPropagatingJPAApi implements JPAApi {
         });
     }
 
+    /** Open a read-only scope, or join the current same-thread transaction. */
+    public <T> T withReadOnlyTransaction(Function<EntityManager, T> block) {
+        return withTransaction("default", true, block);
+    }
+
+    public void withReadOnlyTransaction(Consumer<EntityManager> block) {
+        withTransaction("default", true, block);
+    }
+
+    /** Open an independent transaction, suspending any current same-thread transaction. */
+    public <T> T withNewTransaction(Function<EntityManager, T> block) {
+        return withTransaction(Propagation.REQUIRES_NEW, block);
+    }
+
+    public void withNewTransaction(Consumer<EntityManager> block) {
+        withTransaction(Propagation.REQUIRES_NEW, block);
+    }
+
     @Override
     public JPAApi start() {
         return delegate.start();
@@ -100,7 +175,6 @@ public class TransactionPropagatingJPAApi implements JPAApi {
 
     @Override
     public EntityManager em(String name) {
-        @SuppressWarnings("resource")
         EntityManager em = emStack.get().peek();
         return em != null ? em : delegate.em(name);
     }

@@ -4,6 +4,7 @@ import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.BadRequestException;
+import general.common.JpaTransactions;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.Worker;
@@ -29,11 +30,11 @@ import static org.mockito.Mockito.*;
  */
 public class StudyLinkServiceTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private BatchDao batchDao;
     private WorkerDao workerDao;
     private StudyLinkDao studyLinkDao;
     private WorkerService workerService;
-
     private StudyLinkService studyLinkService;
 
     @Before
@@ -43,9 +44,9 @@ public class StudyLinkServiceTest {
         studyLinkDao = Mockito.mock(StudyLinkDao.class);
         workerService = Mockito.mock(WorkerService.class);
 
-        studyLinkService = new StudyLinkService(batchDao, workerDao, studyLinkDao, workerService);
+        studyLinkService = new StudyLinkService(transactions, batchDao, workerDao, studyLinkDao, workerService);
 
-        JPAMocker.mockDaoTransactions(batchDao, workerDao, studyLinkDao);
+        JPAMocker.mockTransactions(null, transactions);
     }
 
     @Test

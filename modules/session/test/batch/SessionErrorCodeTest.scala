@@ -1,17 +1,22 @@
 package batch
 
 import daos.common.{BatchDao, GroupResultDao}
+import general.common.JpaTransactions
 import group.{GroupActionHandler, GroupActionMsgBuilder, GroupProtocol}
-import models.common.{Batch, GroupResult}
 import models.common.Study.GroupSessionWriteScope
+import models.common.{Batch, GroupResult}
 import org.junit.Assert._
 import org.junit.Test
 import org.mockito.ArgumentMatchers._
+import org.mockito.Mockito
 import org.mockito.Mockito._
 import play.api.libs.json.{JsObject, Json}
 import testutils.session.JPAMocker
 
 class SessionErrorCodeTest {
+
+  private val transactions = Mockito.mock(classOf[JpaTransactions])
+
   private def assertFailure(json: JsObject, action: String, code: String): Unit = {
     assertEquals(action, (json \ "action").as[String])
     assertEquals(code, (json \ "errorCode").as[String])
@@ -27,8 +32,8 @@ class SessionErrorCodeTest {
   @Test
   def batchFailuresHaveSpecificCodes(): Unit = {
     val dao = mock(classOf[BatchDao])
-    JPAMocker.mockDaoTransactions(null, dao)
-    val builder = new BatchActionMsgBuilder(dao)
+    JPAMocker.mockTransactions(null, transactions)
+    val builder = new BatchActionMsgBuilder(transactions, dao)
     val handler = new BatchActionHandler(dao, builder)
     def send(json: JsObject): JsObject = {
       val result = handler.handleActionMsg(BatchProtocol.BatchMsg(json), 1L).head
@@ -54,9 +59,9 @@ class SessionErrorCodeTest {
   @Test
   def groupFailuresHaveSpecificCodes(): Unit = {
     val dao = mock(classOf[GroupResultDao])
-    JPAMocker.mockDaoTransactions(null, dao)
-    val builder = new GroupActionMsgBuilder(dao)
-    val handler = new GroupActionHandler(dao, builder)
+    JPAMocker.mockTransactions(null, transactions)
+    val builder = new GroupActionMsgBuilder(transactions, dao)
+    val handler = new GroupActionHandler(transactions, dao, builder)
     def send(json: JsObject, scope: GroupSessionWriteScope = GroupSessionWriteScope.SHARED): JsObject = {
       val result = handler.handleActionMsg(GroupProtocol.GroupMsg(json), 1L, 100L, scope).head
       assertEquals(GroupProtocol.TellWhom.SenderOnly, result.tellWhom)

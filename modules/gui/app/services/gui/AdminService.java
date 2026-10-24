@@ -7,6 +7,7 @@ import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
+import general.common.JpaTransactions;
 import http.common.Http.Context;
 import json.common.DefaultJson;
 import models.common.AdminStudyData;
@@ -31,6 +32,7 @@ import static auth.gui.AuthAction.SIGNEDIN_USER;
 @Singleton
 public class AdminService {
 
+    private final JpaTransactions transactions;
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
@@ -40,13 +42,15 @@ public class AdminService {
     private final DefaultJson defaultJson;
 
     @Inject
-    AdminService(UserDao userDao,
+    AdminService(JpaTransactions transactions,
+                 UserDao userDao,
                  StudyDao studyDao,
                  WorkerDao workerDao,
                  StudyResultDao studyResultDao,
                  ComponentResultDao componentResultDao,
                  IOUtils ioUtils,
                  DefaultJson defaultJson) {
+        this.transactions = transactions;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
@@ -188,7 +192,7 @@ public class AdminService {
     }
 
     public List<Map<String, Object>> getLatestStudyRuns(int limit) {
-        return studyResultDao.withReadOnlyTransaction(em -> {
+        return transactions.withReadOnlyTransaction(em -> {
             return studyResultDao.findLastSeen(limit).stream()
                     .map(srs -> ImmutableMap.of(
                             "studyTitle", srs.getStudy().getTitle(),

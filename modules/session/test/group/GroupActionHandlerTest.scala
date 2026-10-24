@@ -1,20 +1,23 @@
 package group
 
 import daos.common.GroupResultDao
-import group.GroupProtocol.{GroupErrorCode, GroupAction, GroupMsg, TellWhom}
+import general.common.JpaTransactions
+import group.GroupProtocol.{GroupAction, GroupErrorCode, GroupMsg, TellWhom}
 import models.common.GroupResult
 import models.common.GroupResult.GroupState
 import models.common.Study.GroupSessionWriteScope
 import org.junit.Assert._
 import org.junit.{Before, Test}
-import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
-import org.mockito.invocation.InvocationOnMock
 import org.mockito.Mockito._
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.{ArgumentMatchers, Mockito}
 import play.api.libs.json._
 import testutils.session.JPAMocker
 
 class GroupActionHandlerTest {
+
+  private val transactions = Mockito.mock(classOf[JpaTransactions])
 
   private var groupResultDao: GroupResultDao = _
   private var msgBuilder: GroupActionMsgBuilder = _
@@ -26,7 +29,7 @@ class GroupActionHandlerTest {
   @Before
   def setUp(): Unit = {
     groupResultDao = mock(classOf[GroupResultDao])
-    JPAMocker.mockDaoTransactions(null, groupResultDao)
+    JPAMocker.mockTransactions(null, transactions)
     // Unless a test overrides this, simulate a successful compare-and-set update.
     when(groupResultDao.updateGroupSession(
       ArgumentMatchers.eq(java.lang.Long.valueOf(groupResultId)),
@@ -37,7 +40,7 @@ class GroupActionHandlerTest {
         java.lang.Long.valueOf(expectedVersion + 1L)
       })
     msgBuilder = mock(classOf[GroupActionMsgBuilder])
-    groupActionHandler = new GroupActionHandler(groupResultDao, msgBuilder)
+    groupActionHandler = new GroupActionHandler(transactions, groupResultDao, msgBuilder)
   }
 
   // Helper to construct a group session GroupMsg

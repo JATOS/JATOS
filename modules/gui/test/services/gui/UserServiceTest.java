@@ -6,6 +6,7 @@ import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
+import general.common.JpaTransactions;
 import http.common.Http.Context;
 import jakarta.persistence.EntityManager;
 import models.common.Study;
@@ -37,11 +38,11 @@ import static services.gui.UserService.ADMIN_USERNAME;
  */
 public class UserServiceTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private StudyService studyService;
     private UserDao userDao;
     private StudyDao studyDao;
     private WorkerDao workerDao;
-
     private UserService userService;
 
     @Before
@@ -51,10 +52,10 @@ public class UserServiceTest {
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
 
-        userService = new UserService(studyService, userDao, studyDao, workerDao, mock(daos.common.BatchDao.class));
+        userService = new UserService(transactions, studyService, userDao, studyDao, workerDao, mock(daos.common.BatchDao.class));
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
-        JPAMocker.mockDaoTransactions(entityManager, userDao, studyDao, workerDao);
+        JPAMocker.mockTransactions(entityManager, transactions);
         when(userDao.findByUsernameAndLock(any())).thenAnswer(inv -> inv.getArgument(0));
         when(studyDao.findAllByUserWithLock(any())).thenAnswer(inv ->
                 new java.util.ArrayList<>(((User) inv.getArgument(0)).getStudyList()));

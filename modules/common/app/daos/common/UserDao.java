@@ -1,16 +1,14 @@
 package daos.common;
 
 import exceptions.common.NotFoundException;
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import models.common.Study;
 import models.common.User;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +21,7 @@ import java.util.Map;
 public class UserDao extends AbstractDao {
 
     @Inject
-    UserDao(JPAApi jpa) {
+    UserDao(JpaTransactions jpa) {
         super(jpa);
     }
 

@@ -2,14 +2,14 @@ package cluster
 
 import batch.BatchProtocol.{BatchAction, BatchMsg, TellWhom}
 import batch.{BatchActionHandler, BatchActionMsgBuilder, BatchDispatcher}
-import group.GroupDispatcher
 import com.typesafe.config.ConfigFactory
-import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
+import group.GroupDispatcher
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
 import org.apache.pekko.cluster.{Cluster, MemberStatus}
 import org.junit.Assert.{assertEquals, assertNull}
 import org.junit.{After, Test}
 import org.mockito.Mockito.mock
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 
 import java.util.concurrent.{CountDownLatch, LinkedBlockingQueue, TimeUnit}
 import scala.collection.mutable.ListBuffer
@@ -88,26 +88,26 @@ class DistributedBatchMessagingTest {
 
   private def createActorSystem(): ActorSystem = {
     val config = ConfigFactory.parseString(
-      s"""
-         |pekko {
-         |  actor {
-         |    provider = cluster
-         |    serialization-bindings {
-         |      "cluster.ClusterSerializable" = jackson-cbor
-         |    }
-         |  }
-         |  remote.artery.canonical {
-         |    hostname = "127.0.0.1"
-         |    port = 0
-         |  }
-         |  cluster {
-         |    jmx.multi-mbeans-in-same-jvm = on
-         |    pub-sub.gossip-interval = 100ms
-         |  }
-         |  loglevel = WARNING
-         |  log-dead-letters = off
-         |}
-         |""".stripMargin)
+        s"""
+           |pekko {
+           |  actor {
+           |    provider = cluster
+           |    serialization-bindings {
+           |      "cluster.ClusterSerializable" = jackson-cbor
+           |    }
+           |  }
+           |  remote.artery.canonical {
+           |    hostname = "127.0.0.1"
+           |    port = 0
+           |  }
+           |  cluster {
+           |    jmx.multi-mbeans-in-same-jvm = on
+           |    pub-sub.gossip-interval = 100ms
+           |  }
+           |  loglevel = WARNING
+           |  log-dead-letters = off
+           |}
+           |""".stripMargin)
       .withFallback(ConfigFactory.defaultReference())
     val system = ActorSystem("distributed-batch-test", config)
     actorSystems += system
@@ -125,13 +125,14 @@ class DistributedBatchMessagingTest {
 
   private class StubHandler(messages: List[BatchMsg]) extends BatchActionHandler(null, null) {
     @volatile var callCount = 0
+
     override def handleActionMsg(actionMsg: BatchMsg, batchId: Long): List[BatchMsg] = {
       callCount += 1
       messages
     }
   }
 
-  private class StubBuilder(opened: BatchMsg) extends BatchActionMsgBuilder(null) {
+  private class StubBuilder(opened: BatchMsg) extends BatchActionMsgBuilder(null, null) {
     override def buildSessionData(batchId: Long,
                                   action: BatchAction.Value,
                                   tellWhom: TellWhom.Value): BatchMsg = opened
@@ -140,7 +141,9 @@ class DistributedBatchMessagingTest {
   private class ReadyDispatcherReceiver(dispatcher: BatchDispatcher)
     extends DispatcherChannelMessageReceiver(dispatcher, mock(classOf[GroupDispatcher])) {
     private val readyLatch = new CountDownLatch(1)
+
     override def ready(): Unit = readyLatch.countDown()
+
     def awaitReady(): Unit = assert(readyLatch.await(10, TimeUnit.SECONDS), "Gateway did not subscribe in time")
   }
 

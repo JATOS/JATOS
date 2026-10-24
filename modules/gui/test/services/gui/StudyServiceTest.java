@@ -6,6 +6,7 @@ import daos.common.UserDao;
 import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
 import exceptions.common.ValidationException;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import jakarta.persistence.EntityManager;
@@ -35,6 +36,7 @@ import static org.mockito.Mockito.*;
  */
 public class StudyServiceTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private EntityManager entityManager;
     private JPAMocker.TransactionCallbacks callbacks;
     private BatchService batchService;
@@ -44,7 +46,6 @@ public class StudyServiceTest {
     private StudyDao studyDao;
     private IOUtils ioUtils;
     private StudyLogger studyLogger;
-
     private StudyService studyService;
     private AuthorizationService authorizationService;
 
@@ -59,11 +60,11 @@ public class StudyServiceTest {
         studyLogger = mock(StudyLogger.class);
 
         authorizationService = mock(AuthorizationService.class);
-        studyService = new StudyService(batchService, componentService, studyDao, userDao, batchDao, ioUtils, studyLogger, mock(ResultRemover.class), authorizationService);
+        studyService = new StudyService(transactions, batchService, componentService, studyDao, userDao, batchDao, ioUtils, studyLogger, mock(ResultRemover.class), authorizationService);
 
         callbacks = new JPAMocker.TransactionCallbacks();
         entityManager = callbacks.em;
-        JPAMocker.mockDaoTransactions(entityManager, batchDao, userDao, studyDao);
+        JPAMocker.mockTransactions(entityManager, transactions);
         when(studyDao.findAndLock(any())).thenAnswer(inv -> inv.getArgument(0));
         when(userDao.findByUsernameAndLock(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -244,7 +245,7 @@ public class StudyServiceTest {
                 props.setActive(!active);
                 props.setDirName("changed-directory");
                 org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                        studyService.updateStudyAndRenameAssets(study, props))
+                                studyService.updateStudyAndRenameAssets(study, props))
                         .isInstanceOf(ForbiddenException.class);
                 assertThat(study.isActive()).isEqualTo(active);
             }

@@ -1,10 +1,10 @@
 package daos.common.worker;
 
 import daos.common.AbstractDao;
+import general.common.JpaTransactions;
 import jakarta.persistence.EntityManager;
 import models.common.StudyResult;
 import models.common.workers.Worker;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -18,7 +18,7 @@ import java.util.Optional;
 public class WorkerDao extends AbstractDao {
 
     @Inject
-    WorkerDao(JPAApi jpa) {
+    WorkerDao(JpaTransactions jpa) {
         super(jpa);
     }
 

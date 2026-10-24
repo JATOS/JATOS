@@ -1,5 +1,6 @@
 package daos.common;
 
+import general.common.JpaTransactions;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.Tuple;
@@ -9,7 +10,6 @@ import models.common.ComponentResult;
 import models.common.Study;
 import models.common.StudyResult;
 import play.Logger;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -27,7 +27,7 @@ public class ComponentResultDao extends AbstractDao {
     private static final Logger.ALogger LOGGER = Logger.of(ComponentResultDao.class);
 
     @Inject
-    ComponentResultDao(JPAApi jpa) {
+    ComponentResultDao(JpaTransactions jpa) {
         super(jpa);
     }
 

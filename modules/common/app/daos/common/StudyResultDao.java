@@ -1,17 +1,15 @@
 package daos.common;
 
-import models.common.workers.WorkerType;
-import models.common.*;
-import models.common.workers.Worker;
-import play.db.jpa.JPAApi;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
+import general.common.JpaTransactions;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.Tuple;
+import models.common.*;
+import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.*;
@@ -24,7 +22,7 @@ import java.util.stream.Collectors;
 public class StudyResultDao extends AbstractDao {
 
     @Inject
-    StudyResultDao(JPAApi jpa) {
+    StudyResultDao(JpaTransactions jpa) {
         super(jpa);
     }
 

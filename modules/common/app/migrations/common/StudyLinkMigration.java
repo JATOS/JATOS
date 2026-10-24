@@ -7,7 +7,7 @@ import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.Worker;
 import play.Logger;
-import play.db.jpa.JPAApi;
+import general.common.JpaTransactions;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -21,12 +21,15 @@ public class StudyLinkMigration {
     private static final Logger.ALogger LOGGER = Logger.of(StudyLinkMigration.class);
 
     private final JatosMigrations jatosMigrations;
-    private final JPAApi jpa;
+    private final JpaTransactions jpa;
     private final StudyLinkDao studyLinkDao;
     private final WorkerDao workerDao;
 
     @Inject
-    StudyLinkMigration(JatosMigrations jatosMigrations, JPAApi jpa, StudyLinkDao studyLinkDao, WorkerDao workerDao) {
+    StudyLinkMigration(JatosMigrations jatosMigrations,
+                       JpaTransactions jpa,
+                       StudyLinkDao studyLinkDao,
+                       WorkerDao workerDao) {
         this.jatosMigrations = jatosMigrations;
         this.jpa = jpa;
         this.studyLinkDao = studyLinkDao;

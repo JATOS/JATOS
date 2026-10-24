@@ -1,8 +1,8 @@
 package gui;
 
-import daos.common.StudyDao;
-import general.common.StudyLogger;
 import general.common.Common;
+import general.common.JpaTransactions;
+import general.common.StudyLogger;
 import http.common.Http.Context;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Synchronization;
@@ -13,7 +13,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import play.Application;
-import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.test.Helpers;
 import services.gui.BatchService;
@@ -39,6 +38,7 @@ import static org.junit.Assume.assumeTrue;
  * transaction commits. The optional MySQL test creates and drops only its own uniquely named database.
  */
 public class DeletionCascadeIntegrationTest {
+
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
@@ -87,7 +87,7 @@ public class DeletionCascadeIntegrationTest {
         try {
             Helpers.start(app);
             assertEquals(Path.of(root, "assets"), Path.of(Common.getStudyAssetsRootPath()));
-            JPAApi jpa = app.injector().instanceOf(JPAApi.class);
+            JpaTransactions jpa = app.injector().instanceOf(JpaTransactions.class);
             StudyService studies = app.injector().instanceOf(StudyService.class);
             BatchService batches = app.injector().instanceOf(BatchService.class);
             Context.setCurrent(new Context(Helpers.fakeRequest().build()));
@@ -182,10 +182,10 @@ public class DeletionCascadeIntegrationTest {
             assertTrue(Files.isRegularFile(assets));
             AtomicBoolean laterCallback = new AtomicBoolean();
             jpa.withTransaction((EntityManager em) -> {
-                app.injector().instanceOf(StudyDao.class).afterCommit("intentional test failure", () -> {
+                app.injector().instanceOf(JpaTransactions.class).afterCommit("intentional test failure", () -> {
                     throw new java.io.IOException("test");
                 });
-                app.injector().instanceOf(StudyDao.class).afterCommit("subsequent callback", () -> laterCallback.set(true));
+                app.injector().instanceOf(JpaTransactions.class).afterCommit("subsequent callback", () -> laterCallback.set(true));
             });
             assertTrue(laterCallback.get());
         } finally {
@@ -194,7 +194,7 @@ public class DeletionCascadeIntegrationTest {
         }
     }
 
-    private Fixture fixture(JPAApi jpa, Application app) throws Exception {
+    private Fixture fixture(JpaTransactions jpa, Application app) throws Exception {
         Fixture f = jpa.withTransaction(em -> {
             PersonalMultipleWorker worker = new PersonalMultipleWorker();
             em.persist(worker);
@@ -281,7 +281,7 @@ public class DeletionCascadeIntegrationTest {
         return runs;
     }
 
-    private void assertRows(JPAApi jpa, List<Run> runs, boolean present) {
+    private void assertRows(JpaTransactions jpa, List<Run> runs, boolean present) {
         for (Run run : runs) {
             assertEntity(jpa, StudyResult.class, run.result, present);
             assertEntity(jpa, ComponentResult.class, run.component, present);
@@ -293,7 +293,7 @@ public class DeletionCascadeIntegrationTest {
         }
     }
 
-    private void assertEntity(JPAApi jpa, Class<?> type, Long id, boolean present) {
+    private void assertEntity(JpaTransactions jpa, Class<?> type, Long id, boolean present) {
         boolean found = jpa.withTransaction(em -> em.find(type, id) != null);
         assertEquals(type.getSimpleName() + " " + id, present, found);
     }

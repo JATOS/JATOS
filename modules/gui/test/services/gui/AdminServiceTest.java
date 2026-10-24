@@ -7,6 +7,7 @@ import daos.common.StudyResultDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import general.common.Common;
+import general.common.JpaTransactions;
 import http.common.Http.Context;
 import json.common.DefaultJson;
 import models.common.*;
@@ -34,12 +35,12 @@ public class AdminServiceTest {
 
     private static MockedStatic<Common> commonStatic;
 
+    private final JpaTransactions transactions = Mockito.mock(JpaTransactions.class);
     private UserDao userDao;
     private StudyDao studyDao;
     private WorkerDao workerDao;
     private StudyResultDao studyResultDao;
     private IOUtils ioUtils;
-
     private AdminService adminService;
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -66,9 +67,9 @@ public class AdminServiceTest {
         ComponentResultDao componentResultDao = Mockito.mock(ComponentResultDao.class);
         ioUtils = Mockito.mock(IOUtils.class);
         DefaultJson defaultJson = new DefaultJson();
-        adminService = new AdminService(userDao, studyDao, workerDao, studyResultDao, componentResultDao, ioUtils, defaultJson);
+        adminService = new AdminService(transactions, userDao, studyDao, workerDao, studyResultDao, componentResultDao, ioUtils, defaultJson);
 
-        JPAMocker.mockDaoTransactions(userDao, studyDao, workerDao, studyResultDao, componentResultDao);
+        JPAMocker.mockTransactions(null, transactions);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }

@@ -1,26 +1,26 @@
 package testutils;
 
-import org.apache.pekko.stream.IOResult;
-import org.apache.pekko.stream.Materializer;
-import org.apache.pekko.stream.javadsl.FileIO;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.common.NotFoundException;
 import general.common.Common;
+import general.common.JpaTransactions;
 import http.common.Http.Context;
 import models.common.Study;
 import models.common.User;
 import org.apache.commons.io.FileUtils;
+import org.apache.pekko.stream.IOResult;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.FileIO;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import org.junit.After;
 import org.junit.Before;
 import play.Application;
 import play.ApplicationLoader;
 import play.Environment;
-import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.inject.guice.GuiceApplicationLoader;
 import play.libs.Files.TemporaryFileCreator;
@@ -65,7 +65,7 @@ public class JatosTest {
     protected Application application;
 
     @Inject
-    protected JPAApi jpaApi;
+    protected JpaTransactions jpaApi;
 
     protected User admin;
 

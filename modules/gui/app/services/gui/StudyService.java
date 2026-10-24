@@ -7,6 +7,7 @@ import daos.common.UserDao;
 import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
 import exceptions.common.ValidationException;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import models.common.Batch;
@@ -39,6 +40,7 @@ public class StudyService {
 
     private static final ALogger LOGGER = Logger.of(StudyService.class);
 
+    private final JpaTransactions transactions;
     private final AuthorizationService authorizationService;
     private final BatchService batchService;
     private final ComponentService componentService;
@@ -50,7 +52,8 @@ public class StudyService {
     private final ResultRemover resultRemover;
 
     @Inject
-    StudyService(BatchService batchService,
+    StudyService(JpaTransactions transactions,
+                 BatchService batchService,
                  ComponentService componentService,
                  StudyDao studyDao,
                  UserDao userDao,
@@ -59,6 +62,7 @@ public class StudyService {
                  StudyLogger studyLogger,
                  ResultRemover resultRemover,
                  AuthorizationService authorizationService) {
+        this.transactions = transactions;
         this.batchService = batchService;
         this.componentService = componentService;
         this.studyDao = studyDao;
@@ -121,7 +125,7 @@ public class StudyService {
      * Transfers ownership to an existing member, retaining the previous owner's membership.
      */
     public void changeOwner(Study study, User newOwner) {
-        studyDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             authorizationService.checkUserExists(newOwner);
             User managedNewOwner = userDao.findByUsernameAndLock(newOwner);
             Study managedStudy = studyDao.findAndLock(study);
@@ -136,7 +140,7 @@ public class StudyService {
                 managedStudy.setOwner(managedNewOwner);
                 String signedinUserUsername = signedinUser.getUsername();
                 Long studyId = managedStudy.getId();
-                studyDao.afterCommit("Log ownership transfer for study " + studyId,
+                transactions.afterCommit("Log ownership transfer for study " + studyId,
                         () -> LOGGER.info("User {} transferred study {} ownership from {} to {}",
                                 signedinUserUsername, studyId, previousOwner, nextOwner));
             }
@@ -148,7 +152,7 @@ public class StudyService {
      * Persisting. The batch-worker relationship is updated in the database only - not in memory.
      */
     public void changeUserMember(Study study, User userToChange, boolean isMember) {
-        studyDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             User managedUser = userDao.findByUsernameAndLock(userToChange);
             Study managedStudy = studyDao.findAndLock(study);
             changeLockedUserMember(managedStudy, managedUser, isMember);
@@ -193,7 +197,7 @@ public class StudyService {
      * The batch-worker relationship is updated in the database only - not in memory.
      */
     public void addAllUserMembers(Study study) {
-        studyDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             List<User> users = userDao.findAllAndLock();
             addAllLockedUserMembers(studyDao.findAndLock(study), users);
         });
@@ -217,7 +221,7 @@ public class StudyService {
      * Removes all member users except the owner, including their workers, from the study's batches.
      */
     public void removeAllUserMembers(Study study) {
-        studyDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             removeAllLockedUserMembers(studyDao.findAndLock(study));
         });
     }
@@ -289,7 +293,7 @@ public class StudyService {
      * persists them too. Adds the given user to the users of this study.
      */
     public Study createAndPersistStudy(Study study) {
-        return studyDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             User managedSignedinUser = userDao.findByUsernameAndLock(signedinUser);
             study.setOwner(managedSignedinUser);
@@ -319,7 +323,7 @@ public class StudyService {
      * Update properties of the study with properties of the updatedStudy.
      */
     public void updateStudyAndRenameAssets(Study study, Study updatedStudy) {
-        studyDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(), updatedStudy.getDescriptionHash());
             updateStudyCommon(study, updatedStudy);
             study.setDirName(updatedStudy.getDirName());
@@ -334,7 +338,7 @@ public class StudyService {
      */
     public void updateStudyWithoutDirName(Study study, Study updatedStudy) {
         boolean logStudyDescriptionHash = !Objects.equals(study.getDescriptionHash(), updatedStudy.getDescriptionHash());
-        studyDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             updateStudyCommon(study, updatedStudy);
             studyDao.merge(study);
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -458,7 +462,7 @@ public class StudyService {
      * persists the changes to the database. Also deletes the study's assets from the disk.
      */
     public void removeStudyInclAssets(Study study) {
-        studyDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             // Remove study from all member users
             Study managedStudy = studyDao.findAndLock(study);
             for (User user : new ArrayList<>(managedStudy.getUserList())) {
@@ -471,10 +475,10 @@ public class StudyService {
             studyDao.remove(managedStudy);
             String dirName = managedStudy.getDirName();
             if (dirName != null) {
-                studyDao.afterCommit("Remove study assets directory " + dirName,
+                transactions.afterCommit("Remove study assets directory " + dirName,
                         () -> ioUtils.removeStudyAssetsDir(dirName));
             }
-            studyDao.afterCommit("Retire study log " + managedStudy.getId(), () -> {
+            transactions.afterCommit("Retire study log " + managedStudy.getId(), () -> {
                 studyLogger.log(managedStudy, signedinUser, "Removed study");
                 studyLogger.retire(managedStudy);
             });

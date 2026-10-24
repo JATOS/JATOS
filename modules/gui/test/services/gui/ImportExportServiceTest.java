@@ -4,6 +4,7 @@ import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.common.ForbiddenException;
 import general.common.Common;
+import general.common.JpaTransactions;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
 import models.common.Component;
@@ -36,6 +37,7 @@ public class ImportExportServiceTest {
     private static MockedStatic<Common> commonStatic;
     private static MockedStatic<ZipUtil> zipStatic;
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private AuthorizationService authorizationService;
     private StudyService studyService;
     private ComponentService componentService;
@@ -44,9 +46,7 @@ public class ImportExportServiceTest {
     private StudyDao studyDao;
     private ComponentDao componentDao;
     private StudyDeserializer studyDeserializer;
-
     private ImportExportService importExportService;
-
     private User user;
 
     @BeforeClass
@@ -89,14 +89,14 @@ public class ImportExportServiceTest {
         componentDao = mock(ComponentDao.class);
         studyDeserializer = mock(StudyDeserializer.class);
 
-        importExportService = new ImportExportService(authorizationService, studyService, batchService, componentService,
+        importExportService = new ImportExportService(transactions, authorizationService, studyService, batchService, componentService,
                 domainJsonMapper, ioUtils, studyDao, componentDao, studyDeserializer);
 
         user = new User();
         user.setUsername("tester");
         user.setName("Tester");
 
-        JPAMocker.mockDaoTransactions(studyDao, componentDao);
+        JPAMocker.mockTransactions(null, transactions);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
         Context.current().args().put(SIGNEDIN_USER, user);

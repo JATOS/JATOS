@@ -2,9 +2,10 @@ package batch
 
 import batch.BatchProtocol.BatchAction.BatchAction
 import batch.BatchProtocol.TellWhom.TellWhom
-import batch.BatchProtocol.{BatchErrorCode, BatchAction, BatchActionJsonKey, BatchMsg, TellWhom}
+import batch.BatchProtocol._
 import com.google.common.base.Strings
 import daos.common.BatchDao
+import general.common.JpaTransactions
 import jakarta.persistence.EntityManager
 import models.common.Batch
 import play.api.Logger
@@ -17,7 +18,7 @@ import javax.inject.{Inject, Singleton}
  * Utility class that builds BatchMsgs. So it mostly handles the JSON creation.
  */
 @Singleton
-class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
+class BatchActionMsgBuilder @Inject()(transactions: JpaTransactions, batchDao: BatchDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -97,7 +98,7 @@ class BatchActionMsgBuilder @Inject()(batchDao: BatchDao) {
    * Builds a BatchMsg with the current batch session data and version
    */
   def buildSessionData(batchId: Long, action: BatchAction, tellWhom: TellWhom): BatchMsg = {
-    batchDao.withReadOnlyTransaction((_: EntityManager) => {
+    transactions.withReadOnlyTransaction((_: EntityManager) => {
       logger.debug(s".buildSessionData: batchId $batchId, action $action, tellWhom ${
         tellWhom
           .toString

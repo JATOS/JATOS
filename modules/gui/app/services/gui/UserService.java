@@ -1,12 +1,13 @@
 package services.gui;
 
-import daos.common.StudyDao;
 import daos.common.BatchDao;
+import daos.common.StudyDao;
 import daos.common.UserDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
+import general.common.JpaTransactions;
 import general.common.MessagesStrings;
 import http.common.Http.Context;
 import models.common.Study;
@@ -26,11 +27,7 @@ import utils.common.HashUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 
@@ -48,6 +45,7 @@ public class UserService {
      */
     public static final String ADMIN_USERNAME = "admin";
 
+    private final JpaTransactions transactions;
     private final StudyService studyService;
     private final UserDao userDao;
     private final StudyDao studyDao;
@@ -55,10 +53,12 @@ public class UserService {
     private final BatchDao batchDao;
 
     @Inject
-    UserService(StudyService studyService,
+    UserService(JpaTransactions transactions,
+                StudyService studyService,
                 UserDao userDao,
                 StudyDao studyDao,
                 WorkerDao workerDao, BatchDao batchDao) {
+        this.transactions = transactions;
         this.studyService = studyService;
         this.userDao = userDao;
         this.studyDao = studyDao;
@@ -89,7 +89,7 @@ public class UserService {
      * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
     public User bindToUserAndPersist(NewUserProperties props) {
-        return userDao.withTransaction((em) -> {
+        return transactions.withTransaction((em) -> {
             User user = new User(props.getUsername(),
                     props.getName(),
                     props.getEmail(),
@@ -114,7 +114,7 @@ public class UserService {
      * Creates a user, sets password hash and persists them. Creates and persists a JatosWorker for the user.
      */
     public User createAndPersistUser(User user, String password, boolean adminRole, AuthMethod authMethod) {
-        userDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             user.setAuthMethod(authMethod);
 
             // Set password only if DB authentication
@@ -222,7 +222,7 @@ public class UserService {
     }
 
     public void setLastSignin(String normalizedUsername) {
-        userDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             User user = userDao.findByUsername(normalizedUsername);
             user.setLastLogin(new Timestamp(new Date().getTime()));
             userDao.merge(user);
@@ -243,7 +243,7 @@ public class UserService {
      * completely (including assets and results).
      */
     public List<OwnershipReassignment> removeUser(Long id) {
-        return userDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             User user = userDao.findById(id);
             if (user == null) {
                 throw new NotFoundException("An user with id \"" + id + "\" doesn't exist.");

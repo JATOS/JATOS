@@ -1,7 +1,6 @@
 package services.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.common.ForbiddenException;
@@ -9,6 +8,7 @@ import exceptions.common.ImportExportException;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
+import general.common.JpaTransactions;
 import general.common.MessagesStrings;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
@@ -42,6 +42,7 @@ public class ImportExportService {
 
     public static final String SESSION_TEMP_IMPORT_STUDY_DIR = "tempImportStudyDir";
 
+    private final JpaTransactions transactions;
     private final AuthorizationService authorizationService;
     private final StudyService studyService;
     private final BatchService batchService;
@@ -53,7 +54,8 @@ public class ImportExportService {
     private final StudyDeserializer studyDeserializer;
 
     @Inject
-    ImportExportService(AuthorizationService authorizationService,
+    ImportExportService(JpaTransactions transactions,
+                        AuthorizationService authorizationService,
                         StudyService studyService,
                         BatchService batchService,
                         ComponentService componentService,
@@ -62,6 +64,7 @@ public class ImportExportService {
                         StudyDao studyDao,
                         ComponentDao componentDao,
                         StudyDeserializer studyDeserializer) {
+        this.transactions = transactions;
         this.authorizationService = authorizationService;
         this.studyService = studyService;
         this.batchService = batchService;
@@ -152,7 +155,7 @@ public class ImportExportService {
      */
     public Study importStudyConfirmed(boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets) {
-        return studyDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             Path tempUnzippedStudyDir = getUnzippedStudyDir();
             if (tempUnzippedStudyDir == null) {
                 throw new ImportExportException("Missing unzipped study directory in tmp directory");
@@ -196,7 +199,7 @@ public class ImportExportService {
      */
     public JsonNode importStudyConfirmedForApi(boolean keepProperties, boolean keepAssets,
                                                boolean keepCurrentAssetsName, boolean renameAssets) {
-        return studyDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             Study study = importStudyConfirmed(keepProperties, keepAssets, keepCurrentAssetsName, renameAssets);
             return domainJsonMapper.studyAsJsonForApi(study, false, false);
         });

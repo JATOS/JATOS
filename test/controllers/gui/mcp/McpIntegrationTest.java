@@ -3,6 +3,7 @@ package controllers.gui.mcp;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.UserDao;
 import general.common.Common;
+import general.common.JpaTransactions;
 import models.common.User;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,19 +21,19 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.UUID;
 
-import static services.gui.mcp.McpProtocolUtils.*;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static services.gui.mcp.McpProtocolUtils.*;
 
 /**
  * Real HTTP MCP -> loopback API -> database, including Play routes and filters.
  */
 public class McpIntegrationTest {
+
     private static final int MAX_REQUEST_BYTES = 64 * 1024;
 
     @Rule
@@ -191,7 +192,7 @@ public class McpIntegrationTest {
             }
 
             var resultDao = app.injector().instanceOf(daos.common.ComponentResultDao.class);
-            long[] resultIds = resultDao.withTransaction(em -> {
+            long[] resultIds = app.injector().instanceOf(JpaTransactions.class).withTransaction(em -> {
                 var worker = new models.common.workers.PersonalSingleWorker("MCP result fixture");
                 em.persist(worker);
                 var link = new models.common.StudyLink(em.find(models.common.Batch.class, batchId), worker);
@@ -521,7 +522,7 @@ public class McpIntegrationTest {
                 .get(0).path("id").asLong();
         var batchArgs = Json.newObject().put("batch_id", batchId);
         assertThat(toolData(client, base, token, "list_groups", batchArgs).size()).isZero();
-        long groupId = app.injector().instanceOf(daos.common.GroupResultDao.class).withTransaction(em -> {
+        long groupId = app.injector().instanceOf(JpaTransactions.class).withTransaction(em -> {
             var batch = em.find(models.common.Batch.class, batchId);
             var active = new models.common.GroupResult(batch);
             em.persist(active);

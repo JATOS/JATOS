@@ -13,6 +13,7 @@ import exceptions.common.NotFoundException;
 import exceptions.publix.ForbiddenNonLinearFlowException;
 import exceptions.publix.ForbiddenReloadException;
 import general.common.Common;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import group.GroupAdministration;
 import http.common.Http.Context;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.*;
  */
 public class PublixUtilsTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private static MockedStatic<Common> commonStatic;
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -100,11 +102,11 @@ public class PublixUtilsTest {
         ioUtils = mock(IOUtils.class);
         DefaultJson defaultJson = new DefaultJson();
 
-        publixUtils = new PublixUtils(resultCreator, idCookieService, batchDispatcher, groupAdministration,
+        publixUtils = new PublixUtils(transactions, resultCreator, idCookieService, batchDispatcher, groupAdministration,
                 studyResultDao, componentDao, componentResultDao, workerDao, userDao, studyLogger, ioUtils, defaultJson);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
-        JPAMocker.mockDaoTransactions(entityManager, studyResultDao, componentDao, componentResultDao, workerDao, userDao);
+        JPAMocker.mockTransactions(entityManager, transactions);
     }
 
     @SuppressWarnings("SameParameterValue")

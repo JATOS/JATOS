@@ -4,6 +4,7 @@ import daos.common.BatchDao;
 import daos.common.StudyDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.NotFoundException;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import models.common.Batch;
@@ -34,6 +35,7 @@ public class BatchService {
 
     private static final Logger.ALogger LOGGER = Logger.of(BatchService.class);
 
+    private final JpaTransactions transactions;
     private final BatchDao batchDao;
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
@@ -41,11 +43,13 @@ public class BatchService {
     private final ResultRemover resultRemover;
 
     @Inject
-    BatchService(BatchDao batchDao,
+    BatchService(JpaTransactions transactions,
+                 BatchDao batchDao,
                  StudyDao studyDao,
                  WorkerDao workerDao,
                  StudyLogger studyLogger,
                  ResultRemover resultRemover) {
+        this.transactions = transactions;
         this.batchDao = batchDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
@@ -172,7 +176,7 @@ public class BatchService {
      * cleanup (workers are managed application-layer since they can belong to multiple batches).
      */
     public void remove(Batch batch) {
-        batchDao.withTransaction(entityManager -> {
+        transactions.withTransaction(entityManager -> {
             // Do the result deletion before removing workers or the batch: group membership FKs restrict deletion.
             resultRemover.removeAllStudyResults(batch);
 
@@ -189,7 +193,7 @@ public class BatchService {
             batchDao.remove(batch);
 
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            batchDao.afterCommit("Log removal of batch " + batch.getId(),
+            transactions.afterCommit("Log removal of batch " + batch.getId(),
                     () -> studyLogger.log(study, signedinUser, "Removed batch", batch));
         });
     }
