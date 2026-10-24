@@ -142,6 +142,13 @@ public class User {
     @JsonIgnore
     private String lastVisitedPageUrl;
 
+    /**
+     * Git credentials that can be used to synchronize a study via git if this user is the study's owner
+     */
+    @JsonIgnore
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private GitCredentials gitCredentials;
+
     public User(String username, String name, String email) {
         this(username, name, email, Role.USER);
     }
@@ -385,6 +392,17 @@ public class User {
 
     public String getLastVisitedPageUrl() {
         return this.lastVisitedPageUrl;
+    }
+
+    @JsonIgnore
+    public GitCredentials getGitCredentials() {
+        return gitCredentials;
+    }
+
+    public void setGitCredentials(GitCredentials value) {
+        if (value != null && value.getUser() != this)
+            throw new IllegalArgumentException("Configuration must belong to this user");
+        gitCredentials = value;
     }
 
     @Override

@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Strings;
+import jakarta.persistence.*;
 import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForPublix;
 import utils.common.HashUtils;
-
-import jakarta.persistence.*;
 
 import java.sql.Timestamp;
 import java.util.*;
@@ -194,6 +193,13 @@ public class Study {
     @JoinColumn(name = "study_id")
     @SuppressWarnings({"FieldMayBeFinal"})
     private List<Batch> batchList = new ArrayList<>();
+
+    /**
+     * Instance-local configuration; excluded from all study/user JSON representations.
+     */
+    @JsonIgnore
+    @OneToOne(mappedBy = "study", cascade = CascadeType.ALL, orphanRemoval = true)
+    private StudySource studySource;
 
     public Study() {
         this.uuid = UUID.randomUUID().toString();
@@ -480,6 +486,17 @@ public class Study {
     @JsonIgnore
     public Batch getDefaultBatch() {
         return this.batchList.getFirst();
+    }
+
+    @JsonIgnore
+    public StudySource getStudySource() {
+        return studySource;
+    }
+
+    public void setStudySource(StudySource value) {
+        if (value != null && value.getStudy() != this)
+            throw new IllegalArgumentException("Configuration must belong to this study");
+        studySource = value;
     }
 
     @Override
