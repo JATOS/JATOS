@@ -62,7 +62,7 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertThat(studyCodes.get(0)).isNotEmpty();
+        assertThat(studyCodes.getFirst()).isNotEmpty();
 
         ArgumentCaptor<Worker> workerCaptor = ArgumentCaptor.forClass(Worker.class);
         verify(workerService).validateWorker(workerCaptor.capture());
@@ -109,7 +109,7 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertThat(studyCodes.get(0)).isNotEmpty();
+        assertThat(studyCodes.getFirst()).isNotEmpty();
 
         verify(workerDao).persist(any(Worker.class));
         verify(studyLinkDao).persist(any(StudyLink.class));
@@ -130,7 +130,7 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertEquals(existingStudyLink.getStudyCode(), studyCodes.get(0));
+        assertEquals(existingStudyLink.getStudyCode(), studyCodes.getFirst());
 
         verify(studyLinkDao).findFirstByBatchAndWorkerType(batch, WorkerType.GENERAL_SINGLE);
         verify(studyLinkDao, never()).persist(any(StudyLink.class));
@@ -152,11 +152,11 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertThat(studyCodes.get(0)).isNotEmpty();
+        assertThat(studyCodes.getFirst()).isNotEmpty();
 
         ArgumentCaptor<StudyLink> studyLinkCaptor = ArgumentCaptor.forClass(StudyLink.class);
         verify(studyLinkDao).persist(studyLinkCaptor.capture());
-        assertEquals(studyLinkCaptor.getValue().getStudyCode(), studyCodes.get(0));
+        assertEquals(studyLinkCaptor.getValue().getStudyCode(), studyCodes.getFirst());
 
         verifyNoInteractions(workerDao, batchDao, workerService);
     }

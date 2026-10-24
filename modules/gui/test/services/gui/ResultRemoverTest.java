@@ -3,7 +3,6 @@ package services.gui;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
 import general.common.JpaTransactions;
 import general.common.StudyLogger;
@@ -72,7 +71,6 @@ public class ResultRemoverTest {
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         GroupResultDao groupResultDao = mock(GroupResultDao.class);
-        WorkerDao workerDao = mock(WorkerDao.class);
         studyLogger = mock(StudyLogger.class);
         ioUtils = mock(IOUtils.class);
 

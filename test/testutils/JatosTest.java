@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Guice;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import exceptions.common.NotFoundException;
 import general.common.Common;
 import general.common.JpaTransactions;
 import http.common.Http.Context;
@@ -283,15 +282,6 @@ public class JatosTest {
             em.createNativeQuery("DROP ALL OBJECTS").executeUpdate();
             return null;
         });
-    }
-
-    public void removeUser(String username) {
-        UserService userService = application.injector().instanceOf(UserService.class);
-        try {
-            userService.removeUser(username);
-        } catch (NotFoundException e) {
-            // We don't care
-        }
     }
 
     public void removeAllStudyAssets() throws IOException {

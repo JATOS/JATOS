@@ -3,7 +3,6 @@ package services.gui;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
-import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.NotFoundException;
 import general.common.JpaTransactions;
@@ -54,7 +53,6 @@ public class BatchServiceTest {
         studyDao = Mockito.mock(StudyDao.class);
         workerDao = Mockito.mock(WorkerDao.class);
         groupResultDao = Mockito.mock(GroupResultDao.class);
-        StudyLinkDao studyLinkDao = Mockito.mock(StudyLinkDao.class);
         studyLogger = Mockito.mock(StudyLogger.class);
         batchService = new BatchService(transactions, batchDao, studyDao, workerDao, studyLogger, mock(ResultRemover.class));
 
