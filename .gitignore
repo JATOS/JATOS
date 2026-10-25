@@ -35,3 +35,5 @@ jatos.mv.db
 jatos.trace.db
 node_modules
 /.bsp
+/conf/generated-secret
+/conf/.generated-secret.*
