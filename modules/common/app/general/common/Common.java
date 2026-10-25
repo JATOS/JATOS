@@ -33,6 +33,7 @@ public class Common {
 
     private static String jatosVersion;
     private static final String jatosApiVersion = "1.1.0";
+    private static String applicationSecret;
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
@@ -166,6 +167,7 @@ public class Common {
     @Inject
     Common(Config config) {
         jatosVersion = BuildInfo.version();
+        applicationSecret = config.hasPath("play.http.secret.key") ? config.getString("play.http.secret.key") : null;
         basepath = config.getString("play.server.dir");
         studyAssetsRootPath = obtainPath(config, config.hasPath("jatos.studyAssets.rootPath")
                 ? "jatos.studyAssets.rootPath" : "jatos.studyAssetsRootPath");
@@ -402,6 +404,13 @@ public class Common {
      */
     public static String getJatosApiVersion() {
         return jatosApiVersion;
+    }
+
+    /**
+     * Effective JATOS/Play application secret, or null when none is configured.
+     */
+    public static String getApplicationSecret() {
+        return applicationSecret;
     }
 
     /**

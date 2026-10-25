@@ -39,11 +39,6 @@ start() {
 
     check_java
 
-    # Generate an fallback secret. This is only used if jatos.conf/jatos.secret or env var JATOS_SECRET aren't used.
-    secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"
-    (( ${#secret} == 64 )) ||
-            die "$loader_log" "Could not generate a fallback application secret."
-
     [[ -f "$dir/bin/jatos" ]] ||
             die "$loader_log" "$dir/bin/jatos does not exist."
 
@@ -68,6 +63,10 @@ start() {
         die "$loader_log" "conf/production.conf is no longer supported. Rename it to conf/jatos.conf."
     fi
 
+    # Prepare the secret. Explicit configuration still takes precedence.
+    secret="$(load_secret)" ||
+            die "$loader_log" "Could not load conf/generated-secret. Check its contents and permissions."
+
     printf "Starting JATOS... "
 
     # Start JATOS with configuration file, application secret and pass on other arguments
@@ -82,6 +81,29 @@ start() {
 
     return "$exit_code"
 }
+
+# Loads the secret from file or generates one if it doesn't exist.
+load_secret() (
+    local secret_file="$dir/conf/generated-secret" temporary secret
+    umask 077
+    if [[ ! -e "$secret_file" && ! -L "$secret_file" ]]; then
+        temporary="$(mktemp "$dir/conf/.generated-secret.XXXXXX")" || return 1
+        trap 'rm -f -- "$temporary"' EXIT
+        secret="$(LC_ALL=C tr -cd '[:alnum:]' < /dev/urandom 2>/dev/null | dd bs=64 count=1 2>/dev/null)"
+        (( ${#secret} == 64 )) || return 1
+        printf '%s\n' "$secret" > "$temporary" || return 1
+        # ln fails if another process has already published the file; read its value below.
+        ln -- "$temporary" "$secret_file" 2>/dev/null || {
+            [[ -f "$secret_file" ]] || return 1
+        }
+    fi
+    [[ -f "$secret_file" && ! -L "$secret_file" && -r "$secret_file" ]] || return 1
+    chmod 600 "$secret_file" || return 1
+    secret="$(cat -- "$secret_file")" || return 1
+    # Both loaders generate 64 ASCII characters (alphanumeric or Base64).
+    [[ ${#secret} == 64 && "$secret" != *[!a-zA-Z0-9+/=]* ]] || return 1
+    printf '%s' "$secret"
+)
 
 update() {
     touch "$update_log" || {
@@ -115,6 +137,11 @@ update() {
     local update_dir="${update_dirs[0]}"
 
     validate_update_allowed "$update_dir" || fail_update "Update validation failed."
+
+    # This file belongs to the installation, never to an update package.
+    if [[ -e "$update_dir/conf/generated-secret" || -L "$update_dir/conf/generated-secret" ]]; then
+        fail_update "Update contains conf/generated-secret. Refusing to overwrite the installation secret."
+    fi
 
     log "$update_log" both "Start update of JATOS from folder ${update_dir}."
 
