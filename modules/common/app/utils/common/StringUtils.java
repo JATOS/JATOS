@@ -12,6 +12,13 @@ import java.util.Optional;
 
 public class StringUtils {
 
+    /**
+     * Trims the value, returning null for null or blank input.
+     */
+    public static String trimIfNotNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     public static String humanReadableByteCount(long bytes) {
         if (-1000 < bytes && bytes < 1000) {
             return bytes + " B";
@@ -50,7 +57,7 @@ public class StringUtils {
         return !Strings.isNullOrEmpty(str) ? str.getBytes(StandardCharsets.UTF_8).length : 0;
     }
 
-    public  static String anonymizeUsername(String username) {
+    public static String anonymizeUsername(String username) {
         if (username == null || username.isBlank() || username.equals("unknown")) {
             return "unknown";
         }

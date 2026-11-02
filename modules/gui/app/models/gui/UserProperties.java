@@ -49,6 +49,11 @@ public class UserProperties implements Validatable<List<ValidationError>> {
 
     private boolean active = true;
 
+    /**
+     * Optional credential update; omission leaves the user's credentials unchanged.
+     */
+    private GitCredentialsProperties gitCredentials;
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -79,6 +84,14 @@ public class UserProperties implements Validatable<List<ValidationError>> {
 
     public boolean isActive() {
         return active;
+    }
+
+    public GitCredentialsProperties getGitCredentials() {
+        return gitCredentials;
+    }
+
+    public void setGitCredentials(GitCredentialsProperties gitCredentials) {
+        this.gitCredentials = gitCredentials;
     }
 
     public String getName() {

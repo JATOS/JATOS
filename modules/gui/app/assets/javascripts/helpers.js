@@ -8,7 +8,6 @@ export {
     isJson,
     getWorkerTypeNames,
     getWorkerTypeUIName,
-    isLocalhost,
     getAuthMethodText,
     getUserRoleText,
     generateOrcidLink,
@@ -150,16 +149,6 @@ function getWorkerTypeNames() {
  */
 function getWorkerTypeUIName(workerType) {
     return getWorkerTypeNames()[workerType];
-}
-
-/**
- * Checks if this JATOS is running on 'localhost'. It's not accurate. It just checks the location.hostname.
- */
-function isLocalhost() {
-    return location.hostname === 'localhost' ||
-    location.hostname === '' ||
-    location.hostname === '[::1]' ||
-    location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/);
 }
 
 /**

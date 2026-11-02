@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import play.api.libs.json.JsValue;
 import play.libs.Json;
+import scala.Option;
+
+import java.util.List;
+import java.util.Map;
 
 import static play.api.libs.json.Json.parse;
 
@@ -50,6 +54,7 @@ public class ApiEnvelope {
 
     private final String apiVersion = Common.getJatosApiVersion();
     private String message;
+    private JsonNode fieldErrors;
     private JsonNode data;
     private ErrorCode errorCode;
 
@@ -81,10 +86,18 @@ public class ApiEnvelope {
         return env;
     }
 
-    public static ApiEnvelope wrap(String message, ApiEnvelope.ErrorCode errorCode) {
+    public static ApiEnvelope wrap(String message, ErrorCode errorCode) {
         ApiEnvelope env = new ApiEnvelope();
         env.message = message;
         env.errorCode = errorCode;
+        return env;
+    }
+
+    public static ApiEnvelope wrap(String message, ErrorCode errorCode, Option<Map<String, List<String>>> fieldErrors) {
+        ApiEnvelope env = new ApiEnvelope();
+        env.message = message;
+        env.errorCode = errorCode;
+        if (fieldErrors.isDefined()) env.fieldErrors = Json.toJson(fieldErrors.get());
         return env;
     }
 
@@ -98,6 +111,7 @@ public class ApiEnvelope {
             ObjectNode error = JsonNodeFactory.instance.objectNode();
             error.put("code", errorCode.name());
             if (message != null) error.put("message", message);
+            if (fieldErrors != null) error.set("fields", fieldErrors);
             node.set("error", error);
         }
         return node;

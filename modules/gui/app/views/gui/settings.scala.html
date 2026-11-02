@@ -10,6 +10,7 @@
 <script @{helper.CSPNonce.attr} type="module">
     window.common = {};
     window.common.jatosVersion = "@Common.getJatosVersion";
+    window.common.isServer = @Common.isServer;
     window.common.realHostUrl = location.protocol + '//' + location.host;
     window.common.realBaseUrl = `${window.common.realHostUrl}@Common.getJatosUrlBasePath`;
     window.common.jatosUrlBasePath = "@Common.getJatosUrlBasePath";
@@ -71,6 +72,7 @@
 
     @if(signedinUser.isDefined) {
     window.signedinUser = {};
+    window.signedinUser.id = @signedinUser.get.getId;
     window.signedinUser.username = "@signedinUser.get.getUsername";
     window.signedinUser.name = "@signedinUser.get.getName";
     window.signedinUser.email = "@signedinUser.get.getEmail";

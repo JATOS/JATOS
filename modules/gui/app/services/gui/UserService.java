@@ -51,19 +51,23 @@ public class UserService {
     private final StudyDao studyDao;
     private final WorkerDao workerDao;
     private final BatchDao batchDao;
+    private final GitCredentialsService gitCredentialsService;
 
     @Inject
     UserService(JpaTransactions transactions,
                 StudyService studyService,
                 UserDao userDao,
                 StudyDao studyDao,
-                WorkerDao workerDao, BatchDao batchDao) {
+                WorkerDao workerDao,
+                BatchDao batchDao,
+                GitCredentialsService gitCredentialsService) {
         this.transactions = transactions;
         this.studyService = studyService;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.workerDao = workerDao;
         this.batchDao = batchDao;
+        this.gitCredentialsService = gitCredentialsService;
     }
 
     /**
@@ -145,7 +149,11 @@ public class UserService {
         return user;
     }
 
-    public void updateUser(User user, UserProperties props) {
+    public void updateUserSettings(User user, UserProperties props) {
+        if (props.getGitCredentials() != null) {
+            gitCredentialsService.updateGitCredentialsForUser(props.getGitCredentials());
+        }
+
         user.setName(props.getName());
         user.setEmail(props.getEmail());
         user.setActive(props.isActive());

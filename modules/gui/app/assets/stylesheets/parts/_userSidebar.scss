@@ -48,3 +48,11 @@ minidenticon-svg svg {
 #changeMyPasswordModal button.password-visibility-toggle {
     border-bottom-right-radius: 0 !important;
 }
+
+// Put the Git credentials title on the card border
+#myGitCredentials .card-title {
+    position: absolute;
+    top: 0;
+    transform: translate(0,-50%);
+    background: var(--bs-body-bg);
+}

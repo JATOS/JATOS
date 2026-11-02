@@ -52,7 +52,8 @@ public class UserServiceTest {
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
 
-        userService = new UserService(transactions, studyService, userDao, studyDao, workerDao, mock(daos.common.BatchDao.class));
+        userService = new UserService(transactions, studyService, userDao, studyDao, workerDao,
+                mock(daos.common.BatchDao.class), mock(GitCredentialsService.class));
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
         JPAMocker.mockTransactions(entityManager, transactions);

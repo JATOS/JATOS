@@ -68,6 +68,8 @@ GET      /jatos/api/v1/studies/:id                                          @con
 DELETE   /jatos/api/v1/studies/:id                                          @controllers.gui.api.StudyApi.deleteStudy(id)
 GET      /jatos/api/v1/studies/:id/properties                               @controllers.gui.api.StudyApi.getStudyProperties(id, withComponentProperties: Boolean ?= false, withBatchProperties: Boolean ?= false)
 PATCH    /jatos/api/v1/studies/:id/properties                               @controllers.gui.api.StudyApi.updateStudyProperties(request: Request, id)
+GET      /jatos/api/v1/studies/:id/source                                   @controllers.gui.api.StudyApi.getStudySource(id)
+PUT      /jatos/api/v1/studies/:id/source                                   @controllers.gui.api.StudyApi.saveStudySource(request: Request, id)
 GET      /jatos/api/v1/studies/:id/members                                  @controllers.gui.api.StudyApi.allMembersOfStudy(id)
 PUT      /jatos/api/v1/studies/:id/members/:userId                          @controllers.gui.api.StudyApi.addMemberToStudy(id, userId: Long)
 DELETE   /jatos/api/v1/studies/:id/members/:userId                          @controllers.gui.api.StudyApi.removeMemberFromStudy(id, userId: Long)

@@ -39,9 +39,6 @@ import static messaging.common.FlashMessagingHelper.ERROR;
  * Additionally, it does some basic authorization (with {@link User.Role}).
  *
  * Authentication via DB, LDAP, OIDC and Google Sign-In use the session cookie authentication.
- *
- * IMPORTANT: Since this annotation accesses the database, the annotated method has to be within a transaction. This
- * means the {@link javax.transaction.Transactional} annotation has to be BEFORE the {@link Auth} annotation.
  */
 public class AuthAction extends Action<Auth> {
 
@@ -132,6 +129,9 @@ public class AuthAction extends Action<Auth> {
     public CompletionStage<Result> call(Http.Request request) {
         EnumSet<Role> allowedRoles = EnumSet.copyOf(Arrays.asList(configuration.roles()));
         EnumSet<Type> allowedTypes = EnumSet.copyOf(Arrays.asList(configuration.types()));
+
+        // Authorization headers bypass CSRF checks, so never use session authentication with one.
+        if (request.hasHeader("Authorization")) allowedTypes.retainAll(EnumSet.of(Type.TOKEN));
 
         // Try to authenticate with each registered method
         for (AuthMethod authMethod : authMethods) {

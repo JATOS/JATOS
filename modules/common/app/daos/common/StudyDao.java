@@ -64,6 +64,25 @@ public class StudyDao extends AbstractDao {
     }
 
     /**
+     * Loads and locks a study and refreshes the source and credentials loaded before that lock.
+     */
+    public Study findByIdWithSourceAndLock(long studyId) {
+        return withTransaction(em -> {
+            Study study = findById(studyId);
+            if (study == null) return null;
+            boolean alreadyLocked = em.getLockMode(study) == LockModeType.PESSIMISTIC_WRITE;
+            study = findAndLock(study);
+            if (!alreadyLocked && study.getStudySource() != null) {
+                em.refresh(study.getStudySource());
+                if (study.getStudySource().getGitCredentials() != null) {
+                    em.refresh(study.getStudySource().getGitCredentials());
+                }
+            }
+            return study;
+        });
+    }
+
+    /**
      * Finds a study by its ID and eagerly fetches the batchList to avoid LazyInitializationException.
      */
     public Study findByIdWithBatches(Long id) {

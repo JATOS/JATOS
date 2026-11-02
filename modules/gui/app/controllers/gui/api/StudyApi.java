@@ -22,20 +22,15 @@ import json.common.StrictJson;
 import models.common.Study;
 import models.common.User;
 import models.gui.StudyProperties;
+import models.gui.StudySourceProperties;
 import org.apache.pekko.stream.javadsl.FileIO;
 import org.apache.pekko.stream.javadsl.Source;
 import org.apache.pekko.util.ByteString;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.http.HttpEntity;
 import play.libs.Json;
-import play.mvc.BodyParser;
-import play.mvc.Controller;
-import play.mvc.ResponseHeader;
-import play.mvc.Result;
-import services.gui.ApiService;
-import services.gui.AuthorizationService;
-import services.gui.ImportExportService;
-import services.gui.StudyService;
+import play.mvc.*;
+import services.gui.*;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -58,6 +53,7 @@ public class StudyApi extends Controller {
     private final AuthorizationService authorizationService;
     private final ApiService apiService;
     private final StudyService studyService;
+    private final StudySourceService studySourceService;
     private final ImportExportService importExportService;
     private final UserDao userDao;
     private final StudyDao studyDao;
@@ -69,6 +65,7 @@ public class StudyApi extends Controller {
     StudyApi(AuthorizationService authorizationService,
              ApiService apiService,
              StudyService studyService,
+             StudySourceService studySourceService,
              ImportExportService importExportService,
              UserDao userDao,
              StudyDao studyDao,
@@ -78,6 +75,7 @@ public class StudyApi extends Controller {
         this.authorizationService = authorizationService;
         this.apiService = apiService;
         this.studyService = studyService;
+        this.studySourceService = studySourceService;
         this.importExportService = importExportService;
         this.userDao = userDao;
         this.studyDao = studyDao;
@@ -430,5 +428,33 @@ public class StudyApi extends Controller {
         }
     }
 
+    /**
+     * GET request that returns the study source configuration.
+     */
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    public Result getStudySource(String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        StudySourceProperties props = studySourceService.get(study.getId());
+        return ok(ApiEnvelope.wrap(props).asJsonNode());
+    }
+
+    /**
+     * PUT request to update study source configuration without synchronizing content.
+     */
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    @BodyParser.Of(ApiJsonBodyParser.class)
+    public Result saveStudySource(Http.Request request, String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        JsonNode json = apiService.getJsonFromBody(request);
+        if (!json.isObject()) throw new BadRequestException("Request body is not a JSON object", INVALID_JSON);
+        StudySourceProperties props = strictJson.updateFromJson(new StudySourceProperties(), json);
+        apiService.validateProps(props);
+        StudySourceProperties settings = studySourceService.save(study.getId(), props);
+        return ok(ApiEnvelope.wrap(settings).asJsonNode());
+    }
 
 }

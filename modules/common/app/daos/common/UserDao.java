@@ -76,6 +76,22 @@ public class UserDao extends AbstractDao {
     }
 
     /**
+     * Loads and locks a user and refreshes credentials loaded before that lock. User locks must be acquired before
+     * the study locks.
+     */
+    public User findByUsernameWithGitCredentialsAndLock(String username) {
+        return withTransaction(em -> {
+            User user = findByUsername(username);
+            if (user == null) return null;
+            boolean alreadyLocked = em.getLockMode(user) == LockModeType.PESSIMISTIC_WRITE;
+            user = findByUsernameAndLock(user);
+            // Refresh only on the first lock, preserving changes from earlier calls in this transaction.
+            if (!alreadyLocked && user.getGitCredentials() != null) em.refresh(user.getGitCredentials());
+            return user;
+        });
+    }
+
+    /**
      * Finds a user by username and eagerly fetches their studyList.
      */
     public User findByUsernameWithStudies(String normalizedUsername) {

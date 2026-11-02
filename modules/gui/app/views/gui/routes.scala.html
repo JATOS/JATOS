@@ -30,6 +30,7 @@
     window.routes.Api.updateStudy = (id) => `${basePath}jatos/api/v1/studies/${id}/properties`;
     window.routes.Api.updateComponent = (id) => `${basePath}jatos/api/v1/components/${id}`;
     window.routes.Api.updateBatch = (id) => `${basePath}jatos/api/v1/batches/${id}`;
+    window.routes.Api.getUser = (id) => `${basePath}jatos/api/v1/users/${id}`;
     window.routes.Api.updateUser = (id) => `${basePath}jatos/api/v1/users/${id}`;
     window.routes.Api.changeUserRole = (id) => `${basePath}jatos/api/v1/users/${id}/roles`;
     window.routes.Api.getBatchSession = (id) => `${basePath}jatos/api/v1/batches/${id}/session?asText=true`;
@@ -37,6 +38,8 @@
     window.routes.Api.getGroupsOfBatch = (id) => `${basePath}jatos/api/v1/batches/${id}/groups`;
     window.routes.Api.getGroupSession = (id) => `${basePath}jatos/api/v1/groups/${id}/session?asText=true`;
     window.routes.Api.updateGroupSession = (id, version) => `${basePath}jatos/api/v1/groups/${id}/session?version=${version}`;
+    window.routes.Api.getStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source`;
+    window.routes.Api.saveStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source`;
     window.routes.ApiTokens = {};
     window.routes.ApiTokens.allTokenDataByUser = `${basePath}jatos/user/allApiTokenData`;
     window.routes.ApiTokens.generate = (name, expires) => `${basePath}jatos/user/apiToken?name=${name}&expires=${expires}`;

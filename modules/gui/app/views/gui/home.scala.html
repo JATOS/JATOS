@@ -31,7 +31,6 @@
 }
 
 <script @{helper.CSPNonce.attr} type="module">
-    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
 
     if (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser) {
@@ -61,5 +60,5 @@
         $('#branding').removeClass("invisible");
     }
 
-    if (Helpers.isLocalhost()) $("#localFileLocation").removeClass("d-none");
+    if (!window.common.isServer) $("#localFileLocation").removeClass("d-none");
 </script>

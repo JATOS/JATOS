@@ -15,6 +15,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -293,6 +295,21 @@ public class IOUtils {
             throw new IOException(MessagesStrings.dirPathIsntDir(fullPath.toString()));
         }
         return fullPath;
+    }
+
+    /**
+     * Resolves a readable directory and checks its real path against the allowed roots, including descendants.
+     * Empty roots impose no restriction. Returns empty when outside the roots; unavailable paths throw IOException.
+     */
+    public Optional<Path> resolveReadableDirectoryWithinRoots(String directory, List<String> allowedRoots) throws IOException {
+        Path path = getExistingDirSecurely(Path.of(directory).toRealPath());
+        if (!Files.isReadable(path)) throw new IOException("Directory is not readable");
+        if (allowedRoots.isEmpty()) return Optional.of(path);
+        for (String root : allowedRoots) {
+            Path allowed = Path.of(root);
+            if (allowed.isAbsolute() && path.startsWith(allowed.toRealPath())) return Optional.of(path);
+        }
+        return Optional.empty();
     }
 
     public boolean checkStudyAssetsDirExists(String dirName) {

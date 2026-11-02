@@ -65,6 +65,9 @@
                         <a class="dropdown-item" data-bs-toggle="modal" href="#studyLogModal"><i class="bi-journal-text pe-1"></i>Study log</a>
                     </li>
                     @if(study.getOwner().getUsername() == signedinUser.getUsername() || (general.common.Common.isUserRoleAllowSuperuser() && signedinUser.isSuperuser())) {
+                    <li class="no-info-icon">
+                        <a class="dropdown-item" data-bs-toggle="modal" href="#studySourceModal"><i class="bi-folder-symlink pe-1"></i>Study Source</a>
+                    </li>
                     <li><hr class="dropdown-divider"></li>
                     <li class="no-info-icon" data-bs-tooltip="Delete this study including its components, assets and results">
                         <a class="dropdown-item" id="removeStudy" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
@@ -86,6 +89,7 @@
 }
 
 @views.html.gui.study.studyPropertiesModal(request)
+@views.html.gui.study.studySourceModal(request)
 @views.html.gui.study.studyDescription(study)
 @views.html.gui.study.studyMemberUsersModal(request)
 @views.html.gui.study.componentCreatorModal(request)

@@ -34,6 +34,7 @@ public class Common {
     private static String jatosVersion;
     private static final String jatosApiVersion = "1.1.0";
     private static String applicationSecret;
+    private static boolean isServer;
     private static String basepath;
     private static String studyAssetsRootPath;
     private static boolean studyLogsEnabled;
@@ -150,6 +151,7 @@ public class Common {
     private static String openAiUrlBasePath;
     private static int openAiCallLimit;
     private static int openAiTimeout;
+    private static List<String> studySourcesAllowedRoots;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions (the regexes are
@@ -167,6 +169,7 @@ public class Common {
     @Inject
     Common(Config config) {
         jatosVersion = BuildInfo.version();
+        isServer = config.getBoolean("jatos.isServer");
         applicationSecret = config.hasPath("play.http.secret.key") ? config.getString("play.http.secret.key") : null;
         basepath = config.getString("play.server.dir");
         studyAssetsRootPath = obtainPath(config, config.hasPath("jatos.studyAssets.rootPath")
@@ -304,6 +307,7 @@ public class Common {
         openAiUrlBasePath = config.getString("jatos.openai.urlBasePath");
         openAiCallLimit = config.getInt("jatos.openai.callLimit");
         openAiTimeout = config.getInt("jatos.openai.timeout");
+        studySourcesAllowedRoots = config.getStringList("jatos.studySources.allowedRoots");
     }
 
     /**
@@ -404,6 +408,10 @@ public class Common {
      */
     public static String getJatosApiVersion() {
         return jatosApiVersion;
+    }
+
+    public static boolean isServer() {
+        return isServer;
     }
 
     /**
@@ -1276,5 +1284,12 @@ public class Common {
      */
     public static int getOpenAiTimeout() {
         return openAiTimeout;
+    }
+
+    /**
+     * Get the list of allowed root folders for study sources.
+     */
+    public static List<String> getStudySourcesAllowedRoots() {
+        return studySourcesAllowedRoots;
     }
 }

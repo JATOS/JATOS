@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static models.common.User.AuthMethod.DB;
@@ -265,6 +266,15 @@ public class AuthorizationService {
     }
 
     public void checkSignedinUserAllowedToChangeUser(UserProperties props, User signedinUser, User user) {
+        if (!user.isDb() && !user.isLdap()
+                && (!Objects.equals(props.getName(), user.getName())
+                || !Objects.equals(props.getEmail(), user.getEmail()))) {
+            throw new ForbiddenException("Name and email are managed by the external sign-in provider.");
+        }
+        if (props.getGitCredentials() != null && !user.equals(signedinUser)) {
+            throw new ForbiddenException("You can only change your own Git credentials.");
+        }
+
         final boolean isPropsAdminUser = ADMIN_USERNAME.equals(props.getUsername());
         final boolean isSignedinAdminUser = ADMIN_USERNAME.equals(signedinUser.getUsername());
         final boolean passwordChangeRequested = props.getPassword() != null;

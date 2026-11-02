@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.1.0
+  version: 1.2.0
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -163,6 +163,11 @@ paths:
           description: User not found
     get:
       summary: Get a user (admin or self)
+      description: >-
+        Credential metadata is included only for the authenticated user's own account.
+        Stored secrets are never returned.
+      security:
+        - BearerAuth: []
       tags: [ admin ]
       parameters:
         - in: path
@@ -187,6 +192,13 @@ paths:
           description: User not found
     patch:
       summary: Update a user (admin or self)
+      description: >-
+        Profile and Git credential changes are applied in one transaction. Only the
+        authenticated user may change their own Git credentials; admin access to
+        another user does not grant credential access. Name and email are read-only
+        for external sign-in accounts (all methods except DB and LDAP).
+      security:
+        - BearerAuth: []
       tags: [ admin ]
       parameters:
         - in: path
@@ -207,6 +219,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeUser'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
         '401':
           description: Unauthorized
         '403':
@@ -624,6 +638,78 @@ paths:
           $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/source:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Get study source configuration
+      description: >-
+        Requires the study owner or an enabled superuser. Returns source settings
+        and credential metadata, never stored secrets. An unconfigured study returns
+        type NONE. Source settings are excluded from study exports.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Source configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySource'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Save study source configuration
+      description: >-
+        Requires the study owner or an enabled superuser. This replaces source
+        configuration; it does not fetch or synchronize study content. Inactive
+        source fields are cleared. Switching away from Git removes study credentials.
+        Type NONE removes source settings and credentials while preserving latest-sync
+        metadata. Changing the repository origin requires removing or replacing saved
+        study credentials.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceUpdate'
+            examples:
+              git:
+                value:
+                  type: GIT
+                  gitUrl: https://github.com/example/study.git
+                  gitRef: main
+              folder:
+                value:
+                  type: LOCAL_FOLDER
+                  localFolderPath: /srv/studies/example
+              remove:
+                value:
+                  type: NONE
+      responses:
+        '200':
+          description: Saved source configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySource'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   /jatos/api/v1/studies/{id}/properties:
     get:
@@ -2458,6 +2544,18 @@ components:
                 - UNEXPECTED_ERROR
             message:
               type: string
+            fields:
+              type: object
+              description: >-
+                Optional field validation errors. Keys are field names, including
+                dotted names for nested fields such as gitCredentials.secret.
+                Values are arrays of messages.
+              additionalProperties:
+                type: array
+                items: { type: string }
+              example:
+                name: [ Provide a name. ]
+                gitCredentials.secret: [ Provide a Git password or token. ]
           required: [ code ]
           additionalProperties: false
       required: [ apiVersion, error ]
@@ -2722,6 +2820,8 @@ components:
           type: integer
           format: int64
           nullable: true
+        gitCredentials:
+          $ref: '#/components/schemas/GitCredentialsStatus'
         active:
           type: boolean
       required: [ id, username, name, roles, authMethod, active ]
@@ -3045,7 +3145,120 @@ components:
         active:
           type: boolean
           description: Whether the user is active
+        gitCredentials:
+          $ref: '#/components/schemas/UserGitCredentialsUpdate'
       additionalProperties: false
+
+    GitCredentialsStatus:
+      type: object
+      description: >-
+        Present only in GET/PATCH user responses for the authenticated user's own
+        account, not in user listings or responses for other users.
+      properties:
+        configured: { type: boolean }
+        origin: { type: string, nullable: true, example: 'https://github.com' }
+        username: { type: string, nullable: true }
+      required: [ configured ]
+      additionalProperties: false
+
+    UserGitCredentialsUpdate:
+      type: object
+      description: >-
+        Omit this object to leave credentials unchanged. Only one credential is
+        allowed per user. Omitted username/origin retain their existing values.
+        An empty or omitted secret preserves the existing secret. Creating credentials
+        requires origin, username, and a nonempty secret. Changing username or origin
+        requires a new secret. Use removeCredentials to delete; null is not deletion.
+      properties:
+        origin:
+          type: string
+          description: HTTPS scheme, host and optional port, without a repository path or embedded credentials.
+          example: https://git.example.org:8443
+        username:
+          type: string
+          maxLength: 255
+          description: Git username without colons or control characters.
+        secret:
+          type: string
+          format: password
+          writeOnly: true
+          maxLength: 16384
+          description: New password/token; never returned and not trimmed.
+        removeCredentials:
+          type: boolean
+          default: false
+          writeOnly: true
+          description: Delete credentials; cannot be combined with a nonempty secret.
+      additionalProperties: false
+
+    StudySourceUpdate:
+      type: object
+      required: [ type ]
+      properties:
+        type:
+          type: string
+          enum: [ NONE, GIT, LOCAL_FOLDER ]
+        gitUrl:
+          type: string
+          nullable: true
+          maxLength: 2048
+          description: Required for GIT. HTTPS repository URL without embedded credentials.
+        gitRef:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: Branch or tag; blank uses the default branch. Arbitrary commit IDs are not supported.
+        localFolderPath:
+          type: string
+          nullable: true
+          maxLength: 4096
+          description: >-
+            Required for LOCAL_FOLDER. Absolute, readable folder on the JATOS host.
+            Nonempty allowedRoots restricts paths to those roots. Empty roots permit
+            all folders in local mode and disable folder sources in server mode.
+        anonymous:
+          type: boolean
+          default: false
+          description: Use no credentials, including study, owner, or global credentials.
+        username:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: Git username. Changing a saved username requires a new password/token.
+        secret:
+          type: string
+          format: password
+          nullable: true
+          writeOnly: true
+          maxLength: 16384
+          description: Nonempty password/token replaces study credentials; omitted or empty preserves the secret.
+        removeCredentials:
+          type: boolean
+          default: false
+          writeOnly: true
+          description: Remove study credentials; cannot be combined with a nonempty secret.
+
+    StudySource:
+      allOf:
+        - $ref: '#/components/schemas/StudySourceUpdate'
+        - type: object
+          properties:
+            credentialsConfigured:
+              type: boolean
+              readOnly: true
+            localFolderAllowed:
+              type: boolean
+              readOnly: true
+              description: Whether the installation currently permits local-folder sources.
+
+    ApiEnvelopeStudySource:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/StudySource'
+          required: [ data ]
 
     UserRoleChange:
       type: object

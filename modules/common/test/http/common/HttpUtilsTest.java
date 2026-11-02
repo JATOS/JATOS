@@ -403,4 +403,24 @@ public class HttpUtilsTest {
         return Common.getJatosUrlBasePath().replaceAll("/$", "");
     }
 
+    @Test
+    public void normalizesHttpsOriginsAndExtractsRepositoryOrigins() {
+        assertEquals("https://example.org", HttpUtils.normalizeGitOrigin(" HTTPS://EXAMPLE.org:443/ "));
+        assertEquals("https://example.org:8443", HttpUtils.normalizeGitOrigin("https://EXAMPLE.org:8443"));
+        assertEquals("https://[::1]", HttpUtils.normalizeGitOrigin("https://[::1]:443"));
+        assertEquals("https://example.org", HttpUtils.getGitOriginFromRepositoryUrl("https://EXAMPLE.org/team/repo.git"));
+        assertNotEquals(HttpUtils.normalizeGitOrigin("https://example.org"), HttpUtils.normalizeGitOrigin("https://example.org.evil.test"));
+    }
+
+    @Test
+    public void rejectsCredentialsPathsAndMalformedDestinations() {
+        for (String value : new String[]{null, "", "http://example.org", "ssh://example.org", "https://user:token@example.org",
+                "https://example.org/repo", "https://example.org?x=1", "https://example.org#fragment",
+                "https://example.org:0", "https://example.org:65536", "https://example.org:", "https://example.org:abc",
+                "https://example.org\\evil", "https:///example.org", "https://exa mple.org"}) {
+            assertThrows(IllegalArgumentException.class, () -> HttpUtils.normalizeGitOrigin(value));
+        }
+        assertThrows(IllegalArgumentException.class, () -> HttpUtils.getGitOriginFromRepositoryUrl("https://user:token@example.org/repo.git"));
+    }
+
 }
