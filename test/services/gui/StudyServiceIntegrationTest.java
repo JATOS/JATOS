@@ -49,6 +49,24 @@ public class StudyServiceIntegrationTest extends JatosTest {
     @Inject
     private BatchDao batchDao;
 
+    @Inject
+    private general.common.JpaTransactions transactions;
+
+    @Test
+    public void newStudyAssetsAreRemovedOnRollback() {
+        Context.current().args().put(SIGNEDIN_USER, admin);
+        StudyProperties props = new StudyProperties();
+        props.setTitle("Rollback");
+        props.setDirName("rollback-" + UUID.randomUUID());
+        org.junit.Assert.assertThrows(IllegalStateException.class, () ->
+                transactions.withTransaction((java.util.function.Consumer<EntityManager>) em -> {
+                    studyService.createAndPersistStudyAndAssetsDir(props, true);
+                    assertThat(ioUtils.checkStudyAssetsDirExists(props.getDirName())).isTrue();
+                    throw new IllegalStateException("rollback");
+                }));
+        assertThat(ioUtils.checkStudyAssetsDirExists(props.getDirName())).isFalse();
+    }
+
     /**
      * StudyService.clone(): clones a study but does not persist. This includes the Components, Batches and asset
      * directory.

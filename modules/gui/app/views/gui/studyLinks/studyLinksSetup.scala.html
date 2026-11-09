@@ -150,7 +150,7 @@
                 Helpers.setButtonWidthToMax(".study-links-setup-item .study-links-manager");
                 Helpers.activateTooltips(collapseElement);
             }).fail(function(err) {
-                Alerts.error("Couldn't load study links setup.");
+                Alerts.error("Couldn't load study links setup.", 0, true);
             }).always(WaitingModal.hide);
         }
     });
@@ -211,7 +211,7 @@
                 batch.allowedWorkerTypes = allowedWorkerTypes;
                 setAllowedWorkerTypes(studyLinksSetupDiv, allowedWorkerTypes);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't change type activation.")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't change type activation.", 0, true)
         });
     });
 
@@ -238,7 +238,7 @@
             success: (response) => renderSingleStudyLinkDisplayModal(response.data, batch, type),
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't get study codes";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         });
     });
@@ -253,10 +253,10 @@
         $('#singleStudyLinkDisplayModal').modal('show');
 
         if (!batch.active) {
-            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
+            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`, 10000, true);
         }
         if (!batch.allowedWorkerTypes.includes(type)) {
-            alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`);
+            alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`, 10000, true);
         }
     }
 

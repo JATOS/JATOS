@@ -67,7 +67,7 @@
         groupsTable = $('#groupsTable').DataTable({
             "ajax": {
                 "url" : dataUrl,
-                "error": () => Alerts.error("Error reading group data")
+                "error": () => Alerts.error("Error reading group data", 0, true)
             },
             "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-batch gap-1 mt-1 mb-3'B<'mb-2'f><'mb-2'l>>
                     rt
@@ -219,7 +219,7 @@
                 $(button).parent().html(drawFixedGroupButton(groupState));
                 groupsTable.cell(tr, 6).data(groupState);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle group fix")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't toggle group fix", 0, true)
         });
     });
 

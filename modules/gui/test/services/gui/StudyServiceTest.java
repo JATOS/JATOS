@@ -111,12 +111,12 @@ public class StudyServiceTest {
     @Test
     public void deniedOwnershipActionsDoNotModifyStudy() {
         Study study = new Study();
-        User actor = Context.current().args().get(SIGNEDIN_USER);
+        User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         doThrow(new ForbiddenException("Not owner"))
-                .when(authorizationService).checkLockedStudyOwner(eq(study), eq(actor), anyBoolean());
+                .when(authorizationService).checkLockedStudyOwner(eq(study), eq(signedinUser), anyBoolean());
         for (Runnable action : List.<Runnable>of(
-                () -> studyService.changeUserMember(study, actor, true),
-                () -> studyService.changeUserMember(study, actor, false),
+                () -> studyService.changeUserMember(study, signedinUser, true),
+                () -> studyService.changeUserMember(study, signedinUser, false),
                 () -> studyService.addAllUserMembers(study),
                 () -> studyService.removeAllUserMembers(study))) {
             org.junit.Assert.assertThrows(ForbiddenException.class, action::run);
@@ -484,10 +484,11 @@ public class StudyServiceTest {
         // We don't care about the internals of createAndPersistStudy in this test
         doAnswer(inv -> inv.getArgument(0)).when(spy).createAndPersistStudy(any(Study.class));
 
+        when(ioUtils.reserveStudyAssetsDirectory(anyString(), anyString())).thenAnswer(inv -> inv.getArgument(0));
         Study created = spy.createAndPersistStudyAndAssetsDir(props, true);
 
         assertThat(created.getDirName()).isNotEmpty();
-        verify(ioUtils).createStudyAssetsDir(created.getDirName());
+        verify(ioUtils).reserveStudyAssetsDirectory(created.getDirName(), created.getUuid());
         verify(spy).createAndPersistStudy(created);
     }
 
@@ -517,6 +518,8 @@ public class StudyServiceTest {
         verify(batchService).initBatch(defaultBatch, study);
         verify(studyDao).persist(study);
 
+        verifyNoInteractions(studyLogger);
+        callbacks.commit();
         verify(studyLogger).create(study);
         verify(studyLogger).log(study, signedInUser, "Created study");
         verify(studyLogger).logStudyDescriptionHash(study, signedInUser);
@@ -551,6 +554,8 @@ public class StudyServiceTest {
         verify(batchService).initBatch(b2, study);
         verify(studyDao).persist(study);
 
+        verifyNoInteractions(studyLogger);
+        callbacks.commit();
         verify(studyLogger).create(study);
         verify(studyLogger).log(study, signedInUser, "Created study");
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
@@ -578,6 +583,8 @@ public class StudyServiceTest {
         studyService.createAndPersistStudy(study);
 
         verify(studyDao).persist(study);
+        verifyNoInteractions(studyLogger);
+        callbacks.commit();
         verify(studyLogger).create(study);
         verify(studyLogger).log(study, signedInUser, "Created study");
         verify(studyLogger, never()).logStudyDescriptionHash(any(), any());

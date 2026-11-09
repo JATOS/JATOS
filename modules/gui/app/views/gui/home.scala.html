@@ -33,12 +33,14 @@
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
 
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+
     if (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser) {
-        Alerts.info("As a Superuser you have owner privileges on all studies without needing membership.", 0);
+        Alerts.info("As a Superuser you have owner privileges on all studies without needing membership.", 0, true);
     }
 
     if(window.common.termsOfUseUrl) {
-        Alerts.info(`By using this application you agree to the <a href="${window.common.termsOfUseUrl}" target=”_blank”>Terms of Use</a>.`, 0);
+        Alerts.info(`By using this application you agree to the <a href="${Helpers.escapeHtml(window.common.termsOfUseUrl)}" target="_blank">Terms of Use</a>.`, 0, false);
     }
 
     // Load branding

@@ -1,6 +1,7 @@
 package services.gui;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import exceptions.common.ImportExportException;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
 import json.common.DefaultJson;
@@ -36,7 +37,9 @@ public class StudyDeserializer {
         String jsonStr = unchecked(() -> Files.readString(file));
         JsonNode node = mapper.jsonAsJsonNode(jsonStr);
 
-        int version = node.findValue("version").asInt();
+        if (node == null || !node.hasNonNull("version") || !node.path("data").isObject())
+            throw new ImportExportException("File is not a valid JATOS study.");
+        int version = node.path("version").asInt();
         Study study = switch (version) {
             case 0, 1, 2 ->
                     // Version 2

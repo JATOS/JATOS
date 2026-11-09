@@ -458,7 +458,7 @@ paths:
     post:
       summary: Import or create a study
       description: |
-        Imports a JATOS study archive or creates a new study from scratch.
+        Imports a JATOS study archive or creates a study from properties or a local-folder source.
         The endpoint's behavior is determined by the **Content-Type** header.
         ---
 
@@ -473,6 +473,17 @@ paths:
         Initialize a new study using JSON containing the study properties.
         * **Supported Content-Type:** `application/json`.
         * **Request Body:** Must contain a JSON object defining the study's properties.
+        ### 3. Create From a Local Folder
+        Use `application/json` with a `source` object containing `type: LOCAL_FOLDER`
+        and `localFolderPath`, an absolute path on the computer running JATOS.
+        Copies one root `.jas` file and `assets/` without modifying the source.
+        The folder must contain a root `.jas` file or an `assets/` directory, or both.
+        Missing properties use new-study defaults; missing assets produce an empty directory.
+        An existing UUID is rejected with HTTP 409, without overwriting the study.
+        The initiating user owns the new study. Source settings are saved for later synchronization.
+        Server mode with empty allowed roots disables folder sources; nonempty roots restrict both modes.
+        Source requests cannot include study properties or any of the query parameters below.
+        Git source creation is not implemented yet.
       tags: [ study ]
       parameters:
         - in: query
@@ -528,13 +539,15 @@ paths:
             will return HTTP 403 (Forbidden). Default is `true`.
       requestBody:
         description: >-
-          Either a JSON object containing study properties (create) or
+          A JSON object containing study properties or a source definition, or
           a JATOS study archive upload (.jzip).
         required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StudyCreate'
+              oneOf:
+                - $ref: '#/components/schemas/StudyCreate'
+                - $ref: '#/components/schemas/StudySourceCreate'
           multipart/form-data:
             schema:
               type: object
@@ -573,6 +586,12 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         '403':
           $ref: "#/components/responses/ForbiddenError"
+        '409':
+          description: A study with the source UUID already exists. Change its source settings there.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
         '415':
           description: Wrong 'Content-Type' header
 
@@ -3270,6 +3289,28 @@ components:
           description: The role to assign to the user.
       required: [ role ]
       additionalProperties: false
+
+    StudySourceCreate:
+      type: object
+      additionalProperties: false
+      required: [ source ]
+      properties:
+        source:
+          type: object
+          additionalProperties: false
+          required: [ type, localFolderPath ]
+          properties:
+            type:
+              type: string
+              enum: [ LOCAL_FOLDER ]
+            localFolderPath:
+              type: string
+              maxLength: 4096
+              description: Absolute path on the computer running JATOS.
+      example:
+        source:
+          type: LOCAL_FOLDER
+          localFolderPath: /srv/studies/example
 
     StudyCreate:
       allOf:

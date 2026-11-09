@@ -82,7 +82,7 @@
                 "url": "@dataUrl",
                 "dataSrc": "",
                 "beforeSend": WaitingModal.show,
-                "error": () => Alerts.error("Error reading result data"),
+                "error": () => Alerts.error("Error reading result data", 0, true),
                 "complete": WaitingModal.hide
             },
             "dom": `lfrt<'d-flex flex-row flex-wrap justify-content-between align-items-center mt-3'<'mb-2'i><'mb-2 study-results'p>>`,
@@ -303,7 +303,7 @@
         });
         WaitingModal.hide();
         if (ids.length == 0) {
-            Alerts.error("No results selected", 5000);
+            Alerts.error("No results selected", 5000, true);
             return;
         }
         const data = JSON.stringify({"studyResultIds": ids});
@@ -321,7 +321,7 @@
         });
         if (ids.length <= 0) {
             WaitingModal.hide();
-            Alerts.error("No results selected", 5000);
+            Alerts.error("No results selected", 5000, true);
             return;
         }
 
@@ -350,7 +350,7 @@
                         dataTable.row(selectedTr).remove().draw();
                     });
                 },
-                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't delete result"),
+                error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't delete result", 0, true),
                 complete: WaitingModal.hide
             });
         };

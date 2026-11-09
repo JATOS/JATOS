@@ -104,7 +104,7 @@
     import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
     import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
 
-    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.");
+    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.", 10000, true);
 
     $("#studyToolbar").before(InfoCard.render([
         {"name": "Study ID", "value": window.study.id, "tooltip": "This ID is unique within this JATOS instance"},
@@ -129,7 +129,7 @@
                 drawLockButton();
 
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle study lock")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't toggle study lock", 0, true)
         });
     });
 
@@ -182,7 +182,7 @@
                 },
                 error: (err) => {
                     const message = err?.responseJSON?.error?.message ?? "Couldn't delete study";
-                    Alerts.error(message);
+                    Alerts.error(message, 0, true);
                 },
                 complete: WaitingModal.hide
             });
@@ -194,9 +194,9 @@
         $.ajax({
             url : window.routes.Studies.cloneStudy(window.study.id),
             success : function(response) {
-                Alerts.success(`Added clone "${response.title}". <a href="${window.routes.Studies.study(response.id)}">Go to this study.</a>`);
+                Alerts.success(`Added clone "${Helpers.escapeHtml(response.title)}". <a href="${Helpers.escapeHtml(window.routes.Studies.study(response.id))}">Go to this study.</a>`, 5000, false);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't clone study")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't clone study", 0, true)
         });
     });
 </script>

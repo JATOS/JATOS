@@ -6,7 +6,7 @@ import http.common.Http.Context;
 import models.common.Study;
 import org.junit.Test;
 import play.libs.ws.WSResponse;
-import services.gui.ImportExportService;
+import services.gui.StudyArchiveImportExport;
 import testutils.JatosTest;
 
 import java.nio.file.Files;
@@ -44,7 +44,7 @@ public class StudyImportExportIntegrationTest extends JatosTest {
         try {
             Files.write(archive, exported.asByteArray());
             Context.current().args().put(SIGNEDIN_USER, admin);
-            ImportExportService service = application.injector().instanceOf(ImportExportService.class);
+            StudyArchiveImportExport service = application.injector().instanceOf(StudyArchiveImportExport.class);
             try {
                 service.importStudy(archive);
                 Study restored = service.importStudyConfirmed(false, false, false, false);

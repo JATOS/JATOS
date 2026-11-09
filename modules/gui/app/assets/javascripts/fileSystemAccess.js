@@ -56,10 +56,10 @@ async function downloadFileStream(url, postData, rawFileName, csrfToken) {
             { fileName: fileName },
             fileHandle
         );
-        Alerts.success(`Download of <i>${fileName}</i> was successful.`, 0);
+        Alerts.success(`Download of <i>${Helpers.escapeHtml(fileName)}</i> was successful.`, 0, false);
     } catch (err) {
         if (err.name !== 'AbortError') {
-            Alerts.error("Download failed");
+            Alerts.error("Download failed", 0, true);
             console.error("Download failed (" + err + ")");
         }
     } finally {

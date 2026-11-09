@@ -16,7 +16,7 @@ import play.mvc.BodyParser;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.ImportExportService;
+import services.gui.StudyArchiveImportExport;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -34,13 +34,13 @@ public class ImportExport extends Controller {
 
     private static final ALogger LOGGER = Logger.of(ImportExport.class);
 
-    private final ImportExportService importExportService;
+    private final StudyArchiveImportExport studyArchiveImportExport;
     private final DefaultJson defaultJson;
 
     @Inject
-    ImportExport(ImportExportService importExportService,
+    ImportExport(StudyArchiveImportExport studyArchiveImportExport,
                  DefaultJson defaultJson) {
-        this.importExportService = importExportService;
+        this.studyArchiveImportExport = studyArchiveImportExport;
         this.defaultJson = defaultJson;
     }
 
@@ -66,10 +66,10 @@ public class ImportExport extends Controller {
 
         try {
             Path file = filePart.getRef().path();
-            Map<String, Object> resultInfo = importExportService.importStudy(file);
+            Map<String, Object> resultInfo = studyArchiveImportExport.importStudy(file);
             return ok(defaultJson.objAsJsonNode(resultInfo));
         } catch (Exception e) {
-            importExportService.cleanupAfterStudyImport();
+            studyArchiveImportExport.cleanupAfterStudyImport();
             throw e;
         }
     }
@@ -111,13 +111,20 @@ public class ImportExport extends Controller {
 
         long importedStudyId;
         try {
-            Study study = importExportService.importStudyConfirmed(keepProperties, keepAssets,
+            Study study = studyArchiveImportExport.importStudyConfirmed(keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
             importedStudyId = study.getId();
         } finally {
-            importExportService.cleanupAfterStudyImport();
+            studyArchiveImportExport.cleanupAfterStudyImport();
         }
         return ok(Long.toString(importedStudyId));
+    }
+
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER})
+    public Result cancelStudyImport() {
+        studyArchiveImportExport.cancelStudyImport();
+        return noContent();
     }
 
 }

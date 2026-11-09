@@ -32,7 +32,7 @@ class ComponentResultInfo {
                 Helpers.activateTooltips(collapseElement);
             }).fail(function(err) {
                 const errMsg = err.responseText ? err.responseText : "Couldn't get component result data";
-                Alerts.error(errMsg);
+                Alerts.error(errMsg, 0, true);
             });
         }
     }

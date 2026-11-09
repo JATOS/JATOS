@@ -95,7 +95,6 @@
                     <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="myUserSettingsError" class="alert alert-danger d-none" role="alert"></div>
                     <div class="row mb-3">
                         <label for="myUserSettingsName" class="col-sm-3 col-form-label input-required">Name</label>
                         <div class="col-sm-9">
@@ -270,7 +269,7 @@
         FormValidation.clear("#myUserSettingsForm");
         setGitSecretVisibility(false);
         gitCredentialsConfigured = false;
-        $("#myUserSettingsError").addClass("d-none").text("");
+        alerts.hideAll();
         $("#myGitRemoveRow").addClass("d-none");
         $("#myGitFields").removeClass("d-none");
         Helpers.generateModalSubtitles("#myUserSettingsModal", {"Username": window.signedinUser.username});
@@ -321,7 +320,7 @@
         if (error?.fields) {
             FormValidation.show("#myUserSettingsForm", error.fields);
         } else {
-            $("#myUserSettingsError").text(error?.message || "Could not load or save your settings.").removeClass("d-none");
+            alerts.error(error?.message || "Could not load or save your settings.", 0, true);
         }
     }
 
@@ -345,7 +344,7 @@
             data.gitCredentials = credentials;
         }
         settingsForm.find("input, button").prop("disabled", true);
-        $("#myUserSettingsError").addClass("d-none").text("");
+        alerts.hideAll();
         $.ajax({
             type: "PATCH",
             url: window.routes.Api.updateUser(window.signedinUser.id),
@@ -357,7 +356,7 @@
                 window.signedinUser.email = response.data.email;
                 $("#userSidebarName, #navbarUserName").text(response.data.name);
                 $("#myUserSettingsModal").modal("hide");
-                Alerts.success("Your user settings were changed successfully.");
+                Alerts.success("Your user settings were changed successfully.", 5000, true);
             },
             error: settingsError,
             complete: function() {
@@ -385,16 +384,16 @@
             data: $('#changeMyPasswordForm').serialize(),
             success: function(response) {
                 $('#changeMyPasswordModal').modal('hide');
-                Alerts.success("Your password was changed successfully.");
+                Alerts.success("Your password was changed successfully.", 5000, true);
             },
             error: function(err) {
-                alerts.warning("Your password was not changed.", 5000);
+                alerts.warning("Your password was not changed.", 5000, true);
                 if (Helpers.isJson(err.responseText)) {
                     FormValidation.show("#changeMyPasswordForm", err.responseJSON);
                 } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                    alerts.error(err.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't change user's password");
+                    alerts.error("Couldn't change user's password", 0, true);
                 }
             }
         });
@@ -404,7 +403,7 @@
         $.ajax({
             url: window.routes.Users.signedinUserData,
             success: renderDeleteMyUserModal,
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't load user data")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't load user data", 0, true)
         });
     });
 
@@ -469,7 +468,7 @@
     $('#deleteMyUserConfirm').click(function(event) {
         const safetyCheck = $('#deleteMyUserSafetyCheck').prop('checked');
         if (!safetyCheck) {
-            alerts.error("Your user can only be deleted if the checkbox is checked.");
+            alerts.error("Your user can only be deleted if the checkbox is checked.", 0, true);
             return
         }
 
@@ -483,13 +482,13 @@
             },
             error : function(err) {
                 FormValidation.clear("#deleteMyUserModal");
-                alerts.warning("Your user was not deleted.", 5000);
+                alerts.warning("Your user was not deleted.", 5000, true);
                 if (Helpers.isJson(err.responseText)) {
                     FormValidation.show("#deleteMyUserModal", err.responseJSON);
                 } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                    alerts.error(err.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't delete user");
+                    alerts.error("Couldn't delete user", 0, true);
                 }
             }
         });

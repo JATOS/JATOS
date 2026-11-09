@@ -38,6 +38,7 @@
     window.routes.Api.getGroupsOfBatch = (id) => `${basePath}jatos/api/v1/batches/${id}/groups`;
     window.routes.Api.getGroupSession = (id) => `${basePath}jatos/api/v1/groups/${id}/session?asText=true`;
     window.routes.Api.updateGroupSession = (id, version) => `${basePath}jatos/api/v1/groups/${id}/session?version=${version}`;
+    window.routes.Api.importOrCreateStudy = `${basePath}jatos/api/v1/studies`;
     window.routes.Api.getStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source`;
     window.routes.Api.saveStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source`;
     window.routes.ApiTokens = {};
@@ -123,6 +124,7 @@
 
     window.routes.ImportExport = {};
     window.routes.ImportExport.importStudy = `${basePath}jatos/import/study`;
+    window.routes.ImportExport.cancelStudyImport = `${basePath}jatos/import/study`;
     window.routes.ImportExport.importStudyConfirmed = `${basePath}jatos/import/studyConfirmed`;
 
     window.routes.Users = {};

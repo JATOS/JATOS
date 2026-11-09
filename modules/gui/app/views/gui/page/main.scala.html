@@ -58,9 +58,10 @@
 
     // Show messages from RequestScopeMessaging and FlashMessagingHelper
     const messagesRequestScope = @Html(RequestScopeMessaging.asJson());
-    Alerts.showList(messagesRequestScope);
+    // Archive import messages include links to the imported study.
+    Alerts.showList(messagesRequestScope, undefined, false);
     const messagesFlashScope = @Html(FlashMessagingHelper.asJson(request));
-    Alerts.showList(messagesFlashScope);
+    Alerts.showList(messagesFlashScope, undefined, true);
 
     $(document).ready(() => Helpers.activateTooltips());
 

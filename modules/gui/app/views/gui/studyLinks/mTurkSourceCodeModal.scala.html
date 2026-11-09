@@ -46,7 +46,7 @@
             url: window.routes.Api.getStudyCodes(window.study.id, batch.id, "MTurk", "", 1),
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't get study code";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         }).done(response => fillSourceCodeMTurkModal(response.data));
     });
@@ -64,10 +64,10 @@
         $('#mtSourceCode').text(mtSourceCodeTemplate.replace("studyLinkDummy", mtStudyLink));
 
         if (!batch.active) {
-            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
+            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`, 10000, true);
         }
         if (!batch.allowedWorkerTypes.includes("MT")) {
-            alerts.warning(`Type MTurk is currently not allowed in this batch and study links belonging to this type will not run. Activate type "MTurk" to allow study runs.`);
+            alerts.warning(`Type MTurk is currently not allowed in this batch and study links belonging to this type will not run. Activate type "MTurk" to allow study runs.`, 10000, true);
         }
     }
 </script>

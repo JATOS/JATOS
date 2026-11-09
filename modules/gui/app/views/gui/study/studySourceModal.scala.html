@@ -10,7 +10,6 @@
                 <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div id="studySourceError" class="alert alert-danger d-none" role="alert"></div>
                 <form id="studySourceForm" class="form-study" autocomplete="off">
                     <div class="row mb-3">
                         <label class="col-sm-3 col-form-label" for="studySourceType" data-bs-tooltip="Choose where this study's properties and assets come from. Saving these settings does not import or synchronize content. Select None and save to remove the source settings and study-specific Git credentials. Previous synchronization history is retained.">Source</label>
@@ -100,6 +99,7 @@
 
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
 
+    const alerts = new Alerts.Named("study-source");
     const form = $("#studySourceForm");
     const save = $("#studySourceSave");
     let credentialsConfigured = false;
@@ -111,17 +111,19 @@
         credentialsConfigured = false;
         $("#studySourceRemoveCredentialsRow").addClass("d-none");
         $("#studySourceCredentialStatus").text("");
-        $("#studySourceError").addClass("d-none").text("");
+        alerts.hideAll();
         form.find("input, select").prop("disabled", true);
         save.prop("disabled", true);
         $.ajax({
             url: window.routes.Api.getStudySource(window.study.id),
             success: (response) => fillStudySourceForm(response.data),
             error: function(response) {
-                error(response.responseJSON?.error?.message || response.responseText || "Could not load study source settings.");
+                alerts.error(response.responseJSON?.error?.message || response.responseText || "Could not load study source settings.", 0, true);
             }
         });
     });
+
+    $("#studySourceModal").on("hide.bs.modal", alerts.hideAll);
 
     $("#studySourceModal").on("hidden.bs.modal", function() {
         form[0].reset();
@@ -142,7 +144,7 @@
         $("#studySourceUsername").val(data.username);
         $("#studySourceCredentialStatus").text(data.credentialsConfigured ? "Study credentials are configured." : "No study credentials are configured.");
         if (!data.localFolderAllowed && data.type === "LOCAL_FOLDER") {
-            error("Local-folder sources require configured allowed roots in server mode. Select None or Git to change this configuration.");
+            alerts.warning("Local-folder sources require configured allowed roots in server mode. Select None or Git to change this configuration.", 10000, true);
         }
         toggleFieldsByType();
     }
@@ -158,10 +160,6 @@
     $("#studySourceSecretVisibility").on("click", function() {
         setSecretVisibility($("#studySourceSecret").attr("type") === "password");
     });
-
-    function error(message) {
-        $("#studySourceError").text(message).removeClass("d-none");
-    }
 
     function toggleFieldsByType() {
         const type = $("#studySourceType").val();
@@ -195,7 +193,7 @@
         const jsonData = Object.fromEntries(data.map(field => [field.name, ["anonymous", "removeCredentials"].includes(field.name) ? field.value === "true" : field.value]));
         form.find("input, select").prop("disabled", true);
         save.prop("disabled", true);
-        $("#studySourceError").addClass("d-none").text("");
+        alerts.hideAll();
         $.ajax({
             url: window.routes.Api.saveStudySource(window.study.id),
             type: "PUT",
@@ -204,14 +202,14 @@
             data: JSON.stringify(jsonData),
             success: function() {
                 $("#studySourceModal").modal("hide");
-                Alerts.success("Study source settings saved. Study content has not changed.");
+                Alerts.success("Study source settings saved. Study content has not changed.", 5000, true);
             },
             error: function(response) {
                 const details = response.responseJSON?.error;
                 if (details?.fields) {
                     FormValidation.show("#studySourceForm", details.fields);
                 } else {
-                    error(details?.message || response.responseText || "Could not save study source settings.");
+                    alerts.error(details?.message || response.responseText || "Could not save study source settings.", 0, true);
                 }
             },
             complete: function() {

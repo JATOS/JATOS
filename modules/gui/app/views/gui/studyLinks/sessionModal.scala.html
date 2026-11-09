@@ -69,7 +69,7 @@
             success: fillSessionModal,
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't load session data";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         });
     }
@@ -124,16 +124,16 @@
             data: sessionData,
             success: function(response) {
                 $('#sessionModal').modal('hide');
-                Alerts.success("The session data were changed successfully.");
+                Alerts.success("The session data were changed successfully.", 5000, true);
             },
             error: function(err) {
                 FormValidation.clear("#sessionForm");
-                alerts.warning("The session data were not saved.");
+                alerts.warning("The session data were not saved.", 10000, true);
                 const message = err?.responseJSON?.error?.message;
                 if (message) {
-                    alerts.error(message);
+                    alerts.error(message, 0, true);
                 } else {
-                    alerts.error("Couldn't change session data");
+                    alerts.error("Couldn't change session data", 0, true);
                 }
             }
         });

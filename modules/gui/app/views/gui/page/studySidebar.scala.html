@@ -11,13 +11,18 @@
             </button>
             <ul class="dropdown-menu">
                 <li data-bs-dismiss="offcanvas" data-bs-target="#studySidebar">
-                    <button class="dropdown-item" id="importStudy" type="button">
-                        <i class="bi-box-arrow-in-down-right pe-1"></i>Import Study
+                    <button class="dropdown-item" id="createStudy" type="button" data-bs-toggle="modal" data-bs-target="#studyCreatorModal">
+                        <i class="bi-plus-lg fw-bold pe-1"></i>New
                     </button>
                 </li>
                 <li data-bs-dismiss="offcanvas" data-bs-target="#studySidebar">
-                    <button class="dropdown-item" id="createStudy" type="button" data-bs-toggle="modal" data-bs-target="#studyCreatorModal">
-                        <i class="bi-plus-lg fw-bold pe-1"></i>New Study
+                    <button class="dropdown-item" id="importStudy" type="button">
+                        <i class="bi-box-arrow-in-down-right pe-1"></i>Import Archive
+                    </button>
+                </li>
+                <li class="d-none" id="addStudyFromLocalFolderButton" data-bs-dismiss="offcanvas" data-bs-target="#studySidebar">
+                    <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#localFolderStudyModal">
+                        <i class="bi-folder pe-1"></i>From local folder
                     </button>
                 </li>
             </ul>
@@ -41,6 +46,7 @@
 
 @views.html.gui.study.studyCreatorModal(request)
 @views.html.gui.study.studyImportModal(request)
+@views.html.gui.study.localFolderStudyModal(request)
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
@@ -48,6 +54,9 @@
 
     $("#studySidebar").on('show.bs.offcanvas', () => {
         Alerts.hideAll();
+        if (!window.common.isServer || !window.common.isStudySourcesAllowedRootsEmpty) {
+            $("#addStudyFromLocalFolderButton").removeClass("d-none");
+        }
         drawStudyList();
     });
 
@@ -57,7 +66,7 @@
         $.ajax({
             url: window.routes.Home.sidebarData,
             success: (result) => fillStudyList(result),
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get study data for sidebar")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't get study data for sidebar", 0, true)
         });
     }
 

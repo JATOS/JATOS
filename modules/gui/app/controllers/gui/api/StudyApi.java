@@ -45,6 +45,7 @@ import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static general.common.ApiEnvelope.ErrorCode.*;
 import static java.lang.Boolean.TRUE;
+import static messaging.common.FlashMessagingHelper.SUCCESS;
 import static models.common.User.Role.*;
 
 @Singleton
@@ -54,7 +55,8 @@ public class StudyApi extends Controller {
     private final ApiService apiService;
     private final StudyService studyService;
     private final StudySourceService studySourceService;
-    private final ImportExportService importExportService;
+    private final StudyArchiveImportExport studyArchiveImportExport;
+    private final LocalFolderStudyImport localFolderStudyImport;
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final DomainJsonMapper domainJsonMapper;
@@ -66,7 +68,8 @@ public class StudyApi extends Controller {
              ApiService apiService,
              StudyService studyService,
              StudySourceService studySourceService,
-             ImportExportService importExportService,
+             StudyArchiveImportExport studyArchiveImportExport,
+             LocalFolderStudyImport localFolderStudyImport,
              UserDao userDao,
              StudyDao studyDao,
              DomainJsonMapper domainJsonMapper,
@@ -76,7 +79,8 @@ public class StudyApi extends Controller {
         this.apiService = apiService;
         this.studyService = studyService;
         this.studySourceService = studySourceService;
-        this.importExportService = importExportService;
+        this.studyArchiveImportExport = studyArchiveImportExport;
+        this.localFolderStudyImport = localFolderStudyImport;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.domainJsonMapper = domainJsonMapper;
@@ -130,7 +134,7 @@ public class StudyApi extends Controller {
 
     /**
      * Dispatches the request based on the {@code Content-Type} header: 1) ZIP / multipart upload → import a study
-     * archive 2) JSON → create a new study from the request body.
+     * archive 2) JSON → create a study from properties or a configured source.
      *
      * StudyUploadBodyParser selects the parser by content type, spilling binary archives to disk while preserving the
      * normal JSON and multipart limits.
@@ -155,10 +159,40 @@ public class StudyApi extends Controller {
             if (json == null) {
                 throw new BadRequestException("Request body is empty or not valid JSON", INVALID_JSON);
             }
-            return createStudyFromJson(json, renameAssets);
+            if (json.has("source")) {
+                for (String option : List.of("keepProperties", "keepAssets", "keepCurrentAssetsName", "renameAssets")) {
+                    if (request.queryString().containsKey(option)) {
+                        throw new BadRequestException("Query parameter '" + option + "' is not supported for source-based creation.", INVALID_REQUEST);
+                    }
+                }
+                return createStudyFromSource(request, json);
+            } else {
+                return createStudyFromJson(json, renameAssets);
+            }
         }
 
         throw new HttpException(UNSUPPORTED_MEDIA_TYPE, "Wrong 'Content-Type' " + contentType, WRONG_CONTENT_TYPE);
+    }
+
+    private Result createStudyFromSource(Http.Request request, JsonNode json) {
+        if (json.size() != 1) {
+            throw new BadRequestException("Source-based creation cannot include study properties or other fields.", INVALID_REQUEST);
+        }
+        JsonNode source = json.get("source");
+        if (!source.isObject()) throw new BadRequestException("'source' must be a JSON object.", INVALID_REQUEST);
+        if (!"LOCAL_FOLDER".equals(source.path("type").asText())) {
+            throw new BadRequestException("Unsupported source type. Use LOCAL_FOLDER.", INVALID_REQUEST);
+        }
+        source.fieldNames().forEachRemaining(field -> {
+            if (!field.equals("type") && !field.equals("localFolderPath")) {
+                throw new BadRequestException("Unknown source field: " + field, INVALID_REQUEST);
+            }
+        });
+        StudySourceProperties props = strictJson.updateFromJson(new StudySourceProperties(), source);
+        apiService.validateProps(props);
+        var result = localFolderStudyImport.createStudyFromLocalFolder(props.getLocalFolderPath());
+        Context.current().response().putFlash(SUCCESS, result.message());
+        return created(ApiEnvelope.wrap(result.message(), result.study()).asJsonNode());
     }
 
     private Result createStudyFromJson(JsonNode json, boolean renameAssets) {
@@ -205,9 +239,9 @@ public class StudyApi extends Controller {
         }
 
         try {
-            Map<String, Object> importInfo = importExportService.importStudy(file);
+            Map<String, Object> importInfo = studyArchiveImportExport.importStudy(file);
 
-            JsonNode studyNode = importExportService.importStudyConfirmedForApi(
+            JsonNode studyNode = studyArchiveImportExport.importStudyConfirmedForApi(
                     keepProperties,
                     keepAssets,
                     keepCurrentAssetsName,
@@ -217,7 +251,7 @@ public class StudyApi extends Controller {
             boolean wasOverwritten = TRUE.equals(importInfo.get("studyExists"));
             return wasOverwritten ? ok(envelope) : created(envelope);
         } finally {
-            importExportService.cleanupAfterStudyImport();
+            studyArchiveImportExport.cleanupAfterStudyImport();
         }
     }
 
@@ -233,7 +267,7 @@ public class StudyApi extends Controller {
 
         Path zipFile;
         try {
-            zipFile = importExportService.createStudyExportZipFile(study.getId());
+            zipFile = studyArchiveImportExport.createStudyExportZipFile(study.getId());
         } catch (Exception e) {
             String errorMsg = "Export of study \"" + study.getTitle() + "\" (ID " + study.getId() + ") failed.";
             throw new JatosException(errorMsg, e);

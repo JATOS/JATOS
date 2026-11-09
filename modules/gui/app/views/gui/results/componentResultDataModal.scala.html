@@ -34,7 +34,7 @@
                 $('#componentResultData').text(result);
                 $('#componentResultDataModal').modal('show');
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get result data")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't get result data", 0, true)
         });
     });
 </script>

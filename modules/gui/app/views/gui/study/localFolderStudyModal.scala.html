@@ -1,0 +1,69 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
+@* Study import from local folder Modal *@
+<div class="modal fade" id="localFolderStudyModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Import study from local folder</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="localFolderStudyForm" class="form-study">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label for="localFolderStudyPath" class="col-sm-3 col-form-label" data-bs-tooltip="An existing folder on the computer running JATOS. This is not necessarily this browser's computer. The allowed roots might be restrict in JATOS configuration.">Folder path</label>
+                        <div class="col-sm-9"><input id="localFolderStudyPath" name="localFolderPath" class="form-control" maxlength="4096" required></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" id="localFolderStudyImport" class="btn btn-study">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("local-folder-study");
+    const form = $("#localFolderStudyForm");
+    const button = $("#localFolderStudyImport");
+
+    $("#localFolderStudyModal").on("show.bs.modal", function() {
+        form[0].reset();
+        FormValidation.clear("#localFolderStudyForm");
+        alerts.hideAll();
+        form.find("input, button").prop("disabled", false);
+    });
+
+    $("#localFolderStudyModal").on("hide.bs.modal", alerts.hideAll);
+
+    form.on("submit", function(event) {
+        event.preventDefault();
+        if (button.prop("disabled")) return;
+        FormValidation.clear("#localFolderStudyForm");
+        alerts.hideAll();
+        const data = {source: {type: "LOCAL_FOLDER", localFolderPath: $("#localFolderStudyPath").val()}};
+        form.find("input, button").prop("disabled", true);
+        $.ajax({
+            url: window.routes.Api.importOrCreateStudy,
+            type: "POST",
+            contentType: "application/json",
+            headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
+            data: JSON.stringify(data),
+            success: function(response) {
+                window.location.href = window.routes.Studies.study(response.data.id);
+            },
+            error: function(response) {
+                const error = response.responseJSON?.error;
+                if (error?.fields) FormValidation.show("#localFolderStudyForm", error.fields);
+                else alerts.error(error?.message ?? "Could not import study from local folder.", 0, true);
+                form.find("input, button").prop("disabled", false);
+            }
+        });
+    });
+</script>

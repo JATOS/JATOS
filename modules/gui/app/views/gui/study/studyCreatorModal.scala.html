@@ -53,13 +53,13 @@
             },
             error : function(response) {
                 FormValidation.clear("#studyCreatorForm");
-                alerts.warning("The study was not added.", 5000);
+                alerts.warning("The study was not added.", 5000, true);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#studyCreatorForm", response.responseJSON);
                 } else if (response.responseText) {
-                    alerts.error(response.responseText);
+                    alerts.error(response.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't add a new study");
+                    alerts.error("Couldn't add a new study", 0, true);
                 }
             }
         });

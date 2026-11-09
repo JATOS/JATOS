@@ -74,7 +74,7 @@
         initMemberUserTable();
         memberUserTable.columns.adjust(); // Needed for column width after toggle button drawing
         if (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser) {
-            alerts.info("As a Superuser you have owner privileges on all studies without needing membership.");
+            alerts.info("As a Superuser you have owner privileges on all studies without needing membership.", 5000, true);
         }
     });
 
@@ -97,7 +97,7 @@
                     $("#changeMemberUsersAddAll").toggleClass("d-none", !isOwner || !isAllowedToAddAllUsers);
                     return response.data;
                 },
-                "error": () => Alerts.error("Cannot read member users data.")
+                "error": () => Alerts.error("Cannot read member users data.", 0, true)
             },
             "dom": "t<'row'<'mt-2'p>>",
             "order": [[ 0, "asc" ]],
@@ -160,7 +160,7 @@
             success: function(user) {
                 memberUserTable.ajax.reload();
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't add all users")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't add all users", 0, true)
         });
     });
 
@@ -170,7 +170,7 @@
             type : "DELETE",
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => memberUserTable.ajax.reload(),
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't remove all users")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't remove all users", 0, true)
         });
     });
 
@@ -186,7 +186,7 @@
                 $("#changeMemberUsersForm")[0].reset();
                 alterTableAfterUserAdding(user);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle member user")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle member user", 0, true)
         });
     });
 
@@ -197,7 +197,7 @@
             if (tableMember.username.toLowerCase() === user.username.toLowerCase()) {
                 isAlreadyInTable = true;
                 if (tableMember.isMember) {
-                    alerts.info(`User ${user.name} (${user.username}) is already member.`);
+                    alerts.info(`User ${user.name} (${user.username}) is already member.`, 5000, true);
                 } else {
                     const button = $(this.node()).find('.change-member-users-toggle');
                     button.html($(button.html())
@@ -218,7 +218,7 @@
         const member = memberUserTable.row($(this).closest('tr')).data();
         if (!isOwner || !member.isMember || member.isOwner) return;
         if (!member.transferConfirmation) {
-            alerts.warning(`Transfer ownership to ${member.name} (${member.username})? The previous owner (you) remains a member and loses ownership privileges. Click the same "Make owner" button again to confirm.`, 30000);
+            alerts.warning(`Transfer ownership to ${member.name} (${member.username})? The previous owner (you) remains a member and loses ownership privileges. Click the same "Make owner" button again to confirm.`, 30000, true);
             member.transferConfirmation = true;
             return;
         }
@@ -229,7 +229,7 @@
             type: 'PUT',
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => window.location.reload(),
-            error: err => alerts.error(err?.responseJSON?.error?.message ?? 'Could not transfer ownership.'),
+            error: err => alerts.error(err?.responseJSON?.error?.message ?? 'Could not transfer ownership.', 0, true),
             complete: () => button.prop('disabled', false)
         });
     });
@@ -238,7 +238,7 @@
         const tr = $(this).closest('tr');
         const tableMember = memberUserTable.row(tr).data();
         if (tableMember.username === window.signedinUser.username && !tableMember.removeConfirmation) {
-            alerts.warning('Are you sure you want to remove yourself from this study? Click the button again to confirm.', 30000);
+            alerts.warning('Are you sure you want to remove yourself from this study? Click the button again to confirm.', 30000, true);
             tableMember.removeConfirmation = true;
             return;
         }
@@ -255,7 +255,7 @@
                 }
                 memberUserTable.row(tr).data(user);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle member user")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle member user", 0, true)
         });
     });
 </script>

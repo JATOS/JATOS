@@ -47,7 +47,7 @@
             success: showStudyLogModal,
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't get study log.";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         });
     });
@@ -60,12 +60,12 @@
         try {
             studyLog = JSON.parse(studyLogRaw);
         } catch(e) {
-            alerts.error("Couldn't parse study log. This study's log is corrupted. You can only see the raw content here.");
+            alerts.error("Couldn't parse study log. This study's log is corrupted. You can only see the raw content here.", 0, true);
             showStudyLogRaw();
             return;
         }
         if (typeof studyLog[0] === 'string' && studyLog[0].includes("Error")) {
-            alerts.error("Couldn't get study log.");
+            alerts.error("Couldn't get study log.", 0, true);
         }
         const entryLimit = studyLog.length - 1;
         if (typeof studyLog[entryLimit] === 'string' && studyLog[entryLimit].includes("Log is cut here")) {

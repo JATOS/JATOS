@@ -32,8 +32,6 @@
                     <select id="newStudyOwner" class="form-select"></select>
                     <p class="mt-3">Choose an existing member. The previous owner remains a member.</p>
                 </div>
-                <p id="changeOwnerWarning" class="text-warning d-none" role="status">This study has no other members to receive ownership.</p>
-                <p id="changeOwnerError" class="text-danger" role="alert"></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -48,6 +46,9 @@
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
 
+    const changeOwnerAlerts = new Alerts.Named("change-study-owner");
+    $("#changeOwnerModal").on("hide.bs.modal", changeOwnerAlerts.hideAll);
+
     let dataTable;
     $(document).ready(function() {
         dataTable = $('#studyManagerTable').DataTable({
@@ -55,7 +56,7 @@
                 "url" : window.routes.Admin.allStudiesData,
                 "dataSrc": "",
                 "beforeSend": WaitingModal.show,
-                "error": () => Alerts.error("Error reading study data"),
+                "error": () => Alerts.error("Error reading study data", 0, true),
                 "complete": WaitingModal.hide
             },
             "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-admin mt-1 mb-3'<'mb-2'f><'mb-2'l>>
@@ -187,23 +188,24 @@
         Helpers.generateModalSubtitles("#changeOwnerModal", {"ID": ownerStudy.id, "Title": ownerStudy.title});
 
         $('#changeOwnerCurrent').text(`Current owner: ${ownerStudy.ownerUsername}`);
-        $('#changeOwnerError').empty();
+        changeOwnerAlerts.hideAll();
         const select = $('#newStudyOwner').empty();
         ownerStudy.members.filter(member => member.username !== ownerStudy.ownerUsername).forEach(member => {
             select.append($('<option>').val(member.id).text(`${member.name} (${member.username})`));
         });
         const hasOtherMembers = select.children().length > 0;
         $('#changeOwnerForm').toggleClass('d-none', !hasOtherMembers);
-        $('#changeOwnerWarning').toggleClass('d-none', hasOtherMembers);
+        if (!hasOtherMembers) changeOwnerAlerts.warning("This study has no other members to receive ownership.", 0, true);
         $('#confirmChangeOwner').prop('disabled', !hasOtherMembers);
         $('#changeOwnerModal').modal('show');
     });
 
     $('#confirmChangeOwner').on('click', function() {
+        changeOwnerAlerts.hideAll();
         const studyId = $('#changeOwnerModal').data('studyId');
         const ownerStudy = dataTable.row((index, study) => study.id === studyId).data();
         if (!ownerStudy) {
-            $('#changeOwnerError').text('This study is no longer available. Close the dialog and refresh the study list.');
+            changeOwnerAlerts.error('This study is no longer available. Close the dialog and refresh the study list.', 0, true);
             return;
         }
         const button = $(this).prop('disabled', true);
@@ -213,10 +215,10 @@
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => {
                 $('#changeOwnerModal').modal('hide');
-                Alerts.success('Study ownership reassigned.');
+                Alerts.success('Study ownership reassigned.', 5000, true);
                 dataTable.ajax.reload(null, false);
             },
-            error: err => $('#changeOwnerError').text(err?.responseJSON?.error?.message ?? 'Could not reassign ownership.'),
+            error: err => changeOwnerAlerts.error(err?.responseJSON?.error?.message ?? 'Could not reassign ownership.', 0, true),
             complete: () => button.prop('disabled', false)
         });
     });
@@ -239,7 +241,7 @@
             },
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't toggle study activation";
-                Alerts.error(message);
+                Alerts.error(message, 0, true);
             }
         });
     });
@@ -253,7 +255,7 @@
             success: function(response) {
                 $(button).parent().text(response.humanReadable);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get study assets size")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't get study assets size", 0, true)
         });
     });
 
@@ -266,7 +268,7 @@
             success: function(response) {
                 $(button).parent().text(response.humanReadable);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't get result data size")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't get result data size", 0, true)
         });
     });
 
@@ -279,7 +281,7 @@
             success: function(response) {
                 $(button).parent().text(response.humanReadable);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't result file size")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't result file size", 0, true)
         });
     });
 

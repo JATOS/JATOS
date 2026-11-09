@@ -98,7 +98,7 @@
                 Helpers.activatePopovers("#latestStudyRuns");
                 $("#latestUsers .timeago, #latestStudyRuns .timeago").each((i, e) => timeago.render(e)); // Render timeago
             },
-            error: () => Alerts.warning("Couldn't get JATOS status.")
+            error: () => Alerts.warning("Couldn't get JATOS status.", 10000, true)
         });
     })();
 

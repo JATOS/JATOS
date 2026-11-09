@@ -24,13 +24,15 @@ import java.io.IOException;
 import java.util.Objects;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static general.common.ApiEnvelope.ErrorCode.*;
+import static general.common.ApiEnvelope.ErrorCode.CONFIG_ERROR;
 
 /**
- * Owner-only source configuration; saving does not fetch or import source content.
+ * Handles reading, validating, and saving a study’s source configuration. Saving does not fetch or import source
+ * content.
  */
 @Singleton
 public class StudySourceService {
+
     private final JpaTransactions transactions;
     private final UserDao users;
     private final StudyDao studies;
@@ -58,8 +60,8 @@ public class StudySourceService {
 
     public StudySourceProperties get(long studyId) {
         return transactions.withTransaction(em -> {
-            User actor = getSignedInUserWithCredentials();
-            Study study = getOwnedStudy(studyId, actor);
+            User signedinUser = getSignedInUserWithCredentials();
+            Study study = getOwnedStudy(studyId, signedinUser);
             StudySource source = study.getStudySource();
             // Reading an unconfigured study must not create a persisted source.
             if (source == null) source = new StudySource(study);
@@ -67,13 +69,17 @@ public class StudySourceService {
         });
     }
 
+    /**
+     * Validates and saves source settings and credentials for an owner or enabled superuser, preserving sync history.
+     */
     public StudySourceProperties save(long studyId, StudySourceProperties props) {
         return transactions.withTransaction(em -> {
             User signedInUser = getSignedInUserWithCredentials();
             Study study = getOwnedStudy(studyId, signedInUser);
 
             var errors = props.validate();
-            if (errors != null) throw new FieldValidationException(errors.getFirst().key(), errors.getFirst().message());
+            if (errors != null)
+                throw new FieldValidationException(errors.getFirst().key(), errors.getFirst().message());
 
             StudySource source = study.getStudySource();
             if (source == null) source = new StudySource(study);
@@ -102,7 +108,7 @@ public class StudySourceService {
             study.setStudySource(source);
 
             if (props.getType() != StudySource.Type.GIT || props.isRemoveCredentials()) {
-                credentials.removeGitCredentialsFromSource(studyId);
+                if (source.getGitCredentials() != null) credentials.removeGitCredentialsFromSource(studyId);
             } else if (replaceCredentials || updateUsername) {
                 credentials.saveGitCredentialsForSource(studyId, props.getUsername(),
                         HttpUtils.getGitOriginFromRepositoryUrl(source.getGitUrl()), props.getSecret());
@@ -120,8 +126,8 @@ public class StudySourceService {
     }
 
     private User getSignedInUserWithCredentials() {
-        User actor = Context.current().args().getOrElse(SIGNEDIN_USER, null);
-        return users.findByUsernameWithGitCredentialsAndLock(actor.getUsername());
+        User signedinUser = Context.current().args().getOrElse(SIGNEDIN_USER, null);
+        return users.findByUsernameWithGitCredentialsAndLock(signedinUser.getUsername());
     }
 
     private Study getOwnedStudy(long studyId, User user) {
@@ -131,7 +137,9 @@ public class StudySourceService {
         return study;
     }
 
-    /** Copies validated settings and clears inactive fields without changing sync history. */
+    /**
+     * Copies validated settings and clears inactive fields without changing sync history.
+     */
     private void bindToSource(StudySource source, StudySourceProperties props, String localFolder) {
         source.setType(props.getType());
         source.setGitUrl(props.getType() == StudySource.Type.GIT ? props.getGitUrl().trim() : null);

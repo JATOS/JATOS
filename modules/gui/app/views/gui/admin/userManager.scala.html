@@ -231,7 +231,7 @@
                 "url": window.routes.Users.allUserData,
                 "dataSrc": "",
                 "beforeSend": WaitingModal.show,
-                "error": () => Alerts.error("Error reading user data"),
+                "error": () => Alerts.error("Error reading user data", 0, true),
                 "complete": WaitingModal.hide
             },
             "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-admin gap-1 mt-1 mb-3'Bfl>
@@ -543,18 +543,18 @@
             success: function(user) {
                 $('#userCreatorModal').modal('hide');
                 FormValidation.clear("#userCreatorForm");
-                Alerts.success(`The user "${user.username}" was added successfully.`);
+                Alerts.success(`The user "${user.username}" was added successfully.`, 5000, true);
                 dataTable.row.add(user).draw();
             },
             error: function(response) {
                 FormValidation.clear("#userCreatorForm");
-                Alerts.warning("The user was not added.", 5000);
+                Alerts.warning("The user was not added.", 5000, true);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#userCreatorForm", response.responseJSON);
                 } else if (response.responseText) {
-                    alerts.error(response.responseText);
+                    alerts.error(response.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't add a new user");
+                    alerts.error("Couldn't add a new user", 0, true);
                 }
             }
         });
@@ -586,7 +586,7 @@
                 Helpers.activateTooltips(collapseElement);
             }).fail(function(err) {
                 const errMsg = err.responseText ? err.responseText : "Couldn't get study data by user";
-                alerts.error(errMsg);
+                alerts.error(errMsg, 0, true);
             }).always(WaitingModal.hide);
         }
     });
@@ -657,7 +657,7 @@
             },
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't toggle user activation";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         });
     });
@@ -680,7 +680,7 @@
                 const isUser = user.roles.includes("USER");
                 $(checkbox).prop('checked', isUser);
             },
-            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts("Couldn't change user roles")
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message, 0, true) : alerts("Couldn't change user roles")
         });
     });
 
@@ -701,7 +701,7 @@
                 const isSuperuser = roles.includes("SUPERUSER");
                 $(checkbox).prop('checked', isSuperuser);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle superuser role")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle superuser role", 0, true)
         });
     });
 
@@ -722,7 +722,7 @@
                 const isAdmin = roles.includes("ADMIN");
                 $(checkbox).prop('checked', isAdmin);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle admin rights")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle admin rights", 0, true)
         });
     });
 
@@ -778,19 +778,19 @@
                 data: $('#userSettingsForm').serialize(),
                 success: function() {
                     $('#userSettingsModal').modal('hide');
-                    alerts.success(`${user.username}'s settings were changed successfully.`);
+                    alerts.success(`${user.username}'s settings were changed successfully.`, 5000, true);
                     user.name = $('#userSettingsName').val();
                     user.email = $('#userSettingsEmail').val();
                     dataTable.row(tr).data(user);
                 },
                 error: function(err) {
-                    alerts.warning(`${user.username}'s settings were not changed.`, 5000);
+                    alerts.warning(`${user.username}'s settings were not changed.`, 5000, true);
                     if (Helpers.isJson(err.responseText)) {
                         FormValidation.show("#userSettingsForm", err.responseJSON);
                     } else if (err.responseText) {
-                        alerts.error(err.responseText);
+                        alerts.error(err.responseText, 0, true);
                     } else {
-                        alerts.error("Couldn't change user settings");
+                        alerts.error("Couldn't change user settings", 0, true);
                     }
                 }
             });
@@ -817,16 +817,16 @@
                 data: $('#changePasswordForm').serialize(),
                 success: function(response) {
                     $('#changePasswordModal').modal('hide');
-                    alerts.success(`${user.username}'s password was changed successfully.`);
+                    alerts.success(`${user.username}'s password was changed successfully.`, 5000, true);
                 },
                 error: function(err) {
-                    alerts.warning(`${user.username}'s password was not changed.`, 5000);
+                    alerts.warning(`${user.username}'s password was not changed.`, 5000, true);
                     if (Helpers.isJson(err.responseText)) {
                         FormValidation.show("#changePasswordForm", err.responseJSON);
                     } else if (err.responseText) {
-                        alerts.error(err.responseText);
+                        alerts.error(err.responseText, 0, true);
                     } else {
-                        alerts.error("Couldn't change user password");
+                        alerts.error("Couldn't change user password", 0, true);
                     }
                 }
             });
@@ -853,24 +853,24 @@
                 success: function(response) {
                     row.remove().draw();
                     $('#deleteUserModal').modal('hide');
-                    Alerts.success(`User "${user.username}" was deleted successfully.`);
+                    Alerts.success(`User "${user.username}" was deleted successfully.`, 5000, true);
                     const reassignments = response.ownershipReassignments ?? [];
                     if (reassignments.length) {
                         const items = reassignments.map(change => `
-                            <li>${change.studyTitle} (ID: ${change.studyId}) — new owner is ${change.newOwnerUsername}</li>
+                            <li>${Helpers.escapeHtml(change.studyTitle)} (ID: ${change.studyId}) — new owner is ${Helpers.escapeHtml(change.newOwnerUsername)}</li>
                         `).join('');
-                        Alerts.info(`Study ownership reassigned:<ul>${items}</ul>`, 0);
+                        Alerts.info(`Study ownership reassigned:<ul>${items}</ul>`, 0, false);
                     }
                 },
                 error: function(err) {
                     FormValidation.clear("#deleteUserForm");
-                    alerts.warning(`User ${user.username} was not deleted.`, 5000);
+                    alerts.warning(`User ${user.username} was not deleted.`, 5000, true);
                     if (Helpers.isJson(err.responseText)) {
                         FormValidation.show("#deleteUserForm", err.responseJSON);
                     } else if (err.responseText) {
-                        alerts.error(err.responseText);
+                        alerts.error(err.responseText, 0, true);
                     } else {
-                        alerts.error("Couldn't delete user");
+                        alerts.error("Couldn't delete user", 0, true);
                     }
                 }
             });

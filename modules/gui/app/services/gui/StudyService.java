@@ -6,6 +6,7 @@ import daos.common.StudyDao;
 import daos.common.UserDao;
 import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
+import exceptions.common.JatosException;
 import exceptions.common.ValidationException;
 import general.common.JpaTransactions;
 import general.common.StudyLogger;
@@ -25,6 +26,7 @@ import utils.common.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -274,18 +276,23 @@ public class StudyService {
             study.setDirName(study.getUuid());
         }
 
-        boolean uploadedDirExists = ioUtils.checkStudyAssetsDirExists(study.getDirName());
-        if (uploadedDirExists) {
+        return transactions.withTransaction(em -> {
             if (renameAssets) {
-                String newDirName = ioUtils.findNonExistingStudyAssetsDirName(study.getDirName());
-                study.setDirName(newDirName);
+                study.setDirName(unchecked(() -> ioUtils.reserveStudyAssetsDirectory(study.getDirName(), study.getUuid())));
             } else {
-                throw new ForbiddenException("Cannot create study: a study assets directory with the same name exists already, but 'renameAssets' is set to false.");
+                try {
+                    ioUtils.createStudyAssetsDir(study.getDirName());
+                } catch (FileAlreadyExistsException e) {
+                    throw new ForbiddenException("Cannot create study: a study assets directory with the same name exists already, but 'renameAssets' is set to false.");
+                } catch (IOException e) {
+                    throw new JatosException(e);
+                }
             }
-        }
-
-        unchecked(() -> ioUtils.createStudyAssetsDir(study.getDirName()));
-        return createAndPersistStudy(study);
+            String dirName = study.getDirName();
+            transactions.afterCompletion("Clean up assets after failed study creation", () -> {},
+                    () -> ioUtils.removeStudyAssetsDir(dirName));
+            return createAndPersistStudy(study);
+        });
     }
 
     /**
@@ -310,11 +317,13 @@ public class StudyService {
 
             studyDao.persist(managedStudy);
 
-            studyLogger.create(managedStudy);
-            studyLogger.log(managedStudy, managedSignedinUser, "Created study");
-            if (!Strings.isNullOrEmpty(managedStudy.getDescription())) {
-                studyLogger.logStudyDescriptionHash(managedStudy, managedSignedinUser);
-            }
+            transactions.afterCommit("Log study creation", () -> {
+                studyLogger.create(managedStudy);
+                studyLogger.log(managedStudy, managedSignedinUser, "Created study");
+                if (!Strings.isNullOrEmpty(managedStudy.getDescription())) {
+                    studyLogger.logStudyDescriptionHash(managedStudy, managedSignedinUser);
+                }
+            });
             return managedStudy;
         });
     }

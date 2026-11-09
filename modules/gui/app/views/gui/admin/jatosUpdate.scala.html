@@ -70,23 +70,23 @@
                 showUpdateAvailable(releaseInfo);
                 break;
             case "DOWNLOADING":
-                Alerts.info("JATOS is currently downloading an update.");
+                Alerts.info("JATOS is currently downloading an update.", 5000, true);
                 break;
             case "DOWNLOADED":
                 showUpdateJatosModalDownloaded();
                 break;
             case "MOVING":
             case "RESTARTING":
-                Alerts.warning("JATOS is currently restarting to finish an update. Please wait.");
+                Alerts.warning("JATOS is currently restarting to finish an update. Please wait.", 10000, true);
                 break;
             case "SUCCESS":
-                Alerts.info("JATOS was successfully updated to " + releaseInfo.currentVersionFull);
+                Alerts.info("JATOS was successfully updated to " + releaseInfo.currentVersionFull, 5000, true);
                 break;
             case "FAILED":
-                Alerts.error("Something went wrong in an JATOS update. More information can be found in the application logs.");
+                Alerts.error("Something went wrong in an JATOS update. More information can be found in the application logs.", 0, true);
                 break;
             default:
-                Alerts.error("Unknown UpdateState " + releaseInfo.currentUpdateState);
+                Alerts.error("Unknown UpdateState " + releaseInfo.currentUpdateState, 0, true);
         }
     }
 
@@ -171,7 +171,7 @@
     function cancelUpdate() {
         $.ajax({
             url: window.routes.Updates.cancelUpdate,
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't cancel the update")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't cancel the update", 0, true)
         });
     }
 
@@ -185,7 +185,7 @@
             timeout: 0, // Do not time out
             success: showUpdateJatosModalDownloaded,
             error: function(err) {
-                err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during the JATOS downloading: check the application logs");
+                err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Something went wrong during the JATOS downloading: check the application logs", 0, true);
             },
             complete: WaitingModal.hide
         });
@@ -220,14 +220,14 @@
             url: window.routes.Updates.updateAndRestart(false),
             timeout: 0, // Do not timeout
             success: function() {
-                Alerts.info(`Restarting now to finish the update to version ${version}. It usually takes under a minute. Refresh this page every now and then.`, 0);
+                Alerts.info(`Restarting now to finish the update to version ${version}. It usually takes under a minute. Refresh this page every now and then.`, 0, true);
             },
             error: function(err) {
                 if (err.status === 0) {
                     // JATOS is restarting - nothing to do here
-                    Alerts.info(`Restarting now to finish the update to version ${version}. It usually takes under a minute. Refresh this page every now and then.`, 0);
+                    Alerts.info(`Restarting now to finish the update to version ${version}. It usually takes under a minute. Refresh this page every now and then.`, 0, true);
                 } else {
-                    err.responseText ? Alerts.error(err.responseText) : Alerts.error("Something went wrong during update and restart: check the application logs")
+                    err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Something went wrong during update and restart: check the application logs", 0, true)
                 }
             }
         });

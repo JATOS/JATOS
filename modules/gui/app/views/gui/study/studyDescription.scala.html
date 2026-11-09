@@ -96,12 +96,12 @@
                 $("#studyDescription").data("markdown", markdown);
                 draw();
                 toggleEditor();
-                alerts.success("The study description was changed successfully.");
+                alerts.success("The study description was changed successfully.", 5000, true);
             },
             error: function(err) {
-                alerts.warning("The study description was not saved.", 5000);
+                alerts.warning("The study description was not saved.", 5000, true);
                 const errMsg = err.responseText ? err.responseText : "Couldn't save study description";
-                alerts.error(errMsg);
+                alerts.error(errMsg, 0, true);
             }
         });
     });
