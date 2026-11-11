@@ -1042,82 +1042,76 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
     jatos.onError = function (onError) {
         console.warn("jatos.onError is abolished - use the specific function's error callback or Promise function");
     };
-    
+
     /**
-     * Custom function to convert JSON array with mismatched keys to a CSV format,
-     * Specially useful to convert PsychoPy JSON data to CSV
+     * Converts row objects to delimited text with CRLF between records.
+     * Objects and arrays are written as JSON text in one field.
+     * Null, undefined, and missing values become quoted empty fields.
      *
-     * @param {Object[]} dataArray - JSON data array to be converted, where each
-     * element is an object representing one row (entries may have differing keys)
-     * @param {string} [csvSeparator=','] - the delimiter to use between fields
-     *    (e.g. ',' for CSV, '\t' for TSV)
-     * @param {string} [encoding='UTF8'] - Output encoding: 'UTF8' or 'UTF8BOM'.
-     *    Use 'UTF8BOM' to include a Byte Order Mark for compatibility with Excel.
-     * @return {string} csvData - the resulting CSV-formatted string, with a header
-     *   row containing all keys found across the input objects
+     * @param {Object[]} dataArray - One object per row; keys may differ.
+     * @param {string} [csvSeparator=','] - Field separator.
+     * @param {boolean} [useBOM=false] - Whether to prepend a Unicode BOM.
+     * @returns {string} Delimited text, or an empty string if there are no rows.
+     * @throws {TypeError} If an argument or cell value is unsupported.
      */
-    jatos.convertToCSV = function(dataArray, csvSeparator = ",", encoding = "UTF8") {
-    	// validates dataArray
-    	if (!Array.isArray(dataArray)) {
-    		throw new Error('ERROR: dataArray must be an array');
-    	}
-    	
-    	// return blank if empty
-    	if (dataArray.length === 0) return '';      
+    jatos.convertToCSV = function (dataArray, csvSeparator = ",", useBOM = false) {
+        if (!Array.isArray(dataArray)) {
+            throw new TypeError("dataArray must be an array of row objects");
+        }
+        if (typeof csvSeparator !== "string" || !csvSeparator || /["\r\n]/.test(csvSeparator)) {
+            throw new TypeError("csvSeparator must be a non-empty string without double quotes, CR, or LF");
+        }
+        if (typeof useBOM !== "boolean") {
+            throw new TypeError("useBOM must be a boolean");
+        }
+        if (!dataArray.length) return "";
 
-    	// validates each row is an object and not null/undefined
-    	for (let i = 0; i < dataArray.length; i++) {
-    		const row = dataArray[i];
-    		if (row == null || typeof row !== 'object') {
-    			throw new Error(`ERROR: Row at index ${i} must be a non-null object`);
-    		}
-    	}
+        const keys = new Set();
+        for (const [i, row] of dataArray.entries()) {
+            if (row == null || typeof row !== "object" || Array.isArray(row)) {
+                throw new TypeError("Row at index " + i + " must be a non-null, non-array object");
+            }
+            for (const key of Object.keys(row)) keys.add(key);
+        }
+        const headers = [...keys];
 
-    	// validates csvSeparator
-    	const isInvalidSeparator = 
-    		csvSeparator.length === 0 ||
-    		typeof csvSeparator !== 'string' ||
-    		csvSeparator.includes('"') ||
-    		csvSeparator.includes('\r') ||
-    		csvSeparator.includes('\n');
-    	if (isInvalidSeparator) {
-    		throw new Error('ERROR: csvSeparator must be a non-empty string without quotes or newline');
-    	}
-
-    	// validates encoding
-    	if (encoding !== "UTF8" && encoding !== "UTF8BOM") {
-    		throw new Error('encoding must be "UTF8" or "UTF8BOM"');
-    	}
-    	
-    	// Collect all unique keys across every row
-    	const headersSet = new Set();
-    	dataArray.forEach(row => Object.keys(row).forEach(key => headersSet.add(key)));
-    	const headers = Array.from(headersSet);
-        const csvRows = [];
-
-        const escape = (val) => {
-        	val = (val === undefined || val === null) ? '' : String(val);
-        	const containsSeparator = val.includes(csvSeparator);
-        	const containsNewline = /[\n\r\u2028\u2029]/.test(val); // All line breaks
-        	const containsQuote = val.includes('"');
-        	const needsQuotes = containsSeparator || containsNewline || containsQuote;
-
-        	if (needsQuotes) {
-        		return `"${val.replace(/"/g, '""')}"`;
-        	}
-        	return val;
+        // Prevent characters inside a value from being mistaken for CSV syntax
+        const escapeCsvField = field => {
+            if (!field || csvSeparator.length > 1 ||
+                field.includes(csvSeparator) || /["\r\n\u2028\u2029]/.test(field)) {
+                return '"' + field.replace(/"/g, '""') + '"';
+            }
+            return field;
         };
-    	csvRows.push(headers.map(escape).join(csvSeparator));
-    
-    	for (const row of dataArray) {
-    		csvRows.push(headers.map(header => escape(row[header])).join(csvSeparator));
-    	}
 
-    	if (encoding === "UTF8BOM") {
-    		return '\ufeff' + csvRows.join('\n');
-    	} else {
-    		return csvRows.join('\n');
-    	}
+        const records = [headers.map(escape).join(csvSeparator)];
+        for (const [i, row] of dataArray.entries()) {
+            const fields = headers.map(header => {
+                const value = Object.hasOwn(row, header) ? row[header] : undefined;
+
+                if (value == null) return '""';
+
+                if (["string", "number", "boolean"].includes(typeof value)) {
+                    return escapeCsvField(String(value));
+                }
+
+                const location = `row index ${i}, column ${JSON.stringify(header)}`;
+
+                if (typeof value === "object") {
+                    try {
+                        const json = JSON.stringify(value);
+                        if (json !== undefined) return escapeCsvField(json);
+                    } catch (error) {
+                        throw new TypeError(`Cannot serialize value at ${location} as JSON`, { cause: error });
+                    }
+                }
+
+                throw new TypeError(`Unsupported value at ${location}`);
+            });
+            records.push(fields.join(csvSeparator));
+        }
+
+        return (useBOM ? "\uFEFF" : "") + records.join("\r\n");
     };
 
     /**
