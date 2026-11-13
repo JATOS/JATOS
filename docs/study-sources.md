@@ -15,8 +15,8 @@ Choose one source:
   running JATOS. It does not refer to the browser's computer.
 
 Saving settings does not fetch a repository, copy files, or synchronize study
-content. Connection testing, ingestion, credential fallback resolution, and
-the Sync action are separate implementation steps. Export remains available
+content. Local-folder creation and synchronization are available. Git ingestion and
+credential fallback resolution remain separate implementation steps. Export remains available
 as a backup.
 
 ## Git credentials
@@ -61,8 +61,8 @@ also controls local-installation UI hints and can be set with JATOS_IS_SERVER.
 
 Git sources are unaffected. Configure absolute roots that exist on the JATOS
 host. Validation uses real paths so symlinks cannot escape configured roots.
-Saving settings neither modifies nor imports the source folder. Future creation
-and synchronization must apply the same rules and revalidate access when reading.
+Saving settings neither modifies nor imports the source folder. Creation
+and synchronization apply the same rules and revalidate access when reading.
 
 If configuration changes disallow an existing source, its settings remain
 visible and it can still be removed or switched to Git. Folder availability in
@@ -88,8 +88,7 @@ requests with that header cannot fall back to a session cookie.
 
 `LocalStudySourceIO.stage(path)` now copies source content into an isolated
 `study-source-*` directory under JATOS's configured temporary directory. That
-temporary directory must already exist. The creation endpoint below now uses this staging operation. Synchronization is
-not connected yet. The
+temporary directory must already exist. Creation and synchronization use this staging operation. The
 caller must first authorize the operation, and must use try-with-resources on
 the returned `StagedStudySource` to remove temporary files when finished.
 
@@ -142,8 +141,8 @@ existing assets are never overwritten. The external folder is copied, not moved.
 
 The initiating user owns the new study. Source database IDs and memberships are
 not imported. The local-folder source configuration is saved automatically, ready
-for future synchronization. Success returns HTTP 201 with the study in `data`.
-The GUI displays a reminder to test the study and a link to open it.
+for synchronization. Success returns HTTP 201 with the study in `data`.
+The GUI redirects to the new study and displays a flash message identifying the imported content.
 
 An existing study UUID returns HTTP 409 with an informational message. No update
 is performed; change the source on the existing study instead. Creation failures
@@ -155,7 +154,7 @@ field when staging fails. Session writes require CSRF protection.
 
 `StudyArchiveImportExport` handles `.jzip` uploads, confirmation, and archive exports.
 `LocalFolderStudyImport` coordinates local-folder creation and source configuration,
-using `LocalStudySourceIO` to stage external files. Both import paths use
+using `LocalFolderStudySourceIO` to stage external files. Both import paths use
 `StudyImportService` for shared study validation and content application, including
 assets-directory reservation and rollback cleanup. Git ingestion can reuse this
 service when it is implemented.
@@ -175,3 +174,55 @@ For shared temporary storage, the filesystem must support file locks across host
 Extracted archive content is kept in a `content/` subdirectory, separate from the
 server's lock and expiry state. No new database records or client-facing import IDs
 are used. Tabs in the same browser session share the pending import.
+
+## Synchronize a local-folder source
+
+On the study page, **Sync** appears for a configured local-folder source. Study
+members and enabled superusers can synchronize an unlocked study; only owners
+and enabled superusers can change source settings or credentials. Removing the
+source hides Sync. A newly disallowed folder source is rejected by server policy.
+
+The confirmation displays the configured path and allows properties, assets, or
+both when present. Missing `.jas` leaves properties unchanged; missing `assets/`
+leaves assets unchanged. Selecting an empty `assets/` directory clears all installed
+assets. Assets are replaced, never merged. Any supplied `.jas` must have the target
+study UUID, even when only assets are selected. A source overlapping the installed
+assets cannot be synchronized.
+
+Properties follow archive-import semantics: study and component properties are
+updated; removed components become inactive so results are retained. Ownership,
+membership, batches, source configuration and the installed assets directory name
+are preserved. This adds no study-functionality validation.
+
+API clients use `GET /jatos/api/v1/studies/{id}/source/sync` to preview and then
+`POST` the same endpoint with JSON:
+
+```json
+{"properties":true,"assets":true}
+```
+
+IDs and UUIDs are supported. POST reads the currently configured source again and
+accepts changes made since preview. Keep source files unchanged during that read;
+staging is not an atomic snapshot. A selected content type that has disappeared
+is rejected, and any supplied .jas must still match the study UUID. Preview files
+are deleted before the response, so confirmation does not require sticky sessions
+or pending server state.
+Source paths must be accessible on whichever node handles the request.
+
+Updates use a study database lock and a filesystem lock held until transaction
+completion and recovery callbacks finish. A competing synchronization returns 409.
+Multi-node deployments require shared temporary storage supporting cross-host file
+locks, as well as shared assets. Small lock files under `study-sync-locks`
+remain in temporary storage; they must not be removed while nodes are running.
+
+New assets are copied into a temporary sibling on the assets filesystem before
+replacement. The previous directory is retained until commit and restored on
+rollback. Failed restoration retains the backup and logs a recovery error. This
+handles ordinary operation and transaction failures; it is not automatic recovery
+from a process crash or storage failure. A directory replacement can briefly make
+assets unavailable to concurrent readers; avoid synchronizing during active runs.
+
+Successful synchronization updates properties/assets metadata separately and writes
+a study-log entry after commit. The GUI reloads the study and displays a success
+message with the applied scope and a reminder to test. Export remains available
+for backups. Git synchronization is not implemented yet.

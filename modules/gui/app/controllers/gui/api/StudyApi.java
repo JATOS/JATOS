@@ -9,10 +9,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.StudyDao;
 import daos.common.UserDao;
-import exceptions.common.BadRequestException;
-import exceptions.common.HttpException;
-import exceptions.common.JatosException;
-import exceptions.common.NotFoundException;
+import exceptions.common.*;
 import general.common.ApiEnvelope;
 import general.common.Common;
 import general.common.StudyLogger;
@@ -23,6 +20,7 @@ import models.common.Study;
 import models.common.User;
 import models.gui.StudyProperties;
 import models.gui.StudySourceProperties;
+import models.gui.StudySourceSyncProperties;
 import org.apache.pekko.stream.javadsl.FileIO;
 import org.apache.pekko.stream.javadsl.Source;
 import org.apache.pekko.util.ByteString;
@@ -31,6 +29,10 @@ import play.http.HttpEntity;
 import play.libs.Json;
 import play.mvc.*;
 import services.gui.*;
+import services.gui.importexport.LocalFolderStudyImport;
+import services.gui.importexport.StudyArchiveImportExport;
+import services.gui.importexport.StudySourceService;
+import services.gui.importexport.StudySourceSync;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -55,6 +57,7 @@ public class StudyApi extends Controller {
     private final ApiService apiService;
     private final StudyService studyService;
     private final StudySourceService studySourceService;
+    private final StudySourceSync studySourceSync;
     private final StudyArchiveImportExport studyArchiveImportExport;
     private final LocalFolderStudyImport localFolderStudyImport;
     private final UserDao userDao;
@@ -68,6 +71,7 @@ public class StudyApi extends Controller {
              ApiService apiService,
              StudyService studyService,
              StudySourceService studySourceService,
+             StudySourceSync studySourceSync,
              StudyArchiveImportExport studyArchiveImportExport,
              LocalFolderStudyImport localFolderStudyImport,
              UserDao userDao,
@@ -79,6 +83,7 @@ public class StudyApi extends Controller {
         this.apiService = apiService;
         this.studyService = studyService;
         this.studySourceService = studySourceService;
+        this.studySourceSync = studySourceSync;
         this.studyArchiveImportExport = studyArchiveImportExport;
         this.localFolderStudyImport = localFolderStudyImport;
         this.userDao = userDao;
@@ -165,7 +170,7 @@ public class StudyApi extends Controller {
                         throw new BadRequestException("Query parameter '" + option + "' is not supported for source-based creation.", INVALID_REQUEST);
                     }
                 }
-                return createStudyFromSource(request, json);
+                return createStudyFromSource(json);
             } else {
                 return createStudyFromJson(json, renameAssets);
             }
@@ -174,7 +179,7 @@ public class StudyApi extends Controller {
         throw new HttpException(UNSUPPORTED_MEDIA_TYPE, "Wrong 'Content-Type' " + contentType, WRONG_CONTENT_TYPE);
     }
 
-    private Result createStudyFromSource(Http.Request request, JsonNode json) {
+    private Result createStudyFromSource(JsonNode json) {
         if (json.size() != 1) {
             throw new BadRequestException("Source-based creation cannot include study properties or other fields.", INVALID_REQUEST);
         }
@@ -445,14 +450,14 @@ public class StudyApi extends Controller {
         authorizationService.canUserAccessStudy(study, signedinUser);
 
         if (download) {
-            Path studyLogPath = Path.of(studyLogger.getPath(study));
+            Path studyLogPath = Path.of(studyLogger.getPath(study.getUuid()));
             if (Files.notExists(studyLogPath)) throw new NotFoundException("Study log file doesn't exist");
 
             Source<ByteString, ?> source = FileIO.fromPath(studyLogPath);
             Optional<Long> contentLength = Optional.of(studyLogPath.toFile().length());
             String cdHeader = "attachment; "
                     + HttpHeaderParameterEncoding.encode("filename", "jatos_studylog_"
-                    + studyLogger.getFilename(study));
+                    + studyLogger.getFilename(study.getUuid()));
             Context.current().response().setHeader(CONTENT_DISPOSITION, cdHeader);
             return new Result(
                     new ResponseHeader(200, Collections.emptyMap()),
@@ -466,10 +471,12 @@ public class StudyApi extends Controller {
      * GET request that returns the study source configuration.
      */
     @Async(Executor.IO)
+    @Transactional
     @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getStudySource(String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
-        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        User user = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.checkStudyOwner(study, user, false);
         StudySourceProperties props = studySourceService.get(study.getId());
         return ok(ApiEnvelope.wrap(props).asJsonNode());
     }
@@ -478,17 +485,49 @@ public class StudyApi extends Controller {
      * PUT request to update study source configuration without synchronizing content.
      */
     @Async(Executor.IO)
+    @Transactional
     @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result saveStudySource(Http.Request request, String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
-        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        User user = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.checkStudyOwner(study, user, false);
         JsonNode json = apiService.getJsonFromBody(request);
         if (!json.isObject()) throw new BadRequestException("Request body is not a JSON object", INVALID_JSON);
         StudySourceProperties props = strictJson.updateFromJson(new StudySourceProperties(), json);
         apiService.validateProps(props);
         StudySourceProperties settings = studySourceService.save(study.getId(), props);
         return ok(ApiEnvelope.wrap(settings).asJsonNode());
+    }
+
+    /**
+     * Preview current source content for a study member before selecting an overwrite scope.
+     */
+    @Async(Executor.IO)
+    @Transactional
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    public Result previewStudySourceSync(String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        User user = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.canUserAccessStudy(study, user, true);
+        StudySourceSync.SyncPreview syncPreview = studySourceSync.preview(study.getId());
+        return ok(ApiEnvelope.wrap(syncPreview).asJsonNode());
+    }
+
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    @BodyParser.Of(ApiJsonBodyParser.class)
+    public Result syncStudySource(Http.Request request, String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        JsonNode json = apiService.getJsonFromBody(request);
+        if (!json.isObject()) throw new BadRequestException("Request body is not a JSON object", INVALID_JSON);
+        StudySourceSyncProperties props = strictJson.updateFromJson(new StudySourceSyncProperties(), json);
+        apiService.validateProps(props);
+
+        var result = studySourceSync.sync(study.getId(), props);
+        Context.current().response().putFlash(SUCCESS, result.message());
+        return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
     }
 
 }

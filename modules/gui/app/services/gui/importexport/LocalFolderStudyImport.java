@@ -1,8 +1,8 @@
-package services.gui;
+package services.gui.importexport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import exceptions.common.FieldValidationException;
-import exceptions.common.JatosException;
+import exceptions.common.ImportExportException;
 import general.common.JpaTransactions;
 import json.common.DomainJsonMapper;
 import models.common.Study;
@@ -13,7 +13,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 
-import static general.common.ApiEnvelope.ErrorCode.IO_ERROR;
 import static models.common.StudySource.Type.LOCAL_FOLDER;
 
 /**
@@ -22,19 +21,19 @@ import static models.common.StudySource.Type.LOCAL_FOLDER;
 @Singleton
 public class LocalFolderStudyImport {
 
-    private final LocalStudySourceIO localStudySourceIO;
+    private final LocalFolderStudySourceIO localFolderStudySourceIO;
     private final StudyImportService studyImportService;
     private final StudySourceService studySourceService;
     private final JpaTransactions transactions;
     private final DomainJsonMapper domainJsonMapper;
 
     @Inject
-    public LocalFolderStudyImport(LocalStudySourceIO localStudySourceIO,
+    public LocalFolderStudyImport(LocalFolderStudySourceIO localFolderStudySourceIO,
                                   StudyImportService studyImportService,
                                   StudySourceService studySourceService,
                                   JpaTransactions transactions,
                                   DomainJsonMapper domainJsonMapper) {
-        this.localStudySourceIO = localStudySourceIO;
+        this.localFolderStudySourceIO = localFolderStudySourceIO;
         this.studyImportService = studyImportService;
         this.studySourceService = studySourceService;
         this.transactions = transactions;
@@ -58,13 +57,13 @@ public class LocalFolderStudyImport {
                     : "assets only";
             return new CreationResult(study, "Study created from local folder: imported " + imported + ".");
         } catch (IOException e) {
-            throw new JatosException("Could not create study from study source.", e, IO_ERROR);
+            throw new ImportExportException("Could not create study from study source.");
         }
     }
 
     private StagedStudySource stageLocalFolder(String localFolderPath) {
         try {
-            return localStudySourceIO.stage(localFolderPath);
+            return localFolderStudySourceIO.stage(localFolderPath);
         } catch (IOException e) {
             throw new FieldValidationException("localFolderPath", "Could not read the source folder: " + e.getMessage());
         }
@@ -94,7 +93,7 @@ public class LocalFolderStudyImport {
         try {
             staged.close();
         } catch (IOException e) {
-            throw new JatosException("Could not clean up the staged study source.", e, IO_ERROR);
+            throw new ImportExportException("Could not clean up the staged study source.");
         }
     }
 

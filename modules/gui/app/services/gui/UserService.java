@@ -22,6 +22,7 @@ import play.Logger;
 import play.data.Form;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
+import services.gui.importexport.GitCredentialsService;
 import utils.common.HashUtils;
 
 import javax.inject.Inject;

@@ -1,0 +1,112 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
+@* Study sync Modal *@
+<div class="modal fade" id="studySyncModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Synchronize study</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="studySyncForm" class="form-study">
+                    <p>Select what to overwrite.</p>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label" for="studySyncProperties" data-bs-tooltip="Should the study properties be overwritten? Components included in the imported study will be added or updated. Components not included in the imported study will be inactivated but not deleted.">Properties</label>
+                        <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
+                            <input class="form-check-input checkbox-study" id="studySyncProperties" name="properties" type="checkbox">
+                            <span class="slider slider-study round"></span>
+                        </label><div id="studySyncPropertiesAbsent" class="form-text d-none">No .jas file; existing properties are kept.</div></div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label" for="studySyncAssets" data-bs-tooltip="Should the study assets directory be overwritten? This directory contains the study's files like HTML, CSS, and JavaScript files and images. Selected assets are replaced completely, never merged. An empty assets/ directory removes all existing assets.">Assets</label>
+                        <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
+                            <input class="form-check-input checkbox-study" id="studySyncAssets" name="assets" type="checkbox">
+                            <span class="slider slider-study round"></span>
+                        </label><div id="studySyncAssetsAbsent" class="form-text d-none">No assets/ directory; existing assets are kept.</div></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-study" id="studySyncConfirm" type="submit" disabled>Overwrite</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("study-sync");
+    let previewData;
+    const form = $("#studySyncForm");
+    const confirm = $("#studySyncConfirm");
+
+    $("#studySyncButton").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
+
+    $("#studySyncModal").on("show.bs.modal", function() {
+        alerts.hideAll();
+        previewData = null;
+        form[0].reset();
+        FormValidation.clear("#studySyncForm");
+        Helpers.generateModalSubtitles("#studySyncModal", {
+            "ID": window.study.id,
+            "UUID": window.study.uuid,
+            "Source": window.study.sourceType
+        }, true);
+        $("#studySyncPropertiesAbsent, #studySyncAssetsAbsent").addClass("d-none");
+        form.find("input").prop("disabled", true);
+        confirm.prop("disabled", true);
+        // Keep the modal open until its preview request finishes.
+        $("#studySyncModal [data-bs-dismiss]").prop("disabled", true);
+        $.ajax({
+            url: window.routes.Api.previewStudySourceSync(window.study.id),
+            success: function(response) {
+                previewData = response.data;
+                Helpers.generateModalSubtitles("#studySyncModal", {
+                    "ID": window.study.id,
+                    "UUID": window.study.uuid,
+                    "Local folder": previewData.localFolderPath
+                }, true);
+                $("#studySyncProperties").prop("disabled", !previewData.propertiesAvailable).prop("checked", previewData.propertiesAvailable);
+                $("#studySyncAssets").prop("disabled", !previewData.assetsAvailable).prop("checked", previewData.assetsAvailable);
+                $("#studySyncPropertiesAbsent").toggleClass("d-none", previewData.propertiesAvailable);
+                $("#studySyncAssetsAbsent").toggleClass("d-none", previewData.assetsAvailable);
+                confirm.prop("disabled", false);
+            },
+            error: response => alerts.error(response.responseJSON?.error?.message || "Could not preview study source.", 0, true),
+            complete: () => $("#studySyncModal [data-bs-dismiss]").prop("disabled", false)
+        });
+    });
+
+    $("#studySyncModal").on("hide.bs.modal", alerts.hideAll);
+
+    confirm.click(function(event) {
+        event.preventDefault();
+        if (!previewData || confirm.prop("disabled")) return;
+        alerts.hideAll();
+        FormValidation.clear("#studySyncForm");
+        const data = {
+            properties: $("#studySyncProperties").is(":checked"),
+            assets: $("#studySyncAssets").is(":checked")
+        };
+        $("#studySyncModal button").prop("disabled", true);
+        $.ajax({
+            url: window.routes.Api.syncStudySource(window.study.id),
+            type: "POST",
+            contentType: "application/json",
+            headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
+            data: JSON.stringify(data),
+            success: () => { window.location.href = window.routes.Studies.study(window.study.id); },
+            error: function(response) {
+                const error = response.responseJSON?.error;
+                if (error?.fields) FormValidation.show("#studySyncForm", error.fields);
+                else alerts.error(error?.message || "Could not synchronize study source.", 0, true);
+                $("#studySyncModal button").prop("disabled", false);
+            }
+        });
+    });
+</script>

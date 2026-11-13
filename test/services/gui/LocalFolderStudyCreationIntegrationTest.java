@@ -10,6 +10,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import play.libs.Json;
+import services.gui.importexport.LocalFolderStudyImport;
 import testutils.JatosTest;
 import utils.common.IOUtils;
 
@@ -171,6 +172,7 @@ public class LocalFolderStudyCreationIntegrationTest extends JatosTest {
         assertNoStaging();
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void invalidPropertiesAndDisallowedFoldersDoNotCreateStudies() throws Exception {
         Files.writeString(source.resolve("study.jas"), "{}");

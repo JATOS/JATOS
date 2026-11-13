@@ -1,4 +1,4 @@
-package services.gui;
+package services.gui.importexport;
 
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
@@ -12,6 +12,9 @@ import models.common.Component;
 import models.common.Study;
 import models.gui.StagedStudySource;
 import org.hibernate.exception.ConstraintViolationException;
+import services.gui.BatchService;
+import services.gui.ComponentService;
+import services.gui.StudyService;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -30,6 +33,7 @@ import static exceptions.common.JatosException.unchecked;
  */
 @Singleton
 public class StudyImportService {
+
     private final JpaTransactions transactions;
     private final StudyService studyService;
     private final BatchService batchService;

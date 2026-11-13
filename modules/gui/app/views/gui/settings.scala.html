@@ -69,6 +69,7 @@
     window.study.isActive = @study.get.isActive;
     window.study.isGroupStudy = @study.get.isGroupStudy;
     window.study.dirName = "@study.get.getDirName";
+    window.study.sourceType = "@Option(study.get.getStudySource).map(_.getType.toString).getOrElse("NONE")";
     }
 
     @if(signedinUser.isDefined) {

@@ -1,16 +1,19 @@
 package controllers.gui.api;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.common.Study;
 import models.common.User;
 import org.junit.Test;
 import play.libs.Json;
+import services.gui.importexport.GitCredentialsService;
 import testutils.JatosTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static play.test.Helpers.OK;
 
 public class UserApiTest extends JatosTest {
-    private com.fasterxml.jackson.databind.node.ObjectNode credentialUpdate(String secret) {
+
+    private ObjectNode credentialUpdate(String secret) {
         var body = Json.newObject();
         body.putObject("gitCredentials").put("origin", "https://github.com")
                 .put("username", "git-user").put("secret", secret);
@@ -28,14 +31,14 @@ public class UserApiTest extends JatosTest {
         assertThat(profile.asJson().path("error").path("code").asText()).isEqualTo("VALIDATION_ERROR");
 
         var invalidOrigin = credentialUpdate("private-token");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) invalidOrigin.get("gitCredentials")).put("origin", "http://github.com");
+        ((ObjectNode) invalidOrigin.get("gitCredentials")).put("origin", "http://github.com");
         var origin = api(path).patch(invalidOrigin);
         assertThat(origin.getStatus()).isEqualTo(400);
         assertThat(origin.asJson().path("error").path("fields").path("gitCredentials.origin").isArray()).isTrue();
         assertThat(origin.getBody()).doesNotContain("private-token");
 
         var invalidUsername = credentialUpdate("private-token");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) invalidUsername.get("gitCredentials")).put("username", "");
+        ((ObjectNode) invalidUsername.get("gitCredentials")).put("username", "");
         var username = api(path).patch(invalidUsername);
         assertThat(username.getStatus()).isEqualTo(400);
         assertThat(username.asJson().path("error").path("fields").path("gitCredentials.username").isArray()).isTrue();
@@ -93,17 +96,17 @@ public class UserApiTest extends JatosTest {
         assertThat(api(path).patch(credentialUpdate("original-token")).getStatus()).isEqualTo(OK);
         String originalName = api(path).get().asJson().path("data").path("name").asText();
         var invalidCredentials = credentialUpdate("").put("name", "Should not be saved");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) invalidCredentials.get("gitCredentials")).put("username", "changed");
+        ((ObjectNode) invalidCredentials.get("gitCredentials")).put("username", "changed");
         assertThat(api(path).patch(invalidCredentials).getStatus()).isEqualTo(400);
         assertThat(api(path).get().asJson().path("data").path("name").asText()).isEqualTo(originalName);
         assertThat(api(path).patch(credentialUpdate("replacement-token").put("name", "")).getStatus()).isEqualTo(400);
         var conflicting = credentialUpdate("replacement-token");
-        ((com.fasterxml.jackson.databind.node.ObjectNode) conflicting.get("gitCredentials")).put("removeCredentials", true);
+        ((ObjectNode) conflicting.get("gitCredentials")).put("removeCredentials", true);
         assertThat(api(path).patch(conflicting).getStatus()).isEqualTo(400);
         var crypto = application.injector().instanceOf(utils.common.GitCredentialEncryption.class);
         jpaApi.withTransaction(em -> {
             var credential = em.find(User.class, admin.getUsername()).getGitCredentials();
-            assertThat(crypto.decrypt(credential.getEncryptedSecret(), services.gui.GitCredentialsService.encryptionContext(credential)))
+            assertThat(crypto.decrypt(credential.getEncryptedSecret(), GitCredentialsService.encryptionContext(credential)))
                     .isEqualTo("original-token");
         });
     }

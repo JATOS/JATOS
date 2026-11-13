@@ -1,5 +1,6 @@
 package services.gui;
 
+import services.gui.importexport.LocalFolderStudySourceIO;
 import utils.common.IOUtils;
 import exceptions.common.BadRequestException;
 
@@ -22,11 +23,11 @@ import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mockStatic;
 
-public class LocalStudySourceIOTest {
+public class LocalFolderStudySourceIOTest {
 
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder();
-    private final LocalStudySourceIO io = new LocalStudySourceIO(new IOUtils());
+    private final LocalFolderStudySourceIO io = new LocalFolderStudySourceIO(new IOUtils());
     private Path source;
     private Path staging;
     private MockedStatic<Common> common;

@@ -6,6 +6,7 @@ import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import general.common.Common;
 import general.common.MessagesStrings;
+import http.common.Http.Context;
 import http.common.UploadBodyParsers;
 import json.common.DefaultJson;
 import models.common.Study;
@@ -16,13 +17,14 @@ import play.mvc.BodyParser;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.StudyArchiveImportExport;
+import services.gui.importexport.StudyArchiveImportExport;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static messaging.common.FlashMessagingHelper.SUCCESS;
 import static models.common.User.Role.SUPERUSER;
 import static models.common.User.Role.USER;
 
@@ -117,6 +119,8 @@ public class ImportExport extends Controller {
         } finally {
             studyArchiveImportExport.cleanupAfterStudyImport();
         }
+        String scope = !keepProperties ? (!keepAssets ? "properties and assets" : "properties") : "assets";
+        Context.current().response().putFlash(SUCCESS, "Replaced " + scope + " with those from the study archive.");
         return ok(Long.toString(importedStudyId));
     }
 

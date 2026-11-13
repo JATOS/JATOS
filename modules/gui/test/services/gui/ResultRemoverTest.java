@@ -291,7 +291,7 @@ public class ResultRemoverTest {
         verify(studyResultDao).remove(sr1);
         verify(studyResultDao).remove(sr2);
         // log once
-        verify(studyLogger).log(eq(study), eq(user), contains("Removed result data and files"));
+        verify(studyLogger).log(eq(study.getUuid()), eq(user.getName()), contains("Removed result data and files"));
     }
 
 }

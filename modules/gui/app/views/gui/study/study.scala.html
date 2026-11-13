@@ -41,6 +41,9 @@
             <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
+            <button class="btn btn-study d-none" id="studySyncButton" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal">
+                <i class="bi-arrow-repeat"></i><span class="d-none d-xl-inline ps-1">Sync</span>
+            </button>
             <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip="Export this study to your local file system (including its components and study assets but without its results)">
                 <i class="bi-box-arrow-up-right"></i><span class="d-none d-xl-inline ps-1">Export</span>
             </button>
@@ -90,6 +93,7 @@
 
 @views.html.gui.study.studyPropertiesModal(request)
 @views.html.gui.study.studySourceModal(request)
+@views.html.gui.study.studySyncModal(request)
 @views.html.gui.study.studyDescription(study)
 @views.html.gui.study.studyMemberUsersModal(request)
 @views.html.gui.study.componentCreatorModal(request)

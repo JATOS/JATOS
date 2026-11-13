@@ -1,14 +1,14 @@
 package general.common;
 
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.stream.javadsl.StreamConverters;
-import org.apache.pekko.util.ByteString;
 import com.diffplug.common.base.Errors;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.common.*;
 import models.common.workers.Worker;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.stream.javadsl.StreamConverters;
+import org.apache.pekko.util.ByteString;
 import play.Logger;
 import play.libs.Json;
 import utils.common.HashUtils;
@@ -28,13 +28,13 @@ import java.util.regex.Pattern;
 /**
  * StudyLogger provides logging for JATOS studies. Each study gets it's own log usually created while the study is
  * created.
- * <p>
+ *
  * Major events are written into this log: - study creation/deletion/recreation - batch creation/deletion - study run
  * start/stops/aborts - result data storing - NOT logging any user adding/removing
- * <p>
- * Whenever the log entry handles result data a SHA-256 hash of the data is included in the log. If it exports files a
- * SHA-256 hash of the content of the file is included in the log.
- * <p>
+ *
+ * Whenever the log entry handles result data, an SHA-256 hash of the data is included in the log. If it exports files,
+ * an SHA-256 hash of the content of the file is included in the log.
+ *
  * The log uses charset ISO_8859_1.
  */
 @Singleton
@@ -63,47 +63,44 @@ public class StudyLogger {
     private static final String NO_DATA = "no data";
     private static final String COMPONENT_UUID = "componentUuid";
 
-    public String getFilename(Study study) {
-        return study.getUuid() + ".log";
+    public String getFilename(String studyUuid) {
+        return studyUuid + ".log";
     }
 
-    public String getPath(Study study) {
-        return Common.getStudyLogsPath() + File.separator + getFilename(study);
+    public String getPath(String studyUuid) {
+        return Common.getStudyLogsPath() + File.separator + studyUuid + ".log";
     }
 
-    public String getRetiredFilename(Study study) {
-        return study.getUuid() + "_" + Instant.now().toEpochMilli() + ".retired";
+    public String getRetiredFilename(String studyUuid) {
+        return studyUuid + "_" + Instant.now().toEpochMilli() + ".retired";
     }
 
-    public String getRetiredPath(Study study) {
-        return Common.getStudyLogsPath() + File.separator + getRetiredFilename(study);
+    public String getRetiredPath(String studyUuid) {
+        return Common.getStudyLogsPath() + File.separator + getRetiredFilename(studyUuid);
     }
 
-    public void create(Study study) {
-        if (!Common.isStudyLogsEnabled()) return;
-        String initialMsg = "Initial entry";
-        create(study, initialMsg);
+    public void create(String studyUuid) {
+        create(studyUuid, "Initial entry");
     }
 
-    private void recreate(Study study) {
-        if (!Common.isStudyLogsEnabled()) return;
+    private void recreate(String studyUuid) {
         String initialMsg = "Could not find a study log although the study already exists. Create a new one.";
-        create(study, initialMsg);
+        create(studyUuid, initialMsg);
     }
 
-    private void create(Study study, String msg) {
+    private void create(String studyUuid, String msg) {
         if (!Common.isStudyLogsEnabled()) return;
-        Path studyLogPath = Path.of(getPath(study));
+        Path studyLogPath = Path.of(getPath(studyUuid));
         try {
             if (Files.exists(studyLogPath)) {
                 LOGGER.error("A study log with " + studyLogPath + " exists already.");
-                retire(study);
+                retire(studyUuid);
             }
 
             ObjectNode jsonObj = Json.newObject();
             jsonObj.put(MSG, msg);
             jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
-            jsonObj.put(STUDY_UUID, study.getUuid());
+            jsonObj.put(STUDY_UUID, studyUuid);
             jsonObj.put(SERVERS_MAC, Common.getMac());
             jsonObj.put(HASH_FUNCTION, HashUtils.SHA_256);
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
@@ -114,11 +111,11 @@ public class StudyLogger {
         }
     }
 
-    public String retire(Study study) {
+    public String retire(String studyUuid) {
         if (!Common.isStudyLogsEnabled()) return null;
-        log(study, null, "Last entry of the study log", Pair.of(STUDY_UUID, study.getUuid()));
-        Path logPath = Path.of(getPath(study));
-        Path retiredLogPath = Path.of(getRetiredPath(study));
+        log(studyUuid, null, "Last entry of the study log", Pair.of(STUDY_UUID, studyUuid));
+        Path logPath = Path.of(getPath(studyUuid));
+        Path retiredLogPath = Path.of(getRetiredPath(studyUuid));
         if (Files.exists(logPath)) {
             try {
                 IOUtils.moveFile(logPath, retiredLogPath, false);
@@ -127,6 +124,29 @@ public class StudyLogger {
             }
         }
         return retiredLogPath.getFileName().toString();
+    }
+
+    public void log(String studyUuid, String userName, String msg) {
+        if (!Common.isStudyLogsEnabled()) return;
+        ObjectNode entry = Json.newObject();
+        entry.put(MSG, msg);
+        log(studyUuid, userName, entry);
+    }
+
+    public void log(String studyUuid, String userName, String msg, Long batchId) {
+        if (!Common.isStudyLogsEnabled()) return;
+        ObjectNode entry = Json.newObject();
+        entry.put(MSG, msg);
+        entry.put(BATCH_ID, batchId);
+        log(studyUuid, userName, entry);
+    }
+
+    public void log(String studyUuid, String userName, String msg, Pair<String, Object> additionalInfo) {
+        if (!Common.isStudyLogsEnabled()) return;
+        ObjectNode jsonObj = Json.newObject();
+        jsonObj.put(MSG, msg);
+        jsonObj.put(additionalInfo.getKey(), String.valueOf(additionalInfo.getValue()));
+        log(studyUuid, userName, jsonObj);
     }
 
     public void log(Study study, User user, String msg) {
@@ -210,22 +230,35 @@ public class StudyLogger {
     }
 
     public void logStudyDescriptionHash(Study study, User user) {
-        log(study, user, "Study description changed", Pair.of(STUDY_DESCRIPTION_HASH, study.getDescriptionHash()));
+        if (!Common.isStudyLogsEnabled()) return;
+        logStudyDescriptionHash(study.getUuid(), user != null ? user.getName() : null, study.getDescriptionHash());
+    }
+
+    public void logStudyDescriptionHash(String studyUuid, String userName, String descriptionHash) {
+        if (!Common.isStudyLogsEnabled()) return;
+        ObjectNode entry = Json.newObject();
+        entry.put(MSG, "Study description changed");
+        entry.put(STUDY_DESCRIPTION_HASH, String.valueOf(descriptionHash));
+        log(studyUuid, userName, entry);
+    }
+
+    private void log(Study study, User user, ObjectNode jsonObj) {
+        log(study.getUuid(), user != null ? user.getName() : null, jsonObj);
     }
 
     /**
      * Adds the given jsonObj as an entry to the study
      */
-    private void log(Study study, User user, ObjectNode jsonObj) {
+    private void log(String studyUuid, String userName, ObjectNode jsonObj) {
         if (!Common.isStudyLogsEnabled()) return;
-        Path studyLogPath = Path.of(getPath(study));
+        Path studyLogPath = Path.of(getPath(studyUuid));
         if (Files.notExists(studyLogPath)) {
-            LOGGER.info("Couldn't find log for study with UUID " + study.getUuid() + " in " + studyLogPath
+            LOGGER.info("Couldn't find log for study with UUID " + studyUuid + " in " + studyLogPath
                     + ". Create new log file.");
-            recreate(study);
+            recreate(studyUuid);
         }
         try {
-            if (user != null) jsonObj.put(USER_NAME, user.getName());
+            if (userName != null) jsonObj.put(USER_NAME, userName);
             jsonObj.put(TIMESTAMP, Instant.now().toEpochMilli());
             String logEntry = "\n" + Json.mapper().writer().writeValueAsString(jsonObj);
             String sanitizedLogEntry = sanitizeForIso88591(logEntry);
@@ -244,7 +277,7 @@ public class StudyLogger {
                 .keepAlive(Duration.ofSeconds(30), () -> ByteString.fromString(" "))
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-                    Errors.rethrow().run(() -> streamLogFile(writer, getPath(study), entryLimit));
+                    Errors.rethrow().run(() -> streamLogFile(writer, getPath(study.getUuid()), entryLimit));
                     Errors.rethrow().run(writer::flush);
                     Errors.rethrow().run(writer::close);
                 }));

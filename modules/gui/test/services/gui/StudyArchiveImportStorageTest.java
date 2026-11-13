@@ -5,6 +5,8 @@ import general.common.Common;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import services.gui.importexport.StudyArchiveImportStorage;
+
 import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
@@ -13,9 +15,9 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class PendingStudyImportStorageTest {
+public class StudyArchiveImportStorageTest {
     @Rule public TemporaryFolder temporary = new TemporaryFolder();
-    private final PendingStudyImportStorage pending = new PendingStudyImportStorage();
+    private final StudyArchiveImportStorage pending = new StudyArchiveImportStorage();
 
     private void age(Path directory) throws Exception {
         Files.setLastModifiedTime(directory.resolve("state"), FileTime.from(Instant.now().minus(Duration.ofHours(25))));
@@ -71,7 +73,7 @@ public class PendingStudyImportStorageTest {
         try (var config = mockStatic(Common.class)) {
             config.when(Common::getTmpPath).thenReturn(temporary.getRoot().toString());
             Path directory = pending.prepare(p -> p).getParent();
-            PendingStudyImportStorage other = new PendingStudyImportStorage();
+            StudyArchiveImportStorage other = new StudyArchiveImportStorage();
             pending.use(directory, p -> {
                 try {
                     other.cleanupExpired();

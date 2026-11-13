@@ -257,6 +257,6 @@ public class BatchServiceTest {
         verify(workerDao, atLeastOnce()).remove(any(Worker.class));
         // batch itself removed and logging
         verify(batchDao, times(1)).remove(batch);
-        verify(studyLogger, times(1)).log(eq(study), any(User.class), eq("Removed batch"), eq(batch));
+        verify(studyLogger, times(1)).log(eq(study.getUuid()), nullable(String.class), eq("Removed batch"), eq(batch.getId()));
     }
 }

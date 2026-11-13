@@ -401,6 +401,40 @@ public class IOUtilsTest {
     }
 
     @Test
+    public void testValidatedStudyAssetsPaths() throws Exception {
+        Path root = tmp.newFolder("validatedAssets").toPath().toRealPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(root.toString());
+        assertEquals(root.resolve("missing"), ioUtils.getStudyAssetsDir("missing", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("missing"));
+        Files.createDirectory(root.resolve("existing"));
+        assertEquals(root.resolve("existing"), ioUtils.getStudyAssetsDir("existing"));
+        for (String name : new String[]{null, "", " ", ".", "..", "../outside", "nested/study"}) {
+            assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir(name, false));
+            assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir(name));
+        }
+        Files.writeString(root.resolve("file"), "not a directory");
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("file", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("file"));
+    }
+
+    @Test
+    public void testStudyAssetsPathsRejectSymbolicLinks() throws Exception {
+        Path root = tmp.newFolder("linkedAssets").toPath().toRealPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(root.toString());
+        Path outside = tmp.newFolder("outsideAssets").toPath().toRealPath();
+        try {
+            Files.createSymbolicLink(root.resolve("linked"), outside);
+        } catch (UnsupportedOperationException | IOException e) {
+            org.junit.Assume.assumeNoException("Symbolic links unavailable", e);
+        }
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked"));
+        Files.delete(outside);
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked"));
+    }
+
+    @Test
     public void testStudyAssetsDirOperations() throws Exception {
         Path assetsRoot = tmp.newFolder("assetsRoot").toPath();
         commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());

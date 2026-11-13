@@ -118,8 +118,10 @@ public class ResultRemover {
             em.flush();
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             Study study = batch.getStudy();
+            String studyUuid = study.getUuid();
+            String userName = signedinUser.getName();
             transactions.afterCommit("Log result removal for batch " + batch.getId(),
-                    () -> studyLogger.log(study, signedinUser, "Removed result data and files"));
+                    () -> studyLogger.log(studyUuid, userName, "Removed result data and files"));
         });
     }
 
@@ -133,8 +135,10 @@ public class ResultRemover {
             }
             // Establish deletion order: first child deletion before Hibernate queues Batch/Study deletion and its database cascades.
             em.flush();
+            String studyUuid = study.getUuid();
+            String userName = user.getName();
             transactions.afterCommit("Log result removal for study " + study.getId(),
-                    () -> studyLogger.log(study, user, "Removed result data and files"));
+                    () -> studyLogger.log(studyUuid, userName, "Removed result data and files"));
         });
     }
 

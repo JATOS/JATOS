@@ -377,11 +377,28 @@ public class IOUtils {
     }
 
     /**
-     * Gets the study assets with the given directory name.
+     * Gets an existing study assets directory, rejecting links, junctions, and paths outside the assets root.
      */
     public Path getStudyAssetsDir(String dirName) throws IOException {
-        Path studyAssetsPath = generateStudyAssetsPath(dirName);
-        return getExistingDirSecurely(studyAssetsPath);
+        return getStudyAssetsDir(dirName, true);
+    }
+
+    /**
+     * Resolves a direct child of the real assets root. Existing targets must be directories without links or
+     * junctions. Missing targets are allowed only when mustExist is false.
+     */
+    public Path getStudyAssetsDir(String dirName, boolean mustExist) throws IOException {
+        Path root = Path.of(Common.getStudyAssetsRootPath()).toRealPath();
+        if (dirName == null || dirName.isBlank() || !checkFilename(dirName))
+            throw new IOException("Invalid installed study assets directory name.");
+        Path target = root.resolve(dirName).normalize();
+        if (!root.equals(target.getParent()))
+            throw new IOException("Study assets must be a directory inside the assets root.");
+        if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)
+                && (!Files.isDirectory(target, LinkOption.NOFOLLOW_LINKS) || !target.toRealPath().equals(target)))
+            throw new IOException("Installed study assets must be a regular directory, without links or junctions.");
+        if (mustExist) return getExistingDirSecurely(target);
+        return target;
     }
 
     /**

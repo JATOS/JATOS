@@ -88,10 +88,12 @@ public class JpaTransactions implements JPAApi {
                 try {
                     if (status == Status.STATUS_COMMITTED) committed.run();
                     else if (status == Status.STATUS_ROLLEDBACK
-                            // Hibernate 6 JDBC reports UNKNOWN after a completed rollback and resets
-                            // the transaction to NOT_ACTIVE. It does not notify on JDBC rollback failure.
+                            // Hibernate 6 JDBC reports UNKNOWN after a successful rollback. The driver
+                            // remains MARKED_ROLLBACK during this callback if beforeCompletion failed;
+                            // otherwise it is NOT_ACTIVE. JDBC rollback failures do not invoke this callback.
                             || (status == Status.STATUS_UNKNOWN
-                            && transaction.getStatus() == TransactionStatus.NOT_ACTIVE
+                            && (transaction.getStatus() == TransactionStatus.NOT_ACTIVE
+                                || transaction.getStatus() == TransactionStatus.MARKED_ROLLBACK)
                             && manager.unwrap(SessionImplementor.class).getTransactionCoordinator()
                             instanceof JdbcResourceLocalTransactionCoordinatorImpl))
                         rolledBack.run();

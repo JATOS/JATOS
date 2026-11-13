@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import play.test.Helpers;
+import services.gui.importexport.GitCredentialsService;
 import testutils.gui.JPAMocker;
 
 import java.lang.reflect.Field;

@@ -13,6 +13,10 @@ import models.common.User;
 import org.junit.*;
 import org.mockito.MockedStatic;
 import play.test.Helpers;
+import services.gui.importexport.StudyArchiveImportStorage;
+import services.gui.importexport.StudyArchiveImportExport;
+import services.gui.importexport.StudyDeserializer;
+import services.gui.importexport.StudyImportService;
 import testutils.gui.JPAMocker;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
@@ -92,7 +96,7 @@ public class StudyArchiveImportExportTest {
         StudyImportService studyImportService = new StudyImportService(transactions, studyService, batchService,
                 componentService, ioUtils, studyDao, componentDao, studyDeserializer);
         studyArchiveImportExport = new StudyArchiveImportExport(transactions, authorizationService, studyService,
-                domainJsonMapper, ioUtils, studyDao, studyImportService, new PendingStudyImportStorage());
+                domainJsonMapper, ioUtils, studyDao, studyImportService, new StudyArchiveImportStorage());
 
         user = new User();
         user.setUsername("tester");
@@ -157,7 +161,7 @@ public class StudyArchiveImportExportTest {
     }
 
     private TempUnzipped createUnzippedDirWithSingleAssetsDirAndJas() throws IOException {
-        Path root = new PendingStudyImportStorage().prepare(path -> path);
+        Path root = new StudyArchiveImportStorage().prepare(path -> path);
         Files.createDirectories(root);
         Path assets = root.resolve("assets");
         Files.createDirectories(assets);

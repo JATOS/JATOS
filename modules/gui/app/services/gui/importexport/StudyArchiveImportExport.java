@@ -1,4 +1,4 @@
-package services.gui;
+package services.gui.importexport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.StudyDao;
@@ -14,6 +14,8 @@ import models.common.Study;
 import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
+import services.gui.AuthorizationService;
+import services.gui.StudyService;
 import utils.common.IOUtils;
 import utils.common.ZipUtil;
 
@@ -46,7 +48,7 @@ public class StudyArchiveImportExport {
     private final IOUtils ioUtils;
     private final StudyDao studyDao;
     private final StudyImportService studyImportService;
-    private final PendingStudyImportStorage pendingImports;
+    private final StudyArchiveImportStorage pendingImports;
 
     @Inject
     public StudyArchiveImportExport(JpaTransactions transactions,
@@ -56,7 +58,7 @@ public class StudyArchiveImportExport {
                                     IOUtils ioUtils,
                                     StudyDao studyDao,
                                     StudyImportService studyImportService,
-                                    PendingStudyImportStorage pendingImports) {
+                                    StudyArchiveImportStorage pendingImports) {
         this.transactions = transactions;
         this.authorizationService = authorizationService;
         this.studyService = studyService;

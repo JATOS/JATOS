@@ -193,8 +193,11 @@ public class BatchService {
             batchDao.remove(batch);
 
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            transactions.afterCommit("Log removal of batch " + batch.getId(),
-                    () -> studyLogger.log(study, signedinUser, "Removed batch", batch));
+            String studyUuid = study.getUuid();
+            String userName = signedinUser.getName();
+            Long batchId = batch.getId();
+            transactions.afterCommit("Log removal of batch " + batchId,
+                    () -> studyLogger.log(studyUuid, userName, "Removed batch", batchId));
         });
     }
 

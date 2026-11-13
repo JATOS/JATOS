@@ -15,6 +15,8 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import play.data.FormFactory;
 import play.libs.Json;
+import services.gui.importexport.GitCredentialsService;
+import services.gui.importexport.StudySourceService;
 import testutils.JatosTest;
 
 import java.nio.file.Files;
@@ -32,6 +34,29 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
 
     private StudySourceService service;
     private long id;
+
+    private StudySourceProperties save(long studyId, StudySourceProperties props) {
+        return jpaApi.withTransaction(em -> { return service.save(studyId, props); });
+    }
+
+    private StudySourceProperties get(long studyId) {
+        return jpaApi.withTransaction(em -> { return service.get(studyId); });
+    }
+
+    private void readSourceThroughController() {
+        jpaApi.withTransaction(em -> {
+            application.injector().instanceOf(controllers.gui.api.StudyApi.class).getStudySource(String.valueOf(id));
+        });
+    }
+
+    private void saveSourceThroughController() {
+        jpaApi.withTransaction(em -> {
+            var request = play.test.Helpers.fakeRequest().bodyRaw(
+                    Json.toJson(git()).toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)).build();
+            application.injector().instanceOf(controllers.gui.api.StudyApi.class)
+                    .saveStudySource(request, String.valueOf(id));
+        });
+    }
 
     @Before
     public void setupSource() {
@@ -93,7 +118,7 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
                 """));
         assertEquals(400, changedOrigin.getStatus());
         assertTrue(changedOrigin.asJson().path("error").path("fields").path("gitUrl").isArray());
-        assertEquals("https://example.org/study.git", service.get(id).getGitUrl());
+        assertEquals("https://example.org/study.git", get(id).getGitUrl());
     }
 
     @Test
@@ -144,7 +169,7 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
         assertFalse(json.has("removeCredentials"));
         assertTrue(json.has("credentialsConfigured"));
         assertTrue(json.has("localFolderAllowed"));
-        var saved = service.save(id, props);
+        var saved = save(id, props);
         assertEquals("git-user", saved.getUsername());
         assertNull(saved.getSecret());
         assertTrue(saved.isCredentialsConfigured());
@@ -152,47 +177,47 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
 
     @Test
     public void secretControlsReplacementAndRemovalMustBeExplicit() {
-        service.save(id, withCredentials());
+        save(id, withCredentials());
         String original = jpaApi.withTransaction(em -> {
             return em.find(StudySource.class, id).getGitCredentials().getEncryptedSecret();
         });
         var unchanged = git();
         unchanged.setSecret("");
-        service.save(id, unchanged);
+        save(id, unchanged);
         assertEquals(original, jpaApi.withTransaction(em -> {
             return em.find(StudySource.class, id).getGitCredentials().getEncryptedSecret();
         }));
         var conflicting = withCredentials();
         conflicting.setRemoveCredentials(true);
         assertNotNull(conflicting.validate());
-        assertThrows(FieldValidationException.class, () -> service.save(id, conflicting));
+        assertThrows(FieldValidationException.class, () -> save(id, conflicting));
         assertEquals(original, jpaApi.withTransaction(em -> {
             return em.find(StudySource.class, id).getGitCredentials().getEncryptedSecret();
         }));
         var replacement = withCredentials();
         replacement.setSecret("new-token");
-        service.save(id, replacement);
+        save(id, replacement);
         assertNotEquals(original, jpaApi.withTransaction(em -> {
             return em.find(StudySource.class, id).getGitCredentials().getEncryptedSecret();
         }));
         var remove = git();
         remove.setRemoveCredentials(true);
-        assertFalse(service.save(id, remove).isCredentialsConfigured());
+        assertFalse(save(id, remove).isCredentialsConfigured());
     }
 
     @Test
     public void usernameChangesRequireNewSecret() {
-        service.save(id, withCredentials());
+        save(id, withCredentials());
         var edit = git();
         edit.setUsername("new-git-user");
         edit.setSecret("");
-        assertThrows(FieldValidationException.class, () -> service.save(id, edit));
-        assertEquals("git-user", service.get(id).getUsername());
+        assertThrows(FieldValidationException.class, () -> save(id, edit));
+        assertEquals("git-user", get(id).getUsername());
         edit.setSecret("replacement-token");
-        var saved = service.save(id, edit);
+        var saved = save(id, edit);
         assertEquals("new-git-user", saved.getUsername());
         assertNull(saved.getSecret());
-        assertEquals("new-git-user", service.get(id).getUsername());
+        assertEquals("new-git-user", get(id).getUsername());
         jpaApi.withTransaction(em -> {
             var credentials = em.find(StudySource.class, id).getGitCredentials();
             var encryption = application.injector().instanceOf(utils.common.GitCredentialEncryption.class);
@@ -201,10 +226,10 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
         });
         edit.setSecret("");
         edit.setGitUrl("https://another.example.org/study.git");
-        assertThrows(FieldValidationException.class, () -> service.save(id, edit));
+        assertThrows(FieldValidationException.class, () -> save(id, edit));
         var invalid = git();
         invalid.setUsername("invalid:username");
-        assertThrows(FieldValidationException.class, () -> service.save(id, invalid));
+        assertThrows(FieldValidationException.class, () -> save(id, invalid));
     }
 
     private StudySourceProperties git() {
@@ -224,8 +249,8 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
 
     @Test
     public void createsChangesClearsSourceAndPreservesHistoryWithoutLeakingCredentials() {
-        assertEquals(StudySource.Type.NONE, service.get(id).getType());
-        var response = service.save(id, withCredentials());
+        assertEquals(StudySource.Type.NONE, get(id).getType());
+        var response = save(id, withCredentials());
         assertTrue(response.isCredentialsConfigured());
         String json = Json.toJson(response).toString();
         assertTrue(json.contains("git-user"));
@@ -237,15 +262,15 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
         });
         var anonymous = git();
         anonymous.setAnonymous(true);
-        assertTrue(service.save(id, anonymous).isAnonymous());
-        assertTrue(service.get(id).isCredentialsConfigured());
+        assertTrue(save(id, anonymous).isAnonymous());
+        assertTrue(get(id).isCredentialsConfigured());
         var remove = git();
         remove.setRemoveCredentials(true);
-        assertFalse(service.save(id, remove).isCredentialsConfigured());
-        service.save(id, withCredentials());
+        assertFalse(save(id, remove).isCredentialsConfigured());
+        save(id, withCredentials());
         var none = new StudySourceProperties();
         none.setType(StudySource.Type.NONE);
-        assertEquals(StudySource.Type.NONE, service.save(id, none).getType());
+        assertEquals(StudySource.Type.NONE, save(id, none).getType());
         jpaApi.withTransaction(em -> {
             Study study = em.find(Study.class, id);
             StudySource source = study.getStudySource();
@@ -262,21 +287,22 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
 
     @Test
     public void rejectsCrossOriginCredentialReuseAndRollsBackOuterTransaction() {
-        service.save(id, withCredentials());
+        save(id, withCredentials());
         var other = git();
         other.setGitUrl("https://other.example/study.git");
-        assertThrows(FieldValidationException.class, () -> service.save(id, other));
-        assertEquals("https://example.org/study.git", service.get(id).getGitUrl());
+        assertThrows(FieldValidationException.class, () -> save(id, other));
+        assertEquals("https://example.org/study.git", get(id).getGitUrl());
         assertThrows(IllegalStateException.class, () -> jpaApi.withTransaction((jakarta.persistence.EntityManager em) -> {
             other.setRemoveCredentials(true);
-            service.save(id, other);
+            save(id, other);
             em.flush();
             throw new IllegalStateException("rollback");
         }));
-        assertTrue(service.get(id).isCredentialsConfigured());
-        assertEquals("https://example.org/study.git", service.get(id).getGitUrl());
+        assertTrue(get(id).isCredentialsConfigured());
+        assertEquals("https://example.org/study.git", get(id).getGitUrl());
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void membersCannotReadOrChangeSourceButEnabledSuperusersCan() {
         User member = new User("source-member", "Member", "member@example.org");
@@ -286,19 +312,22 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
             em.find(Study.class, id).addUser(member);
         });
         Context.current().args().put(SIGNEDIN_USER, member);
-        assertThrows(ForbiddenException.class, () -> service.get(id));
-        assertThrows(ForbiddenException.class, () -> service.save(id, git()));
+        assertThrows(ForbiddenException.class, this::readSourceThroughController);
+        assertThrows(ForbiddenException.class, this::saveSourceThroughController);
         jpaApi.withTransaction(em -> {
             em.find(User.class, member.getUsername()).updateRoles(User.Role.SUPERUSER);
         });
         try (MockedStatic<Common> common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isUserRoleAllowSuperuser).thenReturn(true);
-            assertEquals(StudySource.Type.GIT, service.save(id, git()).getType());
+            readSourceThroughController();
+            saveSourceThroughController();
+            assertEquals(StudySource.Type.GIT, get(id).getType());
             common.when(Common::isUserRoleAllowSuperuser).thenReturn(false);
-            assertThrows(ForbiddenException.class, () -> service.save(id, git()));
+            assertThrows(ForbiddenException.class, this::saveSourceThroughController);
         }
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void foldersFollowServerAndAllowedRootsPolicy() throws Exception {
         Path root = Files.createTempDirectory("source-allowed");
@@ -307,42 +336,42 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
         try (MockedStatic<Common> common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isServer).thenReturn(false);
             common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of(root.toString()));
-            service.save(id, withCredentials());
+            save(id, withCredentials());
             var folder = new StudySourceProperties();
             folder.setType(StudySource.Type.LOCAL_FOLDER);
             folder.setLocalFolderPath(root.toString());
-            var response = service.save(id, folder);
+            var response = save(id, folder);
             assertEquals(root.toRealPath().toString(), response.getLocalFolderPath());
             assertFalse(response.isCredentialsConfigured());
             assertNull(response.getGitUrl());
             folder.setLocalFolderPath(outside.toString());
-            assertThrows(FieldValidationException.class, () -> service.save(id, folder));
+            assertThrows(FieldValidationException.class, () -> save(id, folder));
             Files.createSymbolicLink(link, outside);
             folder.setLocalFolderPath(link.toString());
-            assertThrows(FieldValidationException.class, () -> service.save(id, folder));
+            assertThrows(FieldValidationException.class, () -> save(id, folder));
             folder.setLocalFolderPath(root.resolve("missing").toString());
-            assertThrows(FieldValidationException.class, () -> service.save(id, folder));
+            assertThrows(FieldValidationException.class, () -> save(id, folder));
             common.when(Common::isServer).thenReturn(true);
             folder.setLocalFolderPath(root.toString());
-            assertTrue(service.save(id, folder).isLocalFolderAllowed());
+            assertTrue(save(id, folder).isLocalFolderAllowed());
             folder.setLocalFolderPath(link.toString());
-            assertThrows(FieldValidationException.class, () -> service.save(id, folder));
+            assertThrows(FieldValidationException.class, () -> save(id, folder));
             folder.setLocalFolderPath(outside.toString());
-            assertThrows(FieldValidationException.class, () -> service.save(id, folder));
+            assertThrows(FieldValidationException.class, () -> save(id, folder));
             common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of());
-            assertThrows(BadRequestException.class, () -> service.save(id, folder));
-            assertFalse(service.get(id).isLocalFolderAllowed());
-            assertEquals(StudySource.Type.GIT, service.save(id, git()).getType());
+            assertThrows(BadRequestException.class, () -> save(id, folder));
+            assertFalse(get(id).isLocalFolderAllowed());
+            assertEquals(StudySource.Type.GIT, save(id, git()).getType());
             common.when(Common::isServer).thenReturn(false);
-            assertTrue(service.save(id, folder).isLocalFolderAllowed());
-            assertEquals(outside.toRealPath().toString(), service.get(id).getLocalFolderPath());
+            assertTrue(save(id, folder).isLocalFolderAllowed());
+            assertEquals(outside.toRealPath().toString(), get(id).getLocalFolderPath());
             folder.setLocalFolderPath(outside.resolve("missing").toString());
-            assertThrows(FieldValidationException.class, () -> service.save(id, folder));
+            assertThrows(FieldValidationException.class, () -> save(id, folder));
             common.when(Common::isServer).thenReturn(true);
             // Existing folder sources remain removable while server mode is enabled.
             var none = new StudySourceProperties();
             none.setType(StudySource.Type.NONE);
-            assertEquals(StudySource.Type.NONE, service.save(id, none).getType());
+            assertEquals(StudySource.Type.NONE, save(id, none).getType());
         } finally {
             Files.deleteIfExists(link);
             Files.deleteIfExists(root);
@@ -369,23 +398,23 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
 
     @Test
     public void logsOnlyCommittedChangesWithoutSecrets() throws Exception {
-        service.save(id, git());
+        save(id, git());
         var logger = application.injector().instanceOf(StudyLogger.class);
         Path log = jpaApi.withTransaction(em -> {
-            return Path.of(logger.getPath(em.find(Study.class, id)));
+            return Path.of(logger.getPath(em.find(Study.class, id).getUuid()));
         });
         String before = Files.readString(log, java.nio.charset.StandardCharsets.ISO_8859_1);
         assertTrue(before.contains("Changed study source configuration to GIT"));
-        service.save(id, git());
+        save(id, git());
         assertEquals(before, Files.readString(log, java.nio.charset.StandardCharsets.ISO_8859_1));
         assertThrows(IllegalStateException.class, () -> jpaApi.withTransaction((jakarta.persistence.EntityManager em) -> {
             var none = new StudySourceProperties();
             none.setType(StudySource.Type.NONE);
-            service.save(id, none);
+            save(id, none);
             throw new IllegalStateException("rollback");
         }));
         assertEquals(before, Files.readString(log, java.nio.charset.StandardCharsets.ISO_8859_1));
-        service.save(id, withCredentials());
+        save(id, withCredentials());
         String after = Files.readString(log, java.nio.charset.StandardCharsets.ISO_8859_1);
         assertFalse(after.contains("private-access-token"));
         assertFalse(after.contains("git-user"));

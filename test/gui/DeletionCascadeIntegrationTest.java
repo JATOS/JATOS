@@ -207,7 +207,7 @@ public class DeletionCascadeIntegrationTest {
             List<Run> siblingRuns = runs(em, study, sibling, worker);
             List<Run> otherRuns = runs(em, other, otherBatch, worker);
             em.flush();
-            app.injector().instanceOf(StudyLogger.class).create(study);
+            app.injector().instanceOf(StudyLogger.class).create(study.getUuid());
             return new Fixture(study.getId(), selected.getId(), sibling.getId(), other.getId(), worker.getId(),
                     study.getDirName(), study.getUuid(), selectedRuns, siblingRuns, otherRuns);
         });

@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.2.0
+  version: 1.3.0
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -657,6 +657,77 @@ paths:
           $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/source/sync:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Preview study source synchronization
+      description: >-
+        Currently supports configured local folders only. Stages and validates the
+        source, returning available content for confirmation.
+        A .jas UUID differing from the target study is rejected, even for assets-only updates.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available source content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncPreview'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Synchronize selected study content from its configured source
+      description: >-
+        Select properties, assets, or both.
+        Selected assets replace the entire directory, never merge. An empty assets/
+        directory clears existing assets; missing content cannot be selected.
+        Existing ownership, membership, source settings, batches and the internal assets
+        directory name are preserved.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceSyncUpdate'
+      responses:
+        '200':
+          description: Selected content synchronized successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/StudySourceSyncResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Another synchronization is in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
 
   /jatos/api/v1/studies/{id}/source:
     parameters:
@@ -3210,6 +3281,32 @@ components:
           description: Delete credentials; cannot be combined with a nonempty secret.
       additionalProperties: false
 
+    StudySourceSyncPreview:
+      type: object
+      required: [ type, localFolderPath, propertiesAvailable, assetsAvailable ]
+      properties:
+        type: { type: string, enum: [ LOCAL_FOLDER ] }
+        localFolderPath: { type: string, description: Configured server-local folder path }
+        propertiesAvailable: { type: boolean }
+        assetsAvailable: { type: boolean }
+
+    StudySourceSyncUpdate:
+      type: object
+      additionalProperties: false
+      description: Select at least one available content type. Omitted selections default to false.
+      properties:
+        properties: { type: boolean, default: false }
+        assets: { type: boolean, default: false }
+
+    StudySourceSyncResult:
+      type: object
+      required: [ studyId, propertiesUpdated, assetsUpdated, message ]
+      properties:
+        studyId: { type: integer, format: int64 }
+        propertiesUpdated: { type: boolean }
+        assetsUpdated: { type: boolean }
+        message: { type: string }
+
     StudySourceUpdate:
       type: object
       required: [ type ]
@@ -3269,15 +3366,6 @@ components:
               type: boolean
               readOnly: true
               description: Whether the installation currently permits local-folder sources.
-
-    ApiEnvelopeStudySource:
-      allOf:
-        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/StudySource'
-          required: [ data ]
 
     UserRoleChange:
       type: object
@@ -3887,4 +3975,22 @@ components:
               items:
                 type: integer
                 format: int64
+          required: [ data ]
+
+    ApiEnvelopeStudySourceSyncPreview:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/StudySourceSyncPreview'
+          required: [ data ]
+
+    ApiEnvelopeStudySource:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/StudySource'
           required: [ data ]

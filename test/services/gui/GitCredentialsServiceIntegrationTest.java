@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import play.libs.Json;
+import services.gui.importexport.GitCredentialsService;
 import testutils.JatosTest;
 import utils.common.GitCredentialEncryption;
 

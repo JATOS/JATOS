@@ -6,7 +6,7 @@ import http.common.Http.Context;
 import models.common.Study;
 import org.junit.Test;
 import play.libs.ws.WSResponse;
-import services.gui.StudyArchiveImportExport;
+import services.gui.importexport.StudyArchiveImportExport;
 import testutils.JatosTest;
 
 import java.nio.file.Files;
@@ -24,6 +24,7 @@ import static org.junit.Assert.*;
  * and properties.
  */
 public class StudyImportExportIntegrationTest extends JatosTest {
+
     /**
      * Imports the archive, exports it through the HTTP API, deletes the study and reimports the export.
      * Compares non-hidden study assets byte-for-byte (excluding the {@code .jas} metadata) and checks study,

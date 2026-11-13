@@ -317,11 +317,15 @@ public class StudyService {
 
             studyDao.persist(managedStudy);
 
+            String studyUuid = managedStudy.getUuid();
+            String userName = managedSignedinUser.getName();
+            boolean logDescription = !Strings.isNullOrEmpty(managedStudy.getDescription());
+            String descriptionHash = managedStudy.getDescriptionHash();
             transactions.afterCommit("Log study creation", () -> {
-                studyLogger.create(managedStudy);
-                studyLogger.log(managedStudy, managedSignedinUser, "Created study");
-                if (!Strings.isNullOrEmpty(managedStudy.getDescription())) {
-                    studyLogger.logStudyDescriptionHash(managedStudy, managedSignedinUser);
+                studyLogger.create(studyUuid);
+                studyLogger.log(studyUuid, userName, "Created study");
+                if (logDescription) {
+                    studyLogger.logStudyDescriptionHash(studyUuid, userName, descriptionHash);
                 }
             });
             return managedStudy;
@@ -351,7 +355,13 @@ public class StudyService {
             updateStudyCommon(study, updatedStudy);
             studyDao.merge(study);
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-            if (logStudyDescriptionHash) studyLogger.logStudyDescriptionHash(study, signedinUser);
+            if (logStudyDescriptionHash) {
+                String studyUuid = study.getUuid();
+                String userName = signedinUser.getName();
+                String descriptionHash = study.getDescriptionHash();
+                transactions.afterCommit("Log updated study description",
+                        () -> studyLogger.logStudyDescriptionHash(studyUuid, userName, descriptionHash));
+            }
         });
     }
 
@@ -487,9 +497,11 @@ public class StudyService {
                 transactions.afterCommit("Remove study assets directory " + dirName,
                         () -> ioUtils.removeStudyAssetsDir(dirName));
             }
+            String studyUuid = managedStudy.getUuid();
+            String userName = signedinUser.getName();
             transactions.afterCommit("Retire study log " + managedStudy.getId(), () -> {
-                studyLogger.log(managedStudy, signedinUser, "Removed study");
-                studyLogger.retire(managedStudy);
+                studyLogger.log(studyUuid, userName, "Removed study");
+                studyLogger.retire(studyUuid);
             });
         });
 

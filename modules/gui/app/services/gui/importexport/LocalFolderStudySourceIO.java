@@ -1,4 +1,4 @@
-package services.gui;
+package services.gui.importexport;
 
 import exceptions.common.BadRequestException;
 import general.common.Common;
@@ -15,15 +15,15 @@ import java.util.List;
 import static general.common.ApiEnvelope.ErrorCode.CONFIG_ERROR;
 
 /**
- * Stages folder content; callers must authorize creation/synchronization before invoking this service.
+ * Stages local folder content for study import.
  */
 @Singleton
-public class LocalStudySourceIO {
+public class LocalFolderStudySourceIO {
 
     private final IOUtils ioUtils;
 
     @Inject
-    public LocalStudySourceIO(IOUtils ioUtils) {
+    public LocalFolderStudySourceIO(IOUtils ioUtils) {
         this.ioUtils = ioUtils;
     }
 

@@ -1,11 +1,9 @@
-package services.gui;
+package services.gui.importexport;
 
 import com.google.common.base.Strings;
 import daos.common.StudyDao;
-import daos.common.UserDao;
 import exceptions.common.BadRequestException;
 import exceptions.common.FieldValidationException;
-import exceptions.common.NotFoundException;
 import general.common.Common;
 import general.common.JpaTransactions;
 import general.common.StudyLogger;
@@ -13,7 +11,6 @@ import http.common.Http.Context;
 import http.common.HttpUtils;
 import models.common.Study;
 import models.common.StudySource;
-import models.common.User;
 import models.gui.StudySourceProperties;
 import utils.common.IOUtils;
 import utils.common.StringUtils;
@@ -34,107 +31,85 @@ import static general.common.ApiEnvelope.ErrorCode.CONFIG_ERROR;
 public class StudySourceService {
 
     private final JpaTransactions transactions;
-    private final UserDao users;
     private final StudyDao studies;
-    private final AuthorizationService authorization;
     private final GitCredentialsService credentials;
     private final StudyLogger logger;
     private final IOUtils ioUtils;
 
     @Inject
     public StudySourceService(JpaTransactions transactions,
-                              UserDao users,
                               StudyDao studies,
-                              AuthorizationService authorization,
                               GitCredentialsService credentials,
                               StudyLogger logger,
                               IOUtils ioUtils) {
         this.transactions = transactions;
-        this.users = users;
         this.studies = studies;
-        this.authorization = authorization;
         this.credentials = credentials;
         this.logger = logger;
         this.ioUtils = ioUtils;
     }
 
     public StudySourceProperties get(long studyId) {
-        return transactions.withTransaction(em -> {
-            User signedinUser = getSignedInUserWithCredentials();
-            Study study = getOwnedStudy(studyId, signedinUser);
-            StudySource source = study.getStudySource();
-            // Reading an unconfigured study must not create a persisted source.
-            if (source == null) source = new StudySource(study);
-            return bindToProperties(source);
-        });
+        Study study = studies.findByIdWithSourceAndLock(studyId);
+        StudySource source = study.getStudySource();
+        // Reading an unconfigured study must not create a persisted source.
+        if (source == null) source = new StudySource(study);
+        return bindToProperties(source);
     }
 
     /**
      * Validates and saves source settings and credentials for an owner or enabled superuser, preserving sync history.
      */
     public StudySourceProperties save(long studyId, StudySourceProperties props) {
-        return transactions.withTransaction(em -> {
-            User signedInUser = getSignedInUserWithCredentials();
-            Study study = getOwnedStudy(studyId, signedInUser);
-
-            var errors = props.validate();
-            if (errors != null)
-                throw new FieldValidationException(errors.getFirst().key(), errors.getFirst().message());
-
-            StudySource source = study.getStudySource();
-            if (source == null) source = new StudySource(study);
-
-            boolean replaceCredentials = !Strings.isNullOrEmpty(props.getSecret());
-            boolean updateUsername = source.getGitCredentials() != null
-                    && !Strings.isNullOrEmpty(props.getUsername())
-                    && !Objects.equals(props.getUsername(), source.getGitCredentials().getUsername());
-            StudySourceProperties propsBefore = bindToProperties(source);
-            String localFolder = props.getType() == StudySource.Type.LOCAL_FOLDER
-                    ? validateFolder(props.getLocalFolderPath()) : null;
-
-            // Do not allow using the same credentials for different git origins, e.g., change from GitHub to GitLab
-            String gitOrigin = props.getType() == StudySource.Type.GIT
-                    ? HttpUtils.getGitOriginFromRepositoryUrl(props.getGitUrl()) : null;
-            if (props.getType() == StudySource.Type.GIT
-                    && !props.isRemoveCredentials() && !replaceCredentials
-                    && source.getGitCredentials() != null
-                    && !Objects.equals(source.getGitCredentials().getOrigin(), gitOrigin)) {
-                throw new FieldValidationException("gitUrl",
-                        "Remove or replace the saved credentials when changing the repository origin.");
-            }
-
-            bindToSource(source, props, localFolder);
-            // Attach the source; Hibernate saves it through Study's cascade mapping.
-            study.setStudySource(source);
-
-            if (props.getType() != StudySource.Type.GIT || props.isRemoveCredentials()) {
-                if (source.getGitCredentials() != null) credentials.removeGitCredentialsFromSource(studyId);
-            } else if (replaceCredentials || updateUsername) {
-                credentials.saveGitCredentialsForSource(studyId, props.getUsername(),
-                        HttpUtils.getGitOriginFromRepositoryUrl(source.getGitUrl()), props.getSecret());
-            }
-            StudySourceProperties propsAfter = bindToProperties(source);
-            if (!isEqualStudySourceProperties(propsBefore, propsAfter)
-                    || props.getType() == StudySource.Type.GIT
-                    && replaceCredentials) {
-                String message = "Changed study source configuration to " + source.getType();
-                transactions.afterCommit("Log study source configuration change",
-                        () -> logger.log(study, signedInUser, message));
-            }
-            return propsAfter;
-        });
-    }
-
-    private User getSignedInUserWithCredentials() {
-        User signedinUser = Context.current().args().getOrElse(SIGNEDIN_USER, null);
-        return users.findByUsernameWithGitCredentialsAndLock(signedinUser.getUsername());
-    }
-
-    private Study getOwnedStudy(long studyId, User user) {
         Study study = studies.findByIdWithSourceAndLock(studyId);
-        if (study == null) throw new NotFoundException("Study doesn't exist.");
-        authorization.checkLockedStudyOwner(study, user, false);
-        return study;
+
+        var errors = props.validate();
+        if (errors != null)
+            throw new FieldValidationException(errors.getFirst().key(), errors.getFirst().message());
+
+        StudySource source = study.getStudySource();
+        if (source == null) source = new StudySource(study);
+
+        boolean replaceCredentials = !Strings.isNullOrEmpty(props.getSecret());
+        boolean updateUsername = source.getGitCredentials() != null
+                && !Strings.isNullOrEmpty(props.getUsername())
+                && !Objects.equals(props.getUsername(), source.getGitCredentials().getUsername());
+        StudySourceProperties propsBefore = bindToProperties(source);
+        String localFolder = props.getType() == StudySource.Type.LOCAL_FOLDER
+                ? validateFolder(props.getLocalFolderPath()) : null;
+
+        // Do not allow using the same credentials for different git origins, e.g., change from GitHub to GitLab
+        String gitOrigin = props.getType() == StudySource.Type.GIT
+                ? HttpUtils.getGitOriginFromRepositoryUrl(props.getGitUrl()) : null;
+        if (props.getType() == StudySource.Type.GIT
+                && !props.isRemoveCredentials() && !replaceCredentials
+                && source.getGitCredentials() != null
+                && !Objects.equals(source.getGitCredentials().getOrigin(), gitOrigin)) {
+            throw new FieldValidationException("gitUrl",
+                    "Remove or replace the saved credentials when changing the repository origin.");
+        }
+
+        bindToSource(source, props, localFolder);
+        // Attach the source; Hibernate saves it through Study's cascade mapping.
+        study.setStudySource(source);
+
+        if (props.getType() != StudySource.Type.GIT || props.isRemoveCredentials()) {
+            if (source.getGitCredentials() != null) credentials.removeGitCredentialsFromSource(studyId);
+        } else if (replaceCredentials || updateUsername) {
+            credentials.saveGitCredentialsForSource(studyId, props.getUsername(),
+                    HttpUtils.getGitOriginFromRepositoryUrl(source.getGitUrl()), props.getSecret());
+        }
+        StudySourceProperties propsAfter = bindToProperties(source);
+        if (!isEqualStudySourceProperties(propsBefore, propsAfter)
+                || props.getType() == StudySource.Type.GIT
+                && replaceCredentials) {
+            String message = "Changed study source configuration to " + source.getType();
+            String studyUuid = study.getUuid();
+            String userName = Context.current().args().get(SIGNEDIN_USER).getName();
+            transactions.afterCommit("Log study source configuration change",
+                    () -> logger.log(studyUuid, userName, message));
+        }
+        return propsAfter;
     }
 
     /**

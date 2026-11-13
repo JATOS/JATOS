@@ -200,7 +200,9 @@
             contentType: "application/json",
             headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
             data: JSON.stringify(jsonData),
-            success: function() {
+            success: function(response) {
+                window.study.sourceType = response.data.type;
+                $("#studySyncButton").toggleClass("d-none", response.data.type !== "LOCAL_FOLDER");
                 $("#studySourceModal").modal("hide");
                 Alerts.success("Study source settings saved. Study content has not changed.", 5000, true);
             },

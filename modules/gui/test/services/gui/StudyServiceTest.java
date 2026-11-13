@@ -519,10 +519,16 @@ public class StudyServiceTest {
         verify(studyDao).persist(study);
 
         verifyNoInteractions(studyLogger);
+        String studyUuid = study.getUuid();
+        String userName = signedInUser.getName();
+        String descriptionHash = study.getDescriptionHash();
+        study.setUuid(UUID.randomUUID().toString());
+        study.setDescription("");
+        signedInUser.setName("Changed before commit");
         callbacks.commit();
-        verify(studyLogger).create(study);
-        verify(studyLogger).log(study, signedInUser, "Created study");
-        verify(studyLogger).logStudyDescriptionHash(study, signedInUser);
+        verify(studyLogger).create(studyUuid);
+        verify(studyLogger).log(studyUuid, userName, "Created study");
+        verify(studyLogger).logStudyDescriptionHash(studyUuid, userName, descriptionHash);
     }
 
     @Test
@@ -556,9 +562,9 @@ public class StudyServiceTest {
 
         verifyNoInteractions(studyLogger);
         callbacks.commit();
-        verify(studyLogger).create(study);
-        verify(studyLogger).log(study, signedInUser, "Created study");
-        verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
+        verify(studyLogger).create(study.getUuid());
+        verify(studyLogger).log(study.getUuid(), signedInUser.getName(), "Created study");
+        verify(studyLogger, never()).logStudyDescriptionHash(any(), any(), any());
     }
 
     @Test
@@ -585,9 +591,9 @@ public class StudyServiceTest {
         verify(studyDao).persist(study);
         verifyNoInteractions(studyLogger);
         callbacks.commit();
-        verify(studyLogger).create(study);
-        verify(studyLogger).log(study, signedInUser, "Created study");
-        verify(studyLogger, never()).logStudyDescriptionHash(any(), any());
+        verify(studyLogger).create(study.getUuid());
+        verify(studyLogger).log(study.getUuid(), signedInUser.getName(), "Created study");
+        verify(studyLogger, never()).logStudyDescriptionHash(any(), any(), any());
     }
 
     @Test
@@ -608,7 +614,11 @@ public class StudyServiceTest {
         assertThat(existing.getDirName()).isEqualTo("keepMe");
         assertThat(existing.getDescription()).isEqualTo("new");
         verify(studyDao).merge(existing);
-        verify(studyLogger).logStudyDescriptionHash(existing, user);
+        verifyNoInteractions(studyLogger);
+        String descriptionHash = existing.getDescriptionHash();
+        existing.setDescription("Changed again before commit");
+        callbacks.commit();
+        verify(studyLogger).logStudyDescriptionHash(existing.getUuid(), user.getName(), descriptionHash);
     }
 
     @Test
@@ -757,8 +767,8 @@ public class StudyServiceTest {
         verify(studyDao).remove(study);
         verify(ioUtils).removeStudyAssetsDir("dir");
 
-        verify(studyLogger).log(study, signedIn, "Removed study");
-        verify(studyLogger).retire(study);
+        verify(studyLogger).log(study.getUuid(), signedIn.getName(), "Removed study");
+        verify(studyLogger).retire(study.getUuid());
     }
 
     @Test
@@ -779,7 +789,7 @@ public class StudyServiceTest {
 
         verify(studyDao).remove(study);
         verify(ioUtils, never()).removeStudyAssetsDir(anyString());
-        verify(studyLogger).retire(study);
+        verify(studyLogger).retire(study.getUuid());
     }
 
 }

@@ -1,4 +1,4 @@
-package services.gui;
+package services.gui.importexport;
 
 import daos.common.UserDao;
 import daos.common.StudyDao;
@@ -14,6 +14,7 @@ import models.common.Study;
 import models.common.StudySource;
 import models.common.User;
 import models.gui.GitCredentialsProperties;
+import services.gui.AuthorizationService;
 import utils.common.GitCredentialEncryption;
 
 import javax.inject.Inject;

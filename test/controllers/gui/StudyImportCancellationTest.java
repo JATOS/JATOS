@@ -3,7 +3,7 @@ package controllers.gui;
 import models.common.User;
 import org.junit.Test;
 import play.mvc.Http;
-import services.gui.PendingStudyImportStorage;
+import services.gui.importexport.StudyArchiveImportStorage;
 import testutils.JatosTest;
 
 import java.nio.file.Files;
@@ -11,9 +11,10 @@ import java.nio.file.Path;
 
 import static org.junit.Assert.*;
 import static play.test.Helpers.*;
-import static services.gui.StudyArchiveImportExport.SESSION_TEMP_IMPORT_STUDY_DIR;
+import static services.gui.importexport.StudyArchiveImportExport.SESSION_TEMP_IMPORT_STUDY_DIR;
 
 public class StudyImportCancellationTest extends JatosTest {
+
     private Http.RequestBuilder request(User user, String pending, String csrf, boolean sendToken) {
         var request = fakeRequest(DELETE, "/jatos/import/study")
                 .header("Content-Type", "application/x-www-form-urlencoded")
@@ -29,7 +30,7 @@ public class StudyImportCancellationTest extends JatosTest {
     }
 
     @Test public void cancellationRequiresSessionAuthorizationAndCsrfAndIsIdempotent() {
-        PendingStudyImportStorage store = application.injector().instanceOf(PendingStudyImportStorage.class);
+        StudyArchiveImportStorage store = application.injector().instanceOf(StudyArchiveImportStorage.class);
         Path pending = store.prepare(path -> path).getParent();
         Path other = store.prepare(path -> path).getParent();
         String token = application.injector().instanceOf(play.filters.csrf.CSRF.TokenProvider.class).generateToken();

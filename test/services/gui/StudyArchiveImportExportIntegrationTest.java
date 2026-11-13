@@ -13,8 +13,10 @@ import models.common.Study;
 import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import org.assertj.core.api.Fail;
+import org.junit.Assert;
 import org.junit.Test;
 import play.test.Helpers;
+import services.gui.importexport.StudyArchiveImportExport;
 import testutils.JatosTest;
 import utils.common.IOUtils;
 
@@ -27,7 +29,7 @@ import java.util.stream.Stream;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static exceptions.common.JatosException.unchecked;
 import static org.assertj.core.api.Assertions.assertThat;
-import static services.gui.StudyArchiveImportExport.SESSION_TEMP_IMPORT_STUDY_DIR;
+import static services.gui.importexport.StudyArchiveImportExport.SESSION_TEMP_IMPORT_STUDY_DIR;
 
 /**
  * Tests for StudyArchiveImportExport
@@ -61,7 +63,7 @@ public class StudyArchiveImportExportIntegrationTest extends JatosTest {
         studyArchiveImportExport.importStudy(exampleStudyArchive());
         Path staging = IOUtils.tmpDir().resolve(Context.current().response()
                 .getSession(SESSION_TEMP_IMPORT_STUDY_DIR).orElseThrow());
-        org.junit.Assert.assertThrows(IllegalStateException.class, () ->
+        Assert.assertThrows(IllegalStateException.class, () ->
                 transactions.withTransaction((java.util.function.Consumer<jakarta.persistence.EntityManager>) em -> {
                     studyArchiveImportExport.importStudyConfirmed(false, false, false, true);
                     throw new IllegalStateException("rollback");

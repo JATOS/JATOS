@@ -1,9 +1,7 @@
-package services.gui;
+package services.gui.importexport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import exceptions.common.ImportExportException;
-import exceptions.common.JatosException;
-import general.common.ApiEnvelope.ErrorCode;
 import json.common.DefaultJson;
 import models.common.Study;
 
@@ -43,12 +41,12 @@ public class StudyDeserializer {
         Study study = switch (version) {
             case 0, 1, 2 ->
                     // Version 2
-                    throw new JatosException("Support for this version of the study model has been removed.", ErrorCode.IMPORT_EXPORT_ERROR);
+                    throw new ImportExportException("Support for this version of the study model has been removed.");
             case 3 ->
                     // Current version
                     mapper.jsonNodeAsObj(node.findValue("data"), Study.class);
             default ->
-                    throw new JatosException("This study is from an unsupported version of JATOS.", ErrorCode.IMPORT_EXPORT_ERROR);
+                    throw new ImportExportException("This study is from an unsupported version of JATOS.");
         };
         return study;
     }

@@ -34,7 +34,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
     public void checkCreate() throws IOException {
         Study study = importAndGetExampleStudy();
         // Check that the log is created
-        Path studyLogPath = Paths.get(studyLogger.getPath(study));
+        Path studyLogPath = Paths.get(studyLogger.getPath(study.getUuid()));
         assertThat(Files.isReadable(studyLogPath)).isTrue();
         checkInitEntry(study);
     }
@@ -44,7 +44,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
         Study study = importAndGetExampleStudy();
 
         // Check that the log is created
-        Path studyLogPath = Paths.get(studyLogger.getPath(study));
+        Path studyLogPath = Paths.get(studyLogger.getPath(study.getUuid()));
         assertThat(Files.isReadable(studyLogPath)).isTrue();
 
         // Now delete the log
@@ -65,10 +65,10 @@ public class StudyLoggerIntegrationTest extends JatosTest {
         Study study = importAndGetExampleStudy();
 
         // Check that the log is created
-        Path logPath = Paths.get(studyLogger.getPath(study));
+        Path logPath = Paths.get(studyLogger.getPath(study.getUuid()));
         assertThat(Files.isReadable(logPath)).isTrue();
 
-        String retiredLogFilename = studyLogger.retire(study);
+        String retiredLogFilename = studyLogger.retire(study.getUuid());
 
         // Check that the log is renamed
         Path retiredLogPath = Paths.get(Common.getStudyLogsPath() + File.separator + retiredLogFilename);
@@ -76,7 +76,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
         assertThat(Files.exists(retiredLogPath)).isTrue();
 
         List<String> content = Files.readAllLines(retiredLogPath);
-        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
+        JsonNode json = Json.parse(content.getLast()); // get last line from log
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
         assertThat(json.has("studyUuid")).isTrue();
@@ -87,7 +87,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
         Long studyId = importExampleStudy();
         Study study = studyDao.findByIdWithBatches(studyId);
 
-        Path logPath = Paths.get(studyLogger.getPath(study));
+        Path logPath = Paths.get(studyLogger.getPath(study.getUuid()));
         StudyLink studyLink = new StudyLink(study.getDefaultBatch(), admin.getWorker());
 
         // Use all log() methods
@@ -127,9 +127,9 @@ public class StudyLoggerIntegrationTest extends JatosTest {
 
         studyLogger.logResultDataStoring(componentResult, data, false);
 
-        Path logPath = Paths.get(studyLogger.getPath(study));
+        Path logPath = Paths.get(studyLogger.getPath(study.getUuid()));
         List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
+        JsonNode json = Json.parse(content.getLast()); // get last line from log
 
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
@@ -155,9 +155,9 @@ public class StudyLoggerIntegrationTest extends JatosTest {
 
         studyLogger.logResultUploading(uploadedFile, componentResult);
 
-        Path logPath = Paths.get(studyLogger.getPath(study));
+        Path logPath = Paths.get(studyLogger.getPath(study.getUuid()));
         List<String> content = Files.readAllLines(logPath);
-        JsonNode json = Json.parse(content.get(content.size() - 1)); // get last line from log
+        JsonNode json = Json.parse(content.getLast()); // get last line from log
 
         assertThat(json.has("msg")).isTrue();
         assertThat(json.has("timestamp")).isTrue();
@@ -172,7 +172,7 @@ public class StudyLoggerIntegrationTest extends JatosTest {
     }
 
     private void checkInitEntry(Study study) throws IOException {
-        Path logPath = Paths.get(studyLogger.getPath(study));
+        Path logPath = Paths.get(studyLogger.getPath(study.getUuid()));
         List<String> content = Files.readAllLines(logPath);
         JsonNode json = Json.parse(content.get(1)); // First line is empty, second line is init msg
         assertThat(json.has("msg")).isTrue();

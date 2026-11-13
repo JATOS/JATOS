@@ -39,6 +39,8 @@
     window.routes.Api.getGroupSession = (id) => `${basePath}jatos/api/v1/groups/${id}/session?asText=true`;
     window.routes.Api.updateGroupSession = (id, version) => `${basePath}jatos/api/v1/groups/${id}/session?version=${version}`;
     window.routes.Api.importOrCreateStudy = `${basePath}jatos/api/v1/studies`;
+    window.routes.Api.previewStudySourceSync = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source/sync`;
+    window.routes.Api.syncStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source/sync`;
     window.routes.Api.getStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source`;
     window.routes.Api.saveStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source`;
     window.routes.ApiTokens = {};

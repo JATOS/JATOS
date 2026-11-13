@@ -1,4 +1,4 @@
-package services.gui;
+package services.gui.importexport;
 
 import exceptions.common.ImportExportException;
 import exceptions.common.JatosException;
@@ -23,16 +23,16 @@ import java.util.function.Function;
 import static general.common.ApiEnvelope.ErrorCode.IO_ERROR;
 
 /**
- * Manages temporary archive uploads between preparation and confirmation. It handles their lifetime and prevents
+ * Manages temporary study archive uploads between preparation and confirmation. It handles their lifetime and prevents
  * confirmation and cleanup from using the same upload simultaneously. It doesn’t validate or import studies itself;
  * callers provide those operations as callbacks. The usual lifecycle is prepare → wait for confirmation → use → remove
- * or prepare → wait for confirmation → cancel → remove. In case of abandonment cleanupExpired is called by a
+ * or prepare → wait for confirmation → cancel → remove. In case of abandonment, cleanupExpired is called by a
  * scheduler.
  */
 @Singleton
-public class PendingStudyImportStorage {
+public class StudyArchiveImportStorage {
 
-    private static final Logger.ALogger LOGGER = Logger.of(PendingStudyImportStorage.class);
+    private static final Logger.ALogger LOGGER = Logger.of(StudyArchiveImportStorage.class);
 
     // JVM-wide: closing a second channel to the same file can release another channel's native lock.
     private static final Set<Path> ACTIVE_IMPORTS = ConcurrentHashMap.newKeySet();

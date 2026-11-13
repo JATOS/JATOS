@@ -23,7 +23,7 @@ import play.mvc.Result;
 import services.gui.ApiService;
 import services.gui.AuthorizationService;
 import services.gui.UserService;
-import services.gui.GitCredentialsService;
+import services.gui.importexport.GitCredentialsService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
