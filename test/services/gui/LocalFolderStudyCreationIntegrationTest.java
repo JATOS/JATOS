@@ -10,7 +10,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import play.libs.Json;
-import services.gui.importexport.LocalFolderStudyImport;
+import services.gui.importexport.LocalFolderStudyImportExport;
 import testutils.JatosTest;
 import utils.common.IOUtils;
 
@@ -28,12 +28,12 @@ public class LocalFolderStudyCreationIntegrationTest extends JatosTest {
 
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder();
-    private LocalFolderStudyImport service;
+    private LocalFolderStudyImportExport service;
     private Path source;
 
     @Before
     public void setupFolder() throws Exception {
-        service = application.injector().instanceOf(LocalFolderStudyImport.class);
+        service = application.injector().instanceOf(LocalFolderStudyImportExport.class);
         Context.current().args().put(SIGNEDIN_USER, admin);
         source = temporary.newFolder("source").toPath();
     }

@@ -58,7 +58,7 @@ public class StudySourceService {
     }
 
     /**
-     * Validates and saves source settings and credentials for an owner or enabled superuser, preserving sync history.
+     * Validates and saves source settings and credentials for an owner or enabled superuser.
      */
     public StudySourceProperties save(long studyId, StudySourceProperties props) {
         Study study = studies.findByIdWithSourceAndLock(studyId);
@@ -91,7 +91,7 @@ public class StudySourceService {
 
         bindToSource(source, props, localFolder);
         // Attach the source; Hibernate saves it through Study's cascade mapping.
-        study.setStudySource(source);
+        if (props.getType() != StudySource.Type.NONE) study.setStudySource(source);
 
         if (props.getType() != StudySource.Type.GIT || props.isRemoveCredentials()) {
             if (source.getGitCredentials() != null) credentials.removeGitCredentialsFromSource(studyId);
@@ -99,6 +99,7 @@ public class StudySourceService {
             credentials.saveGitCredentialsForSource(studyId, props.getUsername(),
                     HttpUtils.getGitOriginFromRepositoryUrl(source.getGitUrl()), props.getSecret());
         }
+        if (props.getType() == StudySource.Type.NONE) study.setStudySource(null);
         StudySourceProperties propsAfter = bindToProperties(source);
         if (!isEqualStudySourceProperties(propsBefore, propsAfter)
                 || props.getType() == StudySource.Type.GIT
@@ -113,7 +114,7 @@ public class StudySourceService {
     }
 
     /**
-     * Copies validated settings and clears inactive fields without changing sync history.
+     * Copies validated settings and clears inactive fields.
      */
     private void bindToSource(StudySource source, StudySourceProperties props, String localFolder) {
         source.setType(props.getType());

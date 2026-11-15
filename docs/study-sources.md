@@ -7,7 +7,7 @@ cannot configure sources or study-specific credentials.
 Choose one source:
 
 - **None** removes source configuration and study-specific Git credentials.
-  The StudySource row and its latest synchronization metadata remain.
+  The StudySource row is deleted; previous entries remain in the study log.
 - **Git repository** accepts an HTTPS URL and an optional branch or tag.
   Leave the ref empty for the default branch. SSH URLs, embedded credentials,
   query strings, fragments, and arbitrary commit IDs are not supported.
@@ -153,8 +153,10 @@ field when staging fails. Session writes require CSRF protection.
 ## Import implementation
 
 `StudyArchiveImportExport` handles `.jzip` uploads, confirmation, and archive exports.
-`LocalFolderStudyImport` coordinates local-folder creation and source configuration,
-using `LocalFolderStudySourceIO` to stage external files. Both import paths use
+`LocalFolderStudyImportExport` handles local-folder creation, import/export previews, and content replacement,
+using `LocalFolderStudySourceIO` to stage external files. `StudySourceSync` coordinates
+authorization, per-study locking, transactions, and logging for existing-study synchronization.
+Both import paths use
 `StudyImportService` for shared study validation and content application, including
 assets-directory reservation and rollback cleanup. Git ingestion can reuse this
 service when it is implemented.
@@ -177,7 +179,7 @@ are used. Tabs in the same browser session share the pending import.
 
 ## Synchronize a local-folder source
 
-On the study page, **Sync** appears for a configured local-folder source. Study
+On the study page, **Sync → Import** appears for a configured local-folder source. Study
 members and enabled superusers can synchronize an unlocked study; only owners
 and enabled superusers can change source settings or credentials. Removing the
 source hides Sync. A newly disallowed folder source is rejected by server policy.
@@ -194,7 +196,7 @@ updated; removed components become inactive so results are retained. Ownership,
 membership, batches, source configuration and the installed assets directory name
 are preserved. This adds no study-functionality validation.
 
-API clients use `GET /jatos/api/v1/studies/{id}/source/sync` to preview and then
+API clients use `GET /jatos/api/v1/studies/{id}/source/folder/import` to preview and then
 `POST` the same endpoint with JSON:
 
 ```json
@@ -222,7 +224,52 @@ handles ordinary operation and transaction failures; it is not automatic recover
 from a process crash or storage failure. A directory replacement can briefly make
 assets unavailable to concurrent readers; avoid synchronizing during active runs.
 
-Successful synchronization updates properties/assets metadata separately and writes
-a study-log entry after commit. The GUI reloads the study and displays a success
+Successful synchronization writes a study-log entry after commit, recording the
+selected content and source folder along with the time and initiating user. The GUI reloads the study and displays a success
 message with the applied scope and a reminder to test. Export remains available
 for backups. Git synchronization is not implemented yet.
+
+## Export to the configured local folder
+
+Study members and enabled superusers can choose **Sync → Export** for an unlocked study.
+The modal previews the destination and lets them select properties, assets, or both.
+Members can still use **Sync → Import**. Git pull/push is not implemented yet.
+
+Export uses the same allowed-root policy as import and requires an existing writable
+folder. An empty destination is supported. Properties replace the single existing
+root .jas file, preserving its filename; if none exists, export creates study.jas.
+Multiple .jas files, an unreadable/invalid .jas, or a different study UUID block
+export (including assets-only export). Preview reports the first validation error, and apply checks again.
+
+Selected assets replace the entire destination assets/ directory without merging.
+An empty internal assets directory clears the destination assets. A missing internal
+assets directory cannot be exported and never clears the destination. Unselected
+content and unrelated root files, including .git, remain untouched. Files within the
+selected assets/ directory belong to the replacement scope. Internal .git entries
+are not copied. Destination entries and outgoing content may not use links or junctions.
+
+The existing archive serializer writes the .jas, excluding source configuration,
+credentials, and synchronization history. Export records the selected content and
+destination folder in the study log after commit, with the time and initiating user.
+It does not change study content. Changing or removing a source preserves the log.
+
+The API uses the existing endpoints:
+- GET /jatos/api/v1/studies/{id}/source/folder/export
+- POST /jatos/api/v1/studies/{id}/source/folder/export with
+  {"properties":true,"assets":true}
+
+Import and export have separate endpoints and share the properties/assets request body;
+there is no direction field. GET previews the operation and POST applies it.
+Export preview returns an error if destination validation fails. Result flags
+describe changes to the endpoint's destination (JATOS for import, the folder for export).
+
+Import and export share the per-study synchronization lock. Export first stages
+selected content in a .jatos-export-* temporary directory inside the destination
+folder so each replacement move stays on one filesystem. Old entries remain as
+backups until commit. Rollback restores replaced entries; restoration failure
+retains the backups for manual recovery. The .jas and assets replacements are not
+one atomic operation, and process crashes require manual recovery. Keep the folder
+unchanged during an export; external editors and other studies using the same folder
+are not coordinated by the per-study lock.
+
+Synchronization history is available in **Study log**.

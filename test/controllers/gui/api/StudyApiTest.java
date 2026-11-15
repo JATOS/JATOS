@@ -57,6 +57,8 @@ public class StudyApiTest extends JatosTest {
             request.uri("/jatos/" + study.getId());
             String html = contentAsString(route(application, request));
             assertThat(html.contains("id=\"removeStudy\"" )).isEqualTo(!user.equals(member));
+            assertThat(html).contains("id=\"exportStudy\"", "data-operation=\"IMPORT\"", "data-operation=\"EXPORT\"");
+            assertThat(html.contains("href=\"#studySourceModal\"")).isEqualTo(!user.equals(member));
         }
         } finally {
             enabledField.setBoolean(null, previouslyEnabled);
@@ -213,6 +215,22 @@ public class StudyApiTest extends JatosTest {
         assertThat(resp.getSingleHeader("Content-Type").orElseThrow()).contains("application/zip");
         assertThat(resp.asByteArray().length).isGreaterThan(0);
         assertThat(resp.getSingleHeader("Content-Disposition").orElseThrow()).contains("attachment");
+    }
+
+    @Test
+    public void archiveExportAllowsMembersAndRejectsNonmembers() {
+        Study study = importAndGetExampleStudy();
+        User member = createUser("archive-member");
+        jpaApi.withTransaction(em -> {
+            em.find(Study.class, study.getId()).addUser(em.find(User.class, member.getUsername()));
+        });
+        String endpoint = "/jatos/api/v1/studies/" + study.getId();
+        WSResponse response = api(endpoint).token(createApiToken(member)).get();
+        assertThat(response.getStatus()).isEqualTo(OK);
+        assertThat(response.getSingleHeader("Content-Type").orElseThrow()).contains("application/zip");
+        assertThat(response.asByteArray().length).isGreaterThan(0);
+        assertThat(api(endpoint).token(createApiToken(createUser("archive-outsider"))).get().getStatus())
+                .isEqualTo(FORBIDDEN);
     }
 
     @Test

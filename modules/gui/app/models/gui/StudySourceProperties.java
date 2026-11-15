@@ -21,7 +21,7 @@ import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 public class StudySourceProperties implements Validatable<List<ValidationError>> {
 
     /**
-     * Selected source kind; NONE removes the configuration while retaining sync history.
+     * Selected source kind; NONE deletes the study's source settings incl. the study-specific Git credentials.
      */
     private StudySource.Type type;
 

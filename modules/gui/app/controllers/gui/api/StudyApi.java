@@ -29,10 +29,12 @@ import play.http.HttpEntity;
 import play.libs.Json;
 import play.mvc.*;
 import services.gui.*;
-import services.gui.importexport.LocalFolderStudyImport;
+import services.gui.importexport.LocalFolderStudyImportExport;
 import services.gui.importexport.StudyArchiveImportExport;
 import services.gui.importexport.StudySourceService;
 import services.gui.importexport.StudySourceSync;
+import services.gui.importexport.StudySourceSync.SyncPreview;
+import services.gui.importexport.StudySourceSync.SyncResult;
 import utils.common.IOUtils;
 
 import javax.inject.Inject;
@@ -59,7 +61,7 @@ public class StudyApi extends Controller {
     private final StudySourceService studySourceService;
     private final StudySourceSync studySourceSync;
     private final StudyArchiveImportExport studyArchiveImportExport;
-    private final LocalFolderStudyImport localFolderStudyImport;
+    private final LocalFolderStudyImportExport localFolderStudyImportExport;
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final DomainJsonMapper domainJsonMapper;
@@ -73,7 +75,7 @@ public class StudyApi extends Controller {
              StudySourceService studySourceService,
              StudySourceSync studySourceSync,
              StudyArchiveImportExport studyArchiveImportExport,
-             LocalFolderStudyImport localFolderStudyImport,
+             LocalFolderStudyImportExport localFolderStudyImportExport,
              UserDao userDao,
              StudyDao studyDao,
              DomainJsonMapper domainJsonMapper,
@@ -85,7 +87,7 @@ public class StudyApi extends Controller {
         this.studySourceService = studySourceService;
         this.studySourceSync = studySourceSync;
         this.studyArchiveImportExport = studyArchiveImportExport;
-        this.localFolderStudyImport = localFolderStudyImport;
+        this.localFolderStudyImportExport = localFolderStudyImportExport;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.domainJsonMapper = domainJsonMapper;
@@ -195,7 +197,7 @@ public class StudyApi extends Controller {
         });
         StudySourceProperties props = strictJson.updateFromJson(new StudySourceProperties(), source);
         apiService.validateProps(props);
-        var result = localFolderStudyImport.createStudyFromLocalFolder(props.getLocalFolderPath());
+        var result = localFolderStudyImportExport.createStudyFromLocalFolder(props.getLocalFolderPath());
         Context.current().response().putFlash(SUCCESS, result.message());
         return created(ApiEnvelope.wrap(result.message(), result.study()).asJsonNode());
     }
@@ -501,33 +503,62 @@ public class StudyApi extends Controller {
     }
 
     /**
-     * Preview current source content for a study member before selecting an overwrite scope.
+     * Preview a local-folder import for a study member.
      */
     @Async(Executor.IO)
     @Transactional
     @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
-    public Result previewStudySourceSync(String id) {
+    public Result previewStudyFolderImport(String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, user, true);
-        StudySourceSync.SyncPreview syncPreview = studySourceSync.preview(study.getId());
-        return ok(ApiEnvelope.wrap(syncPreview).asJsonNode());
+        SyncPreview preview = studySourceSync.previewImport(study.getId());
+        return ok(ApiEnvelope.wrap(preview).asJsonNode());
+    }
+
+    /**
+     * Preview a local-folder export for a study member.
+     */
+    @Async(Executor.IO)
+    @Transactional
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    public Result previewStudyFolderExport(String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        User user = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.canUserAccessStudy(study, user, true);
+        SyncPreview preview = studySourceSync.previewExport(study.getId());
+        return ok(ApiEnvelope.wrap(preview).asJsonNode());
     }
 
     @Async(Executor.IO)
     @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
-    public Result syncStudySource(Http.Request request, String id) {
+    public Result importStudyFromFolder(Http.Request request, String id) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         if (study == null) throw new NotFoundException("Study doesn't exist.");
+        StudySourceSyncProperties props = readStudySourceSyncProperties(request);
+        SyncResult result = studySourceSync.importFromFolder(study.getId(), props);
+        Context.current().response().putFlash(SUCCESS, result.message());
+        return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
+    }
+
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    @BodyParser.Of(ApiJsonBodyParser.class)
+    public Result exportStudyToFolder(Http.Request request, String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        StudySourceSyncProperties props = readStudySourceSyncProperties(request);
+        SyncResult result = studySourceSync.exportToFolder(study.getId(), props);
+        return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
+    }
+
+    private StudySourceSyncProperties readStudySourceSyncProperties(Http.Request request) {
         JsonNode json = apiService.getJsonFromBody(request);
         if (!json.isObject()) throw new BadRequestException("Request body is not a JSON object", INVALID_JSON);
         StudySourceSyncProperties props = strictJson.updateFromJson(new StudySourceSyncProperties(), json);
         apiService.validateProps(props);
-
-        var result = studySourceSync.sync(study.getId(), props);
-        Context.current().response().putFlash(SUCCESS, result.message());
-        return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
+        return props;
     }
 
 }

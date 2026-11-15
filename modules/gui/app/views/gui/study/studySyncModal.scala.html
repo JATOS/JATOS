@@ -11,9 +11,9 @@
             </div>
             <div class="modal-body">
                 <form id="studySyncForm" class="form-study">
-                    <p>Select what to overwrite.</p>
+                    <p id="studySyncExplanation"></p>
                     <div class="row mb-3">
-                        <label class="col-sm-4 col-form-label" for="studySyncProperties" data-bs-tooltip="Should the study properties be overwritten? Components included in the imported study will be added or updated. Components not included in the imported study will be inactivated but not deleted.">Properties</label>
+                        <label class="col-sm-4 col-form-label" for="studySyncProperties" data-bs-tooltip="Replace properties in the destination. Import adds or updates included components and inactivates omitted components. Export writes the study properties and components to the .jas file.">Properties</label>
                         <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
                             <input class="form-check-input checkbox-study" id="studySyncProperties" name="properties" type="checkbox">
                             <span class="slider slider-study round"></span>
@@ -41,34 +41,44 @@
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
 
     const alerts = new Alerts.Named("study-sync");
+    let exporting;
+    let folderSyncUrl;
     let previewData;
     const form = $("#studySyncForm");
     const confirm = $("#studySyncConfirm");
 
     $("#studySyncButton").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
 
-    $("#studySyncModal").on("show.bs.modal", function() {
+    $("#studySyncModal").on("show.bs.modal", function(event) {
+        exporting = $(event.relatedTarget).data("operation") === "EXPORT";
+        folderSyncUrl = exporting ? window.routes.Api.studyFolderExport(window.study.id) : window.routes.Api.studyFolderImport(window.study.id);
+        $("#studySyncModal .modal-title").text(exporting ? "Export to local folder" : "Import from local folder");
+        confirm.text(exporting ? "Export" : "Import");
+        $("#studySyncExplanation").text(exporting
+            ? "Select what to replace in the local folder. Unrelated root files, including .git, are preserved."
+            : "Select what to replace in JATOS.");
+        $("#studySyncPropertiesAbsent").text(exporting ? "No properties available." : "No .jas file; existing properties are kept.");
+        $("#studySyncAssetsAbsent").text(exporting ? "The study has no assets directory; destination assets are kept." : "No assets/ directory; existing assets are kept.");
+        $("#studySyncPropertiesAbsent, #studySyncAssetsAbsent").addClass("d-none");
+
         alerts.hideAll();
         previewData = null;
         form[0].reset();
         FormValidation.clear("#studySyncForm");
         Helpers.generateModalSubtitles("#studySyncModal", {
-            "ID": window.study.id,
-            "UUID": window.study.uuid,
+            "Study": window.study.title,
             "Source": window.study.sourceType
         }, true);
-        $("#studySyncPropertiesAbsent, #studySyncAssetsAbsent").addClass("d-none");
         form.find("input").prop("disabled", true);
         confirm.prop("disabled", true);
         // Keep the modal open until its preview request finishes.
         $("#studySyncModal [data-bs-dismiss]").prop("disabled", true);
         $.ajax({
-            url: window.routes.Api.previewStudySourceSync(window.study.id),
+            url: folderSyncUrl,
             success: function(response) {
                 previewData = response.data;
                 Helpers.generateModalSubtitles("#studySyncModal", {
-                    "ID": window.study.id,
-                    "UUID": window.study.uuid,
+                    "Study": window.study.title,
                     "Local folder": previewData.localFolderPath
                 }, true);
                 $("#studySyncProperties").prop("disabled", !previewData.propertiesAvailable).prop("checked", previewData.propertiesAvailable);
@@ -95,12 +105,20 @@
         };
         $("#studySyncModal button").prop("disabled", true);
         $.ajax({
-            url: window.routes.Api.syncStudySource(window.study.id),
+            url: folderSyncUrl,
             type: "POST",
             contentType: "application/json",
             headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
             data: JSON.stringify(data),
-            success: () => { window.location.href = window.routes.Studies.study(window.study.id); },
+            success: function(response) {
+                if (exporting) {
+                    $("#studySyncModal button").prop("disabled", false);
+                    $("#studySyncModal").modal("hide");
+                    Alerts.success(response.message, 5000, true);
+                } else {
+                    window.location.href = window.routes.Studies.study(window.study.id);
+                }
+            },
             error: function(response) {
                 const error = response.responseJSON?.error;
                 if (error?.fields) FormValidation.show("#studySyncForm", error.fields);

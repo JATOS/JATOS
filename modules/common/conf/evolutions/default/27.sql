@@ -9,16 +9,6 @@ CREATE TABLE `StudySource` (
     `gitRef` varchar(255),
     `localFolderPath` varchar(4096),
     `anonymous` boolean NOT NULL DEFAULT false,
-    `lastPropertiesSyncAt` timestamp,
-    `lastPropertiesSyncBy` varchar(255),
-    `lastPropertiesSyncSourceType` varchar(16),
-    `lastPropertiesSyncSourceLocation` varchar(4096),
-    `lastPropertiesSyncGitCommit` varchar(64),
-    `lastAssetsSyncAt` timestamp,
-    `lastAssetsSyncBy` varchar(255),
-    `lastAssetsSyncSourceType` varchar(16),
-    `lastAssetsSyncSourceLocation` varchar(4096),
-    `lastAssetsSyncGitCommit` varchar(64),
     CONSTRAINT `FK_study_source_study` FOREIGN KEY (`study_id`) REFERENCES `Study` (`id`) ON DELETE CASCADE,
     CONSTRAINT `CK_study_source_type` CHECK (`type` IN ('NONE', 'GIT', 'LOCAL_FOLDER'))
 );

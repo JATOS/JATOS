@@ -21,7 +21,6 @@ import testutils.JatosTest;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
@@ -248,18 +247,13 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
     }
 
     @Test
-    public void createsChangesClearsSourceAndPreservesHistoryWithoutLeakingCredentials() {
+    public void createsChangesClearsSourceWithoutLeakingCredentials() {
         assertEquals(StudySource.Type.NONE, get(id).getType());
         var response = save(id, withCredentials());
         assertTrue(response.isCredentialsConfigured());
         String json = Json.toJson(response).toString();
         assertTrue(json.contains("git-user"));
         assertFalse(json.contains("private-access-token"));
-        jpaApi.withTransaction(em -> {
-            StudySource source = em.find(StudySource.class, id);
-            source.setLastAssetsSyncAt(Timestamp.valueOf("2026-10-27 12:00:00"));
-            source.setLastAssetsSyncGitCommit("recorded-commit");
-        });
         var anonymous = git();
         anonymous.setAnonymous(true);
         assertTrue(save(id, anonymous).isAnonymous());
@@ -273,16 +267,14 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
         assertEquals(StudySource.Type.NONE, save(id, none).getType());
         jpaApi.withTransaction(em -> {
             Study study = em.find(Study.class, id);
-            StudySource source = study.getStudySource();
-            assertNotNull(source);
-            assertNull(source.getGitUrl());
-            assertNull(source.getGitRef());
-            assertNull(source.getGitCredentials());
-            assertEquals("recorded-commit", source.getLastAssetsSyncGitCommit());
-            assertNotNull(source.getLastAssetsSyncAt());
+            assertNull(study.getStudySource());
+            assertNull(em.find(StudySource.class, id));
             assertFalse(Json.toJson(study).has("studySource"));
             assertEquals(Long.valueOf(0), em.createQuery("select count(c) from GitCredentials c", Long.class).getSingleResult());
         });
+        assertEquals(StudySource.Type.NONE, get(id).getType());
+        assertEquals(StudySource.Type.NONE, save(id, none).getType());
+        assertTrue(save(id, withCredentials()).isCredentialsConfigured());
     }
 
     @Test
@@ -314,9 +306,13 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
         Context.current().args().put(SIGNEDIN_USER, member);
         assertThrows(ForbiddenException.class, this::readSourceThroughController);
         assertThrows(ForbiddenException.class, this::saveSourceThroughController);
-        jpaApi.withTransaction(em -> {
-            em.find(User.class, member.getUsername()).updateRoles(User.Role.SUPERUSER);
+        User superuser = jpaApi.withTransaction(em -> {
+            User updated = em.find(User.class, member.getUsername());
+            updated.updateRoles(User.Role.SUPERUSER);
+            return updated;
         });
+        // A new authenticated request receives the user's current roles.
+        Context.current().args().put(SIGNEDIN_USER, superuser);
         try (MockedStatic<Common> common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isUserRoleAllowSuperuser).thenReturn(true);
             readSourceThroughController();

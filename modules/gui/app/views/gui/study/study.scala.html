@@ -41,10 +41,20 @@
             <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
-            <button class="btn btn-study d-none" id="studySyncButton" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal">
-                <i class="bi-arrow-repeat"></i><span class="d-none d-xl-inline ps-1">Sync</span>
-            </button>
-            <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip="Export this study to your local file system (including its components and study assets but without its results)">
+            <div class="btn-group d-none" id="studySyncButton">
+                <button class="btn btn-study dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi-arrow-repeat"></i><span class="d-none d-xl-inline ps-1">Sync</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-study">
+                    <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="IMPORT" data-bs-tooltip="Import this study from a local folder. The current study's properties and assets will be replaced. The folder's location is configured in the study source.">
+                        <i class="bi-box-arrow-in-down-right pe-1"></i>Import
+                    </button></li>
+                    <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="EXPORT" data-bs-tooltip="Export this study to a local folder. The current study in the local folder will be replaced. The folder's location is configured in the study source.">
+                        <i class="bi-box-arrow-in-up-right pe-1"></i>Export
+                    </button></li>
+                </ul>
+            </div>
+            <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip="Export this study as a study archive (jzip file) to your local file system (including its components and study assets but without its results)">
                 <i class="bi-box-arrow-up-right"></i><span class="d-none d-xl-inline ps-1">Export</span>
             </button>
             <button class="btn btn-study" id="lockStudy" type="button" data-bs-tooltip="Lock/unlock this study. A locked study cannot be changed (e.g. its properties), but its study links will still work. This is useful during data collection to prevent accidental changes in a study setup.">

@@ -587,11 +587,7 @@ paths:
         '403':
           $ref: "#/components/responses/ForbiddenError"
         '409':
-          description: A study with the source UUID already exists. Change its source settings there.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiEnvelopeError'
+          $ref: '#/components/responses/ConflictError'
         '415':
           description: Wrong 'Content-Type' header
 
@@ -658,15 +654,15 @@ paths:
         "404":
           $ref: "#/components/responses/NotFoundError"
 
-  /jatos/api/v1/studies/{id}/source/sync:
+  /jatos/api/v1/studies/{id}/source/folder/import:
     parameters:
       - $ref: '#/components/parameters/StudyIdOrUuidParameter'
     get:
-      summary: Preview study source synchronization
+      summary: Preview import from the configured local folder
       description: >-
-        Currently supports configured local folders only. Stages and validates the
-        source, returning available content for confirmation.
-        A .jas UUID differing from the target study is rejected, even for assets-only updates.
+        Stages the configured local folder and returns available content for confirmation.
+        A .jas UUID differing from the target study is rejected, even for assets-only imports.
+        Requires study membership. Rejects studies without a configured LOCAL_FOLDER source.
       tags: [ study ]
       security:
         - BearerAuth: []
@@ -686,13 +682,78 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
     post:
-      summary: Synchronize selected study content from its configured source
+      summary: Import selected study content from the configured local folder
+      description: >-
+        Select properties, assets, or both. Selected assets replace the entire directory,
+        never merge; an empty assets directory clears existing assets. Missing content
+        cannot be selected. The .jas UUID must match. Existing ownership, membership,
+        source settings, batches and the internal assets directory name are preserved.
+        Requires study membership. Rejects studies without a configured LOCAL_FOLDER source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceSyncUpdate'
+      responses:
+        '200':
+          description: Selected content imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /jatos/api/v1/studies/{id}/source/folder/export:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Preview export to the configured local folder
+      description: >-
+        Returns available study content. Invalid destinations return an error, including a different
+        .jas UUID, an invalid .jas, or multiple .jas files. No content is changed.
+        Requires study membership. Rejects studies without a configured LOCAL_FOLDER source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available source content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncPreview'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Export selected study content to the configured local folder
       description: >-
         Select properties, assets, or both.
-        Selected assets replace the entire directory, never merge. An empty assets/
-        directory clears existing assets; missing content cannot be selected.
-        Existing ownership, membership, source settings, batches and the internal assets
-        directory name are preserved.
+        Export reuses the single existing .jas filename or creates study.jas. A different UUID,
+        invalid .jas, or multiple .jas files block export, including assets-only export.
+        Selected assets replace the entire destination assets directory without merging.
+        Empty study assets clear destination assets; missing study assets cannot be exported.
+        Unrelated root files like .git are preserved. Source settings, credentials, and synchronization
+        history are excluded from the exported .jas. Requires study membership.
+        Rejects studies without a configured LOCAL_FOLDER source.
       tags: [ study ]
       security:
         - BearerAuth: []
@@ -708,12 +769,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelopeSuccess'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/StudySourceSyncResult'
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncResult'
         '400':
           $ref: '#/components/responses/BadRequestError'
         '401':
@@ -723,11 +779,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
         '409':
-          description: Another synchronization is in progress
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiEnvelopeError'
+          $ref: '#/components/responses/ConflictError'
 
   /jatos/api/v1/studies/{id}/source:
     parameters:
@@ -760,8 +812,7 @@ paths:
         Requires the study owner or an enabled superuser. This replaces source
         configuration; it does not fetch or synchronize study content. Inactive
         source fields are cleared. Switching away from Git removes study credentials.
-        Type NONE removes source settings and credentials while preserving latest-sync
-        metadata. Changing the repository origin requires removing or replacing saved
+        Type NONE deletes source settings and credentials; previous study-log entries remain. Changing the repository origin requires removing or replacing saved
         study credentials.
       tags: [ study ]
       security:
@@ -2584,6 +2635,13 @@ components:
           schema:
             $ref: "#/components/schemas/ApiEnvelopeError"
 
+    ConflictError:
+      description: Conflict with the current state of the resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiEnvelopeError"
+
     TooManyRequestsError:
       description: Too many requests
       content:
@@ -3303,8 +3361,8 @@ components:
       required: [ studyId, propertiesUpdated, assetsUpdated, message ]
       properties:
         studyId: { type: integer, format: int64 }
-        propertiesUpdated: { type: boolean }
-        assetsUpdated: { type: boolean }
+        propertiesUpdated: { type: boolean, description: Whether properties were written to the destination for this operation. }
+        assetsUpdated: { type: boolean, description: Whether assets were replaced in the destination for this operation. }
         message: { type: string }
 
     StudySourceUpdate:
@@ -3975,6 +4033,15 @@ components:
               items:
                 type: integer
                 format: int64
+          required: [ data ]
+
+    ApiEnvelopeStudySourceSyncResult:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/StudySourceSyncResult'
           required: [ data ]
 
     ApiEnvelopeStudySourceSyncPreview:

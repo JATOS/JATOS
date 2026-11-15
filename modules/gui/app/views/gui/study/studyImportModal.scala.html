@@ -14,16 +14,16 @@
                 <button class="btn btn-outline-secondary dropdown-toggle collapsed" id="confirmStudyImportDetailsButton" type="button" data-bs-toggle="collapse" data-bs-target="#confirmStudyImportDetails">Details</button>
                 <div class="pt-3 collapse" id="confirmStudyImportDetails" >
                     <form id="studyImportForm" class="form-study">
-                        <p>Select what to overwrite.</p>
+                        <p>Select what to replace.</p>
                         <div class="row mb-3">
-                            <label class="col-sm-4 col-form-label" for="confirmStudyImportProperties" data-bs-tooltip="Should the study properties be overwritten? Components included in the imported study will be added or updated. Components not included in the imported study will be inactivated but not deleted.">Properties</label>
+                            <label class="col-sm-4 col-form-label" for="confirmStudyImportProperties" data-bs-tooltip="Should the study properties be replaced? Components included in the imported study will be added or updated. Components not included in the imported study will be inactivated but not deleted.">Properties</label>
                             <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
                                 <input class="form-check-input checkbox-study" id="confirmStudyImportProperties" name="properties" type="checkbox">
                                 <span class="slider slider-study round"></span>
                             </label></div>
                         </div>
                         <div class="row mb-3">
-                            <label class="col-sm-4 col-form-label" for="confirmStudyImportDir" data-bs-tooltip="Should the study assets directory be overwritten? This directory contains the study's files like HTML, CSS, and JavaScript files and images. Selected assets are replaced completely, never merged. An empty assets/ directory removes all existing assets.">Assets</label>
+                            <label class="col-sm-4 col-form-label" for="confirmStudyImportDir" data-bs-tooltip="Should the study assets directory be replaced? This directory contains the study's files like HTML, CSS, and JavaScript files and images. Selected assets are replaced completely, never merged. An empty assets/ directory removes all existing assets.">Assets</label>
                             <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
                                 <input class="form-check-input checkbox-study" id="confirmStudyImportDir" name="assets" type="checkbox">
                                 <span class="slider slider-study round"></span>
@@ -34,7 +34,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-study" id="confirmStudyImportConfirmed">Overwrite</button>
+                <button type="button" class="btn btn-study" id="confirmStudyImportConfirmed">Import</button>
             </div>
         </div>
     </div>

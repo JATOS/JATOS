@@ -47,7 +47,7 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         properties(uuid, "Original");
         Files.createDirectory(source.resolve("assets"));
         Files.writeString(source.resolve("assets/old.txt"), "old");
-        var created = application.injector().instanceOf(LocalFolderStudyImport.class).createStudyFromLocalFolder(source.toString());
+        var created = application.injector().instanceOf(LocalFolderStudyImportExport.class).createStudyFromLocalFolder(source.toString());
         studyId = created.study().path("id").asLong();
         assets = IOUtils.generateStudyAssetsPath(created.study().path("dirName").asText());
     }
@@ -60,11 +60,11 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
     }
 
     private StudySourceSync.SyncPreview preview() {
-        return jpaApi.withTransaction(em -> {return sync.preview(studyId);});
+        return jpaApi.withTransaction(em -> {return sync.previewImport(studyId);});
     }
 
     private play.libs.ws.WSResponse previewAs(User user) {
-        return api("/jatos/api/v1/studies/" + studyId + "/source/sync")
+        return api("/jatos/api/v1/studies/" + studyId + "/source/folder/import")
                 .token(createApiToken(user)).get();
     }
 
@@ -94,9 +94,11 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         Files.delete(source.resolve("assets/old.txt"));
         Files.writeString(source.resolve("assets/new.txt"), "new");
         Context.current().args().put(SIGNEDIN_USER, member);
-        var result = sync.sync(studyId, selection(true, true));
+        var result = sync.importFromFolder(studyId, selection(true, true));
         assertTrue(result.propertiesUpdated());
         assertTrue(result.assetsUpdated());
+        String log = Files.readString(Path.of(Common.getStudyLogsPath(), uuid + ".log"), java.nio.charset.StandardCharsets.ISO_8859_1);
+        assertTrue(log.contains("Imported properties and assets from local folder: " + source));
         assertFalse(Files.exists(assets.resolve("old.txt")));
         assertEquals("new", Files.readString(assets.resolve("new.txt")));
         jpaApi.withTransaction(em -> {
@@ -105,8 +107,6 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
             assertEquals(admin.getUsername(), study.getOwner().getUsername());
             assertTrue(study.getUserList().stream().anyMatch(u -> u.getUsername().equals(member.getUsername())));
             assertEquals(source.toString(), study.getStudySource().getLocalFolderPath());
-            assertEquals(member.getUsername(), study.getStudySource().getLastAssetsSyncBy());
-            assertNotNull(study.getStudySource().getLastPropertiesSyncAt());
         });
         assertEquals(403, api("/jatos/api/v1/studies/" + studyId + "/source")
                 .token(createApiToken(member)).get().getStatus());
@@ -114,18 +114,16 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
     }
 
     @Test
-    public void missingAssetsPreservesAssetsAndOnlyUpdatesPropertiesHistory() throws Exception {
+    public void missingAssetsPreservesAssetsAndOnlyUpdatesProperties() throws Exception {
         IOUtils.deleteRecursively(source.resolve("assets"));
         properties(uuid, "Properties only");
         var preview = preview();
         assertFalse(preview.assetsAvailable());
-        assertThrows(BadRequestException.class, () -> sync.sync(studyId, selection(true, true)));
-        sync.sync(studyId, selection(true, false));
+        assertThrows(BadRequestException.class, () -> sync.importFromFolder(studyId, selection(true, true)));
+        sync.importFromFolder(studyId, selection(true, false));
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
         jpaApi.withTransaction(em -> {
             var state = em.find(Study.class, studyId).getStudySource();
-            assertNotNull(state.getLastPropertiesSyncAt());
-            assertNull(state.getLastAssetsSyncAt());
         });
         assertNoStaging();
     }
@@ -135,13 +133,11 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         Files.delete(source.resolve("study.jas"));
         Files.delete(source.resolve("assets/old.txt"));
         assertFalse(preview().propertiesAvailable());
-        sync.sync(studyId, selection(false, true));
+        sync.importFromFolder(studyId, selection(false, true));
         try (var paths = Files.list(assets)) {assertEquals(0, paths.count());}
         jpaApi.withTransaction(em -> {
             Study study = em.find(Study.class, studyId);
             assertEquals("Original", study.getTitle());
-            assertNull(study.getStudySource().getLastPropertiesSyncAt());
-            assertNotNull(study.getStudySource().getLastAssetsSyncAt());
         });
         assertNoStaging();
     }
@@ -151,10 +147,10 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         preview();
         properties(UUID.randomUUID().toString(), "Wrong study");
         assertThrows(BadRequestException.class, this::preview);
-        assertThrows(BadRequestException.class, () -> sync.sync(studyId, selection(false, true)));
+        assertThrows(BadRequestException.class, () -> sync.importFromFolder(studyId, selection(false, true)));
         properties(uuid, "Changed since preview");
         Files.writeString(source.resolve("assets/old.txt"), "changed after preview");
-        sync.sync(studyId, selection(false, true));
+        sync.importFromFolder(studyId, selection(false, true));
         assertEquals("changed after preview", Files.readString(assets.resolve("old.txt")));
         assertNoStaging();
     }
@@ -163,11 +159,11 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
     public void rejectsSelectedContentThatDisappearsAfterPreview() throws Exception {
         preview();
         Files.delete(source.resolve("study.jas"));
-        assertThrows(BadRequestException.class, () -> sync.sync(studyId, selection(true, false)));
+        assertThrows(BadRequestException.class, () -> sync.importFromFolder(studyId, selection(true, false)));
         properties(uuid, "Properties restored");
         preview();
         IOUtils.deleteRecursively(source.resolve("assets"));
-        assertThrows(BadRequestException.class, () -> sync.sync(studyId, selection(false, true)));
+        assertThrows(BadRequestException.class, () -> sync.importFromFolder(studyId, selection(false, true)));
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
         assertNoStaging();
     }
@@ -178,16 +174,16 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         User outsider = createUser("sync-outsider");
         Context.current().args().put(SIGNEDIN_USER, outsider);
         assertEquals(403, previewAs(outsider).getStatus());
-        assertThrows(ForbiddenException.class, () -> sync.sync(studyId, selection(true, true)));
+        assertThrows(ForbiddenException.class, () -> sync.importFromFolder(studyId, selection(true, true)));
         Context.current().args().put(SIGNEDIN_USER, admin);
         jpaApi.withTransaction(em -> {em.find(Study.class, studyId).setLocked(true);});
         assertEquals(403, previewAs(admin).getStatus());
-        assertThrows(ForbiddenException.class, () -> sync.sync(studyId, selection(true, true)));
+        assertThrows(ForbiddenException.class, () -> sync.importFromFolder(studyId, selection(true, true)));
         jpaApi.withTransaction(em -> {em.find(Study.class, studyId).setLocked(false);});
         try (var common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isServer).thenReturn(true);
             common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of());
-            assertThrows(BadRequestException.class, () -> sync.sync(studyId, selection(true, true)));
+            assertThrows(BadRequestException.class, () -> sync.importFromFolder(studyId, selection(true, true)));
         }
         assertNoStaging();
     }
@@ -206,19 +202,20 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         var injector = application.injector();
         var failing = new StudySourceSync(jpaApi, injector.instanceOf(daos.common.StudyDao.class),
                 injector.instanceOf(daos.common.UserDao.class), injector.instanceOf(AuthorizationService.class),
-                injector.instanceOf(LocalFolderStudySourceIO.class), failingIO, injector.instanceOf(StudyImportService.class),
-                injector.instanceOf(StudyService.class), injector.instanceOf(StudyLogger.class));
-        assertThrows(exceptions.common.JatosException.class, () -> failing.sync(studyId, selection(true, true)));
+                failingIO, injector.instanceOf(StudyLogger.class),
+                new LocalFolderStudyImportExport(injector.instanceOf(LocalFolderStudySourceIO.class),
+                        injector.instanceOf(StudyImportService.class), injector.instanceOf(StudyService.class),
+                        injector.instanceOf(services.gui.importexport.StudySourceService.class), jpaApi,
+                        injector.instanceOf(json.common.DomainJsonMapper.class), injector.instanceOf(IOUtils.class), failingIO));
+        assertThrows(exceptions.common.JatosException.class, () -> failing.importFromFolder(studyId, selection(true, true)));
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
         assertFalse(Files.exists(assets.resolve("new.txt")));
         jpaApi.withTransaction(em -> {
             Study study = em.find(Study.class, studyId);
             assertEquals("Original", study.getTitle());
-            assertNull(study.getStudySource().getLastAssetsSyncAt());
-            assertNull(study.getStudySource().getLastPropertiesSyncAt());
         });
         // Failure releases both the local claim and native lock.
-        sync.sync(studyId, selection(true, true));
+        sync.importFromFolder(studyId, selection(true, true));
         assertNoStaging();
     }
 
@@ -246,16 +243,17 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         var injector = application.injector();
         var failing = new StudySourceSync(jpaApi, injector.instanceOf(daos.common.StudyDao.class),
                 injector.instanceOf(daos.common.UserDao.class), injector.instanceOf(AuthorizationService.class),
-                injector.instanceOf(LocalFolderStudySourceIO.class), failingIO, injector.instanceOf(StudyImportService.class),
-                injector.instanceOf(StudyService.class), injector.instanceOf(StudyLogger.class));
-        assertThrows(RuntimeException.class, () -> failing.sync(studyId, selection(true, true)));
+                failingIO, injector.instanceOf(StudyLogger.class),
+                new LocalFolderStudyImportExport(injector.instanceOf(LocalFolderStudySourceIO.class),
+                        injector.instanceOf(StudyImportService.class), injector.instanceOf(StudyService.class),
+                        injector.instanceOf(services.gui.importexport.StudySourceService.class), jpaApi,
+                        injector.instanceOf(json.common.DomainJsonMapper.class), injector.instanceOf(IOUtils.class), failingIO));
+        assertThrows(RuntimeException.class, () -> failing.importFromFolder(studyId, selection(true, true)));
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
         assertFalse(Files.exists(assets.resolve("new.txt")));
         jpaApi.withTransaction(em -> {
             Study study = em.find(Study.class, studyId);
             assertEquals("Original", study.getTitle());
-            assertNull(study.getStudySource().getLastPropertiesSyncAt());
-            assertNull(study.getStudySource().getLastAssetsSyncAt());
         });
         assertNoStaging();
     }
@@ -270,12 +268,12 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         jpaApi.withTransaction(em -> {
             em.find(Study.class, studyId).getUserList().removeIf(u -> u.getUsername().equals(member.getUsername()));
         });
-        assertThrows(ForbiddenException.class, () -> sync.sync(studyId, selection(true, true)));
+        assertThrows(ForbiddenException.class, () -> sync.importFromFolder(studyId, selection(true, true)));
         Context.current().args().put(SIGNEDIN_USER, admin);
         jpaApi.withTransaction(em -> {
             em.find(Study.class, studyId).getStudySource().setType(models.common.StudySource.Type.NONE);
         });
-        assertThrows(BadRequestException.class, () -> sync.sync(studyId, selection(true, true)));
+        assertThrows(BadRequestException.class, () -> sync.importFromFolder(studyId, selection(true, true)));
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
         assertNoStaging();
     }
@@ -284,7 +282,7 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
     public void sessionSyncRequiresCsrfAndReturnsSuccessFlash() throws Exception {
         var body = Json.newObject().put("assets", true);
         String csrf = application.injector().instanceOf(play.filters.csrf.CSRF.TokenProvider.class).generateToken();
-        var request = play.test.Helpers.fakeRequest("POST", "/jatos/api/v1/studies/" + studyId + "/source/sync")
+        var request = play.test.Helpers.fakeRequest("POST", "/jatos/api/v1/studies/" + studyId + "/source/folder/import")
                 .header("Cookie", "PLAY_SESSION=test-session")
                 .cookie(play.mvc.Http.Cookie.builder("PLAY_SESSION", "test-session").build())
                 .session("username", admin.getUsername())
@@ -294,8 +292,8 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         assertEquals(403, play.test.Helpers.route(application, request).status());
         var response = play.test.Helpers.route(application, request.header("Csrf-Token", csrf));
         assertEquals(play.test.Helpers.contentAsString(response), 200, response.status());
-        assertTrue(response.flash().get("success").orElseThrow().contains("Synchronized assets"));
-        var invalid = api("/jatos/api/v1/studies/" + studyId + "/source/sync")
+        assertTrue(response.flash().get("success").orElseThrow().contains("Imported assets"));
+        var invalid = api("/jatos/api/v1/studies/" + studyId + "/source/folder/import")
                 .post(Json.newObject());
         assertEquals(400, invalid.getStatus());
         assertNoStaging();
@@ -304,9 +302,9 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
     @Test
     public void concurrentSyncIsRejectedWithoutTouchingAssets() throws Exception {
         try (var ignored = new StudySourceSyncIO(jpaApi, application.injector().instanceOf(IOUtils.class)).lock(studyId)) {
-            assertEquals(409, assertThrows(HttpException.class, () -> sync.sync(studyId, selection(false, true))).getHttpStatus());
+            assertEquals(409, assertThrows(HttpException.class, () -> sync.importFromFolder(studyId, selection(false, true))).getHttpStatus());
         }
-        sync.sync(studyId, selection(false, true));
+        sync.importFromFolder(studyId, selection(false, true));
         assertNoStaging();
     }
 
@@ -318,7 +316,7 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
                 "{\"assets\":null}",
                 "{\"assets\":true,\"unknown\":true}",
                 "{\"properties\":false,\"assets\":false}")) {
-            var response = api("/jatos/api/v1/studies/" + studyId + "/source/sync").post(Json.parse(body));
+            var response = api("/jatos/api/v1/studies/" + studyId + "/source/folder/import").post(Json.parse(body));
             assertEquals(response.getBody(), 400, response.getStatus());
         }
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
@@ -327,10 +325,10 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
 
     @Test
     public void apiSupportsUuidPreviewAndSelectedScope() throws Exception {
-        var response = api("/jatos/api/v1/studies/" + uuid + "/source/sync").get();
+        var response = api("/jatos/api/v1/studies/" + uuid + "/source/folder/import").get();
         assertEquals(response.getBody(), 200, response.getStatus());
         var body = Json.newObject().put("assets", true);
-        var applied = api("/jatos/api/v1/studies/" + studyId + "/source/sync").post(body);
+        var applied = api("/jatos/api/v1/studies/" + studyId + "/source/folder/import").post(body);
         assertEquals(applied.getBody(), 200, applied.getStatus());
         assertTrue(applied.asJson().path("data").path("assetsUpdated").asBoolean());
         assertFalse(applied.asJson().path("data").path("propertiesUpdated").asBoolean());

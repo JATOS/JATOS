@@ -92,7 +92,7 @@ public class LocalFolderStudySourceIO {
         return attributes;
     }
 
-    private static void copySourceDirectory(Path root, Path source, Path target) throws IOException {
+    static void copySourceDirectory(Path root, Path source, Path target) throws IOException {
         if (!sourceAttributes(root, source).isDirectory())
             throw new IOException("Source assets must be a directory.");
         // No FOLLOW_LINKS: links are rejected rather than traversed. Ignore .git at every depth.

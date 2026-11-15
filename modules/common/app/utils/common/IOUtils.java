@@ -384,6 +384,15 @@ public class IOUtils {
     }
 
     /**
+     * Checks for an existing file or directory of the requested type, rejecting links and junctions.
+     * Expects an absolute path with an already resolved parent; the target itself must match its real path.
+     */
+    public static boolean isRegularFileOrDirectory(Path path, boolean directory) throws IOException {
+        return (directory ? Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)
+                : Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) && path.toRealPath().equals(path);
+    }
+
+    /**
      * Resolves a direct child of the real assets root. Existing targets must be directories without links or
      * junctions. Missing targets are allowed only when mustExist is false.
      */
@@ -395,7 +404,7 @@ public class IOUtils {
         if (!root.equals(target.getParent()))
             throw new IOException("Study assets must be a directory inside the assets root.");
         if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)
-                && (!Files.isDirectory(target, LinkOption.NOFOLLOW_LINKS) || !target.toRealPath().equals(target)))
+                && !isRegularFileOrDirectory(target, true))
             throw new IOException("Installed study assets must be a regular directory, without links or junctions.");
         if (mustExist) return getExistingDirSecurely(target);
         return target;

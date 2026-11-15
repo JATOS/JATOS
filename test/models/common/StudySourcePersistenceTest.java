@@ -6,7 +6,6 @@ import org.junit.Test;
 import play.libs.Json;
 import testutils.JatosTest;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +42,7 @@ public class StudySourcePersistenceTest extends JatosTest {
             study.setStudySource(source);
             source.setType(StudySource.Type.GIT);
             source.setGitUrl("https://example.org/repo.git");
-            source.setLastAssetsSyncAt(Timestamp.valueOf("2026-10-24 12:00:00"));
-            source.setLastAssetsSyncGitCommit("abc123");
+
             GitCredentials credentials = new GitCredentials(source);
             credentials.setUsername("git-user");
             credentials.setOrigin("https://example.org:8443");
@@ -60,15 +58,13 @@ public class StudySourcePersistenceTest extends JatosTest {
             StudySource source = em.find(Study.class, id).getStudySource();
             assertEquals("git-user", source.getGitCredentials().getUsername());
             assertEquals("https://example.org:8443", source.getGitCredentials().getOrigin());
-            source.clearConfiguration();
+            source.getStudy().setStudySource(null);
         });
         jpaApi.withTransaction(em -> {
-            StudySource source = em.find(StudySource.class, id);
-            assertEquals(StudySource.Type.NONE, source.getType());
-            assertNull(source.getGitCredentials());
-            assertEquals("abc123", source.getLastAssetsSyncGitCommit());
+            assertNull(em.find(StudySource.class, id));
+            assertNull(em.find(Study.class, id).getStudySource());
             assertEquals(Long.valueOf(0), em.createQuery("select count(c) from GitCredentials c", Long.class).getSingleResult());
-            em.remove(source.getStudy());
+            em.remove(em.find(Study.class, id));
         });
         jpaApi.withTransaction(em -> { assertNull(em.find(StudySource.class, id)); });
     }
