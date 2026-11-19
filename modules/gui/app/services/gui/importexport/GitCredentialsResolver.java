@@ -13,7 +13,6 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import utils.common.GitCredentialEncryption;
-import utils.common.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
