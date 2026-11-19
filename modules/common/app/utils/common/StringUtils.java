@@ -19,10 +19,6 @@ public class StringUtils {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
-    public static boolean isNullOrEmpty(String value) {
-        return value == null || value.isBlank();
-    }
-
     public static String humanReadableByteCount(long bytes) {
         if (-1000 < bytes && bytes < 1000) {
             return bytes + " B";

@@ -45,7 +45,7 @@ public class GitCredentialsResolver {
         if (props.isAnonymous()) {
             return resolveAnonymousCredentials(origin);
         }
-        if (!StringUtils.isNullOrEmpty(props.getSecret())) {
+        if (!Strings.isNullOrEmpty(props.getSecret())) {
             return new ResolvedCredentials(origin, "study", props.getUsername(), props.getSecret());
         }
         return resolveOwnerOrGlobalCredentials(origin, owner);
