@@ -20,6 +20,11 @@
                         <i class="bi-box-arrow-in-down-right pe-1"></i>Import Archive
                     </button>
                 </li>
+                <li data-bs-dismiss="offcanvas" data-bs-target="#studySidebar">
+                    <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#gitStudyModal">
+                        <i class="bi-git pe-1"></i>Clone from Git
+                    </button>
+                </li>
                 <li class="d-none" id="addStudyFromLocalFolderButton" data-bs-dismiss="offcanvas" data-bs-target="#studySidebar">
                     <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#localFolderStudyModal">
                         <i class="bi-folder pe-1"></i>From local folder
@@ -47,6 +52,7 @@
 @views.html.gui.study.studyCreatorModal(request)
 @views.html.gui.study.studyImportModal(request)
 @views.html.gui.study.localFolderStudyModal(request)
+@views.html.gui.study.gitStudyModal(request)
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";

@@ -174,7 +174,7 @@ public class LocalFolderStudyImportExport {
     public record ExportPreview(Path folder, String propertiesFilename, boolean assetsAvailable) {}
 
     public ExportPreview previewExport(Study study, String localFolderStr) throws IOException {
-        var allowedRoots = Common.getStudySourcesAllowedRoots();
+        var allowedRoots = Common.getStudySourcesLocalFolderAllowedRoots();
         if (Common.isServer() && allowedRoots.isEmpty())
             throw new BadRequestException("Local-folder sources require configured allowed roots in server mode.");
         if (!Path.of(localFolderStr).isAbsolute())

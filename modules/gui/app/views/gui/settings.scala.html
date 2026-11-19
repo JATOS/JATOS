@@ -30,7 +30,7 @@
     window.common.resultDataMaxSize = @Common.getResultDataMaxSize;
     window.common.resultUploadsMaxFileSize = @Common.getResultUploadsMaxFileSize;
     window.common.resultUploadsLimitPerStudyRun = @Common.getResultUploadsLimitPerStudyRun;
-    window.common.isStudySourcesAllowedRootsEmpty = @Common.getStudySourcesAllowedRoots.isEmpty;
+    window.common.isStudySourcesAllowedRootsEmpty = @Common.getStudySourcesLocalFolderAllowedRoots.isEmpty;
 
     window.common.isLdapAllowed = @Common.isLdapAllowed;
 
@@ -54,8 +54,8 @@
     window.common.conextSigninButtonText = "@Common.getConextSigninButtonText";
     window.common.conextSigninButtonLogoUrl = "@Common.getConextSigninButtonLogoUrl";
 
-    window.common.userSessionTimeout = @Common.getUserSessionTimeout;
-    window.common.userSessionInactivity = @Common.getUserSessionInactivity;
+    window.common.userSessionTimeout = @Common.getUserSessionTimeout.toMillis;
+    window.common.userSessionInactivity = @Common.getUserSessionInactivity.toMillis;
     window.common.allowKeepSignedin = @Common.getUserSessionAllowKeepSignedin;
     window.common.userSigninTime = "@request.session.get("signinTime").getOrElse("-1")";
     window.common.keepSignedin = @(request.session.get("keepSignedin").getOrElse("false")).toBoolean;

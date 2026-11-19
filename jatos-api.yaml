@@ -462,18 +462,20 @@ paths:
         The endpoint's behavior is determined by the **Content-Type** header.
         ---
 
-        ### 1. Import Study Archive
+        ### 1. Create Study
+        Initialize a new study using JSON containing the study properties.
+        * **Supported Content-Type:** `application/json`.
+        * **Request Body:** Must contain a JSON object defining the study's properties.
+
+        ### 2. Import Study Archive
         Upload a `.jzip` file.
         * **Supported Content-Types:** `multipart/form-data`, `application/zip`, or `application/octet-stream`.
         * **UUID Conflicts:** If a study with the same UUID already exists,
         behavior is controlled by query parameters (e.g., whether to overwrite
         or keep existing properties and assets).
         
-        ### 2. Create Study
-        Initialize a new study using JSON containing the study properties.
-        * **Supported Content-Type:** `application/json`.
-        * **Request Body:** Must contain a JSON object defining the study's properties.
         ### 3. Create From a Local Folder
+        Creates a new JATOS study by importing study properties and assets from a folder on the computer running JATOS.
         Use `application/json` with a `source` object containing `type: LOCAL_FOLDER`
         and `localFolderPath`, an absolute path on the computer running JATOS.
         Copies one root `.jas` file and `assets/` without modifying the source.
@@ -483,7 +485,17 @@ paths:
         The initiating user owns the new study. Source settings are saved for later synchronization.
         Server mode with empty allowed roots disables folder sources; nonempty roots restrict both modes.
         Source requests cannot include study properties or any of the query parameters below.
-        Git source creation is not implemented yet.
+
+        ### 4. Create From Git
+        Creates a new JATOS study by downloading study properties and assets from a Git repository.
+        Use `application/json` with a `source` object containing `type: GIT`, `gitUrl`, and
+        optionally `gitRef`, `anonymous`, `username`, and `secret`. Only HTTPS is supported.
+        An empty ref selects the default branch; named branches and tags are supported.
+        Credentials are selected once: explicit anonymous access, supplied study credentials,
+        matching owner credentials, matching server credentials, then anonymous access.
+        Authentication failures do not fall back to another credential. The repository must contain
+        a root .jas file and/or assets/ directory. Existing UUIDs are rejected with 409.
+        Source settings and encrypted study credentials are saved only after successful creation.
       tags: [ study ]
       parameters:
         - in: query
@@ -3442,21 +3454,54 @@ components:
       required: [ source ]
       properties:
         source:
-          type: object
-          additionalProperties: false
-          required: [ type, localFolderPath ]
-          properties:
-            type:
-              type: string
-              enum: [ LOCAL_FOLDER ]
-            localFolderPath:
-              type: string
-              maxLength: 4096
-              description: Absolute path on the computer running JATOS.
+          oneOf:
+            - $ref: '#/components/schemas/LocalFolderStudySourceCreate'
+            - $ref: '#/components/schemas/GitStudySourceCreate'
       example:
         source:
-          type: LOCAL_FOLDER
-          localFolderPath: /srv/studies/example
+          type: GIT
+          gitUrl: https://github.com/owner/study.git
+          gitRef: main
+
+    LocalFolderStudySourceCreate:
+      type: object
+      additionalProperties: false
+      required: [ type, localFolderPath ]
+      properties:
+        type: { type: string, enum: [ LOCAL_FOLDER ] }
+        localFolderPath:
+          type: string
+          maxLength: 4096
+          description: Absolute path on the computer running JATOS.
+
+    GitStudySourceCreate:
+      type: object
+      additionalProperties: false
+      required: [ type, gitUrl ]
+      properties:
+        type: { type: string, enum: [ GIT ] }
+        gitUrl:
+          type: string
+          maxLength: 2048
+          description: HTTPS repository URL, without embedded credentials, query, or fragment.
+        gitRef:
+          type: string
+          maxLength: 255
+          description: Branch or tag; empty selects the default branch. Use refs/heads/ or refs/tags/ for ambiguous names. Commit IDs are not supported.
+        anonymous:
+          type: boolean
+          default: false
+          description: Use no credentials, overriding all configured credentials.
+        username:
+          type: string
+          maxLength: 255
+          description: Optional study-specific username; requires a password/token.
+        secret:
+          type: string
+          format: password
+          writeOnly: true
+          maxLength: 16384
+          description: Optional study-specific password/token; requires a username.
 
     StudyCreate:
       allOf:

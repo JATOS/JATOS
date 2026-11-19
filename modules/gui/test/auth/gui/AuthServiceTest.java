@@ -183,6 +183,26 @@ public class AuthServiceTest {
         assertThat(authService.isInactivityTimeout()).isTrue();
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
+    public void sessionTimeoutsHonorDurationsShorterThanOneMinute() {
+        try (MockedStatic<Common> common = Mockito.mockStatic(Common.class)) {
+            common.when(Common::getUserSessionTimeout).thenReturn(java.time.Duration.ofSeconds(30));
+            common.when(Common::getUserSessionInactivity).thenReturn(java.time.Duration.ofSeconds(10));
+            String recent = String.valueOf(Instant.now().minusSeconds(1).toEpochMilli());
+            Context.current().response().putSession(SESSION_SIGNIN_TIME, recent);
+            Context.current().response().putSession(SESSION_LAST_ACTIVITY_TIME, recent);
+            assertThat(authService.isSessionTimeout()).isFalse();
+            assertThat(authService.isInactivityTimeout()).isFalse();
+
+            String expired = String.valueOf(Instant.now().minusSeconds(60).toEpochMilli());
+            Context.current().response().putSession(SESSION_SIGNIN_TIME, expired);
+            Context.current().response().putSession(SESSION_LAST_ACTIVITY_TIME, expired);
+            assertThat(authService.isSessionTimeout()).isTrue();
+            assertThat(authService.isInactivityTimeout()).isTrue();
+        }
+    }
+
     @Test
     public void getRedirectPageAfterSignin_homeWhenNoLastVisited() {
         User user = new User();

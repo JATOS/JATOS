@@ -31,7 +31,7 @@ public class LocalFolderStudySourceIO {
      * Rechecks server policy on every ingestion. The caller must close the returned staging directory.
      */
     public StagedStudySource stage(String folder) throws IOException {
-        var roots = Common.getStudySourcesAllowedRoots();
+        var roots = Common.getStudySourcesLocalFolderAllowedRoots();
         if (Common.isServer() && roots.isEmpty()) {
             throw new BadRequestException("Local-folder sources require configured allowed roots in server mode.", CONFIG_ERROR);
         }

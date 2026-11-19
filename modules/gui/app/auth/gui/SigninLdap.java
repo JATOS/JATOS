@@ -64,8 +64,8 @@ public class SigninLdap {
         props.put(Context.SECURITY_PRINCIPAL, userDn);
         props.put(Context.SECURITY_AUTHENTICATION, "simple");
         props.put(Context.SECURITY_CREDENTIALS, password);
-        props.put("com.sun.jndi.ldap.read.timeout", String.valueOf(Common.getLdapTimeout()));
-        props.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(Common.getLdapTimeout()));
+        props.put("com.sun.jndi.ldap.read.timeout", String.valueOf(Common.getLdapTimeout().toMillis()));
+        props.put("com.sun.jndi.ldap.connect.timeout", String.valueOf(Common.getLdapTimeout().toMillis()));
         return new InitialDirContext(props);
     }
 

@@ -169,7 +169,9 @@ public class GitCredentialsService {
     }
 
     private GitCredentialsConfigStatus status(GitCredentials credentials) {
-        return new GitCredentialsConfigStatus(credentials != null, credentials == null ? null : credentials.getOrigin(),
+        return new GitCredentialsConfigStatus(
+                credentials != null,
+                credentials == null ? null : credentials.getOrigin(),
                 credentials == null ? null : credentials.getUsername());
     }
 
@@ -207,10 +209,11 @@ public class GitCredentialsService {
     }
 
     /**
-     * Used by the future resolver to authenticate the same owner and destination during decryption.
+     * Binds encrypted credentials to their owner, origin, and username during encryption and decryption.
      */
     public static String encryptionContext(GitCredentials credentials) {
-        String owner = credentials.getUser() != null ? "user:" + credentials.getUser().getUsername()
+        String owner = credentials.getUser() != null
+                ? "user:" + credentials.getUser().getUsername()
                 : "study:" + credentials.getStudySource().getStudy().getId();
         return owner + "\0" + credentials.getOrigin() + "\0" + credentials.getUsername();
     }

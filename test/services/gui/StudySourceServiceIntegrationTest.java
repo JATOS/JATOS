@@ -331,7 +331,7 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
         Path link = root.resolve("escape");
         try (MockedStatic<Common> common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isServer).thenReturn(false);
-            common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of(root.toString()));
+            common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(List.of(root.toString()));
             save(id, withCredentials());
             var folder = new StudySourceProperties();
             folder.setType(StudySource.Type.LOCAL_FOLDER);
@@ -354,7 +354,7 @@ public class StudySourceServiceIntegrationTest extends JatosTest {
             assertThrows(FieldValidationException.class, () -> save(id, folder));
             folder.setLocalFolderPath(outside.toString());
             assertThrows(FieldValidationException.class, () -> save(id, folder));
-            common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of());
+            common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(List.of());
             assertThrows(BadRequestException.class, () -> save(id, folder));
             assertFalse(get(id).isLocalFolderAllowed());
             assertEquals(StudySource.Type.GIT, save(id, git()).getType());

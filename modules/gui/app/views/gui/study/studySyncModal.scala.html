@@ -37,6 +37,7 @@
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
 
@@ -74,6 +75,7 @@
         // Keep the modal open until its preview request finishes.
         $("#studySyncModal [data-bs-dismiss]").prop("disabled", true);
         $.ajax({
+            beforeSend: WaitingModal.show,
             url: folderSyncUrl,
             success: function(response) {
                 previewData = response.data;
@@ -88,7 +90,10 @@
                 confirm.prop("disabled", false);
             },
             error: response => alerts.error(response.responseJSON?.error?.message || "Could not preview study source.", 0, true),
-            complete: () => $("#studySyncModal [data-bs-dismiss]").prop("disabled", false)
+            complete: function() {
+                WaitingModal.hide();
+                $("#studySyncModal [data-bs-dismiss]").prop("disabled", false);
+            }
         });
     });
 
@@ -105,6 +110,7 @@
         };
         $("#studySyncModal button").prop("disabled", true);
         $.ajax({
+            beforeSend: WaitingModal.show,
             url: folderSyncUrl,
             type: "POST",
             contentType: "application/json",
@@ -124,7 +130,8 @@
                 if (error?.fields) FormValidation.show("#studySyncForm", error.fields);
                 else alerts.error(error?.message || "Could not synchronize study source.", 0, true);
                 $("#studySyncModal button").prop("disabled", false);
-            }
+            },
+            complete: WaitingModal.hide
         });
     });
 </script>

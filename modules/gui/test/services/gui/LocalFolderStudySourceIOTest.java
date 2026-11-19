@@ -32,6 +32,7 @@ public class LocalFolderStudySourceIOTest {
     private Path staging;
     private MockedStatic<Common> common;
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Before
     public void setUp() throws IOException {
         source = temporary.newFolder("source").toPath();
@@ -45,17 +46,19 @@ public class LocalFolderStudySourceIOTest {
         if (common != null) common.close();
     }
 
-    private void createSymbolicLink(Path link, Path target) throws IOException {
+    private void createSymbolicLink(Path link, Path target) {
         try {Files.createSymbolicLink(link, target);} catch (UnsupportedOperationException | IOException e) {
             org.junit.Assume.assumeNoException(e);
         }
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private StagedStudySource stageWithRoots(String folder, List<String> roots) throws IOException {
-        common.when(Common::getStudySourcesAllowedRoots).thenReturn(roots);
+        common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(roots);
         return io.stage(folder);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void rechecksServerModeAndRootsForEveryIngestion() throws IOException {
         Files.createDirectory(source.resolve("assets"));
@@ -203,8 +206,9 @@ public class LocalFolderStudySourceIOTest {
         assertStagingEmpty();
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    public void missingTemporaryDirectoryDoesNotModifySource() throws IOException {
+    public void missingTemporaryDirectoryDoesNotModifySource() {
         Path missing = source.resolve("assets/tmp");
         common.when(Common::getTmpPath).thenReturn(missing.toString());
         assertThrows(IOException.class, this::stage);
@@ -243,6 +247,7 @@ public class LocalFolderStudySourceIOTest {
         }
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void rejectsTemporaryStorageInsideAssets() throws IOException {
         Path assets = Files.createDirectory(source.resolve("assets"));

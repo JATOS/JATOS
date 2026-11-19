@@ -30,6 +30,7 @@ import play.libs.Json;
 import play.mvc.*;
 import services.gui.*;
 import services.gui.importexport.LocalFolderStudyImportExport;
+import services.gui.importexport.GitStudyImportExport;
 import services.gui.importexport.StudyArchiveImportExport;
 import services.gui.importexport.StudySourceService;
 import services.gui.importexport.StudySourceSync;
@@ -62,6 +63,7 @@ public class StudyApi extends Controller {
     private final StudySourceSync studySourceSync;
     private final StudyArchiveImportExport studyArchiveImportExport;
     private final LocalFolderStudyImportExport localFolderStudyImportExport;
+    private final GitStudyImportExport gitStudyImportExport;
     private final UserDao userDao;
     private final StudyDao studyDao;
     private final DomainJsonMapper domainJsonMapper;
@@ -76,6 +78,7 @@ public class StudyApi extends Controller {
              StudySourceSync studySourceSync,
              StudyArchiveImportExport studyArchiveImportExport,
              LocalFolderStudyImportExport localFolderStudyImportExport,
+             GitStudyImportExport gitStudyImportExport,
              UserDao userDao,
              StudyDao studyDao,
              DomainJsonMapper domainJsonMapper,
@@ -88,6 +91,7 @@ public class StudyApi extends Controller {
         this.studySourceSync = studySourceSync;
         this.studyArchiveImportExport = studyArchiveImportExport;
         this.localFolderStudyImportExport = localFolderStudyImportExport;
+        this.gitStudyImportExport = gitStudyImportExport;
         this.userDao = userDao;
         this.studyDao = studyDao;
         this.domainJsonMapper = domainJsonMapper;
@@ -182,24 +186,28 @@ public class StudyApi extends Controller {
     }
 
     private Result createStudyFromSource(JsonNode json) {
-        if (json.size() != 1) {
-            throw new BadRequestException("Source-based creation cannot include study properties or other fields.", INVALID_REQUEST);
-        }
         JsonNode source = json.get("source");
         if (!source.isObject()) throw new BadRequestException("'source' must be a JSON object.", INVALID_REQUEST);
-        if (!"LOCAL_FOLDER".equals(source.path("type").asText())) {
-            throw new BadRequestException("Unsupported source type. Use LOCAL_FOLDER.", INVALID_REQUEST);
-        }
-        source.fieldNames().forEachRemaining(field -> {
-            if (!field.equals("type") && !field.equals("localFolderPath")) {
-                throw new BadRequestException("Unknown source field: " + field, INVALID_REQUEST);
-            }
-        });
         StudySourceProperties props = strictJson.updateFromJson(new StudySourceProperties(), source);
+        if (props.isRemoveCredentials())
+            throw new BadRequestException("Cannot remove credentials when creating a study.", INVALID_REQUEST);
         apiService.validateProps(props);
-        var result = localFolderStudyImportExport.createStudyFromLocalFolder(props.getLocalFolderPath());
-        Context.current().response().putFlash(SUCCESS, result.message());
-        return created(ApiEnvelope.wrap(result.message(), result.study()).asJsonNode());
+        switch (props.getType()) {
+            case GIT -> {
+                if (props.getUsername() != null && !props.getUsername().isEmpty()
+                        && (props.getSecret() == null || props.getSecret().isEmpty()))
+                    throw new FieldValidationException("secret", "Provide a Git password or token with the username.");
+                var result = gitStudyImportExport.createStudyFromGit(props);
+                Context.current().response().putFlash(SUCCESS, result.message());
+                return created(ApiEnvelope.wrap(result.message(), result.study()).asJsonNode());
+            }
+            case LOCAL_FOLDER -> {
+                var result = localFolderStudyImportExport.createStudyFromLocalFolder(props.getLocalFolderPath());
+                Context.current().response().putFlash(SUCCESS, result.message());
+                return created(ApiEnvelope.wrap(result.message(), result.study()).asJsonNode());
+            }
+            default -> throw new BadRequestException("Unsupported source type. Use GIT or LOCAL_FOLDER.", INVALID_REQUEST);
+        }
     }
 
     private Result createStudyFromJson(JsonNode json, boolean renameAssets) {

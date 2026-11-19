@@ -182,7 +182,7 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         jpaApi.withTransaction(em -> {em.find(Study.class, studyId).setLocked(false);});
         try (var common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isServer).thenReturn(true);
-            common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of());
+            common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(List.of());
             assertThrows(BadRequestException.class, () -> sync.importFromFolder(studyId, selection(true, true)));
         }
         assertNoStaging();

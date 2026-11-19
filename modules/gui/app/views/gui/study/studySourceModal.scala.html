@@ -1,7 +1,7 @@
 @import play.api.mvc.RequestHeader
 @(implicit request: RequestHeader)
 
-@* Edit study source Modal *@
+@* Edit study source Modal - does not synchronize a study *@
 <div class="modal fade" id="studySourceModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -12,7 +12,7 @@
             <div class="modal-body">
                 <form id="studySourceForm" class="form-study" autocomplete="off">
                     <div class="row mb-3">
-                        <label class="col-sm-3 col-form-label" for="studySourceType" data-bs-tooltip="Choose where this study's properties and assets come from. Saving these settings does not import or synchronize content. Select None and save to remove the source settings and study-specific Git credentials. Previous synchronization history remains in the study log.">Source</label>
+                        <label class="col-sm-3 col-form-label" for="studySourceType" data-bs-tooltip="Choose where this study's properties and assets come from. Saving these settings does not import or synchronize content. Select None and save to remove the source settings and study-specific Git credentials. Previous synchronization history remains in the study log.">Source<span class="input-required" data-bs-tooltip="required"></span></label>
                         <div class="col-sm-9">
                             <select class="form-select" id="studySourceType" name="type">
                                 <option value="NONE">None</option>
@@ -23,7 +23,7 @@
                     </div>
                     <div id="studySourceGit" class="d-none">
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="studySourceGitUrl" data-bs-tooltip="HTTPS only. Do not put a username or token in the URL.">Repository URL</label>
+                            <label class="col-sm-3 col-form-label" for="studySourceGitUrl" data-bs-tooltip="HTTPS only. Do not put a username or token in the URL.">Repository URL<span class="input-required" data-bs-tooltip="required"></span></label>
                             <div class="col-sm-9">
                                 <input class="form-control" id="studySourceGitUrl" name="gitUrl" type="url" maxlength="2048" placeholder="https://github.com/your-account/your-study.git">
                             </div>
@@ -79,7 +79,7 @@
                         </div>
                     </div>
                     <div id="studySourceFolder" class="row d-none mb-3">
-                        <label class="col-sm-3 col-form-label" for="studySourceFolderPath" data-bs-tooltip="An existing folder on the computer running JATOS. This is not necessarily this browser's computer. If allowed roots are configured, the folder must be within one of them.">Folder path</label>
+                        <label class="col-sm-3 col-form-label" for="studySourceFolderPath" data-bs-tooltip="An existing folder on the computer running JATOS. This is not necessarily this browser's computer. If allowed roots are configured, the folder must be within one of them.">Folder path<span class="input-required" data-bs-tooltip="required"></span></label>
                         <div class="col-sm-9">
                             <input class="form-control" id="studySourceFolderPath" name="localFolderPath" maxlength="4096" placeholder="/absolute/path/to/study">
                         </div>

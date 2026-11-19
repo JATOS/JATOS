@@ -15,9 +15,8 @@ Choose one source:
   running JATOS. It does not refer to the browser's computer.
 
 Saving settings does not fetch a repository, copy files, or synchronize study
-content. Local-folder creation and synchronization are available. Git ingestion and
-credential fallback resolution remain separate implementation steps. Export remains available
-as a backup.
+content. Local-folder creation/import/export and Git creation are available. Git pull/push
+for existing studies is not implemented yet. Archive export remains available as a backup.
 
 ## Git credentials
 
@@ -112,7 +111,7 @@ selected content are rejected, including dangling links. Assets are copied with
 Windows, macOS, and Linux. Real-path checks also reject junctions and paths outside
 the source. These checks do not prevent concurrent path replacement between
 checking and copying: source folders and the processes able to modify them must
-be trusted during ingestion. Git ingestion can later supply the same staged-source
+be trusted during ingestion. Git ingestion supplies the same staged-source
 abstraction.
 
 Temporary storage inside the source's assets is rejected. Failed copies clean up
@@ -158,8 +157,7 @@ using `LocalFolderStudySourceIO` to stage external files. `StudySourceSync` coor
 authorization, per-study locking, transactions, and logging for existing-study synchronization.
 Both import paths use
 `StudyImportService` for shared study validation and content application, including
-assets-directory reservation and rollback cleanup. Git ingestion can reuse this
-service when it is implemented.
+assets-directory reservation and rollback cleanup. Git creation also uses this service.
 
 ## Pending archive imports
 
@@ -273,3 +271,67 @@ unchanged during an export; external editors and other studies using the same fo
 are not coordinated by the per-study lock.
 
 Synchronization history is available in **Study log**.
+
+## Create a study from Git
+
+Choose **+ → Clone from Git**, enter the HTTPS repository URL and optionally a branch
+or tag. Empty selects the default branch. A name shared by a branch and tag requires
+`refs/heads/name` or `refs/tags/name`. Commit-ID input is not supported.
+
+The root layout is the same as for local folders: one `.jas`, `assets/`, or both.
+Multiple `.jas` files or neither content type are errors. Without `.jas`, JATOS creates
+a study with default properties and a new UUID. An existing UUID is rejected without
+changing that study; change its source through **Study Source** instead.
+
+JGit fetches the selected revision into temporary storage without using an external
+Git command. JATOS reads Git objects directly and stages only the selected source
+content. It does not run hooks, check out a working tree, update submodules, or download
+Git LFS objects (LFS pointer files remain pointer files). Links and submodules within
+selected content are rejected. Other root files are ignored. The resolved commit is
+recorded in the study log on successful creation. The temporary repository and staged
+content are removed after success or failure. Saving source settings alone still does
+not access the repository.
+
+Authentication is HTTPS username/password or username/token. GitHub requires a token;
+other providers may accept passwords or tokens depending on their configuration.
+The credentials selected are:
+
+1. Explicit anonymous access, if enabled.
+2. Credentials supplied for this study.
+3. The new study owner's credentials, if their origin matches the repository.
+4. Global credentials, if their origin matches the repository.
+5. Anonymous access when no matching credentials are configured.
+
+Selection happens once: failed authentication does not try another credential.
+Origins include the HTTPS hostname and effective port; a token is never sent to a
+different origin. HTTPS certificate verification stays enabled. Redirects are rejected;
+use the repository's final HTTPS clone URL. Host Git configuration headers, cookies,
+and TLS overrides are not used for these requests.
+
+Set one global fallback credential in `application.conf` / `jatos.conf`:
+
+```hocon
+jatos.studySources.git.credentials.origin = "https://git.example.org:8443"
+jatos.studySources.git.credentials.username = "git-user"
+jatos.studySources.git.credentials.secret = "password-or-token"
+jatos.studySources.git.timeout = 120s
+```
+
+Alternatively use `JATOS_GIT_ORIGIN`, `JATOS_GIT_USERNAME`, and `JATOS_GIT_SECRET`.
+Global credentials are configuration secrets; user/study credentials remain encrypted
+in the database. `timeout` accepts durations such as `30s` or `2m` (minimum `1s`),
+and can also be set with `JATOS_STUDY_SOURCES_GIT_TIMEOUT`. It bounds network waits, rather than the total fetch or extraction duration.
+Unavailable repositories and authentication
+failures return an error without including remote server response bodies or secrets.
+
+The API uses `POST /jatos/api/v1/studies` with JSON:
+
+```json
+{"source":{"type":"GIT","gitUrl":"https://git.example.org/group/study.git","gitRef":"main"}}
+```
+
+Optional `username` and `secret` fields configure study-specific credentials. Use
+`anonymous: true` to disable fallback credentials. Creation returns HTTP 201 with the
+study in `data` and a success `message`. Session-authenticated requests require CSRF
+protection, just like other creation methods. Source configuration and credentials are
+not included in `.jas` files or study exports.

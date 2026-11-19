@@ -15,6 +15,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -45,13 +46,12 @@ public class Common {
     private static long resultUploadsLimitPerStudyRun;
     private static long resultDataMaxSize;
     private static long httpMaxMemoryBuffer;
-    private static long httpMaxDiskBuffer;
     private static long studyArchiveMaxSize;
     private static long studyArchiveMaxMemoryBuffer;
     private static long studyAssetsMaxFileSize;
     private static int maxResultsDbQuerySize;
-    private static int userSessionTimeout;
-    private static int userSessionInactivity;
+    private static Duration userSessionTimeout;
+    private static Duration userSessionInactivity;
     private static boolean userSessionAllowKeepSignedin;
     private static String dbUrl;
     private static String dbDriver;
@@ -69,7 +69,7 @@ public class Common {
     private static List<String> ldapBaseDn;
     private static String ldapAdminDn;
     private static String ldapAdminPassword;
-    private static int ldapTimeout;
+    private static Duration ldapTimeout;
     private static String oauthGoogleClientId;
     private static String oidcDiscoveryUrl;
     private static String oidcClientId;
@@ -111,7 +111,6 @@ public class Common {
     private static String conextSigninButtonText;
     private static String conextSigninButtonLogoUrl;
     private static String conextSuccessFeedback;
-    private static boolean donationAllowed;
     private static String termsOfUseUrl;
     private static String brandingUrl;
     private static String locale;
@@ -143,15 +142,19 @@ public class Common {
     private static String studyArchiveSuffix;
     private static String resultsArchiveSuffix;
     private static boolean groupsCleaningAllowed;
-    private static int groupsCleaningInterval;
-    private static int groupsCleaningMemberIdleAfter;
+    private static Duration groupsCleaningInterval;
+    private static Duration groupsCleaningMemberIdleAfter;
     private static Duration lastSeenDateUpdateThreshold;
     private static boolean openAiAllowed;
     private static String openAiApiKey;
     private static String openAiUrlBasePath;
     private static int openAiCallLimit;
-    private static int openAiTimeout;
-    private static List<String> studySourcesAllowedRoots;
+    private static Duration openAiTimeout;
+    private static List<String> studySourcesLocalFolderAllowedRoots;
+    private static Duration studySourcesGitTimeout;
+    private static String studySourcesGitCredentialOrigin;
+    private static String studySourcesGitCredentialUsername;
+    private static String studySourcesGitCredentialSecret;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions (the regexes are
@@ -186,12 +189,11 @@ public class Common {
         resultUploadsLimitPerStudyRun = config.getBytes("jatos.resultUploads.limitPerStudyRun");
         resultDataMaxSize = config.getBytes("jatos.resultData.maxSize");
         httpMaxMemoryBuffer = config.getBytes("jatos.http.parser.maxMemoryBuffer");
-        httpMaxDiskBuffer = config.getBytes("jatos.http.parser.maxDiskBuffer");
         studyArchiveMaxSize = config.getBytes("jatos.studyArchive.maxSize");
         studyArchiveMaxMemoryBuffer = config.getBytes("jatos.studyArchive.maxMemoryBuffer");
         maxResultsDbQuerySize = config.getInt("jatos.maxResultsDbQuerySize");
-        userSessionTimeout = config.getInt("jatos.userSession.timeout");
-        userSessionInactivity = config.getInt("jatos.userSession.inactivity");
+        userSessionTimeout = getDurationWithDefaultUnit(config, "jatos.userSession.timeout", ChronoUnit.MINUTES);
+        userSessionInactivity = getDurationWithDefaultUnit(config, "jatos.userSession.inactivity", ChronoUnit.MINUTES);
         userSessionAllowKeepSignedin = config.getBoolean("jatos.userSession.allowKeepSignedin");
         dbUrl = config.getString("db.default.url"); // Also jatos.db.url
         dbDriver = config.getString("db.default.driver"); // Also jatos.db.driver
@@ -221,7 +223,7 @@ public class Common {
         }
         ldapAdminDn = config.getString("jatos.user.authentication.ldap.admin.dn");
         ldapAdminPassword = config.getString("jatos.user.authentication.ldap.admin.password");
-        ldapTimeout = config.getInt("jatos.user.authentication.ldap.timeout");
+        ldapTimeout = getDurationWithDefaultUnit(config, "jatos.user.authentication.ldap.timeout", ChronoUnit.MILLIS);
         oauthGoogleClientId = config.getString("jatos.user.authentication.oauth.googleClientId");
         oidcDiscoveryUrl = config.getString("jatos.user.authentication.oidc.discoveryUrl");
         oidcClientId = config.getString("jatos.user.authentication.oidc.clientId");
@@ -263,7 +265,6 @@ public class Common {
         conextSigninButtonText = config.getString("jatos.user.authentication.conext.signInButtonText");
         conextSigninButtonLogoUrl = config.getString("jatos.user.authentication.conext.signInButtonLogoUrl");
         conextSuccessFeedback = config.getString("jatos.user.authentication.conext.successFeedback");
-        donationAllowed = config.getBoolean("jatos.donationAllowed");
         termsOfUseUrl = config.getString("jatos.termsOfUseUrl");
         brandingUrl = config.getString("jatos.brandingUrl");
         locale = config.getString("jatos.locale");
@@ -282,14 +283,14 @@ public class Common {
         jatosMcpMaxRequestSize = config.getBytes("jatos.mcp.maxRequestSize");
         jatosApiAllowed = config.getBoolean("jatos.api.allowed");
         jatosApiTokensApiGenerationAllowed = config.getBoolean("jatos.api.tokens.apiGeneration.allowed");
-        jatosApiTokensApiGenerationExpiresAfter = getDurationWithDefaultUnit(config, "jatos.api.tokens.apiGeneration.expiresAfter");
+        jatosApiTokensApiGenerationExpiresAfter = getDurationWithDefaultUnit(config, "jatos.api.tokens.apiGeneration.expiresAfter", ChronoUnit.SECONDS);
         logsPath = obtainPath(config, "jatos.logs.path");
         LOGGER.info("Path to logs directory is " + logsPath);
         logsFilename = config.getString("jatos.logs.filename");
         logsAppender = config.getString("jatos.logs.appender");
         logsRequestCategories = getStringList(config, "jatos.logs.requestCategories");
         multiNode = config.getBoolean("jatos.multiNode");
-        groupMessageAckTimeout = getDurationWithDefaultUnit(config, "jatos.groupMessageAckTimeout");
+        groupMessageAckTimeout = getDurationWithDefaultUnit(config, "jatos.groupMessageAckTimeout", ChronoUnit.SECONDS);
         tmpPath = config.getIsNull("jatos.tmpPath")
                 ? Path.of(System.getProperty("java.io.tmpdir"), "jatos").toString()
                 : obtainPath(config, "jatos.tmpPath");
@@ -299,15 +300,20 @@ public class Common {
         studyArchiveSuffix = config.getString("jatos.studyArchive.suffix");
         resultsArchiveSuffix = config.getString("jatos.resultsArchive.suffix");
         groupsCleaningAllowed = config.getBoolean("jatos.groups.cleaning.allowed");
-        groupsCleaningInterval = config.getInt("jatos.groups.cleaning.interval");
-        groupsCleaningMemberIdleAfter = config.getInt("jatos.groups.cleaning.memberIdleAfter");
-        lastSeenDateUpdateThreshold = getDurationWithDefaultUnit(config, "jatos.studyResult.lastSeenDate.updateThreshold");
+        groupsCleaningInterval = getDurationWithDefaultUnit(config, "jatos.groups.cleaning.interval", ChronoUnit.SECONDS);
+        groupsCleaningMemberIdleAfter = getDurationWithDefaultUnit(config, "jatos.groups.cleaning.memberIdleAfter", ChronoUnit.SECONDS);
+        lastSeenDateUpdateThreshold = getDurationWithDefaultUnit(config, "jatos.studyResult.lastSeenDate.updateThreshold", ChronoUnit.SECONDS);
         openAiAllowed = config.getBoolean("jatos.openai.allowed");
         openAiApiKey = config.getString("jatos.openai.apiKey");
         openAiUrlBasePath = config.getString("jatos.openai.urlBasePath");
         openAiCallLimit = config.getInt("jatos.openai.callLimit");
-        openAiTimeout = config.getInt("jatos.openai.timeout");
-        studySourcesAllowedRoots = config.getStringList("jatos.studySources.allowedRoots");
+        openAiTimeout = getDurationWithDefaultUnit(config, "jatos.openai.timeout", ChronoUnit.SECONDS);
+        studySourcesLocalFolderAllowedRoots = getStringList(config, "jatos.studySources.localFolder.allowedRoots");
+        studySourcesGitTimeout = getDurationWithDefaultUnit(config, "jatos.studySources.git.timeout", ChronoUnit.SECONDS);
+        studySourcesGitCredentialOrigin = config.getString("jatos.studySources.git.credentials.origin");
+        studySourcesGitCredentialUsername = config.getString("jatos.studySources.git.credentials.username");
+        studySourcesGitCredentialSecret = config.getString("jatos.studySources.git.credentials.secret");
+
     }
 
     /**
@@ -374,15 +380,15 @@ public class Common {
         }
     }
 
-    public Duration getDurationWithDefaultUnit(Config config, String path) {
-        if (config.getValue(path).valueType() == ConfigValueType.NUMBER) {
-            // Treat raw numbers as seconds
-            long seconds = config.getLong(path);
-            return Duration.ofSeconds(seconds);
-        } else {
-            // Otherwise, use the standard HOCON duration parsing (e.g., "5m", "10s")
-            return config.getDuration(path);
+    /**
+     * Reads durations, preserving the specified unit for bare numbers, including environment-variable strings.
+     */
+    public static Duration getDurationWithDefaultUnit(Config config, String path, ChronoUnit defaultUnit) {
+        String value = config.getString(path).trim();
+        if (value.matches("[+-]?[0-9]+")) {
+            return Duration.of(Long.parseLong(value), defaultUnit);
         }
+        return config.getDuration(path);
     }
 
     /**
@@ -507,13 +513,6 @@ public class Common {
     }
 
     /**
-     * Maximum size of HTTP uploads backed by temporary files.
-     */
-    public static long getHttpMaxDiskBuffer() {
-        return httpMaxDiskBuffer;
-    }
-
-    /**
      * Maximal size of result data of one component result in Byte
      */
     public static long getResultDataMaxSize() {
@@ -528,16 +527,16 @@ public class Common {
     }
 
     /**
-     * Time in minutes when the Play session will time out (defined in application.conf)
+     * Duration after which the Play session will time out (defined in application.conf)
      */
-    public static int getUserSessionTimeout() {
+    public static Duration getUserSessionTimeout() {
         return userSessionTimeout;
     }
 
     /**
-     * Time in minutes a user can be inactive before they will be signed out (defined in application.conf)
+     * Duration a user can be inactive before they will be signed out (defined in application.conf)
      */
-    public static int getUserSessionInactivity() {
+    public static Duration getUserSessionInactivity() {
         return userSessionInactivity;
     }
 
@@ -681,7 +680,7 @@ public class Common {
     /**
      * Read timeout for the LDAP server
      */
-    public static int getLdapTimeout() {
+    public static Duration getLdapTimeout() {
         return ldapTimeout;
     }
 
@@ -991,14 +990,6 @@ public class Common {
         return conextSuccessFeedback;
     }
 
-
-    /**
-     * Should the GUI show a donation button
-     */
-    public static boolean isDonationAllowed() {
-        return donationAllowed;
-    }
-
     /**
      * URL to the terms of use that will be shown in a link on the home page
      */
@@ -1026,7 +1017,8 @@ public class Common {
     }
 
     /**
-     * If true, a study owner is allowed to add all users that exist on this JATOS server to be added at once as members of a study
+     * If true, a study owner is allowed to add all users that exist on this JATOS server to be added at once as members
+     * of a study
      */
     public static boolean isStudyOwnerAllowedToAddAllUsers() {
         return studyOwnerAllowedToAddAllUsers;
@@ -1234,16 +1226,16 @@ public class Common {
     }
 
     /**
-     * Interval in seconds the group cleaner is started.
+     * Interval between group cleaner runs.
      */
-    public static int getGroupsCleaningInterval() {
+    public static Duration getGroupsCleaningInterval() {
         return groupsCleaningInterval;
     }
 
     /**
-     * After how many seconds a group member is regarded as idle.
+     * Duration after which a group member is regarded as idle.
      */
-    public static int getGroupsCleaningMemberIdleAfter() {
+    public static Duration getGroupsCleaningMemberIdleAfter() {
         return groupsCleaningMemberIdleAfter;
     }
 
@@ -1282,14 +1274,42 @@ public class Common {
     /**
      * Returns the maximum number of seconds to wait for OpenAI API response.
      */
-    public static int getOpenAiTimeout() {
+    public static Duration getOpenAiTimeout() {
         return openAiTimeout;
     }
 
     /**
      * Get the list of allowed root folders for study sources.
      */
-    public static List<String> getStudySourcesAllowedRoots() {
-        return studySourcesAllowedRoots;
+    public static List<String> getStudySourcesLocalFolderAllowedRoots() {
+        return studySourcesLocalFolderAllowedRoots;
+    }
+
+    /**
+     * The git network timeout
+     */
+    public static Duration getStudySourcesGitTimeout() {
+        return studySourcesGitTimeout;
+    }
+
+    /**
+     * The Git origin contains only scheme, host and optional port, never a repository path.
+     */
+    public static String getStudySourcesGitCredentialOrigin() {
+        return studySourcesGitCredentialOrigin;
+    }
+
+    /**
+     * The Git username
+     */
+    public static String getStudySourcesGitCredentialUsername() {
+        return studySourcesGitCredentialUsername;
+    }
+
+    /**
+     * The Git password or token
+     */
+    public static String getStudySourcesGitCredentialSecret() {
+        return studySourcesGitCredentialSecret;
     }
 }

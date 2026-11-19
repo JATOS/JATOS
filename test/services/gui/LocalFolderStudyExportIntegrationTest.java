@@ -223,10 +223,10 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
     @Test public void honorsAllowedRootsAndSharesImportLock() throws Exception {
         try (var common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isServer).thenReturn(true);
-            common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of());
+            common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(List.of());
             assertThrows(BadRequestException.class, () -> sync.exportToFolder(studyId, selection(true, true)));
             common.when(Common::isServer).thenReturn(false);
-            common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of(temporary.newFolder("other").toPath().toString()));
+            common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(List.of(temporary.newFolder("other").toPath().toString()));
             assertThrows(BadRequestException.class, () -> sync.exportToFolder(studyId, selection(true, true)));
         }
         try (var ignored = application.injector().instanceOf(StudySourceSyncIO.class).lock(studyId)) {

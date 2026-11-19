@@ -1,0 +1,130 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
+@* Clone study from Git Modal *@
+<div class="modal fade" id="gitStudyModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Clone study from Git</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="gitStudyForm" class="form-study">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <label for="gitStudyUrl" class="col-sm-3 col-form-label" data-bs-tooltip="HTTPS URL of the repository containing a .jas file and/or assets/ directory at its root. A study with an existing UUID cannot be cloned again.">Repository URL<span class="input-required" data-bs-tooltip="required"></span></label>
+                        <div class="col-sm-9"><input id="gitStudyUrl" name="gitUrl" class="form-control" maxlength="2048" placeholder="https://github.com/owner/repository.git" required></div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="gitStudyRef" class="col-sm-3 col-form-label" data-bs-tooltip="A branch or tag name. Leave empty for the repository's default branch. Commit IDs are not supported.">Branch or tag</label>
+                        <div class="col-sm-9"><input id="gitStudyRef" name="gitRef" class="form-control" maxlength="255" placeholder="Default branch"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="gitStudyAnonymous" class="col-sm-3 col-form-label" data-bs-tooltip="Use no credentials, even when your account or the server has matching Git credentials configured.">Anonymous</label>
+                        <div class="col-sm-9 pt-2"><label class="switch no-info-icon">
+                            <input id="gitStudyAnonymous" name="anonymous" type="checkbox" class="form-check-input checkbox-study">
+                            <span class="slider slider-study round"></span>
+                        </label></div>
+                    </div>
+                    <div id="gitStudyCredentials">
+                        <div class="row mb-3">
+                            <label for="gitStudyUsername" class="col-sm-3 col-form-label" data-bs-tooltip="If this repository requires a login, you can enter a Git username and password/token here. They will be saved for this study. If you leave both fields empty, JATOS first looks for login details for this Git server in your 'My settings', then in the JATOS administrator’s configuration. If none are configured for this Git server, JATOS tries without a login (for public repositories). If the selected login details fail, JATOS shows an error.">Git username</label>
+                            <div class="col-sm-9"><input id="gitStudyUsername" name="username" class="form-control" maxlength="255" autocomplete="off"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="gitStudySecret" class="col-sm-3 col-form-label" data-bs-tooltip="A password or access token accepted by your Git provider. GitHub requires a token for HTTPS Git authentication.">Password / token</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <input id="gitStudySecret" name="secret" type="password" class="form-control" maxlength="16384" autocomplete="new-password">
+                                    <button id="gitStudySecretVisibility" class="btn btn-nav" type="button" aria-label="Show password or access token" aria-pressed="false" aria-controls="gitStudySecret"><i class="bi-eye-slash-fill" aria-hidden="true"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" id="gitStudyClone" class="btn btn-study">Clone</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("git-study");
+    const form = $("#gitStudyForm");
+    const modal = $("#gitStudyModal");
+    const button = $("#gitStudyClone");
+
+    modal.on("show.bs.modal", function() {
+        form[0].reset();
+        modal.find("input, button").prop("disabled", false);
+        setSecretVisibility(false);
+        toggleCredentials();
+        FormValidation.clear("#gitStudyForm");
+        alerts.hideAll();
+    });
+
+    modal.on("hide.bs.modal", function() {
+        $("#gitStudySecret").val("");
+        setSecretVisibility(false);
+        alerts.hideAll();
+    });
+
+    function setSecretVisibility(visible) {
+        $("#gitStudySecret").attr("type", visible ? "text" : "password");
+        $("#gitStudySecretVisibility").attr("aria-pressed", String(visible))
+            .attr("aria-label", visible ? "Hide password or access token" : "Show password or access token")
+            .find("i").toggleClass("bi-eye-fill", visible).toggleClass("bi-eye-slash-fill", !visible);
+    }
+
+    $("#gitStudySecretVisibility").on("click", () => setSecretVisibility($("#gitStudySecret").attr("type") === "password"));
+
+    function toggleCredentials() {
+        const anonymous = $("#gitStudyAnonymous").is(":checked");
+        $("#gitStudyCredentials").toggleClass("d-none", anonymous).find("input, button").prop("disabled", anonymous);
+    }
+
+    $("#gitStudyAnonymous").on("change", toggleCredentials);
+
+    form.on("submit", function(event) {
+        event.preventDefault();
+        if (button.prop("disabled")) return;
+        FormValidation.clear("#gitStudyForm");
+        alerts.hideAll();
+
+        const anonymous = $("#gitStudyAnonymous").is(":checked");
+        const source = {
+            type: "GIT",
+            gitUrl: $("#gitStudyUrl").val(),
+            gitRef: $("#gitStudyRef").val(),
+            anonymous};
+        if (!anonymous) {
+            source.username = $("#gitStudyUsername").val();
+            source.secret = $("#gitStudySecret").val();
+        }
+        modal.find("input, button").prop("disabled", true);
+        $.ajax({
+            beforeSend: WaitingModal.show,
+            url: window.routes.Api.importOrCreateStudy,
+            type: "POST",
+            contentType: "application/json",
+            headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
+            data: JSON.stringify({source}),
+            success: response => { window.location.href = window.routes.Studies.study(response.data.id); },
+            error: function(response) {
+                const error = response.responseJSON?.error;
+                if (error?.fields) FormValidation.show("#gitStudyForm", error.fields);
+                else alerts.error(error?.message ?? "Could not clone study from Git.", 0, true);
+                modal.find("input, button").prop("disabled", false);
+                toggleCredentials();
+            },
+            complete: WaitingModal.hide
+        });
+    });
+</script>

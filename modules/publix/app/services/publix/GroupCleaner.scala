@@ -22,7 +22,7 @@ object GroupCleaner {
   private case object CleaningFinished
   private case object Stop
 
-  private class CleanerActor(clean: () => Future[Unit], intervalSeconds: Int, clusterSingleton: Boolean)
+  private class CleanerActor(clean: () => Future[Unit], interval: java.time.Duration, clusterSingleton: Boolean)
     extends Actor with ActorLogging {
 
     implicit private val executionContext: ExecutionContext = context.dispatcher
@@ -35,7 +35,7 @@ object GroupCleaner {
       else log.info("GroupCleaner started")
       scheduler = context.system.scheduler.scheduleWithFixedDelay(
         initialDelay = Duration.Zero,
-        delay = Duration(intervalSeconds, TimeUnit.SECONDS),
+        delay = Duration(interval.toNanos, TimeUnit.NANOSECONDS),
         receiver = self,
         message = Clean)
     }
@@ -63,8 +63,8 @@ object GroupCleaner {
     }
   }
 
-  private def props(clean: () => Future[Unit], intervalSeconds: Int, clusterSingleton: Boolean): Props =
-    Props(new CleanerActor(clean, intervalSeconds, clusterSingleton))
+  private def props(clean: () => Future[Unit], interval: java.time.Duration, clusterSingleton: Boolean): Props =
+    Props(new CleanerActor(clean, interval, clusterSingleton))
 }
 
 /**

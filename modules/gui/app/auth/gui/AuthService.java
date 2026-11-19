@@ -15,7 +15,6 @@ import utils.common.HashUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -136,7 +135,7 @@ public class AuthService {
                     .orElseThrow(IllegalArgumentException::new);
             Instant signinTime = Instant.ofEpochMilli(Long.parseLong(signinTimeStr));
             Instant now = Instant.now();
-            Instant allowedUntil = signinTime.plus(Common.getUserSessionTimeout(), ChronoUnit.MINUTES);
+            Instant allowedUntil = signinTime.plus(Common.getUserSessionTimeout());
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
             LOGGER.error(".isSessionTimeout: " + e.getMessage());
@@ -154,7 +153,7 @@ public class AuthService {
                     .orElseThrow(IllegalArgumentException::new);
             Instant lastActivityTime = Instant.ofEpochMilli(Long.parseLong(lastActivityTimeStr));
             Instant now = Instant.now();
-            Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity(), ChronoUnit.MINUTES);
+            Instant allowedUntil = lastActivityTime.plus(Common.getUserSessionInactivity());
             return allowedUntil.isBefore(now);
         } catch (Exception e) {
             LOGGER.error(".isInactivityTimeout: " + e.getMessage());

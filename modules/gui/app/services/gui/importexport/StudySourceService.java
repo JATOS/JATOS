@@ -96,11 +96,15 @@ public class StudySourceService {
         if (props.getType() != StudySource.Type.GIT || props.isRemoveCredentials()) {
             if (source.getGitCredentials() != null) credentials.removeGitCredentialsFromSource(studyId);
         } else if (replaceCredentials || updateUsername) {
+            // Credential authorization can refresh the study; persist its new source before that refresh.
+            transactions.em("default").flush();
             credentials.saveGitCredentialsForSource(studyId, props.getUsername(),
                     HttpUtils.getGitOriginFromRepositoryUrl(source.getGitUrl()), props.getSecret());
         }
         if (props.getType() == StudySource.Type.NONE) study.setStudySource(null);
+
         StudySourceProperties propsAfter = bindToProperties(source);
+
         if (!isEqualStudySourceProperties(propsBefore, propsAfter)
                 || props.getType() == StudySource.Type.GIT
                 && replaceCredentials) {
@@ -151,14 +155,14 @@ public class StudySourceService {
     }
 
     private boolean localFolderAllowed() {
-        return !Common.isServer() || !Common.getStudySourcesAllowedRoots().isEmpty();
+        return !Common.isServer() || !Common.getStudySourcesLocalFolderAllowedRoots().isEmpty();
     }
 
     private String validateFolder(String value) {
         if (!localFolderAllowed()) throw new BadRequestException(
                 "Local-folder sources require configured allowed roots in server mode.", CONFIG_ERROR);
         try {
-            var path = ioUtils.resolveReadableDirectoryWithinRoots(value, Common.getStudySourcesAllowedRoots());
+            var path = ioUtils.resolveReadableDirectoryWithinRoots(value, Common.getStudySourcesLocalFolderAllowedRoots());
             if (path.isPresent()) return path.get().toString();
         } catch (IOException | IllegalArgumentException e) {
             throw new FieldValidationException("localFolderPath",

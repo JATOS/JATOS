@@ -180,7 +180,7 @@ public class LocalFolderStudyCreationIntegrationTest extends JatosTest {
         assertEquals(response.getBody(), 400, response.getStatus());
         try (var common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isServer).thenReturn(true);
-            common.when(Common::getStudySourcesAllowedRoots).thenReturn(List.of());
+            common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(List.of());
             assertThrows(exceptions.common.BadRequestException.class, () -> service.createStudyFromLocalFolder(source.toString()));
         }
         assertNoStaging();

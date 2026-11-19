@@ -44,7 +44,7 @@ public final class StagedStudySource implements AutoCloseable {
     }
 
     /**
-     * Empty means preserve assets on update. A present but empty directory means replace with no assets.
+     * Empty means preserve assets on update. A present but empty directory means replacement with no assets.
      */
     public Optional<Path> getAssets() {
         return Optional.ofNullable(assets);

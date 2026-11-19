@@ -8,7 +8,7 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 /**
- * HTTPS credentials owned exclusively by a study source or a user. Never serialize this entity.
+ * Git HTTPS credentials owned exclusively by a study source or a user. Never serialize this entity.
  */
 @Entity
 @Table(name = "GitCredentials")
@@ -40,7 +40,9 @@ public class GitCredentials {
     private String encryptedSecret;
 
     /**
-     * HTTPS scheme, hostname and optional port, without a repository path (e.g. https://git.example.org:8443).
+     * HTTPS origin allowed to receive these credentials: scheme, hostname and optional port, without a repository
+     * path (e.g. https://git.example.org:8443). It must match the repository URL's origin, preventing credentials
+     * from being sent to a different host or port when that URL changes.
      */
     @Column(nullable = false, length = 512)
     private String origin;
