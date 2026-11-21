@@ -442,7 +442,7 @@
     }
 
     function generateDeleteMyUserConfirmationHtml(user) {
-        let confirmationText = `<p>You are about to delete the user <b>"${window.signedinUser.name}" (${window.signedinUser.username})</b>.</p>`;
+        let confirmationText = `<p>You are about to delete the user <b>"${Helpers.escapeHtml(window.signedinUser.name)}" (${Helpers.escapeHtml(window.signedinUser.username)})</b>.</p>`;
         confirmationText += generateStudyList(user);
         confirmationText += `<p><b class="text-danger">This cannot be undone.</b></p>`;
         return confirmationText;
@@ -454,7 +454,7 @@
         let studyList = "";
         $.each(user.studyList, function(index, study) {
             if (study.userSize === 1) {
-                studyList += `<li>${study.title} (ID: ${study.id})</li>`;
+                studyList += `<li>${Helpers.escapeHtml(study.title)} (ID: ${study.id})</li>`;
             }
         });
         let text = "";

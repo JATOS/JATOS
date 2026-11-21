@@ -191,7 +191,7 @@ function getUserRoleText(role) {
  * @param {string} orcid - User's ORCID ID
  */
 function generateOrcidLink(orcid) {
-    return `<a href="https://orcid.org/${orcid}" target="_blank" class="text-nowrap"><img class="me-1" src="${window.routes.assets("lib/jatos-gui/images/ORCIDiD_iconvector.svg")}" alt="ORCID logo" width="16" height="16"/>${orcid}</a>`;
+    return `<a href="https://orcid.org/${escapeHtml(encodeURIComponent(orcid))}" target="_blank" class="text-nowrap"><img class="me-1" src="${window.routes.assets("lib/jatos-gui/images/ORCIDiD_iconvector.svg")}" alt="ORCID logo" width="16" height="16"/>${escapeHtml(orcid)}</a>`;
 }
 
 /**
@@ -203,9 +203,9 @@ function generateOrcidLink(orcid) {
  */
 function generateFullUserString(name, username, authMethod) {
     if (authMethod === "ORCID") {
-        return `${name} (${generateOrcidLink(username)})`;
+        return `${escapeHtml(name)} (${generateOrcidLink(username)})`;
     } else {
-        return `${name} (${username})`;
+        return `${escapeHtml(name)} (${escapeHtml(username)})`;
     }
 }
 
@@ -393,20 +393,22 @@ function activatePopovers(parent) {
 }
 
 /**
- * Attaches subtitles to the given Modal element
- *
- * @param {string} modalSelector - A selector specifying the Modal element
- * @param {object[]} subtitleList - Array of objects. Each object is of {subtitleName: subtitleValue}.
- * @param {boolean} [newLine=false] - If true, the subtitles will be separated by a new line, otherwise by a comma
+ * Adds modal subtitles, using aligned label/value rows when newLine is true.
+ * Values are plain text or explicitly constructed jQuery elements.
  */
 function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
-    const joinStr = newLine ? "<br>" : ", ";
-    const subtitlesHtml = Object.entries(subtitleList).map(st =>
-        `<span class="fw-normal">${st[0]}</span>: <span class="user-select-all">${st[1]}</span>`
-    ).join(joinStr);
-    const subtitleSpan = `<div class="modal-subtitle fw-light fs-6 text-wrap text-break">${subtitlesHtml}</div>`;
+    const subtitles = $("<div>").addClass("modal-subtitle fw-normal fs-6 text-wrap text-break");
+    if (newLine) subtitles.addClass("modal-subtitle-rows mt-2");
+    Object.entries(subtitleList).forEach(([label, value], index) => {
+        if (!newLine && index > 0) subtitles.append(", ");
+        subtitles.append($("<span>").addClass("text-body-secondary").text(label + (newLine ? "" : ": ")));
+        const valueSpan = $("<span>").addClass("user-select-all");
+        if (value instanceof jQuery) valueSpan.append(value);
+        else valueSpan.text(value);
+        subtitles.append(valueSpan);
+    });
     $(`${modalSelector} .modal-subtitle`).remove();
-    $(`${modalSelector} .modal-title`).append(subtitleSpan);
+    $(`${modalSelector} .modal-title`).append(subtitles);
 }
 
 /**

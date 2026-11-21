@@ -59,7 +59,7 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
         Files.writeString(source.resolve("study.jas"), envelope.toString());
     }
 
-    private StudySourceSync.SyncPreview preview() {
+    private StudySourceSync.LocalFolderPreview preview() {
         return jpaApi.withTransaction(em -> {return sync.previewImport(studyId);});
     }
 
@@ -204,9 +204,10 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
                 injector.instanceOf(daos.common.UserDao.class), injector.instanceOf(AuthorizationService.class),
                 failingIO, injector.instanceOf(StudyLogger.class),
                 new LocalFolderStudyImportExport(injector.instanceOf(LocalFolderStudySourceIO.class),
-                        injector.instanceOf(StudyImportService.class), injector.instanceOf(StudyService.class),
+                        injector.instanceOf(StudyImportService.class),
                         injector.instanceOf(services.gui.importexport.StudySourceService.class), jpaApi,
-                        injector.instanceOf(json.common.DomainJsonMapper.class), injector.instanceOf(IOUtils.class), failingIO));
+                        injector.instanceOf(json.common.DomainJsonMapper.class), injector.instanceOf(IOUtils.class), failingIO),
+                injector.instanceOf(services.gui.importexport.GitStudyImportExport.class));
         assertThrows(exceptions.common.JatosException.class, () -> failing.importFromFolder(studyId, selection(true, true)));
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
         assertFalse(Files.exists(assets.resolve("new.txt")));
@@ -245,9 +246,10 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
                 injector.instanceOf(daos.common.UserDao.class), injector.instanceOf(AuthorizationService.class),
                 failingIO, injector.instanceOf(StudyLogger.class),
                 new LocalFolderStudyImportExport(injector.instanceOf(LocalFolderStudySourceIO.class),
-                        injector.instanceOf(StudyImportService.class), injector.instanceOf(StudyService.class),
+                        injector.instanceOf(StudyImportService.class),
                         injector.instanceOf(services.gui.importexport.StudySourceService.class), jpaApi,
-                        injector.instanceOf(json.common.DomainJsonMapper.class), injector.instanceOf(IOUtils.class), failingIO));
+                        injector.instanceOf(json.common.DomainJsonMapper.class), injector.instanceOf(IOUtils.class), failingIO),
+                injector.instanceOf(services.gui.importexport.GitStudyImportExport.class));
         assertThrows(RuntimeException.class, () -> failing.importFromFolder(studyId, selection(true, true)));
         assertEquals("old", Files.readString(assets.resolve("old.txt")));
         assertFalse(Files.exists(assets.resolve("new.txt")));

@@ -202,7 +202,9 @@
             data: JSON.stringify(jsonData),
             success: function(response) {
                 window.study.sourceType = response.data.type;
-                $("#studySyncButton").toggleClass("d-none", response.data.type !== "LOCAL_FOLDER");
+                $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
+                $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
+                $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
                 $("#studySourceModal").modal("hide");
                 Alerts.success("Study source settings saved. Study content has not changed.", 5000, true);
             },

@@ -1,27 +1,26 @@
 package services.gui.importexport;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import exceptions.common.FieldValidationException;
 import exceptions.common.BadRequestException;
-import general.common.Common;
-import models.gui.StudySourceSyncProperties;
-import utils.common.IOUtils;
-import services.gui.StudyService;
-
-import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.List;
-
+import exceptions.common.FieldValidationException;
 import exceptions.common.ImportExportException;
+import general.common.Common;
 import general.common.JpaTransactions;
 import json.common.DomainJsonMapper;
 import models.common.Study;
 import models.gui.StagedStudySource;
 import models.gui.StudySourceProperties;
+import models.gui.StudySourceSyncProperties;
+import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static models.common.StudySource.Type.LOCAL_FOLDER;
@@ -34,7 +33,6 @@ public class LocalFolderStudyImportExport {
 
     private final LocalFolderStudySourceIO localFolderStudySourceIO;
     private final StudyImportService studyImportService;
-    private final StudyService studyService;
     private final StudySourceService studySourceService;
     private final JpaTransactions transactions;
     private final DomainJsonMapper domainJsonMapper;
@@ -44,13 +42,11 @@ public class LocalFolderStudyImportExport {
     @Inject
     public LocalFolderStudyImportExport(LocalFolderStudySourceIO localFolderStudySourceIO,
                                         StudyImportService studyImportService,
-                                        StudyService studyService,
                                         StudySourceService studySourceService,
                                         JpaTransactions transactions,
                                         DomainJsonMapper domainJsonMapper, IOUtils ioUtils, StudySourceSyncIO studySourceSyncIO) {
         this.localFolderStudySourceIO = localFolderStudySourceIO;
         this.studyImportService = studyImportService;
-        this.studyService = studyService;
         this.studySourceService = studySourceService;
         this.transactions = transactions;
         this.domainJsonMapper = domainJsonMapper;
@@ -123,30 +119,18 @@ public class LocalFolderStudyImportExport {
     public ImportPreview previewImport(Study study, String folder) throws IOException {
         try (StagedStudySource staged = stage(folder)) {
             studySourceSyncIO.checkSourceOutsideAssets(folder, study.getDirName());
-            extractStudyFromSource(study, staged);
+            studyImportService.readStudyFromSource(study, staged);
             return new ImportPreview(staged.getProperties().isPresent(), staged.getAssets().isPresent());
         }
     }
 
     /**
-     * Imports selected properties and assets into an existing study. The caller holds the synchronization lock and
-     * transaction through completion, so a failure restores replaced assets along with rolled-back database changes.
+     * Imports selected properties and assets into an existing study.
      */
     public void importFromLocalFolder(Study study, String folder, StudySourceSyncProperties props) throws IOException {
         try (StagedStudySource staged = stage(folder)) {
             studySourceSyncIO.checkSourceOutsideAssets(folder, study.getDirName());
-            Study imported = extractStudyFromSource(study, staged);
-            if (props.isProperties() && imported == null)
-                throw new BadRequestException("The source has no .jas file. Only assets can be synchronized.");
-            if (props.isAssets() && staged.getAssets().isEmpty())
-                throw new BadRequestException("The source has no assets/ directory. Existing assets are preserved.");
-
-            if (props.isProperties()) {
-                studyImportService.checkForExistingComponents(imported);
-                //noinspection DataFlowIssue
-                studyService.updateStudyWithoutDirName(study, imported);
-                studyImportService.updateStudysComponents(study, imported);
-            }
+            studyImportService.importPropertiesFromStagedSource(study, staged, props);
             if (props.isAssets())
                 studySourceSyncIO.replaceAssets(staged.getAssets().orElseThrow(), study.getDirName());
         }
@@ -160,19 +144,12 @@ public class LocalFolderStudyImportExport {
         }
     }
 
-    private Study extractStudyFromSource(Study target, StagedStudySource stagedSource) {
-        if (stagedSource.getProperties().isEmpty()) return null;
-        Study importedStudy = studyImportService.deserializeStudyProperties(stagedSource.getProperties().orElseThrow());
-        if (!target.getUuid().equals(importedStudy.getUuid()))
-            throw new BadRequestException("The source .jas UUID differs from this study's UUID. Synchronization was aborted.");
-        return importedStudy;
-    }
-
-    /**
-     * Destination validation is repeated before export; another study must never be overwritten.
-     */
     public record ExportPreview(Path folder, String propertiesFilename, boolean assetsAvailable) {}
 
+    /**
+     * Checks the destination folder and available study content before export.
+     * Rejects an existing .jas file belonging to another study. Export repeats these checks before writing.
+     */
     public ExportPreview previewExport(Study study, String localFolderStr) throws IOException {
         var allowedRoots = Common.getStudySourcesLocalFolderAllowedRoots();
         if (Common.isServer() && allowedRoots.isEmpty())
@@ -235,11 +212,7 @@ public class LocalFolderStudyImportExport {
     }
 
     /**
-     * Writes the selected study properties and/or assets to the configured folder, keeping backups so it can undo the
-     * changes if the transaction fails. Stages selected content beside the destination, then replaces only the .jas
-     * file and/or assets directory. The caller holds the study synchronization lock and transaction through
-     * commit/rollback. Unrelated root files (including .git) stay untouched. Rollback restores backups; failed
-     * restoration retains them for manual recovery.
+     * Exports selected properties and assets to the local folder, preserving unrelated files.
      */
     public void exportToLocalFolder(Study study, String folder, StudySourceSyncProperties props) throws IOException {
         ExportPreview preview = previewExport(study, folder);
@@ -286,7 +259,7 @@ public class LocalFolderStudyImportExport {
     }
 
     /**
-     * Uses the archive serializer, which excludes credentials, source configuration and synchronization history.
+     * Writes selected properties and assets to temporary storage.
      */
     private void stageSelectedContent(Study study, StudySourceSyncProperties props, Path staged, String filename) throws IOException {
         if (props.isProperties()) domainJsonMapper.studyAsJsonForIO(study, staged.resolve(filename));

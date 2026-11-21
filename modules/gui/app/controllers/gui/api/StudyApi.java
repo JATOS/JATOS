@@ -28,13 +28,11 @@ import play.core.utils.HttpHeaderParameterEncoding;
 import play.http.HttpEntity;
 import play.libs.Json;
 import play.mvc.*;
-import services.gui.*;
-import services.gui.importexport.LocalFolderStudyImportExport;
-import services.gui.importexport.GitStudyImportExport;
-import services.gui.importexport.StudyArchiveImportExport;
-import services.gui.importexport.StudySourceService;
-import services.gui.importexport.StudySourceSync;
-import services.gui.importexport.StudySourceSync.SyncPreview;
+import services.gui.ApiService;
+import services.gui.AuthorizationService;
+import services.gui.StudyService;
+import services.gui.importexport.*;
+import services.gui.importexport.StudySourceSync.LocalFolderPreview;
 import services.gui.importexport.StudySourceSync.SyncResult;
 import utils.common.IOUtils;
 
@@ -206,7 +204,8 @@ public class StudyApi extends Controller {
                 Context.current().response().putFlash(SUCCESS, result.message());
                 return created(ApiEnvelope.wrap(result.message(), result.study()).asJsonNode());
             }
-            default -> throw new BadRequestException("Unsupported source type. Use GIT or LOCAL_FOLDER.", INVALID_REQUEST);
+            default ->
+                    throw new BadRequestException("Unsupported source type. Use GIT or LOCAL_FOLDER.", INVALID_REQUEST);
         }
     }
 
@@ -520,7 +519,7 @@ public class StudyApi extends Controller {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, user, true);
-        SyncPreview preview = studySourceSync.previewImport(study.getId());
+        var preview = studySourceSync.previewImport(study.getId());
         return ok(ApiEnvelope.wrap(preview).asJsonNode());
     }
 
@@ -534,7 +533,7 @@ public class StudyApi extends Controller {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User user = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, user, true);
-        SyncPreview preview = studySourceSync.previewExport(study.getId());
+        var preview = studySourceSync.previewExport(study.getId());
         return ok(ApiEnvelope.wrap(preview).asJsonNode());
     }
 
@@ -558,6 +557,32 @@ public class StudyApi extends Controller {
         if (study == null) throw new NotFoundException("Study doesn't exist.");
         StudySourceSyncProperties props = readStudySourceSyncProperties(request);
         SyncResult result = studySourceSync.exportToFolder(study.getId(), props);
+        return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
+    }
+
+    /**
+     * Preview the configured Git source for a study member.
+     */
+    @Async(Executor.IO)
+    @Transactional
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    public Result previewStudyGitPull(String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        User user = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.canUserAccessStudy(study, user, true);
+        var preview = studySourceSync.previewGitPull(study.getId());
+        return ok(ApiEnvelope.wrap(preview).asJsonNode());
+    }
+
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    @BodyParser.Of(ApiJsonBodyParser.class)
+    public Result pullStudyFromGit(Http.Request request, String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        StudySourceSyncProperties props = readStudySourceSyncProperties(request);
+        SyncResult result = studySourceSync.pullFromGit(study.getId(), props);
+        Context.current().response().putFlash(SUCCESS, result.message());
         return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
     }
 

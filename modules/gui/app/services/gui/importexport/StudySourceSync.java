@@ -34,6 +34,7 @@ public class StudySourceSync {
     private final StudySourceSyncIO studySourceSyncIO;
     private final StudyLogger studyLogger;
     private final LocalFolderStudyImportExport localFolderStudyImportExport;
+    private final GitStudyImportExport gitStudyImportExport;
 
     @Inject
     public StudySourceSync(JpaTransactions transactions,
@@ -42,7 +43,8 @@ public class StudySourceSync {
                            AuthorizationService authorizationService,
                            StudySourceSyncIO studySourceSyncIO,
                            StudyLogger studyLogger,
-                           LocalFolderStudyImportExport localFolderStudyImportExport) {
+                           LocalFolderStudyImportExport localFolderStudyImportExport,
+                           GitStudyImportExport gitStudyImportExport) {
         this.transactions = transactions;
         this.studyDao = studyDao;
         this.userDao = userDao;
@@ -50,12 +52,19 @@ public class StudySourceSync {
         this.studySourceSyncIO = studySourceSyncIO;
         this.studyLogger = studyLogger;
         this.localFolderStudyImportExport = localFolderStudyImportExport;
+        this.gitStudyImportExport = gitStudyImportExport;
     }
 
-    public record SyncPreview(StudySource.Type type,
-                              String localFolderPath,
-                              boolean propertiesAvailable,
-                              boolean assetsAvailable) {}
+    public record LocalFolderPreview(String localFolderPath,
+                                     boolean propertiesAvailable,
+                                     boolean assetsAvailable) {}
+
+    public record GitPreview(String gitUrl,
+                             String gitRef,
+                             String commit,
+                             String credentialSource,
+                             boolean propertiesAvailable,
+                             boolean assetsAvailable) {}
 
     public record SyncResult(long studyId,
                              boolean propertiesUpdated,
@@ -63,15 +72,14 @@ public class StudySourceSync {
                              String message) {}
 
     /**
-     * Reads and validates a temporary snapshot within the caller’s transaction; no files survive this request. The
-     * caller must authorize access to the unlocked study.
+     * Checks which properties and assets can be imported from the local folder.
      */
-    public SyncPreview previewImport(long studyId) {
+    public LocalFolderPreview previewImport(long studyId) {
         Study study = studyDao.findByIdWithSourceAndLock(studyId);
         String localFolderPath = getLocalFolder(study);
         try {
             var preview = localFolderStudyImportExport.previewImport(study, localFolderPath);
-            return new SyncPreview(LOCAL_FOLDER,
+            return new LocalFolderPreview(
                     localFolderPath,
                     preview.propertiesAvailable(),
                     preview.assetsAvailable());
@@ -81,15 +89,14 @@ public class StudySourceSync {
     }
 
     /**
-     * Previews the destination within the caller's transaction and study-access authorization.
+     * Checks which study content can be exported to the local folder.
      */
-    public SyncPreview previewExport(long studyId) {
+    public LocalFolderPreview previewExport(long studyId) {
         Study study = studyDao.findByIdWithSourceAndLock(studyId);
         String localFolderPath = getLocalFolder(study);
         try {
             var preview = localFolderStudyImportExport.previewExport(study, localFolderPath);
-            return new SyncPreview(
-                    LOCAL_FOLDER,
+            return new LocalFolderPreview(
                     preview.folder().toString(),
                     true,
                     preview.assetsAvailable());
@@ -99,8 +106,7 @@ public class StudySourceSync {
     }
 
     /**
-     * Owns its transaction so filesystem recovery finishes before releasing the synchronization lock. The caller must
-     * validate the synchronization properties before calling this method.
+     * Imports selected content from the local folder.
      */
     public SyncResult importFromFolder(long studyId, StudySourceSyncProperties props) {
         try (var ignored = studySourceSyncIO.lock(studyId)) {
@@ -129,7 +135,7 @@ public class StudySourceSync {
     }
 
     /**
-     * Exports validated selections while holding the synchronization lock through transaction completion and recovery.
+     * Exports selected content to the local folder.
      */
     public SyncResult exportToFolder(long studyId, StudySourceSyncProperties props) {
         try (var ignored = studySourceSyncIO.lock(studyId)) {
@@ -154,6 +160,45 @@ public class StudySourceSync {
         }
     }
 
+    /**
+     * Checks which properties and assets can be pulled from Git.
+     */
+    public GitPreview previewGitPull(long studyId) {
+        Study study = studyDao.findByIdWithSourceAndLock(studyId);
+        try {
+            return gitStudyImportExport.previewPull(study);
+        } catch (IOException e) {
+            throw new ImportExportException("Could not read or clean up the Git study source.");
+        }
+    }
+
+    /**
+     * Pulls selected content from Git into the study.
+     */
+    public SyncResult pullFromGit(long studyId, StudySourceSyncProperties props) {
+        try (var ignored = studySourceSyncIO.lock(studyId)) {
+            return transactions.withNewTransaction(em -> {
+                Study study = getAuthorizedStudy(studyId);
+                try {
+                    String commit = gitStudyImportExport.pullFromGit(study, props);
+                    String scope = props.isProperties() ? (props.isAssets() ? "properties and assets" : "properties") : "assets";
+                    String uuid = study.getUuid();
+                    User user = Context.current().args().get(SIGNEDIN_USER);
+                    String userName = user.getName();
+                    String message = "Pulled " + scope + " from Git at commit " + commit + ".";
+                    String url = study.getStudySource().getGitUrl();
+                    transactions.afterCommit("Log Git pull",
+                            () -> studyLogger.log(uuid, userName, message + " Repository: " + url));
+                    return new SyncResult(studyId, props.isProperties(), props.isAssets(), message);
+                } catch (IOException e) {
+                    throw new ImportExportException("Could not pull or clean up the Git study source.");
+                }
+            });
+        } catch (IOException e) {
+            throw new ImportExportException("Could not access the study synchronization lock.");
+        }
+    }
+
     private Study getAuthorizedStudy(long id) {
         User actor = Context.current().args().get(SIGNEDIN_USER);
         // Use the same lock order as source configuration and read current membership under the study lock.
@@ -168,7 +213,7 @@ public class StudySourceSync {
         if (source == null || source.getType() == NONE)
             throw new BadRequestException("This study has no configured source.");
         if (source.getType() != LOCAL_FOLDER)
-            throw new BadRequestException("Git synchronization is not available yet.");
+            throw new BadRequestException("This study has no configured local-folder source.");
         return source.getLocalFolderPath();
     }
 

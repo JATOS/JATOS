@@ -13,15 +13,15 @@
                 <form id="studySyncForm" class="form-study">
                     <p id="studySyncExplanation"></p>
                     <div class="row mb-3">
-                        <label class="col-sm-4 col-form-label" for="studySyncProperties" data-bs-tooltip="Replace properties in the destination. Import adds or updates included components and inactivates omitted components. Export writes the study properties and components to the .jas file.">Properties</label>
-                        <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
+                        <label class="col-4 col-form-label" for="studySyncProperties" data-bs-tooltip="Replace properties in the destination. Import adds or updates included components and inactivates omitted components. Export writes the study properties and components to the .jas file.">Properties</label>
+                        <div class="col-8 pt-2"><label class="switch no-info-icon">
                             <input class="form-check-input checkbox-study" id="studySyncProperties" name="properties" type="checkbox">
                             <span class="slider slider-study round"></span>
                         </label><div id="studySyncPropertiesAbsent" class="form-text d-none">No .jas file; existing properties are kept.</div></div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-4 col-form-label" for="studySyncAssets" data-bs-tooltip="Should the study assets directory be overwritten? This directory contains the study's files like HTML, CSS, and JavaScript files and images. Selected assets are replaced completely, never merged. An empty assets/ directory removes all existing assets.">Assets</label>
-                        <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
+                        <label class="col-4 col-form-label" for="studySyncAssets" data-bs-tooltip="Should the study assets directory be overwritten? This directory contains the study's files like HTML, CSS, and JavaScript files and images. Selected assets are replaced completely, never merged. An empty assets/ directory removes all existing assets.">Assets</label>
+                        <div class="col-8 pt-2"><label class="switch no-info-icon">
                             <input class="form-check-input checkbox-study" id="studySyncAssets" name="assets" type="checkbox">
                             <span class="slider slider-study round"></span>
                         </label><div id="studySyncAssetsAbsent" class="form-text d-none">No assets/ directory; existing assets are kept.</div></div>
@@ -40,49 +40,30 @@
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
 
     const alerts = new Alerts.Named("study-sync");
     let exporting;
-    let folderSyncUrl;
+    let syncUrl;
     let previewData;
     const form = $("#studySyncForm");
     const confirm = $("#studySyncConfirm");
 
-    $("#studySyncButton").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
-
     $("#studySyncModal").on("show.bs.modal", function(event) {
-        exporting = $(event.relatedTarget).data("operation") === "EXPORT";
-        folderSyncUrl = exporting ? window.routes.Api.studyFolderExport(window.study.id) : window.routes.Api.studyFolderImport(window.study.id);
-        $("#studySyncModal .modal-title").text(exporting ? "Export to local folder" : "Import from local folder");
-        confirm.text(exporting ? "Export" : "Import");
-        $("#studySyncExplanation").text(exporting
-            ? "Select what to replace in the local folder. Unrelated root files, including .git, are preserved."
-            : "Select what to replace in JATOS.");
-        $("#studySyncPropertiesAbsent").text(exporting ? "No properties available." : "No .jas file; existing properties are kept.");
-        $("#studySyncAssetsAbsent").text(exporting ? "The study has no assets directory; destination assets are kept." : "No assets/ directory; existing assets are kept.");
-        $("#studySyncPropertiesAbsent, #studySyncAssetsAbsent").addClass("d-none");
-
-        alerts.hideAll();
         previewData = null;
-        form[0].reset();
-        FormValidation.clear("#studySyncForm");
-        Helpers.generateModalSubtitles("#studySyncModal", {
-            "Study": window.study.title,
-            "Source": window.study.sourceType
-        }, true);
-        form.find("input").prop("disabled", true);
-        confirm.prop("disabled", true);
-        // Keep the modal open until its preview request finishes.
-        $("#studySyncModal [data-bs-dismiss]").prop("disabled", true);
+        exporting = $(event.relatedTarget).data("operation") === "EXPORT";
+        syncUrl = window.study.sourceType === "GIT"
+            ? window.routes.Api.studyGitPull(window.study.id)
+            : exporting
+                ? window.routes.Api.studyFolderExport(window.study.id)
+                : window.routes.Api.studyFolderImport(window.study.id);
+        prepareModal();
         $.ajax({
             beforeSend: WaitingModal.show,
-            url: folderSyncUrl,
+            url: syncUrl,
             success: function(response) {
                 previewData = response.data;
-                Helpers.generateModalSubtitles("#studySyncModal", {
-                    "Study": window.study.title,
-                    "Local folder": previewData.localFolderPath
-                }, true);
+                generateModalSubtitles(previewData);
                 $("#studySyncProperties").prop("disabled", !previewData.propertiesAvailable).prop("checked", previewData.propertiesAvailable);
                 $("#studySyncAssets").prop("disabled", !previewData.assetsAvailable).prop("checked", previewData.assetsAvailable);
                 $("#studySyncPropertiesAbsent").toggleClass("d-none", previewData.propertiesAvailable);
@@ -96,6 +77,82 @@
             }
         });
     });
+
+    function prepareModal() {
+        alerts.hideAll();
+        form[0].reset();
+        FormValidation.clear("#studySyncForm");
+        form.find("input").prop("disabled", true);
+        confirm.prop("disabled", true);
+        // Keep the modal open until its preview request finishes.
+        $("#studySyncModal [data-bs-dismiss]").prop("disabled", true);
+
+        Helpers.generateModalSubtitles("#studySyncModal", {
+            "Study": window.study.title,
+            "Source": window.study.sourceType
+        }, true);
+
+        const title = window.study.sourceType === "GIT"
+            ? "Pull from Git"
+            : exporting
+                ? "Export to local folder"
+                : "Import from local folder";
+        $("#studySyncModal .modal-title").text(title);
+        const confirmButtonText = window.study.sourceType === "GIT"
+            ? "Pull"
+            : exporting
+                ? "Export"
+                : "Import";
+        confirm.text(confirmButtonText);
+        const explanation = exporting
+            ? "Select what to replace in the local folder. Unrelated root files, including .git, are preserved."
+            : window.study.sourceType === "GIT"
+                ? "Select what to replace in JATOS. Pull fetches the configured branch or tag again; it may have changed since this preview."
+                : "Select what to replace in JATOS.";
+        $("#studySyncExplanation").text(explanation);
+        $("#studySyncPropertiesAbsent").text(exporting ? "No properties available." : "No .jas file; existing properties are kept.");
+        $("#studySyncAssetsAbsent").text(exporting ? "The study has no assets directory; destination assets are kept." : "No assets/ directory; existing assets are kept.");
+        $("#studySyncPropertiesAbsent, #studySyncAssetsAbsent").addClass("d-none");
+    }
+
+    function generateModalSubtitles(previewData) {
+        const details = window.study.sourceType === "GIT" ? {
+            "Study": window.study.title,
+            "Repository": previewData.gitUrl,
+            "Branch / tag": previewData.gitRef || "Default branch",
+            "Commit": previewData.commit,
+            "Credentials": {
+                study: "Using study credentials",
+                owner: "Using owner credentials",
+                global: "Using server credentials",
+                anonymous: "Anonymous access"
+            }[previewData.credentialSource]
+        } : {
+            "Study": window.study.title,
+            "Local folder": previewData.localFolderPath
+        };
+        if (window.study.sourceType === "GIT") {
+            details.Repository = $("<a>").attr({
+                href: previewData.gitUrl,
+                target: "_blank",
+                rel: "noopener noreferrer"
+            }).text(previewData.gitUrl.replace(/^https:\/\//, ""));
+            const commit = $("<span>").addClass("d-inline-flex align-items-center gap-2");
+            commit.append($("<span>").addClass("font-monospace no-info-icon")
+                .attr("data-bs-tooltip", previewData.commit).text(previewData.commit.slice(0, 8)));
+            commit.append($("<button>").attr({
+                type: "button",
+                "aria-label": "Copy full commit ID",
+                "data-bs-tooltip": "Copy full commit ID",
+                "data-clipboard-text": previewData.commit
+            }).addClass("btn btn-sm p-0 btn-clipboard no-info-icon")
+                .on("click", CopyToClipboard.onClick));
+            details.Commit = commit;
+        }
+        Helpers.generateModalSubtitles("#studySyncModal", details, true);
+        Helpers.activateTooltips("#studySyncModal .modal-subtitle");
+    }
+
 
     $("#studySyncModal").on("hide.bs.modal", alerts.hideAll);
 
@@ -111,7 +168,7 @@
         $("#studySyncModal button").prop("disabled", true);
         $.ajax({
             beforeSend: WaitingModal.show,
-            url: folderSyncUrl,
+            url: syncUrl,
             type: "POST",
             contentType: "application/json",
             headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
@@ -127,7 +184,7 @@
             },
             error: function(response) {
                 const error = response.responseJSON?.error;
-                if (error?.fields) FormValidation.show("#studySyncForm", error.fields);
+                if (error?.fields?.properties || error?.fields?.assets) FormValidation.show("#studySyncForm", error.fields);
                 else alerts.error(error?.message || "Could not synchronize study source.", 0, true);
                 $("#studySyncModal button").prop("disabled", false);
             },

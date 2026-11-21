@@ -78,9 +78,8 @@ public class GitStudySourceIO {
     }
 
     /**
-     * Fetches the default branch or selected branch/tag into the temporary repository and returns its object ID. Closes
-     * the transport and connection after fetching. Transport failures use controlled messages, so remote response
-     * bodies, redirect URLs, and authentication details are not exposed to API or GUI users.
+     * Fetches the default branch or selected branch or tag and returns its object ID.
+     * Closes connections after fetching. Error messages omit remote responses and authentication details.
      */
     private ObjectId fetchRevision(Repository repository, String url, String ref,
                                    ResolvedCredentials credentials) throws IOException {
@@ -103,8 +102,7 @@ public class GitStudySourceIO {
     }
 
     /**
-     * Reads the fetched Git revision and copies its study content into temporary storage. Resolves the fetched commit
-     * and extracts its study properties and assets into temporary storage.
+     * Copies the fetched revision's .jas file and assets into temporary storage and returns its commit ID.
      */
     private FetchedStudy extractStudySource(Repository repository, ObjectId object, Path tmpWorkDir) throws IOException {
         try (RevWalk walk = new RevWalk(repository)) {
@@ -140,8 +138,8 @@ public class GitStudySourceIO {
     }
 
     /**
-     * Creates an HTTPS transport that restricts all HTTP requests to the repository's origin. The caller configures
-     * credentials and timeout, starts fetching, and closes it. Tests can override this to use local repositories.
+     * Creates an HTTPS transport restricted to the repository's origin.
+     * The caller sets credentials and timeout and closes the transport. Tests may use local repositories.
      */
     protected Transport openTransport(Repository repository, String url) throws IOException {
         HttpUtils.getGitOriginFromRepositoryUrl(url);

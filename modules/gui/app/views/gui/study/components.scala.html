@@ -119,7 +119,7 @@
                     "className": "text-wrap",
                     "data": "title",
                     "render": function (data, type, full, meta) {
-                        return `<span class="no-info-icon" data-bs-tooltip="${data}">${data}</span>`;
+                        return `<span class="no-info-icon" data-bs-tooltip="${Helpers.escapeHtml(data)}">${Helpers.escapeHtml(data)}</span>`;
                     }
                 },
                 {

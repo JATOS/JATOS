@@ -152,9 +152,9 @@
             const description = `
                 <p>
                     The HTML file linked to this component will be renamed from
-                    <span class="text-break"><b><i>${oldFileName}</i></b></span>
+                    <span class="text-break"><b><i>${Helpers.escapeHtml(oldFileName)}</i></b></span>
                     to
-                    <span class="text-break"><b><i>${newFileName}</i></b></span>.
+                    <span class="text-break"><b><i>${Helpers.escapeHtml(newFileName)}</i></b></span>.
                 </p>`;
             $('#htmlFileNameConfirmationText').html(description);
             $('#htmlFileNameConfirmationKeep').prop('checked', false);

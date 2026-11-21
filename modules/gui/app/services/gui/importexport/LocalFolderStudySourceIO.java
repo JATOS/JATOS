@@ -28,7 +28,7 @@ public class LocalFolderStudySourceIO {
     }
 
     /**
-     * Rechecks server policy on every ingestion. The caller must close the returned staging directory.
+     * Copies allowed study content from a local folder into temporary storage.
      */
     public StagedStudySource stage(String folder) throws IOException {
         var roots = Common.getStudySourcesLocalFolderAllowedRoots();
@@ -81,7 +81,8 @@ public class LocalFolderStudySourceIO {
     }
 
     /**
-     * Reject existing links and junctions. Source folders must be trusted against concurrent replacement.
+     * Reads file attributes and rejects links and junctions. The source folder must be trusted against concurrent
+     * replacement.
      */
     private static BasicFileAttributes sourceAttributes(Path root, Path path) throws IOException {
         BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);

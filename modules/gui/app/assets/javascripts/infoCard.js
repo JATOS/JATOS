@@ -1,5 +1,7 @@
 export { render }
 
+import * as Helpers from "helpers";
+
 function render(items) {
     const itemHtml = items.map(renderItem).join("");
     return `
@@ -12,10 +14,10 @@ function render(items) {
 }
 
 function renderItem(item) {
-    const tooltip = item.tooltip ? `data-bs-tooltip="${item.tooltip}"` : "";
+    const tooltip = item.tooltip ? `data-bs-tooltip="${Helpers.escapeHtml(String(item.tooltip))}"` : "";
     return `
         <div class="col fs-6 text-truncate">
-            <span ${tooltip}>${item.name}</span>:
-            <span class="ms-1 fw-light user-select-all">${item.value}</span>
+            <span ${tooltip}>${Helpers.escapeHtml(String(item.name))}</span>:
+            <span class="ms-1 fw-light user-select-all">${Helpers.escapeHtml(String(item.value))}</span>
         </div>`;
 }

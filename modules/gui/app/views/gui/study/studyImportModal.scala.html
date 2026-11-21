@@ -139,8 +139,8 @@
                 But it seems a study with this UUID already exists in this JATOS.
             </p>
             <p>
-                Additionally the assets directory of the imported study is named "${uploadedDirName}"
-                - but the directory name of the currently installed one is "${currentDirName}". Usually, in this case,
+                Additionally the assets directory of the imported study is named "${Helpers.escapeHtml(uploadedDirName)}"
+                - but the directory name of the currently installed one is "${Helpers.escapeHtml(currentDirName)}". Usually, in this case,
                 the directory is renamed to the imported version, but unfortunately this one already
                 exists and belongs to another study.
             </p>
@@ -174,7 +174,7 @@
             <p>A study with this UUID already exists in this JATOS.</p>
             <p>
                 But currently the study doesn't seem to have a study assets directory associated with it. The directory's
-                name was "${currentDirName}" but it doesn't exist on the disk any more. Maybe someone changed its name or deleted it?
+                name was "${Helpers.escapeHtml(currentDirName)}" but it doesn't exist on the disk any more. Maybe someone changed its name or deleted it?
             </p>
             <p>If you continue the uploaded study assets directory will be used instead of the non-existing current one.</p>
             <p>Do you want to proceed?</p>`;
@@ -190,7 +190,7 @@
             ${infoCard}
             <p>
                 Unfortunately, a study assets directory with this name already exists in this JATOS. If you proceed,
-                the study assets directory of your uploaded study will be renamed to "${newDirName}".
+                the study assets directory of your uploaded study will be renamed to "${Helpers.escapeHtml(newDirName)}".
             </p>
             <p>Do you want to proceed?</p>`;
         const action = () => postStudyImportConfirm({ keepProperties: false, keepAssets : false, renameAssets: true });

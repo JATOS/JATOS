@@ -878,7 +878,7 @@
     });
 
     function generateDeleteUserConfirmationHtml(user) {
-        let confirmationText = `<p>You are about to delete the user <b>"${user.name}" (${user.username})</b>.</p>`;
+        let confirmationText = `<p>You are about to delete the user <b>"${Helpers.escapeHtml(user.name)}" (${Helpers.escapeHtml(user.username)})</b>.</p>`;
         confirmationText += generateStudiesToBeRemoved(user);
         confirmationText += generateStudiesToBeReassigned(user);
         confirmationText += `<p><b class="text-danger">This cannot be undone.</b></p>`;
@@ -891,7 +891,7 @@
         let studyList = "";
         $.each(user.studyList, function(index, study) {
             if (study.userSize === 1) {
-                studyList += `<li>${study.title} (ID: ${study.id})</li>`;
+                studyList += `<li>${Helpers.escapeHtml(study.title)} (ID: ${study.id})</li>`;
             }
         });
         let text = "";
@@ -906,7 +906,7 @@
         // ONly add the studies that have this user as an owner and more than one member
         const reassignedStudies = user.studyList
             .filter(study => study.isOwner && study.userSize > 1)
-            .map(study => `<li>${study.title} (ID: ${study.id})</li>`)
+            .map(study => `<li>${Helpers.escapeHtml(study.title)} (ID: ${study.id})</li>`)
             .join('');
         let text = "";
         if (reassignedStudies) {

@@ -29,7 +29,8 @@ import static org.mockito.Mockito.*;
 
 public class LocalFolderStudyExportIntegrationTest extends JatosTest {
 
-    @Rule public TemporaryFolder temporary = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder temporary = new TemporaryFolder();
     private Path folder;
     private Path assets;
     private long studyId;
@@ -37,7 +38,8 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
     private StudySourceSync sync;
     private LocalFolderStudyImportExport exporter;
 
-    @Before public void setupExport() throws Exception {
+    @Before
+    public void setupExport() throws Exception {
         Context.current().args().put(SIGNEDIN_USER, admin);
         folder = temporary.newFolder("external").toPath();
         uuid = UUID.randomUUID().toString();
@@ -50,7 +52,7 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         assets = IOUtils.generateStudyAssetsPath(result.study().path("dirName").asText());
         Files.delete(assets.resolve("old.txt"));
         Files.writeString(assets.resolve("new.txt"), "JATOS");
-        jpaApi.withTransaction(em -> { em.find(Study.class, studyId).setTitle("Exported title"); });
+        jpaApi.withTransaction(em -> {em.find(Study.class, studyId).setTitle("Exported title");});
         sync = application.injector().instanceOf(StudySourceSync.class);
     }
 
@@ -66,7 +68,9 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         return props;
     }
 
-    private String endpoint() { return "/jatos/api/v1/studies/" + studyId + "/source/folder/export"; }
+    private String endpoint() {
+        return "/jatos/api/v1/studies/" + studyId + "/source/folder/export";
+    }
 
     private void noTemporaryFiles() throws Exception {
         try (var files = Files.list(folder)) {
@@ -74,7 +78,8 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         }
     }
 
-    @Test public void exportsBothAndPreservesUnrelatedFiles() throws Exception {
+    @Test
+    public void exportsBothAndPreservesUnrelatedFiles() throws Exception {
         jpaApi.withTransaction(em -> {
             var source = em.find(Study.class, studyId).getStudySource();
             var credentials = new models.common.GitCredentials(source);
@@ -109,7 +114,8 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void selectedScopePreservesUnselectedContentAndEmptyAssetsClearDestination() throws Exception {
+    @Test
+    public void selectedScopePreservesUnselectedContentAndEmptyAssetsClearDestination() throws Exception {
         String original = Files.readString(folder.resolve("custom.jas"));
         sync.exportToFolder(studyId, selection(false, true));
         assertEquals(original, Files.readString(folder.resolve("custom.jas")));
@@ -118,11 +124,12 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         assertTrue(Files.exists(folder.resolve("assets/keep.txt")));
         Files.delete(assets.resolve("new.txt"));
         sync.exportToFolder(studyId, selection(false, true));
-        try (var files = Files.list(folder.resolve("assets"))) { assertEquals(0, files.count()); }
+        try (var files = Files.list(folder.resolve("assets"))) {assertEquals(0, files.count());}
         noTemporaryFiles();
     }
 
-    @Test public void emptyDestinationUsesDefaultFilename() throws Exception {
+    @Test
+    public void emptyDestinationUsesDefaultFilename() throws Exception {
         IOUtils.deleteRecursively(folder.resolve("assets"));
         Files.delete(folder.resolve("custom.jas"));
         var preview = api(endpoint()).get();
@@ -134,7 +141,8 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void previewReportsUuidConflictAndApplyRechecks() throws Exception {
+    @Test
+    public void previewReportsUuidConflictAndApplyRechecks() throws Exception {
         assertEquals(200, api(endpoint()).get().getStatus());
         writeJas(UUID.randomUUID().toString());
         String original = Files.readString(folder.resolve("custom.jas"));
@@ -147,7 +155,8 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void multipleOrInvalidJasFilesBlockExport() throws Exception {
+    @Test
+    public void multipleOrInvalidJasFilesBlockExport() throws Exception {
         Files.copy(folder.resolve("custom.jas"), folder.resolve("another.jas"));
         assertThrows(BadRequestException.class, () -> sync.exportToFolder(studyId, selection(true, true)));
         Files.delete(folder.resolve("another.jas"));
@@ -156,7 +165,8 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void missingStudyAssetsNeverClearDestination() throws Exception {
+    @Test
+    public void missingStudyAssetsNeverClearDestination() throws Exception {
         IOUtils.deleteRecursively(assets);
         var preview = api(endpoint()).get();
         assertFalse(preview.asJson().path("data").path("assetsAvailable").asBoolean());
@@ -166,22 +176,28 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void rollbackRestoresBothDestinationEntries() throws Exception {
+    @Test
+    public void rollbackRestoresBothDestinationEntries() throws Exception {
         String original = Files.readString(folder.resolve("custom.jas"));
         LocalFolderStudyImportExport failingExporter = spy(exporter);
         doAnswer(invocation -> {
             invocation.callRealMethod();
             jpaApi.em("default").unwrap(org.hibernate.Session.class).getTransaction()
                     .registerSynchronization(new jakarta.transaction.Synchronization() {
-                        public void beforeCompletion() { throw new IllegalStateException("Commit failure"); }
-                        public void afterCompletion(int status) {}
+                        public void beforeCompletion() {
+                            throw new IllegalStateException("Commit failure");
+                        }
+
+                        public void afterCompletion(int status) {
+                        }
                     });
             return null;
         }).when(failingExporter).exportToLocalFolder(any(), anyString(), any());
         var injector = application.injector();
         var failing = new StudySourceSync(jpaApi, injector.instanceOf(daos.common.StudyDao.class),
                 injector.instanceOf(daos.common.UserDao.class), injector.instanceOf(AuthorizationService.class),
-                injector.instanceOf(StudySourceSyncIO.class), injector.instanceOf(general.common.StudyLogger.class), failingExporter);
+                injector.instanceOf(StudySourceSyncIO.class), injector.instanceOf(general.common.StudyLogger.class), failingExporter,
+                injector.instanceOf(services.gui.importexport.GitStudyImportExport.class));
         assertThrows(RuntimeException.class, () -> failing.exportToFolder(studyId, selection(true, true)));
         assertEquals(original, Files.readString(folder.resolve("custom.jas")));
         assertEquals("external", Files.readString(folder.resolve("assets/old.txt")));
@@ -189,9 +205,12 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void apiAllowsMembersRejectsNonMembersAndRejectsDirectionField() throws Exception {
+    @Test
+    public void apiAllowsMembersRejectsNonMembersAndRejectsDirectionField() throws Exception {
         User member = createUser("export-member");
-        jpaApi.withTransaction(em -> { em.find(Study.class, studyId).addUser(em.find(User.class, member.getUsername())); });
+        jpaApi.withTransaction(em -> {
+            em.find(Study.class, studyId).addUser(em.find(User.class, member.getUsername()));
+        });
         String token = createApiToken(member);
         assertEquals(200, api(endpoint()).token(token).get().getStatus());
         var body = Json.newObject().put("properties", true).put("assets", true);
@@ -206,11 +225,12 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void folderEndpointsRejectNonFolderSources() throws Exception {
+    @Test
+    public void folderEndpointsRejectNonFolderSources() throws Exception {
         String importUrl = "/jatos/api/v1/studies/" + studyId + "/source/folder/import";
         var body = Json.newObject().put("assets", true);
         for (var type : List.of(models.common.StudySource.Type.NONE, models.common.StudySource.Type.GIT)) {
-            jpaApi.withTransaction(em -> { em.find(Study.class, studyId).getStudySource().setType(type); });
+            jpaApi.withTransaction(em -> {em.find(Study.class, studyId).getStudySource().setType(type);});
             for (String url : List.of(importUrl, endpoint())) {
                 assertEquals(400, api(url).get().getStatus());
                 assertEquals(400, api(url).post(body).getStatus());
@@ -220,7 +240,9 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void honorsAllowedRootsAndSharesImportLock() throws Exception {
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
+    public void honorsAllowedRootsAndSharesImportLock() throws Exception {
         try (var common = mockStatic(Common.class, CALLS_REAL_METHODS)) {
             common.when(Common::isServer).thenReturn(true);
             common.when(Common::getStudySourcesLocalFolderAllowedRoots).thenReturn(List.of());
@@ -235,7 +257,8 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         noTemporaryFiles();
     }
 
-    @Test public void rejectsLinksAndOverlappingDestinations() throws Exception {
+    @Test
+    public void rejectsLinksAndOverlappingDestinations() throws Exception {
         Path outside = temporary.newFolder("outside").toPath();
         IOUtils.deleteRecursively(folder.resolve("assets"));
         try {
@@ -249,7 +272,9 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
         assertThrows(exceptions.common.ImportExportException.class, () -> sync.exportToFolder(studyId, selection(true, true)));
         assertFalse(Files.exists(folder.resolve("assets")));
         assertEquals("External", Json.parse(Files.readString(folder.resolve("custom.jas"))).path("data").path("title").asText());
-        jpaApi.withTransaction(em -> { em.find(Study.class, studyId).getStudySource().setLocalFolderPath(assets.toString()); });
+        jpaApi.withTransaction(em -> {
+            em.find(Study.class, studyId).getStudySource().setLocalFolderPath(assets.toString());
+        });
         assertThrows(BadRequestException.class, () -> sync.exportToFolder(studyId, selection(true, true)));
         noTemporaryFiles();
     }

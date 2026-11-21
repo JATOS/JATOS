@@ -39,6 +39,7 @@
     window.routes.Api.getGroupSession = (id) => `${basePath}jatos/api/v1/groups/${id}/session?asText=true`;
     window.routes.Api.updateGroupSession = (id, version) => `${basePath}jatos/api/v1/groups/${id}/session?version=${version}`;
     window.routes.Api.importOrCreateStudy = `${basePath}jatos/api/v1/studies`;
+    window.routes.Api.studyGitPull = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source/git/pull`;
     window.routes.Api.studyFolderImport = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source/folder/import`;
     window.routes.Api.studyFolderExport = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source/folder/export`;
     window.routes.Api.getStudySource = (studyId) => `${basePath}jatos/api/v1/studies/${studyId}/source`;

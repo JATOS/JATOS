@@ -27,9 +27,7 @@ public class StudyDeserializer {
     }
 
     /**
-     * Accepts a file with the content of a JSON String and turns the data object within this JSON String into an object
-     * of type Study. It can handle different versions of the study model. The version is determined by the version
-     * field in the JSON string.
+     * Reads a study from a JSON file, supporting older study format versions.
      */
     public Study deserialize(Path file) {
         String jsonStr = unchecked(() -> Files.readString(file));

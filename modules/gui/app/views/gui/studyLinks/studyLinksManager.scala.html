@@ -159,7 +159,7 @@
                 {
                     "data": "comment",
                     "render": function (data, type, full, meta) {
-                        const comment = data ? data : '<span class="text-body text-opacity-50">none</span>';
+                        const comment = data ? Helpers.escapeHtml(data) : '<span class="text-body text-opacity-50">none</span>';
                         return `<span class="btn-edit edit-comment no-info-icon" data-bs-tooltip="Edit this comment by clicking on it">
                             ${comment}</span>`;
                     }

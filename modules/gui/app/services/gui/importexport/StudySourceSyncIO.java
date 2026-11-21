@@ -43,9 +43,9 @@ public class StudySourceSyncIO {
     }
 
     /**
-     * Both locking mechanisms are needed: FileLock coordinates processes sharing temporary storage with working
-     * filesystem locks; ACTIVE prevents competing threads in this JVM from opening a second channel to the same
-     * file. On some operating systems, closing that second channel could release the first channel's file lock.
+     * Locks a study to prevent simultaneous synchronization. FileLock coordinates processes; ACTIVE prevents threads in
+     * this JVM from opening a second channel. On some systems, closing a second channel could release the first
+     * channel's lock.
      */
     public SyncLock lock(long studyId) throws IOException {
         Path locks = IOUtils.tmpDir().resolve("study-sync-locks");
@@ -69,7 +69,7 @@ public class StudySourceSyncIO {
     }
 
     /**
-     * Never replace an assets directory that also contains the configured source.
+     * Rejects source folders that overlap the installed study assets.
      */
     public void checkSourceOutsideAssets(String localFolderPath, String dirName) throws IOException {
         Path source = Path.of(localFolderPath).toRealPath();
@@ -86,9 +86,9 @@ public class StudySourceSyncIO {
     }
 
     /**
-     * Copies incoming assets into a temporary "new" directory and keeps the previous assets in "old" for rollback.
-     * The temporary directory stays inside the assets root so replacement and restoration can use atomic moves.
-     * Commit deletes the backup; rollback restores it. Failed restoration retains the backup for manual recovery.
+     * Copies incoming assets into a temporary "new" directory and keeps the previous assets in "old" for rollback. The
+     * temporary directory stays inside the assets root so replacement and restoration can use atomic moves. Commit
+     * deletes the backup; rollback restores it. Failed restoration retains the backup for manual recovery.
      */
     public void replaceAssets(Path source, String studyAssetsDirName) throws IOException {
         Path destination = ioUtils.getStudyAssetsDir(studyAssetsDirName, false);

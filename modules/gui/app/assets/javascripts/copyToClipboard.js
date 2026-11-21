@@ -1,5 +1,6 @@
 /*
- * Handles the copy-to-clipboard button (class .btn-clipboard and defined in CSS)
+ * Handles .btn-clipboard buttons. Copies data-clipboard-text when provided; otherwise copies the parent's text.
+ * The data-clipboard-text allows a shortened display, such as a commit ID, to copy its full value.
  */
 
 export { onClick }
@@ -11,12 +12,12 @@ import * as Helpers from "helpers";
 $(".btn-clipboard").off("click").on("click", onClick);
 
 /*
- * Use this function to add an copy-to-clipboard event handler manually, e.g. for dynamically generated elements
+ * Use this function to add a copy-to-clipboard event handler manually, e.g. for dynamically generated elements
  */
 function onClick(event) {
     const button = this;
 
-    copyToClipboard(button.parentElement);
+    copyToClipboard(button.parentElement, button.dataset.clipboardText);
 
     // Change icon to checkmark for 2s
     $(button).addClass("btn-clipboard-copied");
@@ -50,10 +51,10 @@ function onClick(event) {
 }
 
 /*
- * The actual copying to the clipboard
+ * Copies the supplied text or extracts text from the element when text is null or undefined.
  */
-function copyToClipboard(element) {
-    const textToCopy = getText(element);
+function copyToClipboard(element, text) {
+    const textToCopy = text ?? getText(element);
 
     // navigator clipboard api needs a secure context (https)
     if (navigator.clipboard && window.isSecureContext) {
@@ -73,7 +74,7 @@ function getText(element) {
         return Array.from(element.children)
             .filter(e => !e.classList.contains("hide")) // filter out elements with class "hide"
             .map(e => getText(e))
-            .filter(text => text != "") // filter out empty text elements
+            .filter(text => text !== "") // filter out empty text elements
             .join("\n");
     } else {
         return element.textContent;

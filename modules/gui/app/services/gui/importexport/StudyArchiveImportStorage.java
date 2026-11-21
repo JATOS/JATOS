@@ -43,9 +43,8 @@ public class StudyArchiveImportStorage {
     private static final String EXPIRED_ERROR_MSG = "The pending import has expired. Upload the study archive again.";
 
     /**
-     * Creates the temporary directory and state file, acquires a lock, and calls action with the "content/" path. The
-     * caller extracts and validates the archive there. On success, it marks the import ready and starts the 24-hour
-     * expiry period. On failure, it attempts cleanup and propagates the error.
+     * Prepares temporary storage and calls the supplied action to extract and validate the archive.
+     * Successful uploads expire after 24 hours. Failed preparation removes the temporary files.
      */
     public <T> T prepare(Function<Path, T> action) {
         Path directory;
@@ -70,7 +69,7 @@ public class StudyArchiveImportStorage {
     }
 
     /**
-     * Resolves only directory names issued by this service; session values never become arbitrary paths.
+     * Returns the temporary directory for a valid import name. Rejects arbitrary paths.
      */
     public Path resolve(String name) {
         if (name == null || !name.matches("study-import-[0-9a-fA-F-]{36}")) return null;
@@ -78,9 +77,8 @@ public class StudyArchiveImportStorage {
     }
 
     /**
-     * Acquires the import’s lock, checks that preparation succeeded and the import hasn’t expired, then executes action
-     * with the "content/" path. Confirmation uses this method. It releases the lock afterward but does not delete the
-     * upload or extend its expiry.
+     * Runs the supplied action on a prepared upload while holding its lock.
+     * Rejects unfinished or expired uploads. Does not delete the upload or extend its lifetime.
      */
     public <T> T use(Path directory, Function<Path, T> action) {
         if (directory == null) throw new ImportExportException(EXPIRED_ERROR_MSG);
@@ -109,7 +107,7 @@ public class StudyArchiveImportStorage {
     }
 
     /**
-     * Called hourly and on startup. Fresh, active, and unrelated temporary directories are left alone.
+     * Deletes expired uploads. Runs hourly and on startup; skips active and unrelated directories.
      */
     public void cleanupExpired() {
         try (DirectoryStream<Path> entries = Files.newDirectoryStream(IOUtils.tmpDir(), DIR_PREFIX + "*")) {
@@ -126,8 +124,8 @@ public class StudyArchiveImportStorage {
     }
 
     /**
-     * Requests immediate deletion, regardless of age, for cancellation or completed imports. Does nothing if the
-     * directory is absent. Reports an error if another operation currently holds its lock.
+     * Deletes an upload, optionally only if it has expired.
+     * Missing directories are harmless. Locked uploads cannot be deleted.
      */
     private boolean remove(Path directory, boolean onlyExpired) throws IOException {
         try (ImportClaim claim = tryClaim(directory)) {
@@ -177,16 +175,14 @@ public class StudyArchiveImportStorage {
     }
 
     /**
-     * Opens the existing state file for writing and locking. It doesn’t create a missing file and refuses to follow a
-     * symbolic link for that file.
+     * Opens the existing state file for locking without following symbolic links.
      */
     private static FileChannel openState(Path directory) throws IOException {
         return FileChannel.open(directory.resolve(STATE_FILE_NAME), StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
     }
 
     /**
-     * Attempts to acquire the lock without waiting. Returns null if another operation holds it. It also converts Java’s
-     * same-process OverlappingFileLockException into that same result.
+     * Tries to lock the file without waiting. Returns null if it is already locked.
      */
     private static FileLock tryLock(FileChannel channel) throws IOException {
         try {return channel.tryLock();} catch (OverlappingFileLockException e) {return null;}

@@ -142,7 +142,7 @@ public class StudySourceService {
     }
 
     /**
-     * Compare stored configuration, including the username; secrets and installation flags are excluded.
+     * Compares source settings, including the username, but excluding secrets and installation flags.
      */
     private boolean isEqualStudySourceProperties(StudySourceProperties before, StudySourceProperties after) {
         return before.getType() == after.getType()

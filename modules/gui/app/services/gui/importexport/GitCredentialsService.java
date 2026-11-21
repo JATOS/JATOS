@@ -68,7 +68,7 @@ public class GitCredentialsService {
     }
 
     /**
-     * Applies a partial credential update, including explicit removal and field-error paths.
+     * Updates or removes the signed-in user's Git credentials.
      */
     public void updateGitCredentialsForUser(GitCredentialsProperties props) {
         transactions.withTransaction(em -> {
@@ -92,7 +92,7 @@ public class GitCredentialsService {
     }
 
     /**
-     * Update the signed-in user's own credentials; an empty secret preserves an existing credential.
+     * Saves the signed-in user's Git credentials. An empty secret keeps the stored secret.
      */
     public void saveGitCredentialsForUser(String username, String origin, String secret) {
         transactions.withTransaction(em -> {
@@ -149,7 +149,8 @@ public class GitCredentialsService {
     }
 
     /**
-     * Re-fetch the current user under a user lock before the study lock, following the existing deletion lock order.
+     * Reloads and locks the signed-in user.
+     * Locks the user before the study to follow the deletion lock order.
      */
     private User currentUser() {
         User signedinUser = Context.current().args().getOrElse(SIGNEDIN_USER, null);
@@ -209,7 +210,7 @@ public class GitCredentialsService {
     }
 
     /**
-     * Binds encrypted credentials to their owner, origin, and username during encryption and decryption.
+     * Returns the owner, origin, and username used to bind an encrypted secret to its credentials.
      */
     public static String encryptionContext(GitCredentials credentials) {
         String owner = credentials.getUser() != null

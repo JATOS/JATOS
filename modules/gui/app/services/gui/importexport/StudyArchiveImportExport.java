@@ -2,7 +2,9 @@ package services.gui.importexport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.StudyDao;
-import exceptions.common.*;
+import exceptions.common.ForbiddenException;
+import exceptions.common.ImportExportException;
+import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import general.common.JpaTransactions;
@@ -71,14 +73,16 @@ public class StudyArchiveImportExport {
 
     // @formatter:off
     /**
-     * Import an uploaded JATOS study archive There are 5 possible cases: (udir - name of uploaded study asset dir, cdir
-     * - name of current study asset dir)
+     * Prepares an uploaded study archive and returns information for import confirmation.
      *
-     * 1) study exists & udir exists & udir == cdir -> ask confirmation to overwrite study and/or dir
-     * 2) study exists & udir exists & udir != cdir -> ask confirmation to overwrite study and/or (dir && rename to cdir)
-     * 3) study exists & !udir exists -> shouldn't happen, ask confirmation to overwrite study
-     * 4) !study exists & udir exists -> ask to rename dir (generate new dir name)
-     * 5) !study exists & !udir exists -> new study - write both
+     * "Study exists" means its UUID already exists in JATOS.
+     * "Directory exists" means the uploaded assets directory name already exists in JATOS' assets root.
+     *
+     * 1) Study and directory exist, names match: confirm which content to overwrite.
+     * 2) Study and directory exist, names differ: confirm which content to overwrite and which directory name to use.
+     * 3) Study exists, directory does not: confirm which content to overwrite and which directory name to use.
+     * 4) New study, directory exists: suggest a new directory name to avoid overwriting existing assets.
+     * 5) New study, directory does not exist: import the study and assets without a naming conflict.
      */
     // @formatter:on
     public Map<String, Object> importStudy(Path file) {
@@ -123,19 +127,12 @@ public class StudyArchiveImportExport {
     }
 
     /**
-     * @param keepProperties        If true and the study exists already in JATOS, the current properties are kept.
-     *                              Default is `false` (properties are overwritten by default). If the study doesn't
-     *                              already exist, this parameter has no effect.
-     * @param keepAssets            If true and the study exists already in JATOS, the current study assets directory is
-     *                              kept. Default is `false` (assets are overwritten by default). If the study doesn't
-     *                              already exist, this parameter has no effect.
-     * @param keepCurrentAssetsName If the assets are going to be overwritten (`keepAssets=false`), this flag indicates
-     *                              if the name of the currently installed assets directory should be kept. A `false`
-     *                              indicates that the name should be taken from the uploaded one. Default is `true`.
-     * @param renameAssets          If the study assets directory already exists in JATOS but belongs to a different
-     *                              study, it cannot be overwritten. In this case you can set `renameAssets=true` to let
-     *                              JATOS add a suffix to the assets directory name (original name + "_" + a number).
-     *                              Default is `true`.
+     * Imports the prepared archive using the confirmed overwrite choices.
+     *
+     * @param keepProperties        keep existing properties when the study UUID matches
+     * @param keepAssets            keep existing assets when the study UUID matches
+     * @param keepCurrentAssetsName keep the installed assets directory name when replacing assets
+     * @param renameAssets          choose another directory name if the imported name belongs to another study
      */
     public Study importStudyConfirmed(boolean keepProperties, boolean keepAssets,
                                       boolean keepCurrentAssetsName, boolean renameAssets) {
@@ -159,14 +156,12 @@ public class StudyArchiveImportExport {
     }
 
     /**
-     * Confirms an import and builds its API representation in the same transaction, keeping lazy associations available
-     * during serialization. The transaction in importStudyConfirmed joins this transaction.
+     * Imports the confirmed archive and returns its API data.
      *
-     * @param keepProperties        preserve the existing study properties on a UUID match
-     * @param keepAssets            preserve the existing study assets on a UUID match
-     * @param keepCurrentAssetsName retain the existing assets directory name when replacing assets
-     * @param renameAssets          rename imported assets if their directory belongs to another study
-     * @return the imported study's API properties, including component, batch and member references
+     * @param keepProperties        keep existing properties when the study UUID matches
+     * @param keepAssets            keep existing assets when the study UUID matches
+     * @param keepCurrentAssetsName keep the installed assets directory name when replacing assets
+     * @param renameAssets          choose another directory name if the imported name belongs to another study
      */
     public JsonNode importStudyConfirmedForApi(boolean keepProperties, boolean keepAssets,
                                                boolean keepCurrentAssetsName, boolean renameAssets) {
@@ -225,8 +220,7 @@ public class StudyArchiveImportExport {
     }
 
     /**
-     * Returns a JATOS study archive packed as ZIP. It returns the File object located in the system's temp directory.
-     * The JATOS study archive will contain the study assets' directory and the study's JSON data (a .jas file).
+     * Creates a temporary ZIP archive containing the study's .jas file and assets.
      */
     public Path createStudyExportZipFile(long studyId) {
         Study study = studyDao.findByIdWithComponentsAndBatches(studyId);
@@ -257,8 +251,7 @@ public class StudyArchiveImportExport {
     }
 
     /**
-     * Deletes current study assets' dir and moves imported study assets' dir from Java's temp dir to study assets root
-     * dir
+     * Replaces the installed study assets with the imported directory.
      */
     private void moveStudyAssetsDir(Path unzippedStudyDir, Study currentStudy, String studyAssetsDirName) throws IOException {
         if (currentStudy != null) {
@@ -279,8 +272,7 @@ public class StudyArchiveImportExport {
     }
 
     /**
-     * Get unzipped study dir File object stored in Java's temp directory. Name is stored in session. Discard session
-     * variable afterward.
+     * Returns the pending import directory and removes its reference from the session.
      */
     private Path getPendingImportDirectory() {
         return pendingImports.resolve(Context.current().response().getSession(SESSION_TEMP_IMPORT_STUDY_DIR).orElse(null));

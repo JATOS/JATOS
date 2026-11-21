@@ -46,11 +46,14 @@
                     <i class="bi-arrow-repeat"></i><span class="d-none d-xl-inline ps-1">Sync</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-study">
-                    <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="IMPORT" data-bs-tooltip="Import this study from a local folder. The current study's properties and assets will be replaced. The folder's location is configured in the study source.">
+                    <li class="study-folder-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="IMPORT" data-bs-tooltip="Import this study from a local folder. The current study's properties and assets will be replaced. The folder's location is configured in the study source.">
                         <i class="bi-box-arrow-in-down-right pe-1"></i>Import
                     </button></li>
-                    <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="EXPORT" data-bs-tooltip="Export this study to a local folder. The current study in the local folder will be replaced. The folder's location is configured in the study source.">
+                    <li class="study-folder-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="EXPORT" data-bs-tooltip="Export this study to a local folder. The current study in the local folder will be replaced. The folder's location is configured in the study source.">
                         <i class="bi-box-arrow-in-up-right pe-1"></i>Export
+                    </button></li>
+                    <li class="study-git-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="PULL" data-bs-tooltip="Pull from the configured Git repository and replace selected study content in JATOS.">
+                        <i class="bi-box-arrow-in-down-right pe-1"></i>Pull
                     </button></li>
                 </ul>
             </div>
@@ -131,6 +134,10 @@
             : "This study has no study results yet. Maybe do a test run to generate one.";
     $("#studyResults").attr("data-bs-tooltip", studyResultButtonTooltip);
 
+    $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
+    $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
+    $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
+
     drawLockButton();
 
     $('#lockStudy').click(function() {
@@ -182,7 +189,7 @@
 
     $('#removeStudy').click(function() {
         const title = "Confirm deletion of a study";
-        const htmlText = `<p>You are about to delete the study "<b>${window.study.title}" (ID ${window.study.id})
+        const htmlText = `<p>You are about to delete the study "<b>${Helpers.escapeHtml(window.study.title)}" (ID ${window.study.id})
             with all its components, results, and the entire study assets directory</b>.</p>
             <p><b class="text-danger">This cannot be undone.</b></p>`;
         const action = function() {

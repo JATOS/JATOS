@@ -72,10 +72,11 @@ class ComponentResultInfo {
                     ? `<i class="bi-exclamation-triangle-fill text-warning no-info-icon" data-bs-tooltip="The quota (max result data / file size) was reached at least once during the component run. ${Helpers.getCurrentQuotasAsString()}"></i>`
                     : '';
             const duration = componentResult.duration ? componentResult.duration : '<span class="text-body text-opacity-50">not yet</span>';
-            const message = componentResult.message ? componentResult.message : '<span class="text-body text-opacity-50">none</span>';
+            const message = componentResult.message ? Helpers.escapeHtml(componentResult.message) : '<span class="text-body text-opacity-50">none</span>';
             const resultFiles = componentResult.files.map(function(fileObj) {
                 const url = window.routes.Api.exportSingleResultFile(componentResult.id, fileObj.filename);
-                return `<a class="text-nowrap" href="${url}" download>${fileObj.filename} (${fileObj.sizeHumanReadable})</a>`;
+                return $("<a>").addClass("text-nowrap").attr({href: url, download: ""})
+                    .text(`${fileObj.filename} (${fileObj.sizeHumanReadable})`).prop("outerHTML");
             });
             if (resultFiles.length === 0) resultFiles.push('<span class="text-body text-opacity-50">none</span>');
             const dataShort = getResultDataShort(componentResult.dataShort, componentResult.isDataShortShortened);
@@ -100,7 +101,7 @@ class ComponentResultInfo {
                         <td class="ps-4">${isQuotaReached}</td>
                         <td>${componentResult.id}</td>
                         <td>${componentResult.componentId}</td>
-                        <td>${componentResult.componentTitle}</td>
+                        <td>${Helpers.escapeHtml(componentResult.componentTitle)}</td>
                         <td>${Helpers.getLocalTimeDataTables(componentResult.startDate)}</td>
                         <td>${duration}</td>
                         <td>${componentResult.componentState}</td>

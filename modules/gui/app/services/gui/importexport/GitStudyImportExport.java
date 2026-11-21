@@ -2,16 +2,20 @@ package services.gui.importexport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.UserDao;
+import exceptions.common.BadRequestException;
 import exceptions.common.ImportExportException;
 import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
 import models.common.Study;
+import models.common.StudySource;
 import models.common.User;
 import models.gui.StudySourceProperties;
+import models.gui.StudySourceSyncProperties;
 import services.gui.importexport.GitCredentialsResolver.ResolvedCredentials;
 import services.gui.importexport.GitStudySourceIO.FetchedStudy;
+import services.gui.importexport.StudySourceSync.GitPreview;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -21,7 +25,7 @@ import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static exceptions.common.JatosException.unchecked;
 
 /**
- * Creates studies from Git snapshots. Network access finishes before the creation transaction starts.
+ * Creates and updates studies from Git snapshots.
  */
 @Singleton
 public class GitStudyImportExport {
@@ -34,6 +38,7 @@ public class GitStudyImportExport {
     private final DomainJsonMapper domainJsonMapper;
     private final StudyLogger studyLogger;
     private final UserDao userDao;
+    private final StudySourceSyncIO studySourceSyncIO;
 
     @Inject
     public GitStudyImportExport(JpaTransactions transactions,
@@ -43,7 +48,8 @@ public class GitStudyImportExport {
                                 StudySourceService studySourceService,
                                 DomainJsonMapper domainJsonMapper,
                                 StudyLogger studyLogger,
-                                UserDao userDao) {
+                                UserDao userDao,
+                                StudySourceSyncIO studySourceSyncIO) {
         this.transactions = transactions;
         this.gitCredentialsResolver = gitCredentialsResolver;
         this.gitStudySourceIO = gitStudySourceIO;
@@ -52,12 +58,53 @@ public class GitStudyImportExport {
         this.domainJsonMapper = domainJsonMapper;
         this.studyLogger = studyLogger;
         this.userDao = userDao;
+        this.studySourceSyncIO = studySourceSyncIO;
+    }
+
+    /**
+     * Fetches the Git source and checks which study content is available. Temporary files are removed before returning.
+     */
+    public GitPreview previewPull(Study study) throws IOException {
+        var source = gitSource(study);
+        try (var credentials = gitCredentialsResolver.forExistingStudy(study);
+             var fetchedStudy = gitStudySourceIO.stage(source.getGitUrl(), source.getGitRef(), credentials)) {
+            studyImportService.readStudyFromSource(study, fetchedStudy.content());
+            return new GitPreview(
+                    source.getGitUrl(),
+                    source.getGitRef(),
+                    fetchedStudy.commit(),
+                    credentials.source(),
+                    fetchedStudy.content().getProperties().isPresent(),
+                    fetchedStudy.content().getAssets().isPresent());
+        }
+    }
+
+    /**
+     * Pulls selected study content from Git and returns the commit ID. Checks the UUID and available content on every
+     * pull.
+     */
+    public String pullFromGit(Study study, StudySourceSyncProperties props) throws IOException {
+        var source = gitSource(study);
+        try (var credentials = gitCredentialsResolver.forExistingStudy(study);
+             var fetchedStudy = gitStudySourceIO.stage(source.getGitUrl(), source.getGitRef(), credentials)) {
+            studyImportService.importPropertiesFromStagedSource(study, fetchedStudy.content(), props);
+            if (props.isAssets())
+                studySourceSyncIO.replaceAssets(fetchedStudy.content().getAssets().orElseThrow(), study.getDirName());
+            return fetchedStudy.commit();
+        }
+    }
+
+    private StudySource gitSource(Study study) {
+        var source = study.getStudySource();
+        if (source == null || source.getType() != StudySource.Type.GIT)
+            throw new BadRequestException("This study has no configured Git source.");
+        return source;
     }
 
     public record CreationResult(JsonNode study, String message) {}
 
     /**
-     * Caller authorizes creation and validates source properties; existing UUIDs are never overwritten.
+     * Creates a study from Git and saves its source settings. An existing study UUID causes an error.
      */
     public CreationResult createStudyFromGit(StudySourceProperties props) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -80,7 +127,7 @@ public class GitStudyImportExport {
     }
 
     /**
-     * Creates the study and source, schedules logging, and cleans up staging before the caller commits.
+     * Creates the study and its source settings in a transaction.
      */
     private JsonNode createStudyInTransaction(StudySourceProperties props, FetchedStudy fetchedStudy,
                                               Study preparedStudy, User signedinUser, String scope) {
