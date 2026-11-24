@@ -43,20 +43,20 @@
             </button>
             <div class="btn-group d-none no-info-icon" id="studySyncButton" data-bs-tooltip="Synchronize this study's properties and assets with its configured Git repository or local folder">
                 <button class="btn btn-study dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="bi-arrow-repeat"></i><span class="d-none d-xl-inline ps-1">Sync</span>
+                    <i id="studySyncIcon"></i><span class="d-none d-xl-inline ps-1">Sync</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-study">
                     <li class="study-folder-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="IMPORT" data-bs-tooltip="Import this study from a local folder. The current study's properties and assets will be replaced. The folder's location is configured in the study source.">
                         <i class="bi-box-arrow-in-down-right pe-1"></i>Import
                     </button></li>
                     <li class="study-folder-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="EXPORT" data-bs-tooltip="Export this study to a local folder. The current study in the local folder will be replaced. The folder's location is configured in the study source.">
-                        <i class="bi-box-arrow-in-up-right pe-1"></i>Export
+                        <i class="bi-box-arrow-up-right pe-1"></i>Export
                     </button></li>
                     <li class="study-git-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="PULL" data-bs-tooltip="Pull from the configured Git repository and replace selected study content in JATOS.">
                         <i class="bi-box-arrow-in-down-right pe-1"></i>Pull
                     </button></li>
                     <li class="study-git-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="PUSH" data-bs-tooltip="Push selected study content to the configured Git branch.">
-                        <i class="bi-box-arrow-in-up-right pe-1"></i>Push
+                        <i class="bi-box-arrow-up-right pe-1"></i>Push
                     </button></li>
                 </ul>
             </div>
@@ -150,6 +150,8 @@
         $(".study-owner-action").toggleClass("d-none", !canManageStudy);
 
         $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
+        $("#studySyncIcon").toggleClass("bi-git", window.study.sourceType === "GIT")
+            .toggleClass("bi-folder", window.study.sourceType === "LOCAL_FOLDER");
         $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
         $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
 

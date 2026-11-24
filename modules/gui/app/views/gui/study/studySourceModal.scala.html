@@ -207,6 +207,8 @@
                 window.study.localFolderPath = response.data.localFolderPath;
                 $(document).trigger('study-source-changed');
                 $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
+                $("#studySyncIcon").toggleClass("bi-git", window.study.sourceType === "GIT")
+                    .toggleClass("bi-folder", window.study.sourceType === "LOCAL_FOLDER");
                 $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
                 $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
                 $("#studySourceModal").modal("hide");
