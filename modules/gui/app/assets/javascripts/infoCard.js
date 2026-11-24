@@ -49,7 +49,7 @@ function renderItem(item) {
         : "";
     return `
         <div class="col fs-6 d-flex align-items-baseline">
-            <span class="text-body-secondary text-nowrap" ${tooltip}>${escape(item.name)}:</span>
+            <span class="text-body-secondary text-nowrap"><span ${tooltip}>${escape(item.name)}</span>:</span>
             <span class="info-card-value ms-1 d-inline-flex align-items-center gap-1 user-select-all${shortened ? ' text-nowrap' : ' text-wrap'}">${icon}${content}${copy}</span>
         </div>`;
 }
