@@ -80,7 +80,7 @@ public class ComponentService {
     /**
      * Update a component's properties with the ones from updatedComponent.
      */
-    void updateProperties(Component component, Component updatedComponent) {
+    public void updateProperties(Component component, Component updatedComponent) {
         component.setTitle(updatedComponent.getTitle());
         component.setReloadable(updatedComponent.isReloadable());
         component.setHtmlFilePath(updatedComponent.getHtmlFilePath());

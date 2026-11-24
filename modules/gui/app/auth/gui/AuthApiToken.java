@@ -95,7 +95,7 @@ public class AuthApiToken implements AuthMethod {
         }
 
         // Check authorization
-        if (!user.hasRole(allowedRoles)) {
+        if (!AuthAction.hasAllowedRole(user, allowedRoles)) {
             JsonNode error = ApiEnvelope.wrap("Invalid api token", INVALID_API_TOKEN).asJsonNode();
             return AuthResult.denied(forbidden(error));
         }

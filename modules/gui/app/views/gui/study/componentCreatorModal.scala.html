@@ -58,7 +58,7 @@
         // Disable all fields if study is locked
         Helpers.disableForm("#componentCreatorModal", window.study.isLocked);
         if (window.study.isLocked) {
-            alerts.warning("Study is locked. It is not possible to add a new component.");
+            alerts.warning("Study is locked. It is not possible to add a new component.", 10000, true);
         }
     });
 
@@ -70,18 +70,18 @@
             data : $('#componentCreatorForm').serialize(),
             success : function(response) {
                 $('#componentCreatorModal').modal('hide');
-                alerts.success("The component was added successfully.");
+                alerts.success("The component was added successfully.", 5000, true);
                 $('#componentsTable').DataTable().ajax.reload();
             },
             error : function(err) {
                 FormValidation.clear("#componentCreatorForm");
-                alerts.warning("The component was not saved.", 5000);
+                alerts.warning("The component was not saved.", 5000, true);
                 if (Helpers.isJson(err.responseText)) {
                     FormValidation.show("#componentCreatorForm", err.responseJSON);
                 } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                    alerts.error(err.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't add component");
+                    alerts.error("Couldn't add component", 0, true);
                 }
             }
         });

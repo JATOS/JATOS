@@ -1,16 +1,15 @@
 package batch
 
-import batch.BatchProtocol.{BatchErrorCode, BatchAction, BatchMsg, TellWhom}
+import batch.BatchProtocol.{BatchAction, BatchErrorCode, BatchMsg, TellWhom}
 import daos.common.BatchDao
 import models.common.Batch
 import org.junit.Assert._
 import org.junit.{Before, Test}
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
-import org.mockito.invocation.InvocationOnMock
 import org.mockito.Mockito._
+import org.mockito.invocation.InvocationOnMock
 import play.api.libs.json._
-import testutils.session.JPAMocker
 
 import java.lang
 
@@ -25,7 +24,6 @@ class BatchActionHandlerTest {
   @Before
   def setUp(): Unit = {
     batchDao = mock(classOf[BatchDao])
-    JPAMocker.mockDaoTransactions(null, batchDao)
     // Unless a test overrides this, simulate a successful compare-and-set update.
     when(batchDao.updateBatchSession(
       ArgumentMatchers.eq(lang.Long.valueOf(batchId)),

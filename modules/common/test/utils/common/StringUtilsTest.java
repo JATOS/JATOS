@@ -1,6 +1,7 @@
 package utils.common;
 
 import org.junit.Test;
+import play.libs.Json;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -12,6 +13,23 @@ import static org.junit.Assert.*;
  * Tests for the StringUtils class.
  */
 public class StringUtilsTest {
+
+    @Test
+    public void escapesStringsAndPreventsClosingTheScriptElement() {
+        String value = "C:\\new\\test \"quoted\"\n</script><script>alert(1)</script> & '";
+        String literal = StringUtils.javascriptValue(value).body();
+        assertFalse(literal.contains("<"));
+        assertTrue(literal.contains("\\u003c/script>"));
+        assertEquals(value, Json.parse(literal).asText());
+    }
+
+    @Test
+    public void preservesNullAndPrimitiveTypes() {
+        assertEquals("null", StringUtils.javascriptValue(null).body());
+        assertEquals("true", StringUtils.javascriptValue(true).body());
+        assertEquals("42", StringUtils.javascriptValue(42).body());
+        assertEquals("\"\"", StringUtils.javascriptValue("").body());
+    }
 
     @Test
     public void testHumanReadableByteCount() {

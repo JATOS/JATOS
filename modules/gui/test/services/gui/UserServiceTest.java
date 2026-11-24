@@ -6,6 +6,7 @@ import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
+import general.common.JpaTransactions;
 import http.common.Http.Context;
 import jakarta.persistence.EntityManager;
 import models.common.Study;
@@ -17,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import play.test.Helpers;
+import services.gui.importexport.GitCredentialsService;
 import testutils.gui.JPAMocker;
 
 import java.lang.reflect.Field;
@@ -37,11 +39,11 @@ import static services.gui.UserService.ADMIN_USERNAME;
  */
 public class UserServiceTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private StudyService studyService;
     private UserDao userDao;
     private StudyDao studyDao;
     private WorkerDao workerDao;
-
     private UserService userService;
 
     @Before
@@ -51,10 +53,14 @@ public class UserServiceTest {
         studyDao = mock(StudyDao.class);
         workerDao = mock(WorkerDao.class);
 
-        userService = new UserService(studyService, userDao, studyDao, workerDao);
+        userService = new UserService(transactions, studyService, userDao, studyDao, workerDao,
+                mock(daos.common.BatchDao.class), mock(GitCredentialsService.class));
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
-        JPAMocker.mockDaoTransactions(entityManager, userDao, studyDao, workerDao);
+        JPAMocker.mockTransactions(entityManager, transactions);
+        when(userDao.findByUsernameAndLock(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(studyDao.findAllByUserWithLock(any())).thenAnswer(inv ->
+                new java.util.ArrayList<>(((User) inv.getArgument(0)).getStudyList()));
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
@@ -235,7 +241,7 @@ public class UserServiceTest {
 
         userService.removeUser("foo@ex.org");
 
-        // On sole membership: removeStudyInclAssets(study, user) was called
+        // Sole-member studies are deleted with the user.
         verify(studyService, times(1)).removeStudyInclAssets(eq(s));
         // Finally, user removed
         verify(userDao, times(1)).remove(u);
@@ -251,11 +257,18 @@ public class UserServiceTest {
         Study s = new Study();
         User other = new User("other@ex.org", "Other", "other@ex.org");
         s.addAllUsers(List.of(u, other));
+        s.setOwner(u);
+        when(studyDao.isOwner(s, u)).thenReturn(true);
 
-        userService.removeUser("foo2@ex.org");
+        var reassignments = userService.removeUser("foo2@ex.org");
+        assertThat(reassignments).hasSize(1);
+        assertThat(reassignments.getFirst().newOwnerUsername()).isEqualTo("other@ex.org");
 
+        // Shared studies survive deletion of one member.
+        verify(studyService, never()).removeStudyInclAssets(any());
         // For multi-member study, service removes user from study and updates it
         assertThat(s.getUserList().contains(u)).isFalse();
+        assertThat(s.getOwner()).isEqualTo(other);
         verify(studyDao, times(1)).merge(eq(s));
         verify(userDao, times(1)).remove(u);
     }

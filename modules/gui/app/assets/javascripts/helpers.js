@@ -8,7 +8,6 @@ export {
     isJson,
     getWorkerTypeNames,
     getWorkerTypeUIName,
-    isLocalhost,
     getAuthMethodText,
     getUserRoleText,
     generateOrcidLink,
@@ -153,16 +152,6 @@ function getWorkerTypeUIName(workerType) {
 }
 
 /**
- * Checks if this JATOS is running on 'localhost'. It's not accurate. It just checks the location.hostname.
- */
-function isLocalhost() {
-    return location.hostname === 'localhost' ||
-    location.hostname === '' ||
-    location.hostname === '[::1]' ||
-    location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/);
-}
-
-/**
  * Returns the GUI name of the authentication method (of a user)
  *
  * @param {string} authMethod - Authentication method used for the user
@@ -202,7 +191,7 @@ function getUserRoleText(role) {
  * @param {string} orcid - User's ORCID ID
  */
 function generateOrcidLink(orcid) {
-    return `<a href="https://orcid.org/${orcid}" target="_blank" class="text-nowrap"><img class="me-1" src="${window.routes.assets("lib/jatos-gui/images/ORCIDiD_iconvector.svg")}" alt="ORCID logo" width="16" height="16"/>${orcid}</a>`;
+    return `<a href="https://orcid.org/${escapeHtml(encodeURIComponent(orcid))}" target="_blank" class="text-nowrap"><img class="me-1" src="${window.routes.assets("lib/jatos-gui/images/ORCIDiD_iconvector.svg")}" alt="ORCID logo" width="16" height="16"/>${escapeHtml(orcid)}</a>`;
 }
 
 /**
@@ -214,9 +203,9 @@ function generateOrcidLink(orcid) {
  */
 function generateFullUserString(name, username, authMethod) {
     if (authMethod === "ORCID") {
-        return `${name} (${generateOrcidLink(username)})`;
+        return `${escapeHtml(name)} (${generateOrcidLink(username)})`;
     } else {
-        return `${name} (${username})`;
+        return `${escapeHtml(name)} (${escapeHtml(username)})`;
     }
 }
 
@@ -225,17 +214,22 @@ function generateFullUserString(name, username, authMethod) {
  *
  * @param {string[]} members - Array of usernames
  */
-function generateMembersHtml(members) {
+function generateMembersHtml(members, options = {}) {
+    const memberHtml = member => {
+        const ownerBadge = member.username === options.ownerUsername
+            ? ' <span class="badge bg-secondary no-info-icon">Owner</span>' : '';
+        return generateFullUserString(member.name, member.username, member.authMethod) + ownerBadge;
+    };
     if (members.length === 1) {
         const m = members[0];
-        return `${generateFullUserString(m.name, m.username, m.authMethod)}`;
+        return memberHtml(m);
     } else if (members.length < 4 ) {
         // Show the users in a list
-        const memberList = members.map((m) => `<li>${generateFullUserString(m.name, m.username, m.authMethod)}</li>`).join("");
+        const memberList = members.map((m) => `<li>${memberHtml(m)}</li>`).join("");
         return `<ol class="mb-0 ps-3">${memberList}</ol>`;
     } else {
         // Show a popover with the users. You still have to activate the popovers with activatePopovers()
-        const memberList = members.map((m) => `<li>${generateFullUserString(m.name, m.username, m.authMethod)}</li>`).join("");
+        const memberList = members.map((m) => `<li>${memberHtml(m)}</li>`).join("");
         const membersHtml = `<b>This study has ${members.length} member users</b>:<ol class="mb-0">${memberList}</ol>`;
         return`<button class="btn btn-nav btn-sm" type="button" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-container="body" data-bs-html="true" data-bs-content="${escapeHtml(membersHtml)}">Show All</button>`;
     }
@@ -399,20 +393,22 @@ function activatePopovers(parent) {
 }
 
 /**
- * Attaches subtitles to the given Modal element
- *
- * @param {string} modalSelector - A selector specifying the Modal element
- * @param {object[]} subtitleList - Array of objects. Each object is of {subtitleName: subtitleValue}.
- * @param {boolean} [newLine=false] - If true, the subtitles will be separated by a new line, otherwise by a comma
+ * Adds modal subtitles, using aligned label/value rows when newLine is true.
+ * Values are plain text or explicitly constructed jQuery elements.
  */
 function generateModalSubtitles(modalSelector, subtitleList, newLine = false) {
-    const joinStr = newLine ? "<br>" : ", ";
-    const subtitlesHtml = Object.entries(subtitleList).map(st =>
-        `<span class="fw-normal">${st[0]}</span>: <span class="user-select-all">${st[1]}</span>`
-    ).join(joinStr);
-    const subtitleSpan = `<div class="modal-subtitle fw-light fs-6 text-wrap text-break">${subtitlesHtml}</div>`;
+    const subtitles = $("<div>").addClass("modal-subtitle fw-normal fs-6 text-wrap text-break");
+    if (newLine) subtitles.addClass("modal-subtitle-rows mt-2");
+    Object.entries(subtitleList).forEach(([label, value], index) => {
+        if (!newLine && index > 0) subtitles.append(", ");
+        subtitles.append($("<span>").addClass("text-body-secondary").text(label + (newLine ? "" : ": ")));
+        const valueSpan = $("<span>").addClass("user-select-all");
+        if (value instanceof jQuery) valueSpan.append(value);
+        else valueSpan.text(value);
+        subtitles.append(valueSpan);
+    });
     $(`${modalSelector} .modal-subtitle`).remove();
-    $(`${modalSelector} .modal-title`).append(subtitleSpan);
+    $(`${modalSelector} .modal-title`).append(subtitles);
 }
 
 /**

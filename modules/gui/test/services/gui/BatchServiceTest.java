@@ -3,9 +3,9 @@ package services.gui;
 import daos.common.BatchDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyDao;
-import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.NotFoundException;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import models.common.Batch;
@@ -38,12 +38,12 @@ import static org.mockito.Mockito.*;
  */
 public class BatchServiceTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private BatchDao batchDao;
     private StudyDao studyDao;
     private WorkerDao workerDao;
     private GroupResultDao groupResultDao;
     private StudyLogger studyLogger;
-
     private BatchService batchService;
     private JPAMocker.TransactionCallbacks callbacks;
 
@@ -53,12 +53,11 @@ public class BatchServiceTest {
         studyDao = Mockito.mock(StudyDao.class);
         workerDao = Mockito.mock(WorkerDao.class);
         groupResultDao = Mockito.mock(GroupResultDao.class);
-        StudyLinkDao studyLinkDao = Mockito.mock(StudyLinkDao.class);
         studyLogger = Mockito.mock(StudyLogger.class);
-        batchService = new BatchService(batchDao, studyDao, workerDao, studyLogger, mock(ResultRemover.class));
+        batchService = new BatchService(transactions, batchDao, studyDao, workerDao, studyLogger, mock(ResultRemover.class));
 
         callbacks = new JPAMocker.TransactionCallbacks();
-        JPAMocker.mockDaoTransactions(callbacks.em, batchDao, studyDao, workerDao, groupResultDao, studyLinkDao);
+        JPAMocker.mockTransactions(callbacks.em, transactions);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
@@ -258,6 +257,6 @@ public class BatchServiceTest {
         verify(workerDao, atLeastOnce()).remove(any(Worker.class));
         // batch itself removed and logging
         verify(batchDao, times(1)).remove(batch);
-        verify(studyLogger, times(1)).log(eq(study), any(User.class), eq("Removed batch"), eq(batch));
+        verify(studyLogger, times(1)).log(eq(study.getUuid()), nullable(String.class), eq("Removed batch"), eq(batch.getId()));
     }
 }

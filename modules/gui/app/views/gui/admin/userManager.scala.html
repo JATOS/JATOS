@@ -18,7 +18,7 @@
                 <th class="no-info-icon" data-bs-tooltip="Authentication method, e.g. either locally stored, LDAP, Google, OIDC, ORCID, SRAM or CONEXT">Auth<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Roles, e.g. Viewer, User, Admin, Superuser, or NONE">Roles<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Switch between role Viewer and User">Viewer/User<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon" data-bs-tooltip="Superusers are automatically a member in EVERY study and can do what a normal study member can do including reading/deleting result data or deleting the study altogether. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="If enabled, superusers have owner privileges on EVERY study without being members, including managing members, transferring ownership, and deleting studies and result data. A Superuser has NO access to administration tasks (like creating/deleting users, changing passwords) - only admin users can do this.">Superuser<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Users with the admin rights can e.g. add/change/delete other users and deactivate studies.">Admin<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th></th>
             </tr>
@@ -47,8 +47,8 @@
     </div>
 
     @* Create User Modal *@
-    <div class="modal fade" id="userCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
-        <div class="modal-dialog modal-lg">
+        <div class="modal fade" id="userCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header align-items-start">
                     <h5 class="modal-title text-truncate flex-grow-1">Add a new user</h5>
@@ -57,43 +57,37 @@
                 <div class="modal-body">
                     <form class="form-admin" id="userCreatorForm">
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="userCreatorUsername">
+                            <label class="col-sm-3 col-form-label" for="userCreatorUsername" data-bs-tooltip="What will be the username of the new user? Username and password are used for authentication. E.g., email address. The username is stored in lowercase.">
                                 Username<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="userCreatorUsername" name="username" autocapitalize="none" autocomplete="off" required>
-                                <span class="form-text">What will be the username of the new user? Username and password are used for authentication. E.g., email address.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="userCreatorName">
+                            <label class="col-sm-3 col-form-label" for="userCreatorName" data-bs-tooltip="The name is not used for authentication and only further describes the user.">
                                 Name<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="userCreatorName" name="name" autocomplete="off" required>
-                                <span class="form-text">The name is not used for authentication and only further describes the user.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="userCreatorEmail">Email</label>
+                            <label class="col-sm-3 col-form-label" for="userCreatorEmail" data-bs-tooltip="Optional email address of the user. This field is not used for authentication.">Email</label>
                             <div class="col-sm-9">
                                 <input type="email" class="form-control" id="userCreatorEmail" name="email" autocomplete="off">
-                                <span class="form-text">Optional email address of the user. This field is not used for authentication.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3 d-none" id="userCreatorAuthByLdapDiv">
-                            <legend class="col-sm-3 col-form-label pt-0">
+                            <label class="col-sm-3 col-form-label pt-0" for="userCreatorAuthByLdap" data-bs-tooltip="Authenticate this user by your central LDAP service?">
                                 LDAP
-                            </legend>
+                            </label>
                             <div class="col-sm-9">
                                 <div class="form-check">
                                     <input class="form-check-input checkbox-admin" type="checkbox" name="authMethod" id="userCreatorAuthByLdap" value="LDAP" data-bs-toggle="collapse" data-bs-target="#userCreatorPasswordDiv">
-                                    <label class="form-check-label" for="userCreatorAuthByLdap">
-                                        Authenticate this user by your central LDAP service?
-                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -115,10 +109,10 @@
                             </div>
                         </div>
                     </form>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-admin" id="userCreatorConfirm">Add</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-admin" id="userCreatorConfirm">Add</button>
                 </div>
             </div>
         </div>
@@ -231,7 +225,7 @@
                 "url": window.routes.Users.allUserData,
                 "dataSrc": "",
                 "beforeSend": WaitingModal.show,
-                "error": () => Alerts.error("Error reading user data"),
+                "error": () => Alerts.error("Error reading user data", 0, true),
                 "complete": WaitingModal.hide
             },
             "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-admin gap-1 mt-1 mb-3'Bfl>
@@ -543,18 +537,18 @@
             success: function(user) {
                 $('#userCreatorModal').modal('hide');
                 FormValidation.clear("#userCreatorForm");
-                Alerts.success(`The user "${user.username}" was added successfully.`);
+                Alerts.success(`The user "${user.username}" was added successfully.`, 5000, true);
                 dataTable.row.add(user).draw();
             },
             error: function(response) {
                 FormValidation.clear("#userCreatorForm");
-                Alerts.warning("The user was not added.", 5000);
+                Alerts.warning("The user was not added.", 5000, true);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#userCreatorForm", response.responseJSON);
                 } else if (response.responseText) {
-                    alerts.error(response.responseText);
+                    alerts.error(response.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't add a new user");
+                    alerts.error("Couldn't add a new user", 0, true);
                 }
             }
         });
@@ -586,7 +580,7 @@
                 Helpers.activateTooltips(collapseElement);
             }).fail(function(err) {
                 const errMsg = err.responseText ? err.responseText : "Couldn't get study data by user";
-                alerts.error(errMsg);
+                alerts.error(errMsg, 0, true);
             }).always(WaitingModal.hide);
         }
     });
@@ -624,7 +618,7 @@
                     <tr class="info">
                         <td>${study.id}</td>
                         <td>${Helpers.trimTextWithThreeDots(study.title, 40)}</td>
-                        <td>${Helpers.generateMembersHtml(study.members)}</td>
+                        <td>${Helpers.generateMembersHtml(study.members, { ownerUsername: study.ownerUsername })}</td>
                         <td>${study.studyAssetsSize.humanReadable}</td>
                         <td>${study.studyResultCount}</td>
                         <td>${study.resultDataSize.humanReadable}</td>
@@ -657,7 +651,7 @@
             },
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't toggle user activation";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         });
     });
@@ -680,7 +674,7 @@
                 const isUser = user.roles.includes("USER");
                 $(checkbox).prop('checked', isUser);
             },
-            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts("Couldn't change user roles")
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message, 0, true) : alerts("Couldn't change user roles")
         });
     });
 
@@ -701,7 +695,7 @@
                 const isSuperuser = roles.includes("SUPERUSER");
                 $(checkbox).prop('checked', isSuperuser);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle superuser role")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle superuser role", 0, true)
         });
     });
 
@@ -722,7 +716,7 @@
                 const isAdmin = roles.includes("ADMIN");
                 $(checkbox).prop('checked', isAdmin);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle admin rights")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle admin rights", 0, true)
         });
     });
 
@@ -778,19 +772,19 @@
                 data: $('#userSettingsForm').serialize(),
                 success: function() {
                     $('#userSettingsModal').modal('hide');
-                    alerts.success(`${user.username}'s settings were changed successfully.`);
+                    alerts.success(`${user.username}'s settings were changed successfully.`, 5000, true);
                     user.name = $('#userSettingsName').val();
                     user.email = $('#userSettingsEmail').val();
                     dataTable.row(tr).data(user);
                 },
                 error: function(err) {
-                    alerts.warning(`${user.username}'s settings were not changed.`, 5000);
+                    alerts.warning(`${user.username}'s settings were not changed.`, 5000, true);
                     if (Helpers.isJson(err.responseText)) {
                         FormValidation.show("#userSettingsForm", err.responseJSON);
                     } else if (err.responseText) {
-                        alerts.error(err.responseText);
+                        alerts.error(err.responseText, 0, true);
                     } else {
-                        alerts.error("Couldn't change user settings");
+                        alerts.error("Couldn't change user settings", 0, true);
                     }
                 }
             });
@@ -817,16 +811,16 @@
                 data: $('#changePasswordForm').serialize(),
                 success: function(response) {
                     $('#changePasswordModal').modal('hide');
-                    alerts.success(`${user.username}'s password was changed successfully.`);
+                    alerts.success(`${user.username}'s password was changed successfully.`, 5000, true);
                 },
                 error: function(err) {
-                    alerts.warning(`${user.username}'s password was not changed.`, 5000);
+                    alerts.warning(`${user.username}'s password was not changed.`, 5000, true);
                     if (Helpers.isJson(err.responseText)) {
                         FormValidation.show("#changePasswordForm", err.responseJSON);
                     } else if (err.responseText) {
-                        alerts.error(err.responseText);
+                        alerts.error(err.responseText, 0, true);
                     } else {
-                        alerts.error("Couldn't change user password");
+                        alerts.error("Couldn't change user password", 0, true);
                     }
                 }
             });
@@ -853,17 +847,24 @@
                 success: function(response) {
                     row.remove().draw();
                     $('#deleteUserModal').modal('hide');
-                    Alerts.success(`User "${user.username}" was deleted successfully.`);
+                    Alerts.success(`User "${user.username}" was deleted successfully.`, 5000, true);
+                    const reassignments = response.ownershipReassignments ?? [];
+                    if (reassignments.length) {
+                        const items = reassignments.map(change => `
+                            <li>${Helpers.escapeHtml(change.studyTitle)} (ID: ${change.studyId}) — new owner is ${Helpers.escapeHtml(change.newOwnerUsername)}</li>
+                        `).join('');
+                        Alerts.info(`Study ownership reassigned:<ul>${items}</ul>`, 0, false);
+                    }
                 },
                 error: function(err) {
                     FormValidation.clear("#deleteUserForm");
-                    alerts.warning(`User ${user.username} was not deleted.`, 5000);
+                    alerts.warning(`User ${user.username} was not deleted.`, 5000, true);
                     if (Helpers.isJson(err.responseText)) {
                         FormValidation.show("#deleteUserForm", err.responseJSON);
                     } else if (err.responseText) {
-                        alerts.error(err.responseText);
+                        alerts.error(err.responseText, 0, true);
                     } else {
-                        alerts.error("Couldn't delete user");
+                        alerts.error("Couldn't delete user", 0, true);
                     }
                 }
             });
@@ -871,25 +872,40 @@
     });
 
     function generateDeleteUserConfirmationHtml(user) {
-        let confirmationText = `<p>You are about to delete the user <b>"${user.name}" (${user.username})</b>.</p>`;
-        confirmationText += generateStudyList(user);
+        let confirmationText = `<p>You are about to delete the user <b>"${Helpers.escapeHtml(user.name)}" (${Helpers.escapeHtml(user.username)})</b>.</p>`;
+        confirmationText += generateStudiesToBeRemoved(user);
+        confirmationText += generateStudiesToBeReassigned(user);
         confirmationText += `<p><b class="text-danger">This cannot be undone.</b></p>`;
         return confirmationText;
     }
 
-    function generateStudyList(user) {
+    function generateStudiesToBeRemoved(user) {
         // Only add the studies that have a user size of 1 (means this user is the only
-        // member and the study would be abandoned after user deletion) .
+        // member and the study would be abandoned after user deletion).
         let studyList = "";
         $.each(user.studyList, function(index, study) {
             if (study.userSize === 1) {
-                studyList += `<li>${study.title} (ID: ${study.id})</li>`;
+                studyList += `<li>${Helpers.escapeHtml(study.title)} (ID: ${study.id})</li>`;
             }
         });
         let text = "";
         if (studyList !== "") {
             text += "<p>All studies with this user as the only member user will be deleted too. <b>This would automatically delete the following studies with all their results</b>.";
             text += "<ul>" + studyList + "</ul>";
+        }
+        return text;
+    }
+
+    function generateStudiesToBeReassigned(user) {
+        // ONly add the studies that have this user as an owner and more than one member
+        const reassignedStudies = user.studyList
+            .filter(study => study.isOwner && study.userSize > 1)
+            .map(study => `<li>${Helpers.escapeHtml(study.title)} (ID: ${study.id})</li>`)
+            .join('');
+        let text = "";
+        if (reassignedStudies) {
+            text += "<p>All the following studies are owned by this user but have other members and ownership will be reassigned to a remaining member. The new owners will be shown after deletion.</p>";
+            text += `<ul>${reassignedStudies}</ul>`;
         }
         return text;
     }

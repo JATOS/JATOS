@@ -3,8 +3,8 @@
 @(implicit request: RequestHeader)
 
 @* Change study's user members Modal *@
-<div class="modal fade" id="studyMemberUsersModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":true}'>
-    <div class="modal-dialog">
+<div class="modal fade" id="studyMemberUsersModal" tabindex="-1" data-bs-config='{"backdrop":true, "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header align-items-start">
                 <h5 class="text-truncate modal-title flex-grow-1">
@@ -13,6 +13,8 @@
                 <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <p>Each study has one owner. The owner cannot leave or be removed until ownership is transferred to another member.</p>
+                <div id="membershipManagement" class="d-none">
                 <label for="changeMemberUsersUsername" class="form-label info-icon" data-bs-tooltip="Only usernames of existing JATOS user.">
                     Add user by username
                 </label>
@@ -20,27 +22,27 @@
                     <div class="col-7">
                         <form class="form-study mb-4" id="changeMemberUsersForm">
                             <div class="input-group">
-                                <input type="text" class="form-control" id="changeMemberUsersUsername" placeholder="username" autocapitalize="none" autocomplete="off" required>
+                                <input type="text" class="form-control" id="changeMemberUsersUsername" placeholder="username"
+                                       autocapitalize="none" autocomplete="off" required>
                                 <button type="button" class="btn btn-study" id="changeMemberUsersConfirmed">Add</button>
                             </div>
                         </form>
                     </div>
-                    @if(Common.isStudyMembersAllowedToAddAllUsers()) {
-                    <div class="col">
-                        <button class="btn btn-study" id="changeMemberUsersAddAll" type="button" data-bs-tooltip="Give all users access to this study">
-                            Add All
-                        </button>
-                    </div>
-                    }
+                </div>
                 </div>
                 <table class="table table-hover align-middle w-100" id="studyMemberUsersTable">
                     <thead>
                         <tr>
                             <th>Name<span class="ordering-icon"></span></th>
                             <th>
-                                <button class="btn btn-study text-nowrap" id="changeMemberUsersRemoveAll" type="button" data-bs-tooltip="Remove access rights to this study from all users except yourself">
-                                    Remove All
-                                </button>
+                                <div class="text-nowrap">
+                                    <button class="btn btn-study btn-sm text-nowrap d-none" id="changeMemberUsersAddAll" type="button" data-bs-tooltip="Give all users access to this study">
+                                        Add All
+                                    </button>
+                                    <button class="btn btn-study btn-sm text-nowrap d-none" id="changeMemberUsersRemoveAll" type="button" data-bs-tooltip="Remove access rights to this study from all users except the owner">
+                                        Remove All
+                                    </button>
+                                </div>
                             </th>
                         </tr>
                     </thead>
@@ -59,15 +61,20 @@
     const alerts = new Alerts.Named("change-members");
 
     let memberUserTable;
+    let isOwner = false;
+    let isAllowedToAddAllUsers = false;
 
     $("#studyMemberUsersModal").on('show.bs.modal', function() {
+        isOwner = false;
+        isAllowedToAddAllUsers = false;
+        $("#membershipManagement, #changeMemberUsersAddAll, #changeMemberUsersRemoveAll").addClass("d-none");
         $("#changeMemberUsersForm")[0].reset();
         FormValidation.clear("#changeMemberUsersForm");
         Helpers.generateModalSubtitles("#studyMemberUsersModal", {"Study": window.study.title});
         initMemberUserTable();
-        memberUserTable.columns.adjust(); // Needed for columns width after toggle button drawing
+        memberUserTable.columns.adjust(); // Needed for column width after toggle button drawing
         if (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser) {
-            alerts.info("As a Superuser you have access to all studies like a study member.");
+            alerts.info("As a Superuser you have owner privileges on all studies without needing membership.", 5000, true);
         }
     });
 
@@ -83,7 +90,14 @@
         memberUserTable = $('#studyMemberUsersTable').DataTable({
             "ajax": {
                 "url" : window.routes.Studies.memberUsers(window.study.id),
-                "error": () => Alerts.error("Cannot read member users data.")
+                "dataSrc": response => {
+                    isOwner = response.isOwner;
+                    isAllowedToAddAllUsers = response.isAllowedToAddAllUsers;
+                    $("#membershipManagement, #changeMemberUsersRemoveAll").toggleClass("d-none", !isOwner);
+                    $("#changeMemberUsersAddAll").toggleClass("d-none", !isOwner || !isAllowedToAddAllUsers);
+                    return response.data;
+                },
+                "error": () => Alerts.error("Cannot read member users data.", 0, true)
             },
             "dom": "t<'row'<'mt-2'p>>",
             "order": [[ 0, "asc" ]],
@@ -92,28 +106,27 @@
             "autoWidth": false,
             "columns": [
                 {
-                    "data": "name"
+                    "data": "name",
+                    "render": (name, type, member) => {
+                        if (type !== "display") return name;
+                        return $("<span>").text(`${name} (${member.username})`).prop("outerHTML") +
+                            (member.isOwner ? ' <span class="badge text-bg-secondary">Owner</span>' : "");
+                    }
                 },
                 {
                     "data": null,
-                    "width": "1%",
+                    "width": "30%",
                     "orderable": false,
                     "searchable": false,
-                    "searchable": false,
                     "render": function (data, type, full, meta) {
-                        if (data.isMember) {
-                            return `<div class="flex-direction text-nowrap">
-                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip="Click to remove this user from this study">
-                                    Remove
-                                </button>
-                            </div>`;
-                        } else {
-                            return `<div class="flex-direction text-nowrap">
-                                <button type="button" class="btn btn-study change-member-users-toggle" data-bs-tooltip="Click to add this user to the study again">
-                                    Add
-                                </button>
-                            </div>`;
+                        if (!isOwner) {
+                            return data.isMember && !data.isOwner && data.username === window.signedinUser.username
+                                ? '<button type="button" class="btn btn-study change-member-users-toggle">Leave study</button>' : '';
                         }
+                        if (data.isOwner) return '<span class="text-muted">Transfer ownership before leaving</span>';
+                        const transfer = data.isMember
+                            ? '<button type="button" class="btn btn-study transfer-study-owner ms-1">Make owner</button>' : '';
+                        return `<div class="text-nowrap"><button type="button" class="btn btn-study change-member-users-toggle">${data.isMember ? 'Remove' : 'Add'}</button>${transfer}</div>`;
                     }
                 }
             ],
@@ -147,7 +160,7 @@
             success: function(user) {
                 memberUserTable.ajax.reload();
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't add all users")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't add all users", 0, true)
         });
     });
 
@@ -157,7 +170,7 @@
             type : "DELETE",
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: () => memberUserTable.ajax.reload(),
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't remove all users")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't remove all users", 0, true)
         });
     });
 
@@ -173,7 +186,7 @@
                 $("#changeMemberUsersForm")[0].reset();
                 alterTableAfterUserAdding(user);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle member user")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle member user", 0, true)
         });
     });
 
@@ -184,7 +197,7 @@
             if (tableMember.username.toLowerCase() === user.username.toLowerCase()) {
                 isAlreadyInTable = true;
                 if (tableMember.isMember) {
-                    alerts.info(`User ${user.name} (${user.username}) is already member.`);
+                    alerts.info(`User ${user.name} (${user.username}) is already member.`, 5000, true);
                 } else {
                     const button = $(this.node()).find('.change-member-users-toggle');
                     button.html($(button.html())
@@ -201,23 +214,48 @@
         }
     }
 
+    $('#studyMemberUsersModal').on('click', '.transfer-study-owner', function() {
+        const member = memberUserTable.row($(this).closest('tr')).data();
+        if (!isOwner || !member.isMember || member.isOwner) return;
+        if (!member.transferConfirmation) {
+            alerts.warning(`Transfer ownership to ${member.name} (${member.username})? The previous owner (you) remains a member and loses ownership privileges. Click the same "Make owner" button again to confirm.`, 30000, true);
+            member.transferConfirmation = true;
+            return;
+        }
+        member.transferConfirmation = false;
+        const button = $(this).prop('disabled', true);
+        $.ajax({
+            url: window.routes.Api.changeStudyOwner(window.study.id, member.id),
+            type: 'PUT',
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
+            success: () => window.location.reload(),
+            error: err => alerts.error(err?.responseJSON?.error?.message ?? 'Could not transfer ownership.', 0, true),
+            complete: () => button.prop('disabled', false)
+        });
+    });
+
     $('#studyMemberUsersModal').on('click', '.change-member-users-toggle', function() {
-        const button = this;
         const tr = $(this).closest('tr');
         const tableMember = memberUserTable.row(tr).data();
         if (tableMember.username === window.signedinUser.username && !tableMember.removeConfirmation) {
-            alerts.warning('Are you sure you want to remove yourself from this study? Then click again on the "Remove" button.');
+            alerts.warning('Are you sure you want to remove yourself from this study? Click the button again to confirm.', 30000, true);
             tableMember.removeConfirmation = true;
             return;
         }
+        const leaving = tableMember.isMember && tableMember.username === window.signedinUser.username;
         $.ajax({
-            url: window.routes.Studies.toggleMemberUser(window.study.id, tableMember.username, !tableMember.isMember),
-            type: "POST",
+            url: leaving ? window.routes.Api.removeStudyMember(window.study.id, tableMember.id)
+                : window.routes.Studies.toggleMemberUser(window.study.id, tableMember.username, !tableMember.isMember),
+            type: leaving ? "DELETE" : "POST",
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             success: function(user) {
+                if (leaving) {
+                    window.location.href = window.routes.Home.home;
+                    return;
+                }
                 memberUserTable.row(tr).data(user);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't toggle member user")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't toggle member user", 0, true)
         });
     });
 </script>

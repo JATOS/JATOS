@@ -1,19 +1,18 @@
 package daos.common;
 
-import models.common.workers.WorkerType;
-import models.common.*;
-import models.common.workers.Worker;
-import play.db.jpa.JPAApi;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
+import general.common.JpaTransactions;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.Tuple;
+import models.common.*;
+import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 public class StudyResultDao extends AbstractDao {
 
     @Inject
-    StudyResultDao(JPAApi jpa) {
+    StudyResultDao(JpaTransactions jpa) {
         super(jpa);
     }
 
@@ -146,17 +145,16 @@ public class StudyResultDao extends AbstractDao {
 
     /**
      * Returns a list of StudyResults that are active members of a group and have been idle for a while. An idle
-     * StudyResult is one that has an active group result and a lastSeenDate that is older than the given seconds.
+     * StudyResult is one that has an active group result and a lastSeenDate that is older than the given duration.
      */
-    public List<StudyResult> findIdleGroupMembers(int idleAfterSeconds) {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.SECOND, -idleAfterSeconds);
+    public List<StudyResult> findIdleGroupMembers(Duration idleAfter) {
+        Date cutoff = Date.from(Instant.now().minus(idleAfter));
         return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("""
                                 SELECT sr FROM StudyResult sr
                                 WHERE sr.activeGroupResult is not null
                                 AND sr.lastSeenDate < :date""", StudyResult.class)
-                        .setParameter("date", cal.getTime())
+                        .setParameter("date", cutoff)
                         .getResultList());
     }
 

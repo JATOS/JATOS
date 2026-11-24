@@ -28,8 +28,7 @@ import javax.inject.Singleton;
 
 import static actions.common.AsyncAction.Executor;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 /**
  * Controller that deals with all requests regarding Components within the JATOS GUI.
@@ -70,7 +69,7 @@ public class Components extends Controller {
      * Uses a JatosWorker and the given batch. Redirects to /publix/runx.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result runComponent(Long studyId, Long componentId, Long batchId, Long frames, Long hSplit, Long vSplit) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
@@ -100,7 +99,7 @@ public class Components extends Controller {
      * POST request: Handles the POST request of the form to create a new Component.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result submitCreated(Http.Request request, Long studyId) {
         Study study = studyDao.findByIdWithComponents(studyId);
@@ -119,7 +118,7 @@ public class Components extends Controller {
      * GET requests for getting the properties of a Component.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result properties(Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -135,7 +134,7 @@ public class Components extends Controller {
      * POST request that handles update of component properties
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result submitEdited(Http.Request request, Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
@@ -160,7 +159,7 @@ public class Components extends Controller {
      * GET a request to clone a component.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result cloneComponent(Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
@@ -178,7 +177,7 @@ public class Components extends Controller {
      * DELETE request to remove a component.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result remove(Long studyId, Long componentId) {
         Study study = studyDao.findByIdWithComponents(studyId);

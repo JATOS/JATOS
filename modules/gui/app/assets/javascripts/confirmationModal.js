@@ -29,7 +29,7 @@ function show({
     $('#confirmationModalConfirmed').off('click').on('click', function() {
         const safetyChecked = $('#confirmationModalSafetyCheckbox').prop('checked');
         if (safetyCheck && !safetyChecked) {
-            alerts.error("You can only proceed if the checkbox is checked.", 10000);
+            alerts.error("You can only proceed if the checkbox is checked.", 10000, true);
         } else {
             $('#confirmationModal').modal('hide');
             action();

@@ -1,14 +1,14 @@
 package daos.common;
 
+import exceptions.common.NotFoundException;
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import models.common.Study;
 import models.common.User;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
-import jakarta.persistence.EntityManager;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +21,7 @@ import java.util.Map;
 public class UserDao extends AbstractDao {
 
     @Inject
-    UserDao(JPAApi jpa) {
+    UserDao(JpaTransactions jpa) {
         super(jpa);
     }
 
@@ -61,6 +61,37 @@ public class UserDao extends AbstractDao {
     }
 
     /**
+     * User locks precede study locks. Adding members/creating studies and account deletion share this lock, preventing
+     * an account from acquiring new memberships while it is being deleted.
+     */
+    public User findByUsernameAndLock(User user) {
+        return withTransaction(em -> {
+            User managed = em.find(User.class, user.getUsername());
+            if (managed == null) throw new NotFoundException("User doesn't exist.");
+            if (em.getLockMode(managed) != LockModeType.PESSIMISTIC_WRITE) {
+                em.refresh(managed, LockModeType.PESSIMISTIC_WRITE);
+            }
+            return managed;
+        });
+    }
+
+    /**
+     * Loads and locks a user and refreshes credentials loaded before that lock. User locks must be acquired before
+     * the study locks.
+     */
+    public User findByUsernameWithGitCredentialsAndLock(String username) {
+        return withTransaction(em -> {
+            User user = findByUsername(username);
+            if (user == null) return null;
+            boolean alreadyLocked = em.getLockMode(user) == LockModeType.PESSIMISTIC_WRITE;
+            user = findByUsernameAndLock(user);
+            // Refresh only on the first lock, preserving changes from earlier calls in this transaction.
+            if (!alreadyLocked && user.getGitCredentials() != null) em.refresh(user.getGitCredentials());
+            return user;
+        });
+    }
+
+    /**
      * Finds a user by username and eagerly fetches their studyList.
      */
     public User findByUsernameWithStudies(String normalizedUsername) {
@@ -90,6 +121,14 @@ public class UserDao extends AbstractDao {
     public List<User> findAll() {
         return withReadOnlyTransaction(em -> {
             return em.createQuery("SELECT u FROM User u", User.class).getResultList();
+        });
+    }
+
+
+    public List<User> findAllAndLock() {
+        return withTransaction(em -> {
+            return em.createQuery("SELECT u FROM User u ORDER BY u.username", User.class)
+                    .setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
         });
     }
 

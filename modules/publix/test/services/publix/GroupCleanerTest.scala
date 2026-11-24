@@ -1,12 +1,12 @@
 package services.publix
 
 import daos.common.StudyResultDao
+import general.common.JpaTransactions
 import group.GroupDispatcher
 import org.apache.pekko.actor.ActorSystem
 import org.junit.{After, Before, Test}
 import org.mockito.Mockito.{mock, never, verify, when}
 import play.api.inject.ApplicationLifecycle
-import play.db.jpa.JPAApi
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -29,7 +29,7 @@ class GroupCleanerTest {
       groupDispatcher,
       mock(classOf[StudyResultDao]),
       publixUtils,
-      mock(classOf[JPAApi]))
+      mock(classOf[JpaTransactions]))
   }
 
   @After

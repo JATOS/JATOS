@@ -3,13 +3,14 @@ package services.gui;
 import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
-import models.common.workers.WorkerType;
 import exceptions.common.BadRequestException;
+import general.common.JpaTransactions;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.PersonalMultipleWorker;
 import models.common.workers.PersonalSingleWorker;
 import models.common.workers.Worker;
+import models.common.workers.WorkerType;
 import models.gui.StudyCodeProperties;
 
 import javax.inject.Inject;
@@ -24,16 +25,19 @@ import java.util.List;
 @Singleton
 public class StudyLinkService {
 
+    private final JpaTransactions transactions;
     private final BatchDao batchDao;
     private final WorkerDao workerDao;
     private final StudyLinkDao studyLinkDao;
     private final WorkerService workerService;
 
     @Inject
-    StudyLinkService(BatchDao batchDao,
+    StudyLinkService(JpaTransactions transactions,
+                     BatchDao batchDao,
                      WorkerDao workerDao,
                      StudyLinkDao studyLinkDao,
                      WorkerService workerService) {
+        this.transactions = transactions;
         this.batchDao = batchDao;
         this.workerDao = workerDao;
         this.studyLinkDao = studyLinkDao;
@@ -60,7 +64,7 @@ public class StudyLinkService {
      * is greater than 1. If the amount is smaller than 1, it returns a single study code.
      */
     private List<String> createAndPersistStudyLinks(String comment, int amount, Batch batch, WorkerType workerType) {
-        return studyLinkDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             int i = Math.max(amount, 1);
 
             List<String> studyCodeList = new ArrayList<>();

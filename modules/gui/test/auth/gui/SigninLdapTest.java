@@ -49,7 +49,7 @@ public class SigninLdapTest {
             commonMocked.when(Common::getLdapAdminDn).thenReturn("");
             commonMocked.when(Common::getLdapUserAttribute).thenReturn("uid");
             commonMocked.when(Common::getLdapUrl).thenReturn("ldap://ldap.example.org");
-            commonMocked.when(Common::getLdapTimeout).thenReturn(1234);
+            commonMocked.when(Common::getLdapTimeout).thenReturn(java.time.Duration.ofMillis(1234));
 
             boolean result = signinLdap.authenticate("bob", "pw");
 
@@ -92,7 +92,7 @@ public class SigninLdapTest {
             commonMocked.when(Common::getLdapAdminDn).thenReturn("cn=admin,dc=example,dc=org");
             commonMocked.when(Common::getLdapAdminPassword).thenReturn("admin-pw");
             commonMocked.when(Common::getLdapUrl).thenReturn("ldap://ldap.example.org");
-            commonMocked.when(Common::getLdapTimeout).thenReturn(1234);
+            commonMocked.when(Common::getLdapTimeout).thenReturn(java.time.Duration.ofMillis(1234));
 
             boolean result = signinLdap.authenticate("bob", "pw");
 
@@ -127,7 +127,7 @@ public class SigninLdapTest {
             commonMocked.when(Common::getLdapAdminDn).thenReturn("cn=admin,dc=example,dc=org");
             commonMocked.when(Common::getLdapAdminPassword).thenReturn("admin-pw");
             commonMocked.when(Common::getLdapUrl).thenReturn("ldap://ldap.example.org");
-            commonMocked.when(Common::getLdapTimeout).thenReturn(1234);
+            commonMocked.when(Common::getLdapTimeout).thenReturn(java.time.Duration.ofMillis(1234));
 
             boolean result = signinLdap.authenticate("bob", "pw");
 
@@ -148,7 +148,7 @@ public class SigninLdapTest {
             commonMocked.when(Common::getLdapAdminDn).thenReturn("cn=admin,dc=example,dc=org");
             commonMocked.when(Common::getLdapAdminPassword).thenReturn("admin-pw");
             commonMocked.when(Common::getLdapUrl).thenReturn("ldap://ldap.example.org");
-            commonMocked.when(Common::getLdapTimeout).thenReturn(1234);
+            commonMocked.when(Common::getLdapTimeout).thenReturn(java.time.Duration.ofMillis(1234));
 
             try {
                 signinLdap.authenticate("bob", "pw");

@@ -47,6 +47,11 @@ GET      /jatos/                                                            @con
 GET      /                                                                  @controllers.gui.Home.home(request: Request, httpStatus: Int ?= 200)
 GET      /jatos/branding                                                    @controllers.gui.Home.branding()
 
+# ImportExport controller
+POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy(request: Request)
+POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed(request: Request)
+DELETE   /jatos/import/study                                                @controllers.gui.ImportExport.cancelStudyImport()
+
 # ApiTokens controller
 GET      /jatos/user/allApiTokenData                                        @auth.gui.ApiTokens.allTokenDataByUser()
 POST     /jatos/user/apiToken                                               @auth.gui.ApiTokens.generate(name, expires: Integer)
@@ -121,9 +126,7 @@ DELETE   /jatos/:studyId/:componentId                                       @con
 GET      /jatos/:studyId/:componentId/run                                   @controllers.gui.Components.runComponent(studyId: Long, componentId: Long, batchId: Long ?= -1, frames: Long ?= 1, hSplit: Long ?= 1, vSplit: Long ?= 1)
 GET      /jatos/:studyId/:componentId/clone                                 @controllers.gui.Components.cloneComponent(studyId: Long, componentId: Long)
 
-# ImportExport controller
-POST     /jatos/import/study                                                @controllers.gui.ImportExport.importStudy(request: Request)
-POST     /jatos/import/studyConfirmed                                       @controllers.gui.ImportExport.importStudyConfirmed(request: Request)
+
 
 
 ### Static resources ###

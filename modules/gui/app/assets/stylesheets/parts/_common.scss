@@ -45,3 +45,30 @@ button[disabled] {
         --bs-modal-width: 1440px;
     }
 }
+
+// Soften Bootstrap placeholder text in both light and dark themes.
+.form-control::placeholder {
+    opacity: 0.7;
+}
+
+// Keep wrapped subtitle values aligned with their first line.
+.modal-subtitle-rows {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.4rem 1rem;
+    line-height: 1.4;
+
+    > span {
+        min-width: 0;
+    }
+}
+
+// Keep long paths and URLs inside info cards on narrow screens.
+.info-card-value {
+    min-width: 0;
+}
+
+.info-card-value-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}

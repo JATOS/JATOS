@@ -3,6 +3,7 @@ package services.gui;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import models.common.*;
@@ -22,6 +23,7 @@ import static auth.gui.AuthAction.SIGNEDIN_USER;
 @Singleton
 public class ResultRemover {
 
+    private final JpaTransactions transactions;
     private final AuthorizationService authorizationService;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
@@ -30,12 +32,14 @@ public class ResultRemover {
     private final IOUtils ioUtils;
 
     @Inject
-    ResultRemover(AuthorizationService authorizationService,
+    ResultRemover(JpaTransactions transactions,
+                  AuthorizationService authorizationService,
                   ComponentResultDao componentResultDao,
                   StudyResultDao studyResultDao,
                   GroupResultDao groupResultDao,
                   StudyLogger studyLogger,
                   IOUtils ioUtils) {
+        this.transactions = transactions;
         this.authorizationService = authorizationService;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
@@ -51,7 +55,7 @@ public class ResultRemover {
      * @param componentResultIdList List of IDs of ComponentResults
      */
     public void removeComponentResults(List<Long> componentResultIdList, boolean removeEmptyStudyResults) {
-        studyResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             List<ComponentResult> componentResultList = componentResultDao.findByIds(componentResultIdList);
             authorizationService.canUserAccessComponentResults(componentResultList, signedinUser, true);
@@ -91,7 +95,7 @@ public class ResultRemover {
      * result upload files.
      */
     void removeAllComponentResults(Component component) {
-        componentResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             List<ComponentResult> componentResultList = componentResultDao.findAllByComponent(component);
             for (ComponentResult componentResult : componentResultList) {
                 removeComponentResult(componentResult.getId());
@@ -105,7 +109,7 @@ public class ResultRemover {
      * Removes and flushes all StudyResults before deleting their batch. Removes upload files after commit.
      */
     void removeAllStudyResults(Batch batch) {
-        studyResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             List<StudyResult> studyResultList = studyResultDao.findAllByBatch(batch);
             for (StudyResult studyResult : studyResultList) {
                 removeStudyResultAndUploadDir(studyResult);
@@ -114,8 +118,10 @@ public class ResultRemover {
             em.flush();
             User signedinUser = Context.current().args().get(SIGNEDIN_USER);
             Study study = batch.getStudy();
-            studyResultDao.afterCommit("Log result removal for batch " + batch.getId(),
-                    () -> studyLogger.log(study, signedinUser, "Removed result data and files"));
+            String studyUuid = study.getUuid();
+            String userName = signedinUser.getName();
+            transactions.afterCommit("Log result removal for batch " + batch.getId(),
+                    () -> studyLogger.log(studyUuid, userName, "Removed result data and files"));
         });
     }
 
@@ -123,14 +129,16 @@ public class ResultRemover {
      * Removes and flushes all StudyResults before deleting their study. Removes upload files after commit.
      */
     void removeAllStudyResults(Study study, User user) {
-        studyResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             for (Long id : studyResultDao.findIdsByStudyId(study.getId())) {
                 removeStudyResultAndUploadDir(studyResultDao.findById(id));
             }
             // Establish deletion order: first child deletion before Hibernate queues Batch/Study deletion and its database cascades.
             em.flush();
-            studyResultDao.afterCommit("Log result removal for study " + study.getId(),
-                    () -> studyLogger.log(study, user, "Removed result data and files"));
+            String studyUuid = study.getUuid();
+            String userName = user.getName();
+            transactions.afterCommit("Log result removal for study " + study.getId(),
+                    () -> studyLogger.log(studyUuid, userName, "Removed result data and files"));
         });
     }
 
@@ -141,21 +149,21 @@ public class ResultRemover {
     private void removeStudyResultAndUploadDir(StudyResult result) {
         Long id = result.getId();
         studyResultDao.remove(result); // Hibernate removes component results before their study result.
-        studyResultDao.afterCommit("Remove uploads for study result " + id, () -> ioUtils.removeResultUploadsDir(id));
+        transactions.afterCommit("Remove uploads for study result " + id, () -> ioUtils.removeResultUploadsDir(id));
     }
 
     /**
      * Remove ComponentResult from its StudyResult and then remove itself. Removes result upload files.
      */
     private void removeComponentResult(long componentResultId) {
-        componentResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             ComponentResult componentResult = componentResultDao.findById(componentResultId);
             StudyResult studyResult = componentResult.getStudyResult();
             if (studyResult != null) {
                 studyResult.removeComponentResult(componentResult);
                 Long studyResultId = studyResult.getId();
                 Long resultId = componentResult.getId();
-                studyResultDao.afterCommit("Remove uploads for component result " + resultId,
+                transactions.afterCommit("Remove uploads for component result " + resultId,
                         () -> ioUtils.removeResultUploadsDir(studyResultId, resultId));
             }
             componentResultDao.remove(componentResult);
@@ -167,7 +175,7 @@ public class ResultRemover {
      * will cascade via database constraints. Removes result upload files.
      */
     private void removeStudyResult(long studyResultId) {
-        studyResultDao.withTransaction(em -> {
+        transactions.withTransaction(em -> {
             StudyResult studyResult = studyResultDao.findById(studyResultId);
 
             removeEmptyStudyResult(studyResult);
@@ -175,7 +183,7 @@ public class ResultRemover {
     }
 
     private void removeEmptyStudyResult(StudyResult studyResult) {
-        studyResultDao.withTransaction(entityManager -> {
+        transactions.withTransaction(entityManager -> {
             // Remove studyResult as a member from a group result
             GroupResult activeGroupResult = studyResult.getActiveGroupResult();
             if (activeGroupResult != null) {
@@ -189,7 +197,7 @@ public class ResultRemover {
             }
 
             Long id = studyResult.getId();
-            studyResultDao.afterCommit("Remove uploads for study result " + id,
+            transactions.afterCommit("Remove uploads for study result " + id,
                     () -> ioUtils.removeResultUploadsDir(id));
 
             // Remove studyResult (Worker cleanup is handled by database cascade)

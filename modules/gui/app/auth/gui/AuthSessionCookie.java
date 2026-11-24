@@ -90,7 +90,7 @@ public class AuthSessionCookie implements AuthMethod {
         }
 
         // Check authorization
-        if (!signedinUser.hasRole(allowedRoles)) {
+        if (!AuthAction.hasAllowedRole(signedinUser, allowedRoles)) {
             return call403DueToAuthorization(signedinUser.getUsername());
         }
 

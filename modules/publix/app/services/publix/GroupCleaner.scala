@@ -1,7 +1,7 @@
 package services.publix
 
 import daos.common.StudyResultDao
-import general.common.Common
+import general.common.{Common, JpaTransactions}
 import group.GroupDispatcher
 import jakarta.persistence.EntityManager
 import org.apache.pekko.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Cancellable, Props}
@@ -9,7 +9,6 @@ import org.apache.pekko.cluster.singleton.{ClusterSingletonManager, ClusterSingl
 import org.apache.pekko.pattern.pipe
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
-import play.db.jpa.JPAApi
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
@@ -23,7 +22,7 @@ object GroupCleaner {
   private case object CleaningFinished
   private case object Stop
 
-  private class CleanerActor(clean: () => Future[Unit], intervalSeconds: Int, clusterSingleton: Boolean)
+  private class CleanerActor(clean: () => Future[Unit], interval: java.time.Duration, clusterSingleton: Boolean)
     extends Actor with ActorLogging {
 
     implicit private val executionContext: ExecutionContext = context.dispatcher
@@ -36,7 +35,7 @@ object GroupCleaner {
       else log.info("GroupCleaner started")
       scheduler = context.system.scheduler.scheduleWithFixedDelay(
         initialDelay = Duration.Zero,
-        delay = Duration(intervalSeconds, TimeUnit.SECONDS),
+        delay = Duration(interval.toNanos, TimeUnit.NANOSECONDS),
         receiver = self,
         message = Clean)
     }
@@ -64,8 +63,8 @@ object GroupCleaner {
     }
   }
 
-  private def props(clean: () => Future[Unit], intervalSeconds: Int, clusterSingleton: Boolean): Props =
-    Props(new CleanerActor(clean, intervalSeconds, clusterSingleton))
+  private def props(clean: () => Future[Unit], interval: java.time.Duration, clusterSingleton: Boolean): Props =
+    Props(new CleanerActor(clean, interval, clusterSingleton))
 }
 
 /**
@@ -90,7 +89,7 @@ class GroupCleaner @Inject()(actorSystem: ActorSystem,
                              groupDispatcher: GroupDispatcher,
                              studyResultDao: StudyResultDao,
                              publixUtils: PublixUtils,
-                             jpa: JPAApi) {
+                             jpa: JpaTransactions) {
 
   private val logger: Logger = Logger(this.getClass)
 

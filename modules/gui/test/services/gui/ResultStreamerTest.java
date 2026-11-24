@@ -6,6 +6,7 @@ import daos.common.ComponentResultDao;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import general.common.Common;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import json.common.DomainJsonMapper;
 import models.common.ComponentResult;
@@ -19,7 +20,6 @@ import play.libs.Json;
 import services.gui.ResultStreamer.ResultType;
 import testutils.gui.JPAMocker;
 
-import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -30,13 +30,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -46,15 +44,14 @@ public class ResultStreamerTest {
 
     private static MockedStatic<Common> commonStatic;
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
     private StudyDao studyDao;
     private DomainJsonMapper domainJsonMapper;
     private AuthorizationService authorizationService;
     private StudyLogger studyLogger;
-
     private ResultStreamer resultStreamer;
-
     private User user;
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -80,7 +77,7 @@ public class ResultStreamerTest {
         studyLogger = mock(StudyLogger.class);
         ComponentResultIdsExtractor componentResultIdsExtractor = mock(ComponentResultIdsExtractor.class);
 
-        resultStreamer = new ResultStreamer(
+        resultStreamer = new ResultStreamer(transactions,
                 componentResultDao,
                 studyResultDao,
                 studyDao,
@@ -92,13 +89,7 @@ public class ResultStreamerTest {
         user = new User();
         user.setUsername("alice");
 
-        //noinspection unchecked
-        when(studyResultDao.withReadOnlyTransaction(any(Function.class))).thenAnswer(invocation -> {
-            Function<EntityManager, Object> function = invocation.getArgument(0);
-            return function.apply(null);
-        });
-
-        JPAMocker.mockDaoTransactions(studyResultDao, componentResultDao, studyDao);
+        JPAMocker.mockTransactions(null, transactions);
     }
 
     @Test

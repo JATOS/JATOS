@@ -55,13 +55,13 @@
             },
             error: function(err) {
                 FormValidation.clear("#batchCreatorForm");
-                alerts.warning("The batch was not added.", 5000);
+                alerts.warning("The batch was not added.", 5000, true);
                 if (Helpers.isJson(err.responseText)) {
                     FormValidation.show("#batchCreatorForm", err.responseJSON);
                 } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                    alerts.error(err.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't add a new batch");
+                    alerts.error("Couldn't add a new batch", 0, true);
                 }
             }
         });

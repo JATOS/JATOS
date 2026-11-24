@@ -7,7 +7,6 @@ import executor.common.IOExecutor;
 import executor.common.StudyAssetsExecutor;
 import general.common.Common;
 import general.common.StudyLogger;
-import jakarta.persistence.EntityManager;
 import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.ComponentResult.ComponentState;
@@ -20,7 +19,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import play.libs.Files.TemporaryFile;
 import play.libs.Json;
 import play.mvc.Http;
@@ -29,7 +27,6 @@ import services.publix.PublixErrorMessages;
 import services.publix.PublixUtils;
 import services.publix.StudyAuthorisation;
 import services.publix.idcookie.IdCookieService;
-import testutils.publix.JPAMocker;
 import utils.common.IOUtils;
 
 import java.io.File;
@@ -124,8 +121,6 @@ public class PublixTest {
                 domainJsonMapper, componentResultDao, studyResultDao, studyLogger, ioUtils, ioExecutor,
                 studyAssetsExecutor);
 
-        EntityManager entityManager = Mockito.mock(EntityManager.class);
-        JPAMocker.mockDaoTransactions(entityManager, componentResultDao, studyResultDao);
     }
 
     private static StudyResult newStudyResult(Study study, Batch batch, Worker worker) {

@@ -96,7 +96,7 @@
                     .modal('hide')
                     .one('hidden.bs.modal', () => showStudyLinksDisplayModal(res.data, batch, type, comment));
             },
-            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message) : alerts.error("Couldn't get study codes")
+            error: (err) => err.responseJSON ? alerts.error(err.responseJSON?.error?.message, 0, true) : alerts.error("Couldn't get study codes", 0, true)
         });
     });
 
@@ -113,10 +113,10 @@
 
 
         if (!batch.active) {
-            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`);
+            alerts.warning(`The batch (${batch.title}) is currently deactivated and study links belonging to this batch will not run. Activate this batch to allow study runs.`, 10000, true);
         }
         if (!batch.allowedWorkerTypes.includes(type)) {
-            alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`);
+            alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`, 10000, true);
         }
     }
 

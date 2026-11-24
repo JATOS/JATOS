@@ -10,7 +10,6 @@ import org.mockito.MockedStatic;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -64,9 +63,9 @@ public class IOUtilsTest {
         Path file2 = source.resolve("a/child.txt");
         Path file3 = nestedDir.resolve("deep.txt");
 
-        Files.write(file1, "root-content".getBytes(StandardCharsets.UTF_8));
-        Files.write(file2, "child-content".getBytes(StandardCharsets.UTF_8));
-        Files.write(file3, "deep-content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file1, "root-content");
+        Files.writeString(file2, "child-content");
+        Files.writeString(file3, "deep-content");
 
         IOUtils.copyRecursively(source, target);
 
@@ -98,10 +97,10 @@ public class IOUtilsTest {
         Path keep2 = nestedDir.resolve("keep2.txt");
         Path drop2 = nestedDir.resolve("drop2.md");
 
-        Files.write(keep1, "k1".getBytes(StandardCharsets.UTF_8));
-        Files.write(drop1, "d1".getBytes(StandardCharsets.UTF_8));
-        Files.write(keep2, "k2".getBytes(StandardCharsets.UTF_8));
-        Files.write(drop2, "d2".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(keep1, "k1");
+        Files.writeString(drop1, "d1");
+        Files.writeString(keep2, "k2");
+        Files.writeString(drop2, "d2");
 
         IOUtils.copyRecursively(source, target, path -> path.getFileName().toString().endsWith(".txt"));
 
@@ -118,10 +117,10 @@ public class IOUtilsTest {
         Path target = tmp.newFolder("copyTargetOverwrite").toPath();
 
         Files.createDirectories(source.resolve("dir"));
-        Files.write(source.resolve("dir/file.txt"), "source".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source.resolve("dir/file.txt"), "source");
 
         Files.createDirectories(target.resolve("dir"));
-        Files.write(target.resolve("dir/file.txt"), "old-target".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(target.resolve("dir/file.txt"), "old-target");
 
         IOUtils.copyRecursively(source, target);
 
@@ -132,7 +131,7 @@ public class IOUtilsTest {
     public void testMoveFileMovesFileWithoutReplacingExistingTarget() throws Exception {
         Path source = tmp.newFile("moveFileSource.txt").toPath();
         Path target = tmp.getRoot().toPath().resolve("moveFileTarget.txt");
-        Files.write(source, "source".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source, "source");
 
         IOUtils.moveFile(source, target, false);
 
@@ -145,8 +144,8 @@ public class IOUtilsTest {
     public void testMoveFileReplacesExistingTarget() throws Exception {
         Path source = tmp.newFile("moveFileReplaceSource.txt").toPath();
         Path target = tmp.newFile("moveFileReplaceTarget.txt").toPath();
-        Files.write(source, "new".getBytes(StandardCharsets.UTF_8));
-        Files.write(target, "old".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source, "new");
+        Files.writeString(target, "old");
 
         IOUtils.moveFile(source, target, true);
 
@@ -218,7 +217,7 @@ public class IOUtilsTest {
         Path source = sourceDir.resolve("source.txt");
         Path target = targetDir.resolve("target.txt");
 
-        Files.write(source, "source-content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source, "source-content");
 
         boolean overwritten = IOUtils.moveFileAndDetectOverwrite(source, target);
 
@@ -236,8 +235,8 @@ public class IOUtilsTest {
         Path source = sourceDir.resolve("source.txt");
         Path target = targetDir.resolve("target.txt");
 
-        Files.write(source, "new-content".getBytes(StandardCharsets.UTF_8));
-        Files.write(target, "old-content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source, "new-content");
+        Files.writeString(target, "old-content");
 
         boolean overwritten = IOUtils.moveFileAndDetectOverwrite(source, target);
 
@@ -253,8 +252,8 @@ public class IOUtilsTest {
         Path target = tmp.getRoot().toPath().resolve("moveRecursiveTarget");
 
         Files.createDirectories(source.resolve("nested"));
-        Files.write(source.resolve("root.txt"), "root".getBytes(StandardCharsets.UTF_8));
-        Files.write(source.resolve("nested/file.txt"), "nested".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source.resolve("root.txt"), "root");
+        Files.writeString(source.resolve("nested/file.txt"), "nested");
 
         IOUtils.moveRecursively(source, target);
 
@@ -268,7 +267,7 @@ public class IOUtilsTest {
     public void testMoveRecursivelyMovesSingleFile() throws Exception {
         Path source = tmp.newFile("moveRecursiveSingleSource.txt").toPath();
         Path target = tmp.getRoot().toPath().resolve("moveRecursiveSingleTarget.txt");
-        Files.write(source, "single".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source, "single");
 
         IOUtils.moveRecursively(source, target);
 
@@ -303,9 +302,9 @@ public class IOUtilsTest {
         Path file2 = root.resolve("a/b/file.txt");
         Path file3 = nestedDir.resolve("deep.txt");
 
-        Files.write(file1, "root".getBytes(StandardCharsets.UTF_8));
-        Files.write(file2, "nested".getBytes(StandardCharsets.UTF_8));
-        Files.write(file3, "deep".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file1, "root");
+        Files.writeString(file2, "nested");
+        Files.writeString(file3, "deep");
 
         assertTrue(Files.exists(file1));
         assertTrue(Files.exists(file2));
@@ -322,7 +321,7 @@ public class IOUtilsTest {
     @Test
     public void testDeleteRecursivelyDeletesSingleFile() throws Exception {
         Path file = tmp.newFile("single.txt").toPath();
-        Files.write(file, "content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file, "content");
 
         assertTrue(Files.exists(file));
 
@@ -347,7 +346,7 @@ public class IOUtilsTest {
     public void testDeleteRecursivelyIfExistsDeletesExistingTree() throws Exception {
         Path root = tmp.newFolder("deleteIfExistsRoot").toPath();
         Files.createDirectories(root.resolve("nested"));
-        Files.write(root.resolve("nested/file.txt"), "content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(root.resolve("nested/file.txt"), "content");
 
         IOUtils.deleteRecursivelyIfExists(root);
 
@@ -365,6 +364,77 @@ public class IOUtilsTest {
     }
 
     @Test
+    public void concurrentReservationsClaimDifferentDirectories() throws Exception {
+        Path root = tmp.newFolder("concurrentAssets").toPath();
+        var executor = java.util.concurrent.Executors.newFixedThreadPool(2);
+        var start = new java.util.concurrent.CyclicBarrier(2);
+        java.util.concurrent.Callable<String> reserve = () -> {
+            // Mockito static mocks are scoped to the calling thread.
+            try (MockedStatic<Common> config = mockStatic(Common.class)) {
+                config.when(Common::getStudyAssetsRootPath).thenReturn(root.toString());
+                start.await(10, java.util.concurrent.TimeUnit.SECONDS);
+                return ioUtils.reserveStudyAssetsDirectory("shared", "study-uuid");
+            }
+        };
+        try {
+            var first = executor.submit(reserve);
+            var second = executor.submit(reserve);
+            String firstName = first.get(10, java.util.concurrent.TimeUnit.SECONDS);
+            String secondName = second.get(10, java.util.concurrent.TimeUnit.SECONDS);
+            assertNotEquals(firstName, secondName);
+            assertTrue(Files.isDirectory(root.resolve(firstName)));
+            assertTrue(Files.isDirectory(root.resolve(secondName)));
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void reservationUsesStudyUuidAndPreservesOccupiedDirectory() throws Exception {
+        Path root = tmp.newFolder("reservedAssets").toPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(root.toString());
+        assertEquals("study-uuid", ioUtils.reserveStudyAssetsDirectory(null, "study-uuid"));
+        Files.writeString(root.resolve("study-uuid/keep.txt"), "original");
+        assertEquals("study-uuid_1", ioUtils.reserveStudyAssetsDirectory(null, "study-uuid"));
+        assertThrows(FileAlreadyExistsException.class, () -> ioUtils.createStudyAssetsDir("study-uuid"));
+        assertEquals("original", Files.readString(root.resolve("study-uuid/keep.txt")));
+    }
+
+    @Test
+    public void testValidatedStudyAssetsPaths() throws Exception {
+        Path root = tmp.newFolder("validatedAssets").toPath().toRealPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(root.toString());
+        assertEquals(root.resolve("missing"), ioUtils.getStudyAssetsDir("missing", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("missing"));
+        Files.createDirectory(root.resolve("existing"));
+        assertEquals(root.resolve("existing"), ioUtils.getStudyAssetsDir("existing"));
+        for (String name : new String[]{null, "", " ", ".", "..", "../outside", "nested/study"}) {
+            assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir(name, false));
+            assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir(name));
+        }
+        Files.writeString(root.resolve("file"), "not a directory");
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("file", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("file"));
+    }
+
+    @Test
+    public void testStudyAssetsPathsRejectSymbolicLinks() throws Exception {
+        Path root = tmp.newFolder("linkedAssets").toPath().toRealPath();
+        commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(root.toString());
+        Path outside = tmp.newFolder("outsideAssets").toPath().toRealPath();
+        try {
+            Files.createSymbolicLink(root.resolve("linked"), outside);
+        } catch (UnsupportedOperationException | IOException e) {
+            org.junit.Assume.assumeNoException("Symbolic links unavailable", e);
+        }
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked"));
+        Files.delete(outside);
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked", false));
+        assertThrows(IOException.class, () -> ioUtils.getStudyAssetsDir("linked"));
+    }
+
+    @Test
     public void testStudyAssetsDirOperations() throws Exception {
         Path assetsRoot = tmp.newFolder("assetsRoot").toPath();
         commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
@@ -376,7 +446,7 @@ public class IOUtilsTest {
         assertEquals(assetsRoot.resolve(dirName), IOUtils.generateStudyAssetsPath(dirName));
 
         // findNonExistingStudyAssetsDirName
-        assertEquals("studyA_2", ioUtils.findNonExistingStudyAssetsDirName("studyA"));
+        assertEquals("studyA_1", ioUtils.findNonExistingStudyAssetsDirName("studyA"));
 
         // getStudyAssetsDir
         Path dir = ioUtils.getStudyAssetsDir(dirName);
@@ -415,7 +485,7 @@ public class IOUtilsTest {
         ioUtils.createStudyAssetsDir("studyCheckFile");
         Path file = assetsRoot.resolve("studyCheckFile").resolve("nested/file.txt");
         Files.createDirectories(file.getParent());
-        Files.write(file, "content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file, "content");
 
         assertTrue(ioUtils.checkFileInStudyAssetsDirExists("studyCheckFile", "nested/file.txt"));
         assertFalse(ioUtils.checkFileInStudyAssetsDirExists("studyCheckFile", "nested/missing.txt"));
@@ -432,7 +502,7 @@ public class IOUtilsTest {
         Files.createDirectories(sub);
 
         Path file = sub.resolve("file.txt");
-        Files.write(file, "secure".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file, "secure");
 
         Path result = ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), "sub/file.txt");
 
@@ -474,7 +544,7 @@ public class IOUtilsTest {
         Path outside = tmp.newFolder("outsideTraversal").toPath();
 
         Path secret = outside.resolve("secret.txt");
-        Files.write(secret, "secret".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(secret, "secret");
 
         Files.createDirectories(base.resolve("sub"));
 
@@ -490,7 +560,7 @@ public class IOUtilsTest {
     public void testGetExistingFileSecurelyRejectsAbsoluteFilePath() throws Exception {
         Path base = tmp.newFolder("secureBaseAbsolute").toPath();
         Path file = tmp.newFile("absolute.txt").toPath();
-        Files.write(file, "absolute".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file, "absolute");
 
         try {
             ioUtils.getExistingFileSecurely(base.toAbsolutePath().toString(), file.toAbsolutePath().toString());
@@ -519,7 +589,7 @@ public class IOUtilsTest {
         Path outside = tmp.newFolder("outsideTraversalExisting").toPath();
 
         Path secret = outside.resolve("secret.txt");
-        Files.write(secret, "secret".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(secret, "secret");
 
         // Create a path that would exist if traversal were allowed
         Files.createDirectories(base.resolve("sub"));
@@ -538,7 +608,7 @@ public class IOUtilsTest {
         Path sub = base.resolve("sub");
         Files.createDirectories(sub);
         Path f = sub.resolve("test.txt");
-        Files.write(f, "abc".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(f, "abc");
 
         assertTrue(ioUtils.existsAndSecure(base.toAbsolutePath().toString(), "sub/test.txt"));
         assertFalse(ioUtils.existsAndSecure(base.toAbsolutePath().toString(), "sub/missing.txt"));
@@ -556,7 +626,7 @@ public class IOUtilsTest {
         ioUtils.createStudyAssetsDir("studyX");
         Path target = assetsRoot.resolve("studyX").resolve("nested/file.txt");
         Files.createDirectories(target.getParent());
-        Files.write(target, "x".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(target, "x");
 
         Path byPath = ioUtils.getFileInStudyAssetsDir("studyX", "nested/file.txt");
         assertEquals(target.toAbsolutePath(), byPath.toAbsolutePath());
@@ -606,7 +676,7 @@ public class IOUtilsTest {
         ioUtils.createStudyAssetsDir("studyTraversal");
         Path outside = tmp.newFolder("outsideTraversalGetFile").toPath();
         Path secret = outside.resolve("secret.txt");
-        Files.write(secret, "secret".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(secret, "secret");
 
         try {
             ioUtils.getFileInStudyAssetsDir("studyTraversal", "../outsideTraversalGetFile/secret.txt");
@@ -623,7 +693,7 @@ public class IOUtilsTest {
 
         ioUtils.createStudyAssetsDir("studyAbsolute");
         Path absolute = tmp.newFile("absoluteGetFile.txt").toPath();
-        Files.write(absolute, "abs".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(absolute, "abs");
 
         try {
             ioUtils.getFileInStudyAssetsDir("studyAbsolute", absolute.toAbsolutePath().toString());
@@ -641,7 +711,7 @@ public class IOUtilsTest {
         ioUtils.createStudyAssetsDir("studyRelative");
         Path target = assetsRoot.resolve("studyRelative").resolve("subdir/file.txt");
         Files.createDirectories(target.getParent());
-        Files.write(target, "relative".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(target, "relative");
 
         Path result = ioUtils.getFileInStudyAssetsDir("studyRelative", "subdir/file.txt");
 
@@ -665,7 +735,7 @@ public class IOUtilsTest {
 
         // Very long name (should be truncated to 100 chars)
         StringBuilder longName = new StringBuilder();
-        longName.append("a".repeat(200));
+        longName.repeat("a", 200);
         filename = ioUtils.generateFileName(longName.toString());
         assertEquals(100, filename.length());
 
@@ -733,7 +803,7 @@ public class IOUtilsTest {
         Path assetsRoot = tmp.newFolder("assetsRootRemoveFile").toPath();
         commonStatic.when(Common::getStudyAssetsRootPath).thenReturn(assetsRoot.toAbsolutePath().toString());
 
-        Files.write(assetsRoot.resolve("notADirectory"), "file".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(assetsRoot.resolve("notADirectory"), "file");
 
         try {
             ioUtils.removeStudyAssetsDir("notADirectory");
@@ -752,7 +822,7 @@ public class IOUtilsTest {
         ioUtils.createStudyAssetsDir(studyDir);
 
         Path original = assetsRoot.resolve(studyDir).resolve("index.html");
-        Files.write(original, "<html>original</html>".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(original, "<html>original</html>");
 
         String clonedLocalPath = ioUtils.cloneComponentHtmlFile(studyDir, "index.html");
 
@@ -774,7 +844,7 @@ public class IOUtilsTest {
 
         Path original = assetsRoot.resolve(studyDir).resolve("comp/sub/index.html");
         Files.createDirectories(original.getParent());
-        Files.write(original, "<html>nested</html>".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(original, "<html>nested</html>");
 
         String clonedLocalPath = ioUtils.cloneComponentHtmlFile(studyDir, "comp/sub/index.html");
 
@@ -795,10 +865,10 @@ public class IOUtilsTest {
         ioUtils.createStudyAssetsDir(studyDir);
 
         Path original = assetsRoot.resolve(studyDir).resolve("index.html");
-        Files.write(original, "<html>original</html>".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(original, "<html>original</html>");
 
         Path firstClone = assetsRoot.resolve(studyDir).resolve("index_clone.html");
-        Files.write(firstClone, "<html>existing clone</html>".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(firstClone, "<html>existing clone</html>");
 
         String clonedLocalPath = ioUtils.cloneComponentHtmlFile(studyDir, "index.html");
 
@@ -874,7 +944,7 @@ public class IOUtilsTest {
 
         Path source = tmp.newFolder("externalStudyAssetsSource").toPath();
         Files.createDirectories(source.resolve("nested"));
-        Files.write(source.resolve("nested/file.txt"), "asset".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(source.resolve("nested/file.txt"), "asset");
 
         ioUtils.moveStudyAssetsDir(source, "movedStudyAssets");
 
@@ -966,7 +1036,7 @@ public class IOUtilsTest {
         File base = new File(assetsRoot, dirName);
         File src = new File(base, "comp/index.html");
         assertTrue(src.getParentFile().mkdirs());
-        Files.write(src.toPath(), "<html>1</html>".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(src.toPath(), "<html>1</html>");
 
         // Successfully rename
         ioUtils.renameHtmlFile("comp/index.html", "comp/new.html", dirName);
@@ -978,9 +1048,9 @@ public class IOUtilsTest {
 
         // Conflict: target exists
         File other = new File(base, "comp/conflict.html");
-        Files.write(other.toPath(), "x".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(other.toPath(), "x");
         File toRename = new File(base, "comp/tmp.html");
-        Files.write(toRename.toPath(), "x".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(toRename.toPath(), "x");
         try {
             ioUtils.renameHtmlFile("comp/tmp.html", "comp/conflict.html", dirName);
             fail("Expected IOException due to existing target file");
@@ -1054,7 +1124,7 @@ public class IOUtilsTest {
     @Test
     public void testDeleteFileDeletesExistingFile() throws Exception {
         Path file = tmp.newFile("deleteFileExisting.txt").toPath();
-        Files.write(file, "delete me".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(file, "delete me");
 
         IOUtils.deleteFile(file).run();
 

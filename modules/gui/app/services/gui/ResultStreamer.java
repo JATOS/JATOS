@@ -1,8 +1,5 @@
 package services.gui;
 
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.stream.javadsl.StreamConverters;
-import org.apache.pekko.util.ByteString;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,12 +10,16 @@ import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import exceptions.common.JatosException;
 import general.common.Common;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
 import models.common.*;
 import models.common.workers.Worker;
 import models.common.workers.WorkerType;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.stream.javadsl.StreamConverters;
+import org.apache.pekko.util.ByteString;
 import play.Logger;
 import play.libs.Json;
 import play.mvc.Http;
@@ -42,15 +43,16 @@ import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Service class around ComponentResults and StudyResults. It's used by controllers or other services.
- * Response streams must not inject keep-alive bytes: stream chunks can split JSON tokens, raw result data
- * or ZIP records, so even whitespace can corrupt their contents.
+ * Service class around ComponentResults and StudyResults. It's used by controllers or other services. Response streams
+ * must not inject keep-alive bytes: stream chunks can split JSON tokens, raw result data or ZIP records, so even
+ * whitespace can corrupt their contents.
  */
 @Singleton
 public class ResultStreamer {
 
     private static final Logger.ALogger LOGGER = Logger.of(ResultStreamer.class);
 
+    private final JpaTransactions transactions;
     private final ComponentResultDao componentResultDao;
     private final StudyResultDao studyResultDao;
     private final StudyDao studyDao;
@@ -60,13 +62,15 @@ public class ResultStreamer {
     private final ComponentResultIdsExtractor componentResultIdsExtractor;
 
     @Inject
-    ResultStreamer(ComponentResultDao componentResultDao,
+    ResultStreamer(JpaTransactions transactions,
+                   ComponentResultDao componentResultDao,
                    StudyResultDao studyResultDao,
                    StudyDao studyDao,
                    DomainJsonMapper domainJsonMapper,
                    AuthorizationService authorizationService,
                    StudyLogger studyLogger,
                    ComponentResultIdsExtractor componentResultIdsExtractor) {
+        this.transactions = transactions;
         this.componentResultDao = componentResultDao;
         this.studyResultDao = studyResultDao;
         this.studyDao = studyDao;
@@ -96,14 +100,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByStudyPaginated(Writer writer, Study study) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
+        int resultCount = transactions.withReadOnlyTransaction(em -> {
             return studyResultDao.countByStudy(study);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (first + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByStudy(study, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -144,14 +148,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByBatchPaginated(Writer writer, Batch batch) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
+        int resultCount = transactions.withReadOnlyTransaction(em -> {
             return studyResultDao.countByBatchExcludingWorkerType(batch, WorkerType.JATOS);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (first + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByBatch(batch, WorkerType.JATOS, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -160,14 +164,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByBatchAndWorkerTypePaginated(Writer writer, Batch batch, WorkerType workerType) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
+        int resultCount = transactions.withReadOnlyTransaction(em -> {
             return studyResultDao.countByBatchAndWorkerType(batch, workerType);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByBatchAndWorkerType(batch, workerType, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -194,14 +198,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByGroupPaginated(Writer writer, GroupResult group) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
+        int resultCount = transactions.withReadOnlyTransaction(em -> {
             return studyResultDao.countByGroup(group);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByGroup(group, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -229,14 +233,14 @@ public class ResultStreamer {
 
     private void fetchStudyResultsByWorkerPaginated(Writer writer, Worker worker, User user) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
+        int resultCount = transactions.withReadOnlyTransaction(em -> {
             return studyResultDao.countByWorker(worker, user);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 List<StudyResult> resultList = studyResultDao.findAllByWorker(worker, user, first, maxDbQuerySize);
                 writeStudyResults(writer, isLastPage, resultList);
             });
@@ -263,14 +267,14 @@ public class ResultStreamer {
 
     private void fetchComponentResultsPaginated(Writer writer, Component component) {
         int maxDbQuerySize = Common.getMaxResultsDbQuerySize();
-        int resultCount = studyResultDao.withReadOnlyTransaction(em -> {
+        int resultCount = transactions.withReadOnlyTransaction(em -> {
             return componentResultDao.countByComponent(component);
         });
 
         for (int i = 0; i < resultCount; i += maxDbQuerySize) {
             int first = i;
             boolean isLastPage = (i + maxDbQuerySize) >= resultCount;
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 List<ComponentResult> resultList = componentResultDao.findAllByComponent(component, first, maxDbQuerySize);
                 writeComponentResults(writer, isLastPage, resultList);
             });
@@ -314,7 +318,7 @@ public class ResultStreamer {
     void writeComponentResultDataByIds(Writer writer, List<Long> componentResultIdList, User user) {
         Set<Study> studies = new HashSet<>();
         for (Long componentResultId : componentResultIdList) {
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 ComponentResult componentResult = componentResultDao.findById(componentResultId);
                 if (componentResult != null) {
                     authorizationService.canUserAccessComponentResult(componentResult, user, false);
@@ -402,7 +406,7 @@ public class ResultStreamer {
         return StreamConverters.asOutputStream()
                 .mapMaterializedValue(outputStream -> CompletableFuture.runAsync(() -> {
                     try (ZipOutputStream zipOut = new ZipOutputStream(outputStream, UTF_8)) {
-                        studyResultDao.withReadOnlyTransaction(em -> {
+                        transactions.withReadOnlyTransaction(em -> {
                             writeResults(componentResultIds, signedinUser, zipOut, resultsType, wrapObject);
                         });
                         zipOut.flush();
@@ -420,7 +424,7 @@ public class ResultStreamer {
         crids.addAll(componentResultIdsExtractor.extract(request.queryString()));
         Collections.sort(crids);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        return studyResultDao.withReadOnlyTransaction(em -> {
+        return transactions.withReadOnlyTransaction(em -> {
             return writeResults(crids, signedinUser, null, ResultType.METADATA_ONLY, wrapObject);
         });
     }
@@ -535,7 +539,7 @@ public class ResultStreamer {
         ArrayNode componentResultArrayNode = Json.mapper().createArrayNode();
         for (Long componentResultId : componentResultList) {
             // We have to do it one by one to save memory in case of large result data
-            studyResultDao.withReadOnlyTransaction(em -> {
+            transactions.withReadOnlyTransaction(em -> {
                 switch (resultsType) {
                     case METADATA_ONLY: {
                         ComponentResult componentResult = componentResultDao.findById(componentResultId);

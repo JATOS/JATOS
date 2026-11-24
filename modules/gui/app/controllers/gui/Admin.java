@@ -3,9 +3,6 @@ package controllers.gui;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction.Transactional;
-import org.apache.pekko.stream.javadsl.FileIO;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import daos.common.StudyDao;
 import daos.common.StudyResultDao;
@@ -15,6 +12,9 @@ import http.common.HttpUtils;
 import json.common.DefaultJson;
 import models.common.Study;
 import models.common.User;
+import org.apache.pekko.stream.javadsl.FileIO;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.http.HttpEntity;
 import play.mvc.Controller;
@@ -196,7 +196,7 @@ public class Admin extends Controller {
      * Returns the study assets folder size of one study
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     public Result studyAssetsSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);
@@ -208,7 +208,7 @@ public class Admin extends Controller {
      * Returns the result data size of one study
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     public Result resultDataSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findByIdWithComponents(studyId);
@@ -221,7 +221,7 @@ public class Admin extends Controller {
      * Returns the size of all result files of one study
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER})
     public Result resultFileSize(Long studyId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Study study = studyDao.findById(studyId);

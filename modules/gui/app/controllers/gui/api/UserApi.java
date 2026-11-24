@@ -2,6 +2,7 @@ package controllers.gui.api;
 
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
+import actions.common.TransactionalAction.Transactional;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,6 +23,7 @@ import play.mvc.Result;
 import services.gui.ApiService;
 import services.gui.AuthorizationService;
 import services.gui.UserService;
+import services.gui.importexport.GitCredentialsService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -42,6 +44,7 @@ public class UserApi extends Controller {
     private final AuthorizationService authorizationService;
     private final ApiService apiService;
     private final UserService userService;
+    private final GitCredentialsService gitCredentialsService;
     private final UserDao userDao;
     private final DefaultJson defaultJson;
     private final StrictJson strictJson;
@@ -50,12 +53,14 @@ public class UserApi extends Controller {
     public UserApi(AuthorizationService authorizationService,
                    ApiService apiService,
                    UserService userService,
+                   GitCredentialsService gitCredentialsService,
                    UserDao userDao,
                    DefaultJson defaultJson,
                    StrictJson strictJson) {
         this.authorizationService = authorizationService;
         this.apiService = apiService;
         this.userService = userService;
+        this.gitCredentialsService = gitCredentialsService;
         this.userDao = userDao;
         this.defaultJson = defaultJson;
         this.strictJson = strictJson;
@@ -95,13 +100,16 @@ public class UserApi extends Controller {
      * Get info of a user.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getUser(Long id) {
         User user = userDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.checkAdminOrSelf(signedinUser, user);
 
-        JsonNode userNode = defaultJson.asJsonForApi(user);
+        ObjectNode userNode = (ObjectNode) defaultJson.asJsonForApi(user);
+        if (user.equals(signedinUser)) {
+            userNode.set("gitCredentials", Json.toJson(gitCredentialsService.getUserGitCredentialsConfigStatus()));
+        }
         return ok(ApiEnvelope.wrap(userNode).asJsonNode());
     }
 
@@ -120,23 +128,29 @@ public class UserApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
+    @Transactional
     public Result updateUser(Request request, Long id) {
+        JsonNode json = apiService.getJsonFromBody(request);
+        if (!json.isObject()) throw new BadRequestException("Request body is not a JSON object");
+        if (json.has("gitCredentials") && json.get("gitCredentials").isNull())
+            throw new BadRequestException("Use removeCredentials to remove Git credentials.");
+
         User user = userDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.checkAdminOrSelf(signedinUser, user);
-
-        UserProperties props = userService.bindToProperties(user);
-        JsonNode json = apiService.getJsonFromBody(request);
-        props = strictJson.updateFromJson(props, json);
+        user = userDao.findByUsernameWithGitCredentialsAndLock(user.getUsername());
+        UserProperties props = strictJson.updateFromJson(userService.bindToProperties(user), json);
         apiService.validateProps(props);
         authorizationService.checkSignedinUserAllowedToChangeUser(props, signedinUser, user);
+        userService.updateUserSettings(user, props);
 
-        userService.updateUser(user, props);
-
-        JsonNode userNode = defaultJson.asJsonForApi(user);
-        return ok(ApiEnvelope.wrap(userNode).asJsonNode());
+        ObjectNode userJson = (ObjectNode) defaultJson.asJsonForApi(user);
+        if (user.equals(signedinUser)) {
+            userJson.set("gitCredentials", Json.toJson(gitCredentialsService.getUserGitCredentialsConfigStatus()));
+        }
+        return ok(ApiEnvelope.wrap(userJson).asJsonNode());
     }
 
     @Async(Executor.IO)
@@ -161,16 +175,16 @@ public class UserApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER, ADMIN}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, ADMIN, SUPERUSER}, types = {TOKEN, SESSION})
     public Result deleteUser(Long id) {
         User user = userDao.findById(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.checkAdminOrSelf(signedinUser, user);
         authorizationService.checkNotUserAdmin(user);
 
-        userService.removeUser(user.getId());
-
-        return ok(ApiEnvelope.wrap("User deleted successfully").asJsonNode());
+        var reassignments = userService.removeUser(user.getId());
+        JsonNode data = Json.toJson(Map.of("ownershipReassignments", reassignments));
+        return ok(ApiEnvelope.wrap("User deleted successfully", data).asJsonNode());
     }
 
 }

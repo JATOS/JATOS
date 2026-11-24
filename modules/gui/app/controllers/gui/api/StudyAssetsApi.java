@@ -1,26 +1,22 @@
 package controllers.gui.api;
 
-import general.common.Common;
-import play.mvc.BodyParser;
-import http.common.UploadBodyParsers;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
-import exceptions.common.HttpException;
-import exceptions.common.BadRequestException;
-import exceptions.common.InternalServerErrorException;
-import exceptions.common.JatosException;
-import exceptions.common.NotFoundException;
+import exceptions.common.*;
 import general.common.ApiEnvelope;
+import general.common.Common;
 import http.common.Http.Context;
 import http.common.HttpUtils;
+import http.common.UploadBodyParsers;
 import json.common.DirectoryStructureToJson;
 import models.common.Study;
 import models.common.User;
 import play.Logger;
 import play.core.utils.HttpHeaderParameterEncoding;
 import play.libs.Files.TemporaryFile;
+import play.mvc.BodyParser;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Result;
@@ -41,6 +37,7 @@ import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static general.common.ApiEnvelope.ErrorCode.*;
+import static models.common.User.Role.SUPERUSER;
 import static models.common.User.Role.USER;
 
 @Singleton
@@ -74,7 +71,7 @@ public class StudyAssetsApi extends Controller {
      * @return JSON with study assets directory structure
      */
     @Async(Executor.STUDY_ASSETS)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getStudyAssetsStructure(String id, boolean flatten) {
         Study study = studyService.getStudyFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -102,7 +99,7 @@ public class StudyAssetsApi extends Controller {
      *                 be.
      */
     @Async(Executor.STUDY_ASSETS)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(UploadBodyParsers.StudyAsset.class)
     public Result uploadStudyAssetsFile(play.mvc.Http.Request request, String id, String filepath) {
         Study study = studyService.getStudyFromIdOrUuid(id);
@@ -150,7 +147,7 @@ public class StudyAssetsApi extends Controller {
      *                 URL encoded but doesn't have to be. Directories cannot be downloaded.
      */
     @Async(Executor.STUDY_ASSETS)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result downloadStudyAssetsFile(String id, String filepath) throws IOException {
         String filepathUrlDecoded = HttpUtils.urlDecode(filepath);
         String finalFilepath = filepathUrlDecoded.startsWith("/")
@@ -175,7 +172,7 @@ public class StudyAssetsApi extends Controller {
      *                 URL encoded but doesn't have to be. Directories cannot be deleted.
      */
     @Async(Executor.STUDY_ASSETS)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result deleteStudyAssetsFile(String id, String filepath) {
         String filepathUrlDecoded = HttpUtils.urlDecode(filepath);
         String finalFilepath = filepathUrlDecoded.startsWith("/")

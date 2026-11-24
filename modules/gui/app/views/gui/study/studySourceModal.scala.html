@@ -1,0 +1,229 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
+@* Edit study source Modal - does not synchronize a study *@
+<div class="modal fade" id="studySourceModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Study Source</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="studySourceForm" class="form-study" autocomplete="off">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label" for="studySourceType" data-bs-tooltip="Choose where this study's properties and assets come from. Saving these settings does not import or synchronize content. Select None and save to remove the source settings and study-specific Git credentials. Previous synchronization history remains in the study log.">Source<span class="input-required" data-bs-tooltip="required"></span></label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="studySourceType" name="type">
+                                <option value="NONE">None</option>
+                                <option value="GIT">Git repository</option>
+                                <option value="LOCAL_FOLDER">Local folder</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="studySourceGit" class="d-none">
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label" for="studySourceGitUrl" data-bs-tooltip="HTTPS only. Do not put a username or token in the URL.">Repository URL<span class="input-required" data-bs-tooltip="required"></span></label>
+                            <div class="col-sm-9">
+                                <input class="form-control" id="studySourceGitUrl" name="gitUrl" type="url" maxlength="2048" placeholder="https://github.com/your-account/your-study.git">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label" for="studySourceGitRef" data-bs-tooltip="Leave empty for the default branch. Commit IDs are not supported.">Branch or tag</label>
+                            <div class="col-sm-9">
+                                <input class="form-control" id="studySourceGitRef" name="gitRef" maxlength="255" placeholder="Default branch">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label" for="studySourceAnonymous" data-bs-tooltip="Use no Git credentials, even if credentials are configured for this study, its owner, or the server.">Anonymous access</label>
+                            <div class="col-sm-9 pt-2">
+                                <label class="switch no-info-icon">
+                                    <input type="checkbox" class="form-check-input checkbox-study" id="studySourceAnonymous" name="anonymous">
+                                    <span class="slider slider-study round"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="studySourceRemoveCredentialsRow" class="row mb-3 d-none">
+                            <label class="col-sm-3 col-form-label" for="studySourceRemoveCredentials">Remove study credentials</label>
+                            <div class="col-sm-9 pt-2">
+                                <label class="switch no-info-icon">
+                                    <input type="checkbox" class="form-check-input checkbox-study" id="studySourceRemoveCredentials" name="removeCredentials">
+                                    <span class="slider slider-study round"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-sm-9 offset-sm-3">
+                                <p id="studySourceCredentialStatus" class="text-muted mb-0"></p>
+                            </div>
+                        </div>
+                        <div id="studySourceCredentials" class="d-none">
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label" for="studySourceUsername">Git username</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" id="studySourceUsername" name="username" maxlength="255" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label" for="studySourceSecret" data-bs-tooltip="Leave the password/token empty to keep the stored secret. Changing the username requires entering a password/token again.">Password or access token</label>
+                                <div class="col-sm-9">
+                                    <div class="input-group">
+                                        <input class="form-control" id="studySourceSecret" name="secret" type="password" maxlength="16384" autocomplete="new-password">
+                                        <button class="btn btn-nav" id="studySourceSecretVisibility" type="button" aria-label="Show password or access token" aria-pressed="false" aria-controls="studySourceSecret">
+                                            <i class="bi-eye-slash-fill" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Stored passwords/tokens are never displayed.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="studySourceFolder" class="row d-none mb-3">
+                        <label class="col-sm-3 col-form-label" for="studySourceFolderPath" data-bs-tooltip="An existing folder on the computer running JATOS. This is not necessarily this browser's computer. If allowed roots are configured, the folder must be within one of them.">Folder path<span class="input-required" data-bs-tooltip="required"></span></label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="studySourceFolderPath" name="localFolderPath" maxlength="4096" placeholder="/absolute/path/to/study">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="studySourceForm" class="btn btn-study" id="studySourceSave">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+
+    const alerts = new Alerts.Named("study-source");
+    const form = $("#studySourceForm");
+    const save = $("#studySourceSave");
+    let credentialsConfigured = false;
+
+    $("#studySourceModal").on("show.bs.modal", function() {
+        form[0].reset();
+        FormValidation.clear("#studySourceForm");
+        setSecretVisibility(false);
+        credentialsConfigured = false;
+        $("#studySourceRemoveCredentialsRow").addClass("d-none");
+        $("#studySourceCredentialStatus").text("");
+        alerts.hideAll();
+        form.find("input, select").prop("disabled", true);
+        save.prop("disabled", true);
+        Helpers.generateModalSubtitles("#studySourceModal", {"Study": window.study.title});
+        $.ajax({
+            url: window.routes.Api.getStudySource(window.study.id),
+            success: (response) => fillStudySourceForm(response.data),
+            error: function(response) {
+                alerts.error(response.responseJSON?.error?.message || response.responseText || "Could not load study source settings.", 0, true);
+            }
+        });
+    });
+
+    $("#studySourceModal").on("hide.bs.modal", alerts.hideAll);
+
+    $("#studySourceModal").on("hidden.bs.modal", function() {
+        form[0].reset();
+        setSecretVisibility(false);
+        $("#studySourceUsername, #studySourceSecret").val("");
+    });
+
+    function fillStudySourceForm(data) {
+        credentialsConfigured = data.credentialsConfigured;
+        form.find("input, select").prop("disabled", false);
+        const folderOption = $("#studySourceType option[value='LOCAL_FOLDER']");
+        folderOption.prop("disabled", !data.localFolderAllowed).prop("hidden", !data.localFolderAllowed && data.type !== "LOCAL_FOLDER");
+        $("#studySourceType").val(data.type);
+        $("#studySourceGitUrl").val(data.gitUrl);
+        $("#studySourceGitRef").val(data.gitRef);
+        $("#studySourceFolderPath").val(data.localFolderPath);
+        $("#studySourceAnonymous").prop("checked", data.anonymous);
+        $("#studySourceUsername").val(data.username);
+        $("#studySourceCredentialStatus").text(data.credentialsConfigured ? "Study credentials are configured." : "No study credentials are configured.");
+        if (!data.localFolderAllowed && data.type === "LOCAL_FOLDER") {
+            alerts.warning("Local-folder sources require configured allowed roots in server mode. Select None or Git to change this configuration.", 10000, true);
+        }
+        toggleFieldsByType();
+    }
+
+    function setSecretVisibility(visible) {
+        $("#studySourceSecret").attr("type", visible ? "text" : "password");
+        $("#studySourceSecretVisibility")
+            .attr("aria-label", visible ? "Hide password or access token" : "Show password or access token")
+            .attr("aria-pressed", String(visible))
+            .find("i").toggleClass("bi-eye-fill", visible).toggleClass("bi-eye-slash-fill", !visible);
+    }
+
+    $("#studySourceSecretVisibility").on("click", function() {
+        setSecretVisibility($("#studySourceSecret").attr("type") === "password");
+    });
+
+    function toggleFieldsByType() {
+        const type = $("#studySourceType").val();
+        const git = type === "GIT";
+        const folder = type === "LOCAL_FOLDER";
+        $("#studySourceGit").toggleClass("d-none", !git).find("input, select").prop("disabled", !git);
+        $("#studySourceFolder").toggleClass("d-none", !folder).find("input").prop("disabled", !folder);
+        $("#studySourceRemoveCredentialsRow").toggleClass("d-none", !git || !credentialsConfigured);
+        $("#studySourceRemoveCredentials").prop("disabled", !git || !credentialsConfigured);
+        const replace = git && !$("#studySourceRemoveCredentials").is(":checked");
+        $("#studySourceCredentials").toggleClass("d-none", !replace).find("input").prop("disabled", !replace);
+        if (!replace) $("#studySourceSecret").val("");
+        save.prop("disabled", !type);
+    }
+
+    $("#studySourceType, #studySourceRemoveCredentials").on("change", toggleFieldsByType);
+
+    form.on("submit", function(event) {
+        event.preventDefault();
+        if (save.prop("disabled")) return;
+        FormValidation.clear("#studySourceForm");
+        const data = form.serializeArray();
+        data.push({
+            name: "anonymous",
+            value: $("#studySourceAnonymous").is(":checked") ? "true" : "false"
+        });
+        data.push({
+            name: "removeCredentials",
+            value: $("#studySourceRemoveCredentials").is(":checked") ? "true" : "false"}
+        );
+        const jsonData = Object.fromEntries(data.map(field => [field.name, ["anonymous", "removeCredentials"].includes(field.name) ? field.value === "true" : field.value]));
+        form.find("input, select").prop("disabled", true);
+        save.prop("disabled", true);
+        alerts.hideAll();
+        $.ajax({
+            url: window.routes.Api.saveStudySource(window.study.id),
+            type: "PUT",
+            contentType: "application/json",
+            headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
+            data: JSON.stringify(jsonData),
+            success: function(response) {
+                window.study.sourceType = response.data.type;
+                window.study.gitUrl = response.data.gitUrl;
+                window.study.localFolderPath = response.data.localFolderPath;
+                $(document).trigger('study-source-changed');
+                $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
+                $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
+                $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
+                $("#studySourceModal").modal("hide");
+                Alerts.success("Study source settings saved. Study content has not changed.", 5000, true);
+            },
+            error: function(response) {
+                const details = response.responseJSON?.error;
+                if (details?.fields) {
+                    FormValidation.show("#studySourceForm", details.fields);
+                } else {
+                    alerts.error(details?.message || response.responseText || "Could not save study source settings.", 0, true);
+                }
+            },
+            complete: function() {
+                form.find("input, select").prop("disabled", false);
+                toggleFieldsByType();
+            }
+        });
+    });
+</script>

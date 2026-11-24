@@ -1,17 +1,20 @@
 package daos.common;
 
+import exceptions.common.NotFoundException;
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
 import models.common.AdminStudyData;
 import models.common.AdminStudyMemberData;
 import models.common.Study;
 import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
-import play.db.jpa.JPAApi;
+import org.hibernate.Hibernate;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Tuple;
-import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -23,7 +26,7 @@ import java.util.stream.Collectors;
 public class StudyDao extends AbstractDao {
 
     @Inject
-    StudyDao(JPAApi jpa) {
+    StudyDao(JpaTransactions jpa) {
         super(jpa);
     }
 
@@ -41,6 +44,42 @@ public class StudyDao extends AbstractDao {
 
     public Study findById(Long id) {
         return withReadOnlyTransaction((EntityManager em) -> em.find(Study.class, id));
+    }
+
+    /**
+     * Use before checking or changing membership; the caller must keep the transaction open.
+     */
+    public Study findAndLock(Study study) {
+        return withTransaction(em -> {
+            Study managed = em.find(Study.class, study.getId());
+            if (managed == null) throw new NotFoundException("Study doesn't exist.");
+            // find(..., lockMode) alone does not refresh an already managed entity/collection.
+            // Do not refresh twice in one transaction: that would discard this transaction's changes.
+            if (em.getLockMode(managed) != LockModeType.PESSIMISTIC_WRITE) {
+                em.refresh(managed, LockModeType.PESSIMISTIC_WRITE);
+                Hibernate.initialize(managed.getUserList());
+            }
+            return managed;
+        });
+    }
+
+    /**
+     * Loads and locks a study and refreshes the source and credentials loaded before that lock.
+     */
+    public Study findByIdWithSourceAndLock(long studyId) {
+        return withTransaction(em -> {
+            Study study = findById(studyId);
+            if (study == null) return null;
+            boolean alreadyLocked = em.getLockMode(study) == LockModeType.PESSIMISTIC_WRITE;
+            study = findAndLock(study);
+            if (!alreadyLocked && study.getStudySource() != null) {
+                em.refresh(study.getStudySource());
+                if (study.getStudySource().getGitCredentials() != null) {
+                    em.refresh(study.getStudySource().getGitCredentials());
+                }
+            }
+            return study;
+        });
     }
 
     /**
@@ -70,10 +109,10 @@ public class StudyDao extends AbstractDao {
     public Study findByIdWithComponentsAndBatches(Long id) {
         return withReadOnlyTransaction((EntityManager em) ->
                 em.createQuery("""
-                                SELECT DISTINCT s FROM Study s
-                                LEFT JOIN FETCH s.componentList
-                                LEFT JOIN FETCH s.batchList
-                                WHERE s.id = :id""",
+                                        SELECT DISTINCT s FROM Study s
+                                        LEFT JOIN FETCH s.componentList
+                                        LEFT JOIN FETCH s.batchList
+                                        WHERE s.id = :id""",
                                 Study.class)
                         .setParameter("id", id)
                         .getSingleResult());
@@ -169,11 +208,27 @@ public class StudyDao extends AbstractDao {
     }
 
     public List<Study> findAllByUser(User user) {
-        return withReadOnlyTransaction((EntityManager em) -> {
-            TypedQuery<Study> query = em.createQuery(
-                    "SELECT s FROM Study s INNER JOIN s.userList u WHERE u = :user", Study.class);
-            query.setParameter("user", user);
-            return query.getResultList();
+        return withReadOnlyTransaction((EntityManager em) ->
+                em.createQuery("SELECT s FROM Study s INNER JOIN s.userList u WHERE u = :user", Study.class)
+                        .setParameter("user", user)
+                        .getResultList());
+    }
+
+    /**
+     * Finds, locks, and refreshes the user's studies and initializes their members in ID order. Acquire the user lock
+     * first and keep the transaction open throughout deletion.
+     */
+    public List<Study> findAllByUserWithLock(User user) {
+        return withTransaction(em -> {
+            List<Study> studies = em.createQuery("SELECT s FROM Study s JOIN s.userList u WHERE u.username = :username ORDER BY s.id", Study.class)
+                    .setParameter("username", user.getUsername())
+                    .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                    .getResultList();
+            for (Study study : studies) {
+                em.refresh(study, LockModeType.PESSIMISTIC_WRITE);
+                Hibernate.initialize(study.getUserList());
+            }
+            return studies;
         });
     }
 
@@ -293,6 +348,7 @@ public class StudyDao extends AbstractDao {
             String studyQueryStr = """
                     SELECT s.id AS id,
                     s.uuid AS uuid,
+                    s.owner.username AS ownerUsername,
                     s.title AS title,
                     s.active AS active,
                     s.dirName AS dirName,
@@ -301,14 +357,14 @@ public class StudyDao extends AbstractDao {
                     FROM StudyResultStatus srs
                     WHERE srs.study = s AND srs.startDate IS NOT NULL) AS lastStarted
                     FROM Study s\s""" +
-                            (filterByUsername
-                                    ? """
-                                      WHERE EXISTS (
-                                      SELECT 1 FROM Study s2 JOIN s2.userList filterUser
-                                      WHERE s2 = s AND filterUser.username = :username
-                                      )\s"""
-                                    : "") +
-                            "ORDER BY s.id";
+                    (filterByUsername
+                            ? """
+                            WHERE EXISTS (
+                            SELECT 1 FROM Study s2 JOIN s2.userList filterUser
+                            WHERE s2 = s AND filterUser.username = :username
+                            )\s"""
+                            : "") +
+                    "ORDER BY s.id";
 
             TypedQuery<Tuple> studyQuery = em.createQuery(studyQueryStr, Tuple.class);
             if (filterByUsername) {
@@ -323,10 +379,10 @@ public class StudyDao extends AbstractDao {
 
             Map<Long, Long> resultDataSizeByStudyId = includeResultDataSize && !studyIds.isEmpty()
                     ? em.createQuery("""
-                            SELECT cr.studyResult.study.id AS studyId, COALESCE(SUM(cr.dataSize), 0) AS size
-                            FROM ComponentResult cr
-                            WHERE cr.studyResult.study.id IN :studyIds
-                            GROUP BY cr.studyResult.study.id""",
+                                    SELECT cr.studyResult.study.id AS studyId, COALESCE(SUM(cr.dataSize), 0) AS size
+                                    FROM ComponentResult cr
+                                    WHERE cr.studyResult.study.id IN :studyIds
+                                    GROUP BY cr.studyResult.study.id""",
                             Tuple.class)
                     .setParameter("studyIds", studyIds)
                     .getResultList()
@@ -339,24 +395,26 @@ public class StudyDao extends AbstractDao {
             Map<Long, List<AdminStudyMemberData>> membersByStudyId = studyIds.isEmpty()
                     ? Collections.emptyMap()
                     : em.createQuery("""
-                            SELECT s.id AS studyId,
-                            u.username AS username,
-                            u.name AS name,
-                            u.authMethod AS authMethod
-                            FROM Study s
-                            JOIN s.userList u
-                            WHERE s.id IN :studyIds
-                            ORDER BY s.id, u.username""",
+                                    SELECT s.id AS studyId,
+                                    u.id AS userId,
+                                    u.username AS username,
+                                    u.name AS name,
+                                    u.authMethod AS authMethod
+                                    FROM Study s
+                                    JOIN s.userList u
+                                    WHERE s.id IN :studyIds
+                                    ORDER BY s.id, u.username""",
                             Tuple.class)
                     .setParameter("studyIds", studyIds)
                     .getResultList()
                     .stream()
                     .map(t -> new AdminStudyMemberData(
                             ((Number) t.get("studyId")).longValue(),
+                            ((Number) t.get("userId")).longValue(),
                             (String) t.get("username"),
                             (String) t.get("name"),
                             String.valueOf(t.get("authMethod"))))
-                    .collect(Collectors.groupingBy(AdminStudyMemberData::getStudyId));
+                    .collect(Collectors.groupingBy(AdminStudyMemberData::studyId));
 
             Function<Tuple, AdminStudyData> toAdminStudyData = t -> {
                 Long studyId = ((Number) t.get("id")).longValue();
@@ -369,7 +427,8 @@ public class StudyDao extends AbstractDao {
                         ((Number) t.get("studyResultCount")).longValue(),
                         resultDataSizeByStudyId.getOrDefault(studyId, 0L),
                         (Date) t.get("lastStarted"),
-                        membersByStudyId.getOrDefault(studyId, Collections.emptyList()));
+                        membersByStudyId.getOrDefault(studyId, Collections.emptyList()),
+                        (String) t.get("ownerUsername"));
             };
 
             return studyTuples.stream()
@@ -393,6 +452,13 @@ public class StudyDao extends AbstractDao {
 
             return result.isEmpty() ? null : result.getFirst();
         });
+    }
+
+    public boolean isOwner(Study study, User user) {
+        if (study == null || user == null) return false;
+        return withReadOnlyTransaction(em -> em.createQuery("select count(s) from Study s where s.id = :id and s.owner.username = :username", Long.class)
+                .setParameter("id", study.getId()).setParameter("username", user.getUsername())
+                .getSingleResult() == 1);
     }
 
 }

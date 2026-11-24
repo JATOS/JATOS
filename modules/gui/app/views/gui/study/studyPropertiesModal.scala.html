@@ -138,7 +138,7 @@
         $.ajax({
             url: window.routes.Studies.properties(window.study.id),
             success: fillStudyPropertiesForm,
-            error: (err) => alerts.error("Couldn't load study properties.")
+            error: (err) => alerts.error("Couldn't load study properties.", 0, true)
         });
     });
 
@@ -146,8 +146,7 @@
         $("#studyPropertiesForm")[0].reset();
         FormValidation.clear("#studyPropertiesForm");
         $('#studyPropertiesModal').data(properties);
-        Helpers.generateModalSubtitles("#studyPropertiesModal",
-                {"ID": properties.studyId, "UUID": properties.uuid}, true);
+        Helpers.generateModalSubtitles("#studyPropertiesModal", {"ID": properties.studyId, "UUID": properties.uuid}, true);
 
         $('#studyPropertiesFormTitle').val(properties.title);
         $('#studyPropertiesFormDescription').val(properties.description ? properties.description: "");
@@ -165,7 +164,7 @@
         // Disable all fields if study is locked
         Helpers.disableForm("#studyPropertiesModal", window.study.isLocked);
         if (window.study.isLocked) {
-            alerts.warning("Study is locked. It is not possible to edit the properties.");
+            alerts.warning("Study is locked. It is not possible to edit the properties.", 10000, true);
         }
     }
 
@@ -187,19 +186,22 @@
             data : $('#studyPropertiesForm').serialize(),
             success : function(response) {
                 $('#studyPropertiesModal').modal('hide');
-                Alerts.success("The study properties were changed successfully.");
+                Alerts.success("The study properties were changed successfully.", 5000, true);
                 const title = $('#studyPropertiesFormTitle').val();
+                window.study.title = title;
+                window.study.dirName = $('#studyPropertiesFormDirName').val();
+                $(document).trigger('study-properties-changed');
                 $('#breadcrumbs .nav-item:last').text(title);
             },
             error : function(response) {
                 FormValidation.clear("#studyPropertiesForm");
-                alerts.warning("Study properties were not saved", 5000);
+                alerts.warning("Study properties were not saved", 5000, true);
                 if (Helpers.isJson(response.responseText)) {
                     FormValidation.show("#studyPropertiesForm", response.responseJSON);
                 } else if (response.responseText) {
-                    alerts.error(response.responseText);
+                    alerts.error(response.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't change study properties");
+                    alerts.error("Couldn't change study properties", 0, true);
                 }
             }
         });

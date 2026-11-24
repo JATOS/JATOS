@@ -8,6 +8,7 @@ import migrations.common.{ComponentResultMigration, MySQLCharsetFix, StudyLinkMi
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
+import services.gui.importexport.StudyArchiveImportStorage
 import services.publix.GroupCleaner
 import utils.common.HashUtils
 
@@ -48,7 +49,8 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
                             componentResultMigration: ComponentResultMigration,
                             loginAttemptDao: LoginAttemptDao,
                             userDao: UserDao,
-                            groupCleaner: GroupCleaner) {
+                            groupCleaner: GroupCleaner,
+                            studyArchiveImportStorage: StudyArchiveImportStorage) {
 
   private val logger = Logger(this.getClass)
 
@@ -71,6 +73,7 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
   componentResultMigration.run()
   initAdminPassword()
   scheduleLoginAttemptCleaning()
+  scheduleStudyImportCleaning()
   groupCleaner.start()
 
   if (isPortInUse && environment.isProd && !isUpdateRestart) {
@@ -175,16 +178,27 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
    */
   private def scheduleLoginAttemptCleaning(): Unit = {
     val task: Runnable = () => loginAttemptDao.removeOldAttempts()
-
     implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
     val scheduler = actorSystem.scheduler.scheduleWithFixedDelay(
       initialDelay = Duration(0, TimeUnit.SECONDS),
       delay = Duration(1, TimeUnit.HOURS)
     )(task)
-
     lifecycle.addStopHook(() => Future {
       scheduler.cancel()
     })
+  }
+
+  /**
+   * Starts a scheduler that cleans the tmp directory of unused study import files.
+   */
+  private def scheduleStudyImportCleaning(): Unit = {
+    val task: Runnable = () => studyArchiveImportStorage.cleanupExpired()
+    implicit val executor: ExecutionContextExecutor = actorSystem.dispatcher
+    val scheduler = actorSystem.scheduler.scheduleWithFixedDelay(
+      initialDelay = Duration(0, TimeUnit.SECONDS),
+      delay = Duration(1, TimeUnit.HOURS)
+    )(task)
+    lifecycle.addStopHook(() => Future { scheduler.cancel() })
   }
 
 }

@@ -130,7 +130,7 @@
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")"
     import * as GoogleSignin from "@routes.Assets.versioned("lib/jatos-gui/javascripts/googleSignin.js")";
 
-    if (Helpers.isLocalhost()) $(".navbar-brand svg").toggleClass("d-none");
+    if (!window.common.isServer) $(".navbar-brand svg").toggleClass("d-none");
 
     if (window.common.isOidcAllowed) {
         $("#oidcSigninButtonText").text(window.common.oidcSigninButtonText);

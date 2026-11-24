@@ -53,24 +53,27 @@ lazy val jatos = (project in file("."))
   .settings(
     aggregateReverseRoutes := Seq(publix, session, common, gui),
     Assets / pipelineStages += digest,
-    // Use live publix mappings instead of sbt-web's extracted dependency copy.
-    // The WebJar extraction can retain old files while the module version stays
-    // unchanged, leaving sbt run serving stale scripts.
+    // Use live module mappings instead of sbt-web's extracted dependency copies.
+    // WebJar extraction can retain old files while module versions stay unchanged.
     Assets / webModules / mappings := {
-      val prefix = "lib/jatos-publix/"
-      val otherAssets = (Assets / webModules / mappings).value.filterNot(_._2.startsWith(prefix))
-      val publixAssets = (publix / Assets / mappings).value.map { case (file, path) =>
-        file -> (prefix + path)
+      val prefixes = Seq("lib/jatos-publix/", "lib/jatos-gui/")
+      val otherAssets = (Assets / webModules / mappings).value.filterNot { case (_, path) =>
+        prefixes.exists(path.startsWith)
       }
-      otherAssets ++ publixAssets
+      val publixAssets = (publix / Assets / mappings).value.map { case (file, path) =>
+        file -> ("lib/jatos-publix/" + path)
+      }
+      val guiAssets = (gui / Assets / mappings).value.map { case (file, path) =>
+        file -> ("lib/jatos-gui/" + path)
+      }
+      otherAssets ++ publixAssets ++ guiAssets
     },
-    // The live files above belong to publix, not the root project's WebJar.
-    // sbt-web normally excludes dependency files by their extraction directory;
-    // these source files live elsewhere, so exclude them explicitly from exports.
-    // Otherwise, TestAssets imports them twice (from jatos and jatos-publix).
+    // Live module files live outside the root's WebJar extraction directory.
+    // Exclude them from exports to avoid importing them twice in TestAssets.
     Assets / exportedMappings := {
-      val publixFiles = (publix / Assets / mappings).value.map(_._1).toSet
-      (Assets / exportedMappings).value.filterNot { case (file, _) => publixFiles.contains(file) }
+      val moduleFiles = ((publix / Assets / mappings).value ++ (gui / Assets / mappings).value)
+        .map(_._1).toSet
+      (Assets / exportedMappings).value.filterNot { case (file, _) => moduleFiles.contains(file) }
     },
     routesGenerator := InjectedRoutesGenerator,
 

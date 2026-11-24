@@ -1,12 +1,12 @@
 package daos.common;
 
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
 import models.common.ApiToken;
 import models.common.User;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,7 +17,7 @@ import java.util.Optional;
 public class ApiTokenDao extends AbstractDao {
 
     @Inject
-    ApiTokenDao(JPAApi jpa) {
+    ApiTokenDao(JpaTransactions jpa) {
         super(jpa);
     }
 

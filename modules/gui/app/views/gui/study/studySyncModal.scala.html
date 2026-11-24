@@ -1,0 +1,202 @@
+@import play.api.mvc.RequestHeader
+@(implicit request: RequestHeader)
+
+@* Study sync Modal *@
+<div class="modal fade" id="studySyncModal" tabindex="-1" data-bs-config='{"backdrop":"true", "focus":true, "keyboard":false}'>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1">Synchronize study</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="studySyncForm" class="form-study">
+                    <p id="studySyncExplanation"></p>
+                    <div class="row mb-3">
+                        <label class="col-4 col-form-label" for="studySyncProperties" data-bs-tooltip="Replace properties in the destination. Import adds or updates included components and inactivates omitted components. Export writes the study properties and components to the .jas file.">Properties</label>
+                        <div class="col-8 pt-2"><label class="switch no-info-icon">
+                            <input class="form-check-input checkbox-study" id="studySyncProperties" name="properties" type="checkbox">
+                            <span class="slider slider-study round"></span>
+                        </label><div id="studySyncPropertiesAbsent" class="form-text d-none">No .jas file; existing properties are kept.</div></div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-4 col-form-label" for="studySyncAssets" data-bs-tooltip="Should the study assets directory be overwritten? This directory contains the study's files like HTML, CSS, and JavaScript files and images. Selected assets are replaced completely, never merged. An empty assets/ directory removes all existing assets.">Assets</label>
+                        <div class="col-8 pt-2"><label class="switch no-info-icon">
+                            <input class="form-check-input checkbox-study" id="studySyncAssets" name="assets" type="checkbox">
+                            <span class="slider slider-study round"></span>
+                        </label><div id="studySyncAssetsAbsent" class="form-text d-none">No assets/ directory; existing assets are kept.</div></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-study" id="studySyncConfirm" type="submit" disabled>Overwrite</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script @{helper.CSPNonce.attr} type="module">
+    import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
+    import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
+
+    const alerts = new Alerts.Named("study-sync");
+    let operation;
+    let previewData;
+    const form = $("#studySyncForm");
+    const confirm = $("#studySyncConfirm");
+
+    const operations = Object.freeze({
+        gitPull: {
+            syncUrl: window.routes.Api.studyGitPull,
+            git: true, exportOrPush: false,
+            title: "Pull from Git", button: "Pull",
+            explanation: "Select what to replace in JATOS. Pull fetches the configured branch or tag again; it may have changed since this preview."
+        },
+        gitPush: {
+            syncUrl: window.routes.Api.studyGitPush,
+            git: true, exportOrPush: true,
+            title: "Push to Git", button: "Push",
+            explanation: "Select what to replace in the Git branch. Unrelated repository files are preserved. Push fetches the branch again and creates a commit only if content changed. Concurrent branch changes are rejected; no force push or merge is performed."
+        },
+        localFolderImport: {
+            syncUrl: window.routes.Api.studyFolderImport,
+            git: false, exportOrPush: false,
+            title: "Import from local folder", button: "Import",
+            explanation: "Select what to replace in JATOS."
+        },
+        localFolderExport: {
+            syncUrl: window.routes.Api.studyFolderExport,
+            git: false, exportOrPush: true,
+            title: "Export to local folder", button: "Export",
+            explanation: "Select what to replace in the local folder. Unrelated root files, including .git, are preserved."
+        }
+    });
+
+    $("#studySyncModal").on("show.bs.modal", function(event) {
+        previewData = null;
+        const requestedOperation = $(event.relatedTarget).data("operation");
+        const exportOrPush = requestedOperation === "EXPORT" || requestedOperation === "PUSH";
+        const operationName = window.study.sourceType === "GIT"
+            ? (exportOrPush ? "gitPush" : "gitPull")
+            : (exportOrPush ? "localFolderExport" : "localFolderImport");
+        operation = operations[operationName];
+        prepareModal();
+        $.ajax({
+            beforeSend: WaitingModal.show,
+            url: operation.syncUrl(window.study.id),
+            success: function(response) {
+                previewData = response.data;
+                generateModalSubtitles(previewData);
+                $("#studySyncProperties").prop("disabled", !previewData.propertiesAvailable).prop("checked", previewData.propertiesAvailable);
+                $("#studySyncAssets").prop("disabled", !previewData.assetsAvailable).prop("checked", previewData.assetsAvailable);
+                $("#studySyncPropertiesAbsent").toggleClass("d-none", previewData.propertiesAvailable);
+                $("#studySyncAssetsAbsent").toggleClass("d-none", previewData.assetsAvailable);
+                confirm.prop("disabled", false);
+            },
+            error: response => alerts.error(response.responseJSON?.error?.message || "Could not preview study source.", 0, true),
+            complete: function() {
+                WaitingModal.hide();
+                $("#studySyncModal [data-bs-dismiss]").prop("disabled", false);
+            }
+        });
+    });
+
+    function prepareModal() {
+        alerts.hideAll();
+        form[0].reset();
+        FormValidation.clear("#studySyncForm");
+        form.find("input").prop("disabled", true);
+        confirm.prop("disabled", true);
+        // Keep the modal open until its preview request finishes.
+        $("#studySyncModal [data-bs-dismiss]").prop("disabled", true);
+
+        Helpers.generateModalSubtitles("#studySyncModal", {
+            "Study": window.study.title,
+            "Source": window.study.sourceType
+        }, true);
+
+        $("#studySyncModal .modal-title").text(operation.title);
+        confirm.text(operation.button);
+        $("#studySyncExplanation").text(operation.explanation);
+        $("#studySyncPropertiesAbsent").text(operation.exportOrPush ? "No properties available." : "No .jas file; existing properties are kept.");
+        $("#studySyncAssetsAbsent").text(operation.exportOrPush ? "The study has no assets directory; destination assets are kept." : "No assets/ directory; existing assets are kept.");
+        $("#studySyncPropertiesAbsent, #studySyncAssetsAbsent").addClass("d-none");
+    }
+
+    function generateModalSubtitles(previewData) {
+        const details = {"Study": window.study.title};
+        if (operation.git) {
+            details.Repository = $("<a>").attr({
+                href: previewData.gitUrl,
+                target: "_blank",
+                rel: "noopener noreferrer"
+            }).text(previewData.gitUrl.replace(/^https:\/\//, ""));
+            const commit = $("<span>").addClass("d-inline-flex align-items-center gap-2");
+            commit.append($("<span>")
+                .addClass("font-monospace no-info-icon")
+                .attr("data-bs-tooltip", previewData.commitId)
+                .text(previewData.commitId.slice(0, 8)));
+            commit.append($("<button>").attr({
+                type: "button",
+                "aria-label": "Copy full commit ID",
+                "data-bs-tooltip": "Copy full commit ID",
+                "data-clipboard-text": previewData.commitId
+            }).addClass("btn btn-sm p-0 btn-clipboard no-info-icon")
+                .on("click", CopyToClipboard.onClick));
+            details[operation.exportOrPush ? "Branch" : "Branch / tag"] = previewData.gitRef || "Default branch";
+            details.Commit = commit;
+            details.Credentials = {
+                study: "Using study credentials",
+                owner: "Using owner credentials",
+                global: "Using server credentials",
+                anonymous: "Anonymous access"
+            }[previewData.credentialSource];
+        } else {
+            details["Local folder"] = previewData.localFolderPath;
+        }
+        Helpers.generateModalSubtitles("#studySyncModal", details, true);
+        Helpers.activateTooltips("#studySyncModal .modal-subtitle");
+    }
+
+
+    $("#studySyncModal").on("hide.bs.modal", alerts.hideAll);
+
+    confirm.click(function(event) {
+        event.preventDefault();
+        if (!previewData || confirm.prop("disabled")) return;
+        alerts.hideAll();
+        FormValidation.clear("#studySyncForm");
+        const data = {
+            properties: $("#studySyncProperties").is(":checked"),
+            assets: $("#studySyncAssets").is(":checked")
+        };
+        $("#studySyncModal button").prop("disabled", true);
+        $.ajax({
+            beforeSend: WaitingModal.show,
+            url: operation.syncUrl(window.study.id),
+            type: "POST",
+            contentType: "application/json",
+            headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
+            data: JSON.stringify(data),
+            success: function(response) {
+                if (operation.exportOrPush) {
+                    $("#studySyncModal button").prop("disabled", false);
+                    $("#studySyncModal").modal("hide");
+                    Alerts.success(response.message, 5000, true);
+                } else {
+                    window.location.href = window.routes.Studies.study(window.study.id);
+                }
+            },
+            error: function(response) {
+                const error = response.responseJSON?.error;
+                if (error?.fields?.properties || error?.fields?.assets) FormValidation.show("#studySyncForm", error.fields);
+                else alerts.error(error?.message || "Could not synchronize study source.", 0, true);
+                $("#studySyncModal button").prop("disabled", false);
+            },
+            complete: WaitingModal.hide
+        });
+    });
+</script>

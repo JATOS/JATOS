@@ -41,7 +41,26 @@
             <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
-            <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip="Export this study to your local file system (including its components and study assets but without its results)">
+            <div class="btn-group d-none no-info-icon" id="studySyncButton" data-bs-tooltip="Synchronize this study's properties and assets with its configured Git repository or local folder">
+                <button class="btn btn-study dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi-arrow-repeat"></i><span class="d-none d-xl-inline ps-1">Sync</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-study">
+                    <li class="study-folder-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="IMPORT" data-bs-tooltip="Import this study from a local folder. The current study's properties and assets will be replaced. The folder's location is configured in the study source.">
+                        <i class="bi-box-arrow-in-down-right pe-1"></i>Import
+                    </button></li>
+                    <li class="study-folder-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="EXPORT" data-bs-tooltip="Export this study to a local folder. The current study in the local folder will be replaced. The folder's location is configured in the study source.">
+                        <i class="bi-box-arrow-in-up-right pe-1"></i>Export
+                    </button></li>
+                    <li class="study-git-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="PULL" data-bs-tooltip="Pull from the configured Git repository and replace selected study content in JATOS.">
+                        <i class="bi-box-arrow-in-down-right pe-1"></i>Pull
+                    </button></li>
+                    <li class="study-git-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="PUSH" data-bs-tooltip="Push selected study content to the configured Git branch.">
+                        <i class="bi-box-arrow-in-up-right pe-1"></i>Push
+                    </button></li>
+                </ul>
+            </div>
+            <button class="btn btn-study" id="exportStudy" type="button" data-bs-tooltip="Export this study as a study archive (jzip file) to your local file system (including its components and study assets but without its results)">
                 <i class="bi-box-arrow-up-right"></i><span class="d-none d-xl-inline ps-1">Export</span>
             </button>
             <button class="btn btn-study" id="lockStudy" type="button" data-bs-tooltip="Lock/unlock this study. A locked study cannot be changed (e.g. its properties), but its study links will still work. This is useful during data collection to prevent accidental changes in a study setup.">
@@ -58,14 +77,17 @@
                     <li class="no-info-icon" data-bs-tooltip="Clone this study without its results">
                         <a class="dropdown-item" id="cloneStudy" href="#"><i class="bi-copy pe-1"></i>Clone</a>
                     </li>
-                    <li class="no-info-icon" data-bs-tooltip="Change which users can access this study">
-                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyMemberUsersModal"><i class="bi-people-fill pe-1"></i>Change users</a>
+                    <li class="no-info-icon" data-bs-tooltip="View study members and manage access if you are the owner">
+                        <a class="dropdown-item" data-bs-toggle="modal" href="#studyMemberUsersModal"><i class="bi-people-fill pe-1"></i>Members</a>
                     </li>
                     <li class="no-info-icon" data-bs-tooltip="Show this study's study log">
                         <a class="dropdown-item" data-bs-toggle="modal" href="#studyLogModal"><i class="bi-journal-text pe-1"></i>Study log</a>
                     </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li class="no-info-icon" data-bs-tooltip="Delete this study including its components, assets and results">
+                    <li class="study-owner-action d-none no-info-icon" data-bs-tooltip="Configure a Git repository or local folder to synchronize this study's properties and assets">
+                        <a class="dropdown-item" data-bs-toggle="modal" href="#studySourceModal"><i class="bi-folder-symlink pe-1"></i>Study Source</a>
+                    </li>
+                    <li class="study-owner-action d-none"><hr class="dropdown-divider"></li>
+                    <li class="study-owner-action d-none no-info-icon" data-bs-tooltip="Delete this study including its components, assets and results">
                         <a class="dropdown-item" id="removeStudy" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
                     </li>
                 </ul>
@@ -84,6 +106,8 @@
 }
 
 @views.html.gui.study.studyPropertiesModal(request)
+@views.html.gui.study.studySourceModal(request)
+@views.html.gui.study.studySyncModal(request)
 @views.html.gui.study.studyDescription(study)
 @views.html.gui.study.studyMemberUsersModal(request)
 @views.html.gui.study.componentCreatorModal(request)
@@ -98,34 +122,76 @@
     import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
     import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
 
-    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.");
+    init();
 
-    $("#studyToolbar").before(InfoCard.render([
-        {"name": "Study ID", "value": window.study.id, "tooltip": "This ID is unique within this JATOS instance"},
-        {"name": "Study UUID", "value": window.study.uuid, "tooltip": "Universally unique identifier - used to keep track of studies between different JATOS instances"},
-        {"name": "Study assets", "value": window.study.dirName, "tooltip": "Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."}
-    ]));
+    function init() {
+        if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit " +
+            "this study, it can't be run by you nor by a worker. Please contact your admin.", 10000, true);
 
-    const studyResultButtonTooltip = @studyResultsCount > 0
+        renderStudyInfo();
+        $(document).on('study-source-changed study-properties-changed', renderStudyInfo);
+
+        // Set the href property in code so users can use the Ctrl + click to open the study run in a different tab
+        $('#runStudy').prop("href", `${window.routes.Studies.runStudy(window.study.id)}`);
+        $('#runStudy2x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 2, 2, 1)}`);
+        $('#runStudy3x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 3, 3, 1)}`);
+        $('#runStudy2x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 4, 2, 2)}`);
+        $('#runStudy3x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 6, 3, 2)}`);
+        $('#runStudy4x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 8, 4, 2)}`);
+        $('#runStudy3x3').prop("href", `${window.routes.Studies.runStudy(window.study.id, 9, 3, 3)}`);
+
+        const studyResultButtonTooltip = @studyResultsCount > 0
             ? "This study has @studyResultsCount study result(s) so far. Click here to go to the study result page."
             : "This study has no study results yet. Maybe do a test run to generate one.";
-    $("#studyResults").attr("data-bs-tooltip", studyResultButtonTooltip);
+        $("#studyResults").attr("data-bs-tooltip", studyResultButtonTooltip);
 
-    drawLockButton();
+        const canManageStudy = window.study.ownerUsername === window.signedinUser.username
+            || (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser);
+        $(".study-owner-action").toggleClass("d-none", !canManageStudy);
 
-    $('#lockStudy').click(function() {
-        $.ajax({
-            url : window.routes.Studies.toggleLock(window.study.id),
-            type : "POST",
-            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
-            success : function(response) {
-                window.study.isLocked = response === 'true';
-                drawLockButton();
+        $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
+        $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
+        $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
 
+        drawLockButton();
+    }
+
+    function renderStudyInfo() {
+        const git = window.study.sourceType === "GIT";
+        const location = git ? window.study.gitUrl : window.study.localFolderPath;
+        const studyInfo = $(InfoCard.render([
+            {
+                "name": "Study ID",
+                "value": window.study.id,
+                "tooltip": "This ID is unique within this JATOS instance"
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't toggle study lock")
-        });
-    });
+            {
+                "name": "UUID",
+                "value": window.study.uuid,
+                "truncate": 8, addCopyBtn: true,
+                "tooltip": "Universally unique identifier - used to keep track of studies between different JATOS instances. Only the first 8 characters are displayed; hover to see the full UUID."
+            },
+            {
+                "name": "Assets",
+                "value": window.study.dirName,
+                "useMonospace": true,
+                "tooltip": "Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."
+            },
+            {
+                "name": "Source",
+                "value": window.study.sourceType === "NONE" ? "None" : location,
+                "displayValue": git && location ? location.replace(/^https:\/\//, '') : undefined,
+                "icon": window.study.sourceType === "NONE" ? undefined : (git ? 'bi-git' : 'bi-folder'),
+                "href": git ? location : undefined,
+                "useMonospace": window.study.sourceType === "LOCAL_FOLDER",
+                "tooltip": "The configured source for synchronizing this study's properties and assets. Configure it under More → Study Source."
+            }
+        ]));
+        $('#studyInfoCard').remove();
+        studyInfo.attr('id', 'studyInfoCard');
+        $("#studyToolbar").before(studyInfo);
+        Helpers.activateTooltips(studyInfo);
+    }
 
     function drawLockButton() {
         if (window.study.isLocked) {
@@ -137,14 +203,19 @@
         }
     }
 
-    // Set the href property in code so users can use the Ctrl + click to open the study run in a different tab
-    $('#runStudy').prop("href", `${window.routes.Studies.runStudy(window.study.id)}`);
-    $('#runStudy2x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 2, 2, 1)}`);
-    $('#runStudy3x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 3, 3, 1)}`);
-    $('#runStudy2x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 4, 2, 2)}`);
-    $('#runStudy3x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 6, 3, 2)}`);
-    $('#runStudy4x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 8, 4, 2)}`);
-    $('#runStudy3x3').prop("href", `${window.routes.Studies.runStudy(window.study.id, 9, 3, 3)}`);
+    $('#lockStudy').click(function() {
+        $.ajax({
+            url : window.routes.Studies.toggleLock(window.study.id),
+            type : "POST",
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
+            success : function(response) {
+                window.study.isLocked = response === 'true';
+                drawLockButton();
+
+            },
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't toggle study lock", 0, true)
+        });
+    });
 
     $('#studyResults').click(function() {
         window.location.href = window.routes.StudyResults.studysStudyResults(window.study.id);
@@ -162,7 +233,7 @@
 
     $('#removeStudy').click(function() {
         const title = "Confirm deletion of a study";
-        const htmlText = `<p>You are about to delete the study "<b>${window.study.title}" (ID ${window.study.id})
+        const htmlText = `<p>You are about to delete the study "<b>${Helpers.escapeHtml(window.study.title)}" (ID ${window.study.id})
             with all its components, results, and the entire study assets directory</b>.</p>
             <p><b class="text-danger">This cannot be undone.</b></p>`;
         const action = function() {
@@ -176,7 +247,7 @@
                 },
                 error: (err) => {
                     const message = err?.responseJSON?.error?.message ?? "Couldn't delete study";
-                    Alerts.error(message);
+                    Alerts.error(message, 0, true);
                 },
                 complete: WaitingModal.hide
             });
@@ -188,9 +259,9 @@
         $.ajax({
             url : window.routes.Studies.cloneStudy(window.study.id),
             success : function(response) {
-                Alerts.success(`Added clone "${response.title}". <a href="${window.routes.Studies.study(response.id)}">Go to this study.</a>`);
+                Alerts.success(`Added clone "${Helpers.escapeHtml(response.title)}". <a href="${Helpers.escapeHtml(window.routes.Studies.study(response.id))}">Go to this study.</a>`, 5000, false);
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't clone study")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't clone study", 0, true)
         });
     });
 </script>

@@ -1,7 +1,9 @@
 package group
 
+import general.common.JpaTransactions
 import org.junit.Assert._
 import org.junit._
+import org.mockito.Mockito
 import play.api.libs.json.Json
 
 /**
@@ -11,7 +13,9 @@ import play.api.libs.json.Json
  */
 class GroupActionHandlerScopeTest {
 
-  private val groupActionHandler = new GroupActionHandler(null, null)
+  private val transactions = Mockito.mock(classOf[JpaTransactions])
+
+  private val groupActionHandler = new GroupActionHandler(transactions, null, null)
 
   private val memberId = 123L
 

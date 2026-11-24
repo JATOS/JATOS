@@ -82,7 +82,7 @@
         componentsTable = $('#componentsTable').DataTable({
             "ajax": {
                 "url" : window.routes.Studies.tableDataByStudy(window.study.id),
-                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Cannot read component data.")
+                error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Cannot read component data.", 0, true)
             },
             "pageLength": 100,
             "dom": 't',
@@ -119,7 +119,7 @@
                     "className": "text-wrap",
                     "data": "title",
                     "render": function (data, type, full, meta) {
-                        return `<span class="no-info-icon" data-bs-tooltip="${data}">${data}</span>`;
+                        return `<span class="no-info-icon" data-bs-tooltip="${Helpers.escapeHtml(data)}">${Helpers.escapeHtml(data)}</span>`;
                     }
                 },
                 {
@@ -182,7 +182,7 @@
                 type: "POST",
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 success: () => componentsTable.ajax.reload(),
-                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't change component order")
+                error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't change component order", 0, true)
             });
         });
     });
@@ -192,11 +192,11 @@
             type: 'GET',
             url: window.routes.Components.cloneComponent(window.study.id, getComponentId(this)),
             success: function(result) {
-                Alerts.showList(JSON.parse(result));
-                Alerts.success(`The component was cloned successfully.`);
+                Alerts.showList(JSON.parse(result), undefined, true);
+                Alerts.success(`The component was cloned successfully.`, 5000, true);
                 componentsTable.ajax.reload();
             },
-            error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't clone component")
+            error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't clone component", 0, true)
         });
     });
 
@@ -215,10 +215,10 @@
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 beforeSend: WaitingModal.show,
                 success : function(result) {
-                    Alerts.showList(JSON.parse(result));
+                    Alerts.showList(JSON.parse(result), undefined, true);
                     componentsTable.ajax.reload();
                 },
-                error: (err) => err.responseText ? Alerts.error(err.responseText) : Alerts.error("Couldn't delete component"),
+                error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't delete component", 0, true),
                 complete: WaitingModal.hide
             });
         };
@@ -246,7 +246,7 @@
             },
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't toggle component activation";
-                Alerts.error(message);
+                Alerts.error(message, 0, true);
             }
         });
     });

@@ -1,13 +1,13 @@
 package daos.common;
 
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import models.common.Component;
 import models.common.Study;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class ComponentDao extends AbstractDao {
 
     @Inject
-    ComponentDao(JPAApi jpa) {
+    ComponentDao(JpaTransactions jpa) {
         super(jpa);
     }
 

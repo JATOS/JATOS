@@ -2,6 +2,7 @@ package group.session;
 
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
+import general.common.JpaTransactions;
 import group.GroupAdministration;
 import group.GroupDispatcher;
 import jakarta.persistence.EntityManager;
@@ -25,10 +26,10 @@ import static org.mockito.Mockito.*;
  */
 public class GroupAdministrationTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private GroupDispatcher dispatcher;
     private GroupResultDao groupResultDao;
     private StudyResultDao studyResultDao;
-
     private GroupAdministration admin;
 
     @Before
@@ -37,10 +38,10 @@ public class GroupAdministrationTest {
         groupResultDao = mock(GroupResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
 
-        admin = new GroupAdministration(dispatcher, studyResultDao, groupResultDao);
+        admin = new GroupAdministration(transactions, dispatcher, studyResultDao, groupResultDao);
 
         EntityManager entityManager = Mockito.mock(EntityManager.class);
-        JPAMocker.mockDaoTransactions(entityManager, groupResultDao, studyResultDao);
+        JPAMocker.mockTransactions(entityManager, transactions);
     }
 
     private StudyResult newStudyResult(long id, Study study, Batch batch) {

@@ -1,5 +1,7 @@
 package group
 
+import general.common.JpaTransactions
+
 import daos.common.GroupResultDao
 import group.GroupProtocol.GroupAction.GroupAction
 import group.GroupProtocol.TellWhom.TellWhom
@@ -16,7 +18,7 @@ import scala.jdk.CollectionConverters._
  * Utility class that builds GroupMsgs. So it mostly handles the JSON creation.
  */
 @Singleton
-class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
+class GroupActionMsgBuilder @Inject()(transactions: JpaTransactions, groupResultDao: GroupResultDao) {
 
   private val logger: Logger = Logger(this.getClass)
 
@@ -90,7 +92,7 @@ class GroupActionMsgBuilder @Inject()(groupResultDao: GroupResultDao) {
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
-    groupResultDao.withReadOnlyTransaction((_: EntityManager) => {
+    transactions.withReadOnlyTransaction((_: EntityManager) => {
       logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
         s"$action , tellWhom ${tellWhom.toString}")
       val groupResult = groupResultDao.findById(groupResultId)

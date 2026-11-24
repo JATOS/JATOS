@@ -1,6 +1,7 @@
 package gui;
 
-import daos.common.StudyDao;
+import general.common.Common;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import jakarta.persistence.EntityManager;
@@ -12,7 +13,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import play.Application;
-import play.db.jpa.JPAApi;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.test.Helpers;
 import services.gui.BatchService;
@@ -38,6 +38,7 @@ import static org.junit.Assume.assumeTrue;
  * transaction commits. The optional MySQL test creates and drops only its own uniquely named database.
  */
 public class DeletionCascadeIntegrationTest {
+
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
@@ -78,14 +79,15 @@ public class DeletionCascadeIntegrationTest {
                 .configure("db.default.driver", driver).configure("db.default.url", url)
                 .configure("db.default.username", username).configure("db.default.password", password)
                 .configure("jatos.multiNode", false)
-                .configure("jatos.studyAssetsRootPath", root + "/assets")
+                .configure("jatos.studyAssets.rootPath", root + "/assets")
                 .configure("jatos.studyLogs.path", root + "/study-logs")
                 .configure("jatos.resultUploads.path", root + "/uploads")
                 .configure("jatos.logs.path", root + "/logs").configure("jatos.tmpPath", root + "/tmp")
                 .build();
         try {
             Helpers.start(app);
-            JPAApi jpa = app.injector().instanceOf(JPAApi.class);
+            assertEquals(Path.of(root, "assets"), Path.of(Common.getStudyAssetsRootPath()));
+            JpaTransactions jpa = app.injector().instanceOf(JpaTransactions.class);
             StudyService studies = app.injector().instanceOf(StudyService.class);
             BatchService batches = app.injector().instanceOf(BatchService.class);
             Context.setCurrent(new Context(Helpers.fakeRequest().build()));
@@ -147,6 +149,16 @@ public class DeletionCascadeIntegrationTest {
                     assertEntity(jpa, Batch.class, f.batch, !committed);
                     assertEntity(jpa, Batch.class, f.sibling, !(committed && wholeStudy));
                     assertEntity(jpa, Study.class, f.otherStudy, true);
+                    jpa.withTransaction((EntityManager em) -> {
+                        User owner = em.find(User.class, "admin");
+                        assertNotNull("Deleting a study must not delete its owner", owner);
+                        assertEquals(owner, em.find(Study.class, f.otherStudy).getOwner());
+                        if (!(committed && wholeStudy)) {
+                            Study retained = em.find(Study.class, f.study);
+                            assertEquals(owner, retained.getOwner());
+                            assertTrue(retained.getUserList().contains(owner));
+                        }
+                    });
                     assertEntity(jpa, PersonalMultipleWorker.class, f.worker, true);
                     assertEquals(!(committed && wholeStudy), Files.exists(Path.of(root, "assets", f.dir)));
                     assertEquals(!(committed && wholeStudy), Files.exists(Path.of(root, "study-logs", f.uuid + ".log")));
@@ -170,10 +182,10 @@ public class DeletionCascadeIntegrationTest {
             assertTrue(Files.isRegularFile(assets));
             AtomicBoolean laterCallback = new AtomicBoolean();
             jpa.withTransaction((EntityManager em) -> {
-                app.injector().instanceOf(StudyDao.class).afterCommit("intentional test failure", () -> {
+                app.injector().instanceOf(JpaTransactions.class).afterCommit("intentional test failure", () -> {
                     throw new java.io.IOException("test");
                 });
-                app.injector().instanceOf(StudyDao.class).afterCommit("subsequent callback", () -> laterCallback.set(true));
+                app.injector().instanceOf(JpaTransactions.class).afterCommit("subsequent callback", () -> laterCallback.set(true));
             });
             assertTrue(laterCallback.get());
         } finally {
@@ -182,7 +194,7 @@ public class DeletionCascadeIntegrationTest {
         }
     }
 
-    private Fixture fixture(JPAApi jpa, Application app) throws Exception {
+    private Fixture fixture(JpaTransactions jpa, Application app) throws Exception {
         Fixture f = jpa.withTransaction(em -> {
             PersonalMultipleWorker worker = new PersonalMultipleWorker();
             em.persist(worker);
@@ -195,7 +207,7 @@ public class DeletionCascadeIntegrationTest {
             List<Run> siblingRuns = runs(em, study, sibling, worker);
             List<Run> otherRuns = runs(em, other, otherBatch, worker);
             em.flush();
-            app.injector().instanceOf(StudyLogger.class).create(study);
+            app.injector().instanceOf(StudyLogger.class).create(study.getUuid());
             return new Fixture(study.getId(), selected.getId(), sibling.getId(), other.getId(), worker.getId(),
                     study.getDirName(), study.getUuid(), selectedRuns, siblingRuns, otherRuns);
         });
@@ -214,6 +226,7 @@ public class DeletionCascadeIntegrationTest {
 
     private Study study(EntityManager em, String title) {
         Study study = new Study();
+        study.setOwner(em.find(User.class, "admin"));
         study.setTitle(title);
         study.setGroupStudy(true);
         em.persist(study);
@@ -268,7 +281,7 @@ public class DeletionCascadeIntegrationTest {
         return runs;
     }
 
-    private void assertRows(JPAApi jpa, List<Run> runs, boolean present) {
+    private void assertRows(JpaTransactions jpa, List<Run> runs, boolean present) {
         for (Run run : runs) {
             assertEntity(jpa, StudyResult.class, run.result, present);
             assertEntity(jpa, ComponentResult.class, run.component, present);
@@ -280,7 +293,7 @@ public class DeletionCascadeIntegrationTest {
         }
     }
 
-    private void assertEntity(JPAApi jpa, Class<?> type, Long id, boolean present) {
+    private void assertEntity(JpaTransactions jpa, Class<?> type, Long id, boolean present) {
         boolean found = jpa.withTransaction(em -> em.find(type, id) != null);
         assertEquals(type.getSimpleName() + " " + id, present, found);
     }

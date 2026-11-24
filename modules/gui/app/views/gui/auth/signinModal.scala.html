@@ -91,10 +91,9 @@
 
 	function resetSessionTimeout() {
 		sessionTimeoutWorker.postMessage({
-			// We multiply with 60000 because the values are in minutes
-			// and minus 5000 because we want to timeout earlier than the backend
-			userSessionTimeout: window.common.userSessionTimeout * 60000 - 5000,
-			userSessionInactivity: window.common.userSessionInactivity * 60000 - 5000,
+			// Values are in milliseconds; expire five seconds before the backend.
+			userSessionTimeout: window.common.userSessionTimeout - 5000,
+			userSessionInactivity: window.common.userSessionInactivity - 5000,
 			userSigninTime: window.common.userSigninTime
 		});
 	}

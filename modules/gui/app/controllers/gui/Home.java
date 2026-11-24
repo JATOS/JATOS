@@ -29,8 +29,7 @@ import java.util.concurrent.CompletionStage;
 import static actions.common.TransactionalAction.Mode.READ_ONLY;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 /**
  * Controller that provides actions for the home page
@@ -61,7 +60,7 @@ public class Home extends Controller {
      * Shows home view
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     public Result home(Http.Request request, int httpStatus) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -81,7 +80,7 @@ public class Home extends Controller {
      * Tries to loads some static HTML that will be shown on the home page instead of the default welcome message
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public CompletionStage<Result> branding() {
         Context context = Context.current();
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -102,7 +101,7 @@ public class Home extends Controller {
      * signed-in user).
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @Transactional(READ_ONLY)
     public Result sidebarData() {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

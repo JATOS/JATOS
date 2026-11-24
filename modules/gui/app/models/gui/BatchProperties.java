@@ -163,6 +163,7 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         }
     }
 
+    @SuppressWarnings("unused")
     public void setAllowedWorkerTypeValues(List<String> allowedWorkerTypeValues) {
         this.allowedWorkerTypeValues = allowedWorkerTypeValues;
     }

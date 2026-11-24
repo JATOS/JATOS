@@ -116,7 +116,7 @@
                 $("#componentPropertiesModal").modal('show');
             },
             error: function(err) {
-                alerts.error("Couldn't load component properties.");
+                alerts.error("Couldn't load component properties.", 0, true);
             }
         });
     });
@@ -138,7 +138,7 @@
         // Disable all fields if study is locked
         Helpers.disableForm("#componentPropertiesModal", window.study.isLocked);
         if (window.study.isLocked) {
-            alerts.warning("Study is locked. It is not possible to edit the component properties.");
+            alerts.warning("Study is locked. It is not possible to edit the component properties.", 10000, true);
         }
     }
 
@@ -152,9 +152,9 @@
             const description = `
                 <p>
                     The HTML file linked to this component will be renamed from
-                    <span class="text-break"><b><i>${oldFileName}</i></b></span>
+                    <span class="text-break"><b><i>${Helpers.escapeHtml(oldFileName)}</i></b></span>
                     to
-                    <span class="text-break"><b><i>${newFileName}</i></b></span>.
+                    <span class="text-break"><b><i>${Helpers.escapeHtml(newFileName)}</i></b></span>.
                 </p>`;
             $('#htmlFileNameConfirmationText').html(description);
             $('#htmlFileNameConfirmationKeep').prop('checked', false);
@@ -186,18 +186,18 @@
             data : $('#componentPropertiesForm').serialize(),
             success : function(response) {
                 $('#componentPropertiesModal').modal('hide');
-                Alerts.success("The component properties were changed successfully.");
+                Alerts.success("The component properties were changed successfully.", 5000, true);
                 $('#componentsTable').DataTable().ajax.reload();
             },
             error : function(err) {
                 FormValidation.clear("#componentPropertiesForm");
-                alerts.warning("The component was not saved.");
+                alerts.warning("The component was not saved.", 10000, true);
                 if (Helpers.isJson(err.responseText)) {
                     FormValidation.show("#componentPropertiesForm", err.responseJSON);
                 } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                    alerts.error(err.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't change component");
+                    alerts.error("Couldn't change component", 0, true);
                 }
             }
         });

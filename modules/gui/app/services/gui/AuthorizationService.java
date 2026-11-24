@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static models.common.User.AuthMethod.DB;
@@ -32,6 +33,40 @@ public class AuthorizationService {
     @Inject
     public AuthorizationService(StudyDao studyDao) {
         this.studyDao = studyDao;
+    }
+
+    /**
+     * Enabled superusers have owner privileges. Admin override is reserved for ownership transfer.
+     */
+    public void checkStudyOwner(Study study, User user, boolean adminAllowed) {
+        boolean isOwner = studyDao.isOwner(study, user);
+        checkStudyOwner(study, user, adminAllowed, isOwner);
+    }
+
+    /**
+     * Checks owner privileges using a study refreshed under a lock held by the current transaction.
+     */
+    public void checkLockedStudyOwner(Study study, User user, boolean adminAllowed) {
+        boolean isOwner = study != null && user != null && user.equals(study.getOwner());
+        checkStudyOwner(study, user, adminAllowed, isOwner);
+    }
+
+    private void checkStudyOwner(Study study, User user, boolean adminAllowed, boolean isOwner) {
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        if (user == null || !(adminAllowed && user.isAdmin())
+                && !isAllowedSuperuser(user)
+                && !isOwner) {
+            throw new ForbiddenException("Only the study owner or an enabled superuser" + (adminAllowed ? " or an administrator" : "")
+                    + " can perform this action.", ErrorCode.NO_ACCESS);
+        }
+    }
+
+    /**
+     * Members may leave; changing anyone else's membership requires ownership privileges.
+     */
+    public void checkMembershipChange(Study study, User actingUser, User member, boolean adding) {
+        if (!adding && actingUser.equals(member) && studyDao.hasUser(study, actingUser)) return;
+        checkStudyOwner(study, actingUser, false);
     }
 
     public boolean isAllowedSuperuser(User user) {
@@ -179,7 +214,7 @@ public class AuthorizationService {
         if (worker == null) {
             throw new NotFoundException("Worker doesn't exist");
         }
-        boolean allowed = studyDao.findAllByUser(user).stream()
+        boolean allowed = (isAllowedSuperuser(user) ? studyDao.findAll() : studyDao.findAllByUser(user)).stream()
                 .map(Study::getBatchList)
                 .flatMap(List::stream)
                 .map(Batch::getWorkerList)
@@ -231,6 +266,15 @@ public class AuthorizationService {
     }
 
     public void checkSignedinUserAllowedToChangeUser(UserProperties props, User signedinUser, User user) {
+        if (!user.isDb() && !user.isLdap()
+                && (!Objects.equals(props.getName(), user.getName())
+                || !Objects.equals(props.getEmail(), user.getEmail()))) {
+            throw new ForbiddenException("Name and email are managed by the external sign-in provider.");
+        }
+        if (props.getGitCredentials() != null && !user.equals(signedinUser)) {
+            throw new ForbiddenException("You can only change your own Git credentials.");
+        }
+
         final boolean isPropsAdminUser = ADMIN_USERNAME.equals(props.getUsername());
         final boolean isSignedinAdminUser = ADMIN_USERNAME.equals(signedinUser.getUsername());
         final boolean passwordChangeRequested = props.getPassword() != null;

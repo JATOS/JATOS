@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import exceptions.common.BadRequestException;
+import exceptions.common.FieldValidationException;
 import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import general.common.MessagesStrings;
@@ -26,7 +27,10 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static general.common.ApiEnvelope.ErrorCode.VALIDATION_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -48,7 +52,11 @@ public class ApiService {
         List<ValidationError> errors = props.validate();
         if (errors != null && !errors.isEmpty()) {
             String msg = "Error in field '" + errors.getFirst().key() + "' - " + errors.getFirst().message();
-            throw new BadRequestException(msg, VALIDATION_ERROR);
+            Map<String, List<String>> fields = new LinkedHashMap<>();
+            for (ValidationError error : errors) {
+                fields.computeIfAbsent(error.key(), key -> new ArrayList<>()).add(error.message());
+            }
+            throw new FieldValidationException(msg, fields);
         }
     }
 

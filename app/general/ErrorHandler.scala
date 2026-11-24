@@ -16,6 +16,7 @@ import play.mvc.Http
 import services.publix.idcookie.exceptions.{IdCookieAlreadyExistsException, IdCookieCollectionFullException, IdCookieNotFoundException}
 
 import java.io.IOException
+import java.util
 import java.util.concurrent.CompletionException
 import javax.inject.{Inject, Singleton}
 import javax.naming.NamingException
@@ -98,6 +99,9 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
 
       case e: IdCookieNotFoundException =>
         infoResultLogged(request, e, BadRequest)
+
+      case e: FieldValidationException =>
+        errorResult(request, BadRequest, e.getMessage, e.getErrorCode, Some(e.getFieldErrors))
 
       case e: ValidationException =>
         infoResultLogged(request, e, BadRequest)
@@ -239,7 +243,11 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
     }
   }
 
-  private def errorResult(request: RequestHeader, status: Status, msg: String, errorCode: ErrorCode): Result = {
+  private def errorResult(request: RequestHeader,
+                          status: Status,
+                          msg: String,
+                          errorCode: ErrorCode,
+                          fieldErrors: Option[util.Map[String, util.List[String]]] = None): Result = {
     val gui = HttpUtils.isGuiUrl(request.path)
     val html = HttpUtils.isHtmlRequest(request.asJava)
     val api = HttpUtils.isApiRequest(request.asJava)
@@ -249,7 +257,7 @@ class ErrorHandler @Inject() extends HttpErrorHandler {
     } else if (html) {
       status(views.html.publix.error.render(msg))
     } else if (api) {
-      status(ApiEnvelope.wrap(msg, errorCode).asJsValue())
+      status(ApiEnvelope.wrap(msg, errorCode, fieldErrors).asJsValue())
     } else {
       status(msg)
     }

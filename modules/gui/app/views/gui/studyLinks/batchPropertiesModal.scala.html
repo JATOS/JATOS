@@ -150,7 +150,7 @@
                 fillBatchPropertiesForm(batch, properties);
                 $('#batchPropertiesModal').modal('show');
             },
-            error: (err) => Alerts.error("Couldn't load batch properties.")
+            error: (err) => Alerts.error("Couldn't load batch properties.", 0, true)
         });
     });
 
@@ -184,7 +184,7 @@
 
         Helpers.disableForm("#batchPropertiesForm", window.study.isLocked);
         if (window.study.isLocked) {
-            alerts.warning("Study is locked. It is not possible to edit the batch properties. Unlock this study in its study page.");
+            alerts.warning("Study is locked. It is not possible to edit the batch properties. Unlock this study in its study page.", 10000, true);
         }
     }
 
@@ -243,18 +243,18 @@
             data: $('#batchPropertiesForm').serialize(),
             success: function(response) {
                 $('#batchPropertiesModal').modal('hide');
-                Alerts.success("The batch properties were changed successfully.");
+                Alerts.success("The batch properties were changed successfully.", 5000, true);
                 $("#batchTable").DataTable().ajax.reload();
             },
             error: function(err) {
                 FormValidation.clear("#batchPropertiesForm");
-                alerts.warning("The batch was not saved.");
+                alerts.warning("The batch was not saved.", 10000, true);
                 if (Helpers.isJson(err.responseText)) {
                     FormValidation.show("#batchPropertiesForm", err.responseJSON);
                 } else if (err.responseText) {
-                    alerts.error(err.responseText);
+                    alerts.error(err.responseText, 0, true);
                 } else {
-                    alerts.error("Couldn't change batch properties");
+                    alerts.error("Couldn't change batch properties", 0, true);
                 }
             }
         });

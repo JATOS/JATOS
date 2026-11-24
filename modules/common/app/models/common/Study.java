@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.Strings;
+import jakarta.persistence.*;
 import json.common.DefaultJson.JsonForApi;
 import json.common.DefaultJson.JsonForPublix;
 import utils.common.HashUtils;
-
-import jakarta.persistence.*;
 
 import java.sql.Timestamp;
 import java.util.*;
@@ -167,6 +166,15 @@ public class Study {
     private Set<User> userList = new HashSet<>();
 
     /**
+     * Instance-local ownership; never imported or exported with the study properties.
+     */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_username", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_study_owner_user"))
+    private User owner;
+
+    /**
      * Ordered list of components of this study. The relationship is bidirectional.
      */
     @JsonView({JsonForIO.class})
@@ -185,6 +193,13 @@ public class Study {
     @JoinColumn(name = "study_id")
     @SuppressWarnings({"FieldMayBeFinal"})
     private List<Batch> batchList = new ArrayList<>();
+
+    /**
+     * Instance-local configuration; excluded from all study/user JSON representations.
+     */
+    @JsonIgnore
+    @OneToOne(mappedBy = "study", cascade = CascadeType.ALL, orphanRemoval = true)
+    private StudySource studySource;
 
     public Study() {
         this.uuid = UUID.randomUUID().toString();
@@ -358,6 +373,18 @@ public class Study {
         userList.forEach(this::removeUser);
     }
 
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        Objects.requireNonNull(owner, "Study owner must not be null");
+        if (this.owner != null) this.owner.getOwnedStudies().remove(this);
+        this.owner = owner;
+        owner.getOwnedStudies().add(this);
+        addUser(owner);
+    }
+
     public List<Component> getComponentList() {
         return this.componentList;
     }
@@ -459,6 +486,17 @@ public class Study {
     @JsonIgnore
     public Batch getDefaultBatch() {
         return this.batchList.getFirst();
+    }
+
+    @JsonIgnore
+    public StudySource getStudySource() {
+        return studySource;
+    }
+
+    public void setStudySource(StudySource value) {
+        if (value != null && value.getStudy() != this)
+            throw new IllegalArgumentException("Configuration must belong to this study");
+        studySource = value;
     }
 
     @Override

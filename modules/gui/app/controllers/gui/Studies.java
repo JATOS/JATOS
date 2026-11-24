@@ -5,6 +5,7 @@ import actions.common.AsyncAction.Executor;
 import actions.common.TransactionalAction.Transactional;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import daos.common.*;
 import exceptions.common.ForbiddenException;
@@ -33,8 +34,7 @@ import java.util.Map;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 import static messaging.common.FlashMessagingHelper.ERROR;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 /**
  * Controller for all actions regarding studies within the JATOS GUI.
@@ -95,7 +95,7 @@ public class Studies extends Controller {
      * Shows the study view with details of a study and their components.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     public Result study(Http.Request request, Long studyId, int httpStatus) {
         Study study = studyDao.findById(studyId);
@@ -121,7 +121,7 @@ public class Studies extends Controller {
      * POST request to create a new study.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result submitCreated(Http.Request request) {
         Form<StudyProperties> form = formFactory.form(StudyProperties.class).bindFromRequest(request);
         if (form.hasErrors()) return badRequest(form.errorsAsJson());
@@ -135,7 +135,7 @@ public class Studies extends Controller {
      * GET request that returns the study properties as JSON.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result properties(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -149,7 +149,7 @@ public class Studies extends Controller {
      * POST request to update study properties
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result submitEdited(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
@@ -172,7 +172,7 @@ public class Studies extends Controller {
      * POST request to update study properties
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result submitDescription(Http.Request request, Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -183,7 +183,7 @@ public class Studies extends Controller {
         StudyProperties sp = new StudyProperties();
         sp.setDescription(description);
         List<ValidationError> errors = sp.validateDescription();
-        if (!errors.isEmpty()) return badRequest(errors.get(0).message());
+        if (!errors.isEmpty()) return badRequest(errors.getFirst().message());
 
         studyService.updateDescription(study, description);
         return ok();
@@ -193,7 +193,7 @@ public class Studies extends Controller {
      * POST request to swap the locked field of a study.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result toggleLock(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -213,7 +213,7 @@ public class Studies extends Controller {
      * GET request to clone a study.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result cloneStudy(Long studyId) {
         Study study = studyDao.findByIdWithComponents(studyId);
@@ -228,32 +228,37 @@ public class Studies extends Controller {
     }
 
     /**
-     * GET request that gets all users and whether they are admin of this study as a JSON array.
+     * GET request that returns study members, the owner, and membership-management permission.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
+    @Transactional
     public Result memberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         authorizationService.canUserAccessStudy(study, signedinUser);
 
         List<User> userList = userDao.findAllByStudy(study);
-        return ok(domainJsonMapper.memberUserArrayOfStudy(userList));
+        var response = (ObjectNode) domainJsonMapper.memberUserArrayOfStudy(userList, study);
+        response.put("isOwner",
+                studyDao.isOwner(study, signedinUser) || authorizationService.isAllowedSuperuser(signedinUser));
+        response.put("isAllowedToAddAllUsers", Common.isStudyOwnerAllowedToAddAllUsers());
+        return ok(response);
     }
 
     /**
      * POST request that adds or removes a member user from a study
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result toggleMemberUser(Long studyId, String username, boolean isMember) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         String normalizedUsername = User.normalizeUsername(username);
-        authorizationService.canUserAccessStudy(study, signedinUser);
 
         User userToChange = userService.retrieveUser(normalizedUsername);
+        authorizationService.checkMembershipChange(study, signedinUser, userToChange, isMember);
         studyService.changeUserMember(study, userToChange, isMember);
 
         return ok(domainJsonMapper.memberUserOfStudy(userToChange, study));
@@ -263,14 +268,14 @@ public class Studies extends Controller {
      * POST request that adds all users as members to a study
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result addAllMemberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.canUserAccessStudy(study, signedinUser);
+        authorizationService.checkStudyOwner(study, signedinUser, false);
 
-        if (!Common.isStudyMembersAllowedToAddAllUsers()) {
+        if (!Common.isStudyOwnerAllowedToAddAllUsers()) {
             return forbidden("It's not allowed to add all users at once in this JATOS.");
         }
 
@@ -282,12 +287,12 @@ public class Studies extends Controller {
      * DELETE request that removes all member users from a study
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result removeAllMemberUsers(Long studyId) {
         Study study = studyDao.findById(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
-        authorizationService.canUserAccessStudy(study, signedinUser);
+        authorizationService.checkStudyOwner(study, signedinUser, false);
 
         studyService.removeAllUserMembers(study);
         return ok();
@@ -297,7 +302,7 @@ public class Studies extends Controller {
      * POST request to change the order of components within a study.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @Transactional
     public Result changeComponentOrder(Long studyId, Long componentId, int newPosition) {
         Study study = studyDao.findByIdWithComponents(studyId);
@@ -316,7 +321,7 @@ public class Studies extends Controller {
      * Redirects to /publix/runx.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result runStudy(Long studyId, Long batchId, Long frames, Long hSplit, Long vSplit) {
         Study study = studyDao.findById(studyId);
         Batch batch = batchService.fetchBatch(batchId, study);
@@ -337,7 +342,7 @@ public class Studies extends Controller {
      * GET request that returns all component data of the given study as JSON.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result tableDataByStudy(Long studyId) {
         Study study = studyDao.findByIdWithComponents(studyId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

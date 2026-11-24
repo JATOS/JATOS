@@ -5,6 +5,7 @@ import cluster.ChannelMessageBus
 import daos.common.StudyResultDao
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
 import executor.common.IOExecutor
+import general.common.JpaTransactions
 import jakarta.persistence.EntityManager
 import models.common.StudyResult
 import models.common.workers.WorkerType
@@ -21,7 +22,8 @@ import scala.concurrent.ExecutionContext
  * worker type.
  */
 @Singleton
-class ChannelInterceptor @Inject()(components: ControllerComponents,
+class ChannelInterceptor @Inject()(transactions: JpaTransactions,
+                                   components: ControllerComponents,
                                    studyResultDao: StudyResultDao,
                                    jatosBatchChannel: JatosBatchChannel,
                                    personalSingleBatchChannel: PersonalSingleBatchChannel,
@@ -58,7 +60,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
         if (!channelMessageBus.isReady) {
           Left(Results.ServiceUnavailable("Cluster node is joining; retry the channel connection.")
             .withHeaders("Retry-After" -> "1"))
-        } else studyResultDao.withReadOnlyTransaction((_: EntityManager) => {
+        } else transactions.withReadOnlyTransaction((_: EntityManager) => {
           try {
             val studyResult = fetchStudyResult(studyResultUuid)
             studyResult.getWorkerType match {
@@ -202,7 +204,7 @@ class ChannelInterceptor @Inject()(components: ControllerComponents,
    */
   def leaveGroup(studyResultUuid: String): Action[AnyContent] = Action.async { request =>
     withContext(request) {
-      studyResultDao.withTransaction(_ => {
+      transactions.withTransaction(_ => {
         try {
           val studyResult = fetchStudyResult(studyResultUuid)
           studyResult.getWorkerType match {

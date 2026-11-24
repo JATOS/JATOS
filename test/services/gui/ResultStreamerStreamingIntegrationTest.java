@@ -1,8 +1,5 @@
 package services.gui;
 
-import org.apache.pekko.stream.Materializer;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import daos.common.ComponentResultDao;
@@ -10,10 +7,14 @@ import daos.common.StudyDao;
 import daos.common.StudyResultDao;
 import general.GuiceModule;
 import general.common.Common;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
 import models.common.*;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import org.junit.*;
 import org.mockito.ArgumentMatchers;
 import play.Application;
@@ -51,6 +52,7 @@ public class ResultStreamerStreamingIntegrationTest {
     private Application app;
     private Materializer materializer;
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
     private StudyDao studyDao;
@@ -58,9 +60,7 @@ public class ResultStreamerStreamingIntegrationTest {
     private AuthorizationService authorizationService;
     private StudyLogger studyLogger;
     private ComponentResultIdsExtractor componentResultIdsExtractor;
-
     private ResultStreamer resultStreamer;
-
     private User user;
 
     @BeforeClass
@@ -104,6 +104,7 @@ public class ResultStreamerStreamingIntegrationTest {
         componentResultIdsExtractor = mock(ComponentResultIdsExtractor.class);
 
         resultStreamer = new ResultStreamer(
+                transactions,
                 componentResultDao,
                 studyResultDao,
                 studyDao,
@@ -115,7 +116,7 @@ public class ResultStreamerStreamingIntegrationTest {
         user = new User();
         user.setUsername("alice");
 
-        JPAMocker.mockDaoTransactions(studyResultDao, componentResultDao, studyDao);
+        JPAMocker.mockTransactions(null, transactions);
     }
 
     @After

@@ -1,14 +1,14 @@
 package daos.common;
 
-import models.common.workers.WorkerType;
+import general.common.JpaTransactions;
+import jakarta.persistence.EntityManager;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.Worker;
-import play.db.jpa.JPAApi;
+import models.common.workers.WorkerType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,7 +16,7 @@ import java.util.Optional;
 public class StudyLinkDao extends AbstractDao {
 
     @Inject
-    StudyLinkDao(JPAApi jpa) {
+    StudyLinkDao(JpaTransactions jpa) {
         super(jpa);
     }
 

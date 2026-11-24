@@ -145,7 +145,7 @@ class Toolbars {
                                         // https://datatables.net/forums/discussion/33209/run-script-before-exporting-begins-buttons-plugin
                                         $(".dt-button-collection").hide();
                                         if (dataTable.rows('.selected').nodes().length == 0) {
-                                            Alerts.error("No results selected", 5000);
+                                            Alerts.error("No results selected", 5000, true);
                                             // Hide ".dt-button-background" because it prevents a subsequent click showing the dropdown.
                                             // This hack is only necessary for multi-level dropdowns, the second layer.
                                             $(".dt-button-background").remove();

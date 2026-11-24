@@ -47,7 +47,7 @@
             success: showStudyLogModal,
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't get study log.";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         });
     });
@@ -55,53 +55,84 @@
     function showStudyLogModal(response) {
         Helpers.generateModalSubtitles("#studyLogModal", {"Study": window.study.title});
 
-        studyLogRaw = response;
-        let studyLog;
-        try {
-            studyLog = JSON.parse(studyLogRaw);
-        } catch(e) {
-            alerts.error("Couldn't parse study log. This study's log is corrupted. You can only see the raw content here.");
-            showStudyLogRaw();
-            return;
-        }
+        const studyLog = response;
+        studyLogPretty = "";
+        studyLogRaw = "";
+        $("#studyLogMessage").addClass("d-none").empty();
         if (typeof studyLog[0] === 'string' && studyLog[0].includes("Error")) {
-            alerts.error("Couldn't get study log.");
+            alerts.error("Couldn't get study log.", 0, true);
         }
+
         const entryLimit = studyLog.length - 1;
         if (typeof studyLog[entryLimit] === 'string' && studyLog[entryLimit].includes("Log is cut here")) {
             $("#studyLogMessage").removeClass("d-none").text(`This study log has more than ${entryLimit} entries.
             Only the last ${entryLimit} entries are shown. To get the whole study log download it and display it locally.`);
         }
-        studyLog.forEach(function(entry) {
-            if (entry.timestamp) {
-                entry.timestamp = new Date(entry.timestamp).toLocaleString('en-GB')
-            }
-        });
-        studyLogPretty = prettifyStudyLogJson(studyLog);
+
+        try {
+            studyLogRaw = studyLog.map(item => JSON.stringify(item, null, 2)).join("\n");
+        } catch(e) {
+            alerts.error("Couldn't parse study log. This study log is corrupted. You try downloading it.", 0, true);
+            return;
+        }
+
+        studyLogPretty = formatStudyLog(studyLog);
         showStudyLogPretty();
     }
 
-    function prettifyStudyLogJson(studyLog) {
-        return JSON.stringify(studyLog, function(key, value) {
-            if (key === "workerIds" || key === "dataHashes" || key === "componentUuids") {
-                return JSON.stringify(value);
+    function formatStudyLog(studyLog) {
+        const labels = {
+            studyUuid: "Study UUID", componentUuid: "Component UUID", componentUuids: "Component UUIDs",
+            workerId: "Worker ID", workerIds: "Worker IDs", batchId: "Batch ID",
+            studyCode: "Study code", studyDescriptionHash: "Study description hash",
+            serversMac: "Server MAC address", hashFunction: "Hash function",
+            dataHash: "Data hash", dataHashes: "Data hashes", fileHash: "File hash", fileName: "File name"
+        };
+        function labelFor(key) {
+            return labels[key] || key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase());
+        }
+        function formatValue(value) {
+            if (value === null) return "—";
+            if (Array.isArray(value)) return value.length ? value.map(formatValue).join(", ") : "(none)";
+            if (typeof value === "object") {
+                return Object.entries(value).map(([key, item]) => `${key}: ${formatValue(item)}`).join("; ");
             }
-            return value;
-        }, 2).replace(/\\/g, '')
-                .replace(/\"\[/g, '[')
-                .replace(/\]\"/g,']')
-                .replace(/\"\{/g, '{')
-                .replace(/\}\"/g,'}');
+            return String(value);
+        }
+        if (studyLog.length === 0) return "No study log entries.";
+        return studyLog.map(entry => {
+            // The backend can include plain-text notices, e.g. when the log is truncated.
+            if (entry === null || typeof entry !== "object") return formatValue(entry);
+            const heading = [];
+            if (entry.timestamp) {
+                const date = new Date(entry.timestamp);
+                heading.push(Number.isNaN(date.getTime()) ? entry.timestamp : date.toLocaleString('en-GB'));
+            }
+            if (entry.userName) heading.push(entry.userName);
+            const lines = [];
+            if (heading.length) lines.push(heading.join(" — "));
+            if (entry.msg) lines.push(entry.msg);
+            Object.entries(entry).forEach(([key, value]) => {
+                if (!["timestamp", "userName", "msg"].includes(key)) {
+                    lines.push(`  ${labelFor(key)}: ${formatValue(value)}`);
+                }
+            });
+            return lines.join("\n");
+        }).join("\n\n");
     }
 
     $('#studyLogPretty').on('change', showStudyLogPretty);
     $('#studyLogRaw').on('change', showStudyLogRaw);
 
     function showStudyLogPretty() {
+        $('#studyLogPretty').prop('checked', true);
+        $('#studyLogModal pre').css({'white-space': 'pre-wrap', 'overflow-wrap': 'anywhere'});
         $('#studyLogModal code').text(studyLogPretty);
     }
 
     function showStudyLogRaw() {
+        $('#studyLogRaw').prop('checked', true);
+        $('#studyLogModal pre').css({'white-space': '', 'overflow-wrap': ''});
         $('#studyLogModal code').text(studyLogRaw);
     }
 

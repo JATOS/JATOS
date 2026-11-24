@@ -11,7 +11,6 @@ import play.mvc.Http;
 import play.mvc.Result;
 
 import javax.inject.Inject;
-import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 import static general.common.ApiEnvelope.ErrorCode.OPENAI_ERROR;
@@ -50,7 +49,7 @@ public class OpenAiProxy extends Controller {
 
         WSRequest wsRequest = ws.url("https://api.openai.com" + Common.getOpenAiUrlBasePath() + formattedPath)
                 .addHeader("Authorization", "Bearer " + Common.getOpenAiApiKey())
-                .setRequestTimeout(Duration.ofSeconds(Common.getOpenAiTimeout()));
+                .setRequestTimeout(Common.getOpenAiTimeout());
 
         // Pass through Content-Type if present, default to JSON
         String contentType = request.contentType().orElse("application/json");

@@ -49,6 +49,24 @@ public class StudyServiceIntegrationTest extends JatosTest {
     @Inject
     private BatchDao batchDao;
 
+    @Inject
+    private general.common.JpaTransactions transactions;
+
+    @Test
+    public void newStudyAssetsAreRemovedOnRollback() {
+        Context.current().args().put(SIGNEDIN_USER, admin);
+        StudyProperties props = new StudyProperties();
+        props.setTitle("Rollback");
+        props.setDirName("rollback-" + UUID.randomUUID());
+        org.junit.Assert.assertThrows(IllegalStateException.class, () ->
+                transactions.withTransaction((java.util.function.Consumer<EntityManager>) em -> {
+                    studyService.createAndPersistStudyAndAssetsDir(props, true);
+                    assertThat(ioUtils.checkStudyAssetsDirExists(props.getDirName())).isTrue();
+                    throw new IllegalStateException("rollback");
+                }));
+        assertThat(ioUtils.checkStudyAssetsDirExists(props.getDirName())).isFalse();
+    }
+
     /**
      * StudyService.clone(): clones a study but does not persist. This includes the Components, Batches and asset
      * directory.
@@ -92,6 +110,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
     @Test
     public void checkChangeUserMember() {
         Long studyId = importExampleStudy();
+        Context.current().args().put(SIGNEDIN_USER, admin);
 
         // Add user foo but not user bar
         jpaApi.withTransaction((EntityManager em) -> {
@@ -200,6 +219,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
     @Test
     public void checkChangeUserMemberDouble() {
         Long studyId = importExampleStudy();
+        Context.current().args().put(SIGNEDIN_USER, admin);
 
         // Add user foo twice: no exception should be thrown
         {
@@ -248,6 +268,7 @@ public class StudyServiceIntegrationTest extends JatosTest {
     @Test
     public void checkChangeUserMemberAtLeastOne() {
         Long studyId = importExampleStudy();
+        Context.current().args().put(SIGNEDIN_USER, admin);
 
         // If one tries to remove the last user of a study, an exception is thrown
         try {
@@ -436,6 +457,8 @@ public class StudyServiceIntegrationTest extends JatosTest {
             // admin's worker is added to the batch
             assertThat(defaultBatch.getWorkerList()).isNotEmpty();
             assertThat(s.getUserList()).contains(admin);
+            assertThat(s.getOwner()).isEqualTo(admin);
+            assertThat(s.getOwner().getOwnedStudies()).contains(s);
         });
     }
 

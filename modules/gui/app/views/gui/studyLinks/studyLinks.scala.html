@@ -78,14 +78,14 @@
 
     const alerts = new Alerts.Named("study-links");
 
-    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.");
+    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.", 10000, true);
 
     let batchTable;
     $(document).ready(function() {
         batchTable = $('#batchTable').DataTable({
             "ajax": {
                 "url" : window.routes.StudyLinks.batchesByStudy(window.study.id),
-                "error": () => Alerts.error("Error reading result data")
+                "error": () => Alerts.error("Error reading result data", 0, true)
             },
             "dom": 't',
             "pageLength": 100,
@@ -182,7 +182,7 @@
             },
             error: (err) => {
                 const message = err?.responseJSON?.error?.message ?? "Couldn't toggle batch activation";
-                alerts.error(message);
+                alerts.error(message, 0, true);
             }
         });
     });
@@ -204,10 +204,10 @@
                 headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
                 beforeSend: WaitingModal.show,
                 success : function(result) {
-                    Alerts.showList(JSON.parse(result));
+                    Alerts.showList(JSON.parse(result), undefined, true);
                     batchTable.ajax.reload();
                 },
-                error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Couldn't delete batch"),
+                error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Couldn't delete batch", 0, true),
                 complete: WaitingModal.hide
             });
         };

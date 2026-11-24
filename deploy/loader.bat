@@ -65,21 +65,6 @@ rem ### Functions ###
   set "_JAVA_PARAMS="
   set "_APP_ARGS="
 
-  rem Generate a fallback secret. This is inherited by the Java process as the GENERATED_SECRET environment variable.
-  rem It is only used if jatos.conf/jatos.secret or env var JATOS_SECRET aren't used.
-  set "GENERATED_SECRET="
-  for /F "usebackq delims=" %%S in (`powershell.exe -NoProfile -Command ^
-    "$b = New-Object byte[] 48; " ^
-    "$rng = [Security.Cryptography.RandomNumberGenerator]::Create(); " ^
-    "try { $rng.GetBytes($b) } finally { $rng.Dispose() }; " ^
-    "[Convert]::ToBase64String($b)"`) do (
-    set "GENERATED_SECRET=%%S"
-  )
-  if not defined GENERATED_SECRET (
-    echo Could not generate a fallback application secret.
-    exit /B 1
-  )
-
   call :checkjava
   if errorlevel 1 (
     exit /B 1
@@ -118,12 +103,54 @@ rem ### Functions ###
     exit /B 1
   )
 
+  rem Prepare the secret. Explicit configuration still takes precedence.
+  call :load_secret
+  if errorlevel 1 exit /B 1
+
   rem Start JATOS
   "%_JAVACMD%" !_JAVA_OPTS! !JATOS_OPTS! -cp "%APP_CLASSPATH%" %APP_MAIN_CLASS% !_APP_ARGS! 2>&1
   set "EXIT_CODE=!ERRORLEVEL!"
 
   set "GENERATED_SECRET="
   exit /B !EXIT_CODE!
+
+:load_secret
+  rem Loads the secret from file or generates one if it doesn't exist.
+  set "GENERATED_SECRET="
+  for /F "usebackq delims=" %%S in (`powershell.exe -NoProfile -Command ^
+    "$ErrorActionPreference = 'Stop'; " ^
+    "$path = Join-Path $env:JATOS_HOME 'conf\generated-secret'; " ^
+    "$temp = $null; " ^
+    "try { " ^
+    "    $acl = New-Object Security.AccessControl.FileSecurity; " ^
+    "    $acl.SetAccessRuleProtection($true, $false); " ^
+    "    $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User; " ^
+    "    $rule = New-Object Security.AccessControl.FileSystemAccessRule($sid, 'FullControl', 'Allow'); " ^
+    "    $acl.AddAccessRule($rule); " ^
+    "  if (-not (Test-Path -LiteralPath $path)) { " ^
+    "    $b = New-Object byte[] 48; " ^
+    "    $rng = [Security.Cryptography.RandomNumberGenerator]::Create(); " ^
+    "    try { $rng.GetBytes($b) } finally { $rng.Dispose() }; " ^
+    "    $temp = Join-Path (Split-Path $path) ('.generated-secret.' + [Guid]::NewGuid().ToString()); " ^
+    "    $stream = [IO.File]::Create($temp, 4096, [IO.FileOptions]::None, $acl); " ^
+    "    try { $data = [Text.Encoding]::ASCII.GetBytes([Convert]::ToBase64String($b)); $stream.Write($data, 0, $data.Length) } finally { $stream.Dispose() }; " ^
+    "    try { [IO.File]::Move($temp, $path) } catch [IO.IOException] { if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw } }; " ^
+    "  }; " ^
+    "  $item = Get-Item -LiteralPath $path -Force; " ^
+    "  if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Secret must be a regular file' }; " ^
+    "  [IO.File]::SetAccessControl($path, $acl); " ^
+    "  $secret = [IO.File]::ReadAllText($path).TrimEnd([char[]]([char]13, [char]10)); " ^
+    "  if ($secret -cnotmatch '^[A-Za-z0-9+/=]{64}$') { throw 'Invalid saved secret' }; " ^
+    "  [Console]::WriteLine($secret); " ^
+    "} catch { [Console]::Error.WriteLine('Could not load conf/generated-secret. Check its contents and permissions.'); exit 1 } " ^
+    "finally { if ($temp -and [IO.File]::Exists($temp)) { [IO.File]::Delete($temp) } }"`) do (
+    set "GENERATED_SECRET=%%S"
+  )
+  if not defined GENERATED_SECRET (
+    echo Could not load the fallback application secret.
+    exit /B 1
+  )
+  exit /B 0
 
 :is_running
   set "PID="

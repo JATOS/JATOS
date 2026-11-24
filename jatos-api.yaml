@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.1.0
+  version: 1.3.0
 externalDocs:
   description: Find out more about JATOS
   url: https://www.jatos.org
@@ -163,6 +163,11 @@ paths:
           description: User not found
     get:
       summary: Get a user (admin or self)
+      description: >-
+        Credential metadata is included only for the authenticated user's own account.
+        Stored secrets are never returned.
+      security:
+        - BearerAuth: []
       tags: [ admin ]
       parameters:
         - in: path
@@ -187,6 +192,13 @@ paths:
           description: User not found
     patch:
       summary: Update a user (admin or self)
+      description: >-
+        Profile and Git credential changes are applied in one transaction. Only the
+        authenticated user may change their own Git credentials; admin access to
+        another user does not grant credential access. Name and email are read-only
+        for external sign-in accounts (all methods except DB and LDAP).
+      security:
+        - BearerAuth: []
       tags: [ admin ]
       parameters:
         - in: path
@@ -207,6 +219,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeUser'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
         '401':
           description: Unauthorized
         '403':
@@ -444,21 +458,44 @@ paths:
     post:
       summary: Import or create a study
       description: |
-        Imports a JATOS study archive or creates a new study from scratch.
+        Imports a JATOS study archive or creates a study from properties or a local-folder source.
         The endpoint's behavior is determined by the **Content-Type** header.
         ---
 
-        ### 1. Import Study Archive
+        ### 1. Create Study
+        Initialize a new study using JSON containing the study properties.
+        * **Supported Content-Type:** `application/json`.
+        * **Request Body:** Must contain a JSON object defining the study's properties.
+
+        ### 2. Import Study Archive
         Upload a `.jzip` file.
         * **Supported Content-Types:** `multipart/form-data`, `application/zip`, or `application/octet-stream`.
         * **UUID Conflicts:** If a study with the same UUID already exists,
         behavior is controlled by query parameters (e.g., whether to overwrite
         or keep existing properties and assets).
         
-        ### 2. Create Study
-        Initialize a new study using JSON containing the study properties.
-        * **Supported Content-Type:** `application/json`.
-        * **Request Body:** Must contain a JSON object defining the study's properties.
+        ### 3. Create From a Local Folder
+        Creates a new JATOS study by importing study properties and assets from a folder on the computer running JATOS.
+        Use `application/json` with a `source` object containing `type: LOCAL_FOLDER`
+        and `localFolderPath`, an absolute path on the computer running JATOS.
+        Copies one root `.jas` file and `assets/` without modifying the source.
+        The folder must contain a root `.jas` file or an `assets/` directory, or both.
+        Missing properties use new-study defaults; missing assets produce an empty directory.
+        An existing UUID is rejected with HTTP 409, without overwriting the study.
+        The initiating user owns the new study. Source settings are saved for later synchronization.
+        Server mode with empty allowed roots disables folder sources; nonempty roots restrict both modes.
+        Source requests cannot include study properties or any of the query parameters below.
+
+        ### 4. Create From Git
+        Creates a new JATOS study by downloading study properties and assets from a Git repository.
+        Use `application/json` with a `source` object containing `type: GIT`, `gitUrl`, and
+        optionally `gitRef`, `anonymous`, `username`, and `secret`. Only HTTPS is supported.
+        An empty ref selects the default branch; named branches and tags are supported.
+        Credentials are selected once: explicit anonymous access, supplied study credentials,
+        matching owner credentials, matching server credentials, then anonymous access.
+        Authentication failures do not fall back to another credential. The repository must contain
+        a root .jas file and/or assets/ directory. Existing UUIDs are rejected with 409.
+        Source settings and encrypted study credentials are saved only after successful creation.
       tags: [ study ]
       parameters:
         - in: query
@@ -514,13 +551,15 @@ paths:
             will return HTTP 403 (Forbidden). Default is `true`.
       requestBody:
         description: >-
-          Either a JSON object containing study properties (create) or
+          A JSON object containing study properties or a source definition, or
           a JATOS study archive upload (.jzip).
         required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StudyCreate'
+              oneOf:
+                - $ref: '#/components/schemas/StudyCreate'
+                - $ref: '#/components/schemas/StudySourceCreate'
           multipart/form-data:
             schema:
               type: object
@@ -559,6 +598,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         '403':
           $ref: "#/components/responses/ForbiddenError"
+        '409':
+          $ref: '#/components/responses/ConflictError'
         '415':
           description: Wrong 'Content-Type' header
 
@@ -624,6 +665,335 @@ paths:
           $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
+
+  /jatos/api/v1/studies/{id}/source/git/pull:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Preview pull from the configured Git repository
+      description: >-
+        Fetches the configured branch or tag and returns available content, resolved commit, and credential source.
+        A .jas UUID differing from the target study is rejected, even for assets-only imports.
+        Requires study membership. Rejects studies without a configured GIT source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available source content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyGitPullPreview'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Pull selected study content from the configured Git repository
+      description: >-
+        Select properties, assets, or both. Selected assets replace the entire directory,
+        never merge; an empty assets directory clears existing assets. Missing content
+        cannot be selected. The .jas UUID must match. Existing ownership, membership,
+        source settings, batches and the internal assets directory name are preserved.
+        A preview is optional. Each pull fetches the ref again, so it may apply a newer commit than the preview.
+        Uses study credentials, matching owner credentials, matching global credentials, or anonymous access;
+        explicit anonymous access overrides credentials. Authentication failures do not trigger fallback.
+        No commits, merges, or pushes are made. Requires study membership. Rejects studies without a
+        configured GIT source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceSyncUpdate'
+      responses:
+        '200':
+          description: Selected content pulled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /jatos/api/v1/studies/{id}/source/git/push:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Preview push to the configured Git branch
+      description: >-
+        Fetches the destination branch and checks its study identity. Returns the resolved branch, commitId,
+        credential source, and content available in JATOS. Requires study membership and a configured GIT source.
+        Tags cannot be pushed to. This preview checks read access; write access and branch protection are checked
+        during the push.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Destination branch and available study content (properties and assets)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyGitPushPreview'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Push selected study content to the configured Git branch
+      description: >-
+        Exports selected properties and/or assets to the configured default or named branch. A preview is optional.
+        Replaces selected content completely, preserving unrelated repository files.
+        Source settings, credentials, and synchronization history are excluded. Requires study membership;
+        the selected credentials must have write access. Credential selection is the same as for pulling.
+        Exported study properties retain their normal content. No force push or automatic merge is performed.
+        Returns the resulting commit and changed=false if no new commit was needed. Tags and repositories without
+        an existing destination branch are rejected.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceSyncUpdate'
+      responses:
+        '200':
+          description: Push completed, or selected content was already up to date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyGitPushResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /jatos/api/v1/studies/{id}/source/folder/import:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Preview import from the configured local folder
+      description: >-
+        Stages the configured local folder and returns available content for confirmation.
+        A .jas UUID differing from the target study is rejected, even for assets-only imports.
+        Requires study membership. Rejects studies without a configured LOCAL_FOLDER source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available source content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncPreview'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Import selected study content from the configured local folder
+      description: >-
+        Select properties, assets, or both. Selected assets replace the entire directory,
+        never merge; an empty assets directory clears existing assets. Missing content
+        cannot be selected. The .jas UUID must match. Existing ownership, membership,
+        source settings, batches and the internal assets directory name are preserved.
+        Requires study membership. Rejects studies without a configured LOCAL_FOLDER source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceSyncUpdate'
+      responses:
+        '200':
+          description: Selected content imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /jatos/api/v1/studies/{id}/source/folder/export:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Preview export to the configured local folder
+      description: >-
+        Returns available study content. Invalid destinations return an error, including a different
+        .jas UUID, an invalid .jas, or multiple .jas files. No content is changed.
+        Requires study membership. Rejects studies without a configured LOCAL_FOLDER source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available source content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncPreview'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Export selected study content to the configured local folder
+      description: >-
+        Select properties, assets, or both.
+        Export reuses the single existing .jas filename or creates study.jas. A different UUID,
+        invalid .jas, or multiple .jas files block export, including assets-only export.
+        Selected assets replace the entire destination assets directory without merging.
+        Empty study assets clear destination assets; missing study assets cannot be exported.
+        Unrelated root files like .git are preserved. Source settings, credentials, and synchronization
+        history are excluded from the exported .jas. Requires study membership.
+        Rejects studies without a configured LOCAL_FOLDER source.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceSyncUpdate'
+      responses:
+        '200':
+          description: Selected content synchronized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySourceSyncResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /jatos/api/v1/studies/{id}/source:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Get study source configuration
+      description: >-
+        Requires the study owner or an enabled superuser. Returns source settings
+        and credential metadata, never stored secrets. An unconfigured study returns
+        type NONE. Source settings are excluded from study exports.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Source configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySource'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Save study source configuration
+      description: >-
+        Requires the study owner or an enabled superuser. This replaces source
+        configuration; it does not fetch or synchronize study content. Inactive
+        source fields are cleared. Switching away from Git removes study credentials.
+        Type NONE deletes source settings and credentials; previous study-log entries remain. Changing the repository origin requires removing or replacing saved
+        study credentials.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceUpdate'
+            examples:
+              git:
+                value:
+                  type: GIT
+                  gitUrl: https://github.com/example/study.git
+                  gitRef: main
+              folder:
+                value:
+                  type: LOCAL_FOLDER
+                  localFolderPath: /srv/studies/example
+              remove:
+                value:
+                  type: NONE
+      responses:
+        '200':
+          description: Saved source configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudySource'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   /jatos/api/v1/studies/{id}/properties:
     get:
@@ -2100,25 +2470,21 @@ security:
 
 components:
   securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
+    BearerAuth: {type: http, scheme: bearer}
 
   parameters:
     StudyIdOrUuidParameter:
       in: path
       name: id
       required: true
-      schema:
-        type: string
+      schema: { type: string }
       description: Either a study ID or a study UUID
     StudyIdParameter:
       in: query
       name: studyId
       schema:
         type: array
-        items:
-          type: integer
+        items: { type: integer }
       style: form
       explode: true
       description: >-
@@ -2129,8 +2495,7 @@ components:
       name: studyUuid
       schema:
         type: array
-        items:
-          type: string
+        items: { type: string }
       style: form
       explode: true
       description: >-
@@ -2140,16 +2505,14 @@ components:
       in: path
       name: id
       required: true
-      schema:
-        type: string
+      schema: { type: string }
       description: Either a component ID or a component UUID
     ComponentIdParameter:
       in: query
       name: componentId
       schema:
         type: array
-        items:
-          type: integer
+        items: { type: integer }
       style: form
       explode: true
       description: >-
@@ -2160,8 +2523,7 @@ components:
       name: componentUuid
       schema:
         type: array
-        items:
-          type: string
+        items: { type: string }
       style: form
       explode: true
       description: >-
@@ -2172,8 +2534,7 @@ components:
       name: studyResultId
       schema:
         type: array
-        items:
-          type: integer
+        items: { type: integer }
       style: form
       explode: true
       description: >-
@@ -2184,8 +2545,7 @@ components:
       name: componentResultId
       schema:
         type: array
-        items:
-          type: integer
+        items: { type: integer }
       style: form
       explode: true
       description: >-
@@ -2195,16 +2555,14 @@ components:
       in: path
       name: id
       required: true
-      schema:
-        type: string
+      schema: { type: string }
       description: Either a batch ID or batch UUID
     BatchIdParameter:
       in: query
       name: batchId
       schema:
         type: array
-        items:
-          type: integer
+        items: { type: integer }
       style: form
       explode: true
       description: >-
@@ -2215,8 +2573,7 @@ components:
       name: groupId
       schema:
         type: array
-        items:
-          type: integer
+        items: { type: integer }
       style: form
       explode: true
       description: >-
@@ -2226,15 +2583,13 @@ components:
       in: path
       name: studyResultUuid
       required: true
-      schema:
-        type: string
+      schema: { type: string }
       description: The UUID of the study result
     OpenAiPathParameter:
       in: path
       name: path
       required: true
-      schema:
-        type: string
+      schema: { type: string }
       description: The specific OpenAI API endpoint path
 
   requestBodies:
@@ -2247,74 +2602,62 @@ components:
               studyIds:
                 oneOf:
                   - type: array
-                    items:
-                      type: integer
+                    items: { type: integer }
                   - type: integer
                   - type: string
               studyUuids:
                 oneOf:
                   - type: array
-                    items:
-                      type: string
+                    items: { type: string }
                   - type: string
               componentIds:
                 oneOf:
                   - type: array
-                    items:
-                      type: integer
+                    items: { type: integer }
                   - type: integer
                   - type: string
               componentUuids:
                 oneOf:
                   - type: array
-                    items:
-                      type: string
+                    items: { type: string }
                   - type: string
               componentResultIds:
                 oneOf:
                   - type: array
-                    items:
-                      type: integer
+                    items: { type: integer }
                   - type: integer
                   - type: string
               studyResultIds:
                 oneOf:
                   - type: array
-                    items:
-                      type: integer
+                    items: { type: integer }
                   - type: integer
                   - type: string
               batchIds:
                 oneOf:
                   - type: array
-                    items:
-                      type: integer
+                    items: { type: integer }
                   - type: integer
                   - type: string
               groupIds:
                 oneOf:
                   - type: array
-                    items:
-                      type: integer
+                    items: { type: integer }
                   - type: integer
                   - type: string
           examples:
             studyIds:
               summary: Study ID
-              value:
-                studyIds: 1
+              value: { studyIds: 1 }
             studyUuids:
               summary: Study UUID
-              value:
-                studyUuids: 11111111-1111-1111-1111-111111111111
+              value: { studyUuids: 11111111-1111-1111-1111-111111111111 }
             componentIds:
               summary: Component ID
-              value:
-                componentIds: 1
+              value: { componentIds: 1 }
             componentUuids:
               summary: Component UUID
-              value:
-                componentUuids: 11111111-1111-1111-1111-111111111111
+              value: { componentUuids: 11111111-1111-1111-1111-111111111111 }
             listOfComponentIds:
               summary: Multiple component IDs
               value:
@@ -2331,12 +2674,10 @@ components:
                   - 33333333-3333-3333-3333-333333333333
             batchIds:
               summary: Batch ID
-              value:
-                batchIds: 1
+              value: { batchIds: 1 }
             groupIds:
               summary: Group ID
-              value:
-                groupIds: 1
+              value: { groupIds: 1 }
             listOfComponentResultIds:
               summary: Multiple component result IDs
               value:
@@ -2346,12 +2687,10 @@ components:
                   - 3
             rangeOfComponentResultIds:
               summary: Range of component result IDs
-              value:
-                componentResultIds: 1-10
+              value: { componentResultIds: 1-10 }
             mixOfComponentResultIds:
               summary: Mix of ranges and single component result IDs
-              value:
-                componentResultIds: 1-10, 12, 15, 20-30
+              value: { componentResultIds: '1-10, 12, 15, 20-30' }
             listOfStudyResultIds:
               summary: Multiple study result IDs
               value:
@@ -2361,12 +2700,10 @@ components:
                   - 3
             rangeOfStudyResultIds:
               summary: Range of Study result IDs
-              value:
-                studyResultIds: 1-10
+              value: { studyResultIds: 1-10 }
             mixOfStudyResultIds:
               summary: Mix of ranges and single study result IDs
-              value:
-                studyResultIds: 1-10, 12, 15, 20-30
+              value: { studyResultIds: '1-10, 12, 15, 20-30' }
             combinationOfAll:
               summary: All
               value:
@@ -2384,52 +2721,50 @@ components:
       description: Unauthorized
       content:
         application/json:
-          schema:
-            $ref: "#/components/schemas/ApiEnvelopeError"
+          schema: { $ref: '#/components/schemas/ApiEnvelopeError' }
 
     ForbiddenError:
       description: Forbidden
       content:
         application/json:
-          schema:
-            $ref: "#/components/schemas/ApiEnvelopeError"
+          schema: { $ref: '#/components/schemas/ApiEnvelopeError' }
 
     NotFoundError:
       description: Not found
       content:
         application/json:
-          schema:
-            $ref: "#/components/schemas/ApiEnvelopeError"
+          schema: { $ref: '#/components/schemas/ApiEnvelopeError' }
 
     BadRequestError:
       description: Bad request
       content:
         application/json:
-          schema:
-            $ref: "#/components/schemas/ApiEnvelopeError"
+          schema: { $ref: '#/components/schemas/ApiEnvelopeError' }
+
+    ConflictError:
+      description: Conflict with the current state of the resource
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiEnvelopeError' }
 
     TooManyRequestsError:
       description: Too many requests
       content:
         application/json:
-          schema:
-            $ref: "#/components/schemas/ApiEnvelopeError"
+          schema: { $ref: '#/components/schemas/ApiEnvelopeError' }
 
   schemas:
     ApiEnvelopeSuccess:
       type: object
       properties:
-        apiVersion:
-          type: string
-        message:
-          type: string
+        apiVersion: { type: string }
+        message: { type: string }
       required: [ apiVersion ]
 
     ApiEnvelopeError:
       type: object
       properties:
-        apiVersion:
-          type: string
+        apiVersion: { type: string }
         error:
           type: object
           properties:
@@ -2456,8 +2791,19 @@ components:
                 - OPENAI_ERROR
                 - UNSPECIFIED
                 - UNEXPECTED_ERROR
-            message:
-              type: string
+            message: { type: string }
+            fields:
+              type: object
+              description: >-
+                Optional field validation errors. Keys are field names, including
+                dotted names for nested fields such as gitCredentials.secret.
+                Values are arrays of messages.
+              additionalProperties:
+                type: array
+                items: { type: string }
+              example:
+                name: [ Provide a name. ]
+                gitCredentials.secret: [ Provide a Git password or token. ]
           required: [ code ]
           additionalProperties: false
       required: [ apiVersion, error ]
@@ -2466,33 +2812,24 @@ components:
     ComponentRef:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        uuid:
-          type: string
+        id: {type: integer, format: int64}
+        uuid: { type: string }
       required: [ id, uuid ]
       additionalProperties: false
 
     BatchRef:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        uuid:
-          type: string
+        id: {type: integer, format: int64}
+        uuid: { type: string }
       required: [ id, uuid ]
       additionalProperties: false
 
     StudyMemberRef:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        username:
-          type: string
+        id: {type: integer, format: int64}
+        username: { type: string }
       required: [ id, username ]
       additionalProperties: false
 
@@ -2503,40 +2840,21 @@ components:
         When `flatten=false`, the response is a tree and directories may have `content`.
         When `flatten=true`, the response is a flat array of leaf nodes.
       properties:
-        name:
-          type: string
-          description: File or directory name (last path segment).
-        path:
-          type: string
-          description: Path relative to the study assets base directory.
-          example: images/logo.png
+        name: {type: string, description: File or directory name (last path segment).}
+        path: {type: string, description: Path relative to the study assets base directory., example: images/logo.png}
         type:
           type: string
           description: Node type as detected from the filesystem.
           enum: [ directory, file, other ]
-        creation:
-          type: integer
-          format: int64
-          description: Creation timestamp in milliseconds since epoch.
-        lastModified:
-          type: integer
-          format: int64
-          description: Last modification timestamp in milliseconds since epoch.
-        size:
-          type: integer
-          format: int64
-          description: Size in bytes (for directories this can be filesystem-dependent).
-        checksum:
-          type: integer
-          format: int64
-          nullable: true
-          description: Adler32 checksum; present only for regular files.
+        creation: {type: integer, format: int64, description: Creation timestamp in milliseconds since epoch.}
+        lastModified: {type: integer, format: int64, description: Last modification timestamp in milliseconds since epoch.}
+        size: {type: integer, format: int64, description: Size in bytes (for directories this can be filesystem-dependent).}
+        checksum: {type: integer, format: int64, nullable: true, description: Adler32 checksum; present only for regular files.}
         content:
           type: array
           nullable: true
           description: Directory contents (present only when this node is a directory and `flatten=false`).
-          items:
-            $ref: '#/components/schemas/DirectoryEntry'
+          items: { $ref: '#/components/schemas/DirectoryEntry' }
       required: [ name, path, type, creation, lastModified, size ]
       additionalProperties: false
 
@@ -2546,9 +2864,7 @@ components:
         Temporary, global data storage for a batch or group (JSON stored as string) plus a version for
         optimistic concurrency control.
       properties:
-        version:
-          type: integer
-          format: int64
+        version: {type: integer, format: int64}
         data:
           oneOf:
             - type: string
@@ -2561,42 +2877,23 @@ components:
       type: object
       description: API token metadata (token value is never returned).
       properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-          nullable: true
-        username:
-          type: string
-          nullable: true
-        userId:
-          type: integer
-          format: int64
-          nullable: true
-        creationDate:
-          type: integer
-          format: int64
-          nullable: true
-          description: Token creation Unix timestamp in milliseconds
+        id: {type: integer, format: int64}
+        name: {type: string, nullable: true}
+        username: {type: string, nullable: true}
+        userId: {type: integer, format: int64, nullable: true}
+        creationDate: {type: integer, format: int64, nullable: true, description: Token creation Unix timestamp in milliseconds}
         expiresAfter:
           type: integer
           nullable: true
           description: Expiration time in seconds after creation. Null or <= 0 means no expiration.
-        expirationDate:
-          type: integer
-          format: int64
-          nullable: true
-          description: Calculated expiration Unix timestamp in milliseconds.
-        isExpired:
-          type: boolean
+        expirationDate: {type: integer, format: int64, nullable: true, description: Calculated expiration Unix timestamp in milliseconds.}
+        isExpired: { type: boolean }
         roles:
           type: array
           items:
             type: string
             enum: [ VIEWER, USER, ADMIN, SUPERUSER ]
-        active:
-          type: boolean
+        active: { type: boolean }
       required: [ id, isExpired, roles, active ]
 
     ApiTokenWithValue:
@@ -2605,82 +2902,54 @@ components:
         - $ref: '#/components/schemas/ApiTokenMetadata'
         - type: object
           properties:
-            token:
-              type: string
-              description: The generated token value. Returned only once at creation time.
+            token: {type: string, description: The generated token value. Returned only once at creation time.}
           required: [ token ]
 
     AdminStatusLatestUser:
       type: object
       properties:
-        username:
-          type: string
-        name:
-          type: string
-        authMethod:
-          type: string
-        time:
-          type: string
-          format: date-time
-          description: ISO-8601 timestamp string.
+        username: { type: string }
+        name: { type: string }
+        authMethod: { type: string }
+        time: {type: string, format: date-time, description: ISO-8601 timestamp string.}
       required: [ username, name, authMethod, time ]
 
     AdminStatusLatestStudyRunMember:
       type: object
       properties:
-        username:
-          type: string
-        name:
-          type: string
-        authMethod:
-          type: string
+        username: { type: string }
+        name: { type: string }
+        authMethod: { type: string }
       required: [ username, name, authMethod ]
 
     AdminStatusLatestStudyRun:
       type: object
       properties:
-        studyTitle:
-          type: string
-        time:
-          type: integer
-          format: int64
-          description: Unix timestamp in milliseconds
+        studyTitle: { type: string }
+        time: {type: integer, format: int64, description: Unix timestamp in milliseconds}
         members:
           type: array
-          items:
-            $ref: '#/components/schemas/AdminStatusLatestStudyRunMember'
+          items: { $ref: '#/components/schemas/AdminStatusLatestStudyRunMember' }
       required: [ studyTitle, time, members ]
 
     AdminStatus:
       type: object
       description: Admin status information.
       properties:
-        studyCount:
-          type: integer
-        studyCountTotal:
-          type: integer
-        studyResultCount:
-          type: integer
-        studyResultCountTotal:
-          type: integer
-        workerCount:
-          type: integer
-        workerCountTotal:
-          type: integer
-        userCount:
-          type: integer
-        serverTime:
-          type: integer
-          format: int64
-          description: Server time in milliseconds since epoch.
+        studyCount: { type: integer }
+        studyCountTotal: { type: integer }
+        studyResultCount: { type: integer }
+        studyResultCountTotal: { type: integer }
+        workerCount: { type: integer }
+        workerCountTotal: { type: integer }
+        userCount: { type: integer }
+        serverTime: {type: integer, format: int64, description: Server time in milliseconds since epoch.}
         latestUsers:
           type: array
-          items:
-            $ref: '#/components/schemas/AdminStatusLatestUser'
+          items: { $ref: '#/components/schemas/AdminStatusLatestUser' }
         latestStudyRuns:
           type: array
-          items:
-            $ref: '#/components/schemas/AdminStatusLatestStudyRun'
+          items: { $ref: '#/components/schemas/AdminStatusLatestStudyRun' }
       required:
         - studyCount
         - studyCountTotal
@@ -2696,16 +2965,10 @@ components:
     User:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        username:
-          type: string
-        name:
-          type: string
-        email:
-          type: string
-          nullable: true
+        id: {type: integer, format: int64}
+        username: { type: string }
+        name: { type: string }
+        email: {type: string, nullable: true}
         roles:
           type: array
           items:
@@ -2714,16 +2977,10 @@ components:
         authMethod:
           type: string
           enum: [ DB, LDAP, OAUTH_GOOGLE, OIDC, ORCID, SRAM, CONEXT ]
-        lastSignin:
-          type: integer
-          format: int64
-          nullable: true
-        lastSeen:
-          type: integer
-          format: int64
-          nullable: true
-        active:
-          type: boolean
+        lastSignin: {type: integer, format: int64, nullable: true}
+        lastSeen: {type: integer, format: int64, nullable: true}
+        gitCredentials: { $ref: '#/components/schemas/GitCredentialsStatus' }
+        active: { type: boolean }
       required: [ id, username, name, roles, authMethod, active ]
 
     UserWithStudyIds:
@@ -2733,25 +2990,16 @@ components:
           properties:
             studyIds:
               type: array
-              items:
-                type: integer
-                format: int64
+              items: {type: integer, format: int64}
           required: [ studyIds ]
 
     StudyActiveToggled:
       type: object
       description: Minimal response payload when only the study's 'active' flag is toggled.
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Study ID.
-        uuid:
-          type: string
-          description: Study UUID.
-        active:
-          type: boolean
-          description: Current activation status.
+        id: {type: integer, format: int64, description: Study ID.}
+        uuid: {type: string, description: Study UUID.}
+        active: {type: boolean, description: Current activation status.}
       required: [ id, uuid, active ]
       additionalProperties: false
 
@@ -2759,35 +3007,15 @@ components:
       type: object
       description: Study properties. Includes components, batches, and members.
       properties:
-        id:
-          type: integer
-          format: int64
-          description: The ID of the study.
-        uuid:
-          type: string
-          description: The UUID identifier for the study.
-        title:
-          type: string
-          description: Title of the study
-        description:
-          type: string
-          nullable: true
-          description: Description of the study
-        locked:
-          type: boolean
-          description: Is the study locked
-        active:
-          type: boolean
-          description: Is the study activated
-        groupStudy:
-          type: boolean
-          description: Is the study a group study
-        linearStudy:
-          type: boolean
-          description: Is the study a linear study
-        allowPreview:
-          type: boolean
-          description: Are previews allowed
+        id: {type: integer, format: int64, description: The ID of the study.}
+        uuid: {type: string, description: The UUID identifier for the study.}
+        title: {type: string, description: Title of the study}
+        description: {type: string, nullable: true, description: Description of the study}
+        locked: {type: boolean, description: Is the study locked}
+        active: {type: boolean, description: Is the study activated}
+        groupStudy: {type: boolean, description: Is the study a group study}
+        linearStudy: {type: boolean, description: Is the study a linear study}
+        allowPreview: {type: boolean, description: Are previews allowed}
         components:
           type: array
           description: >-
@@ -2806,32 +3034,18 @@ components:
             oneOf:
               - $ref: '#/components/schemas/BatchRef'
               - $ref: '#/components/schemas/Batch'
-        dirName:
-          type: string
-          description: Directory name of the study assets
-        comments:
-          type: string
-          nullable: true
-          description: Some comments
-        studyInput:
-          type: string
-          description: Study input in JSON format
-        jsonData:
-          type: string
-          deprecated: true
-          description: Study input in JSON format. Deprecated, use `studyInput` instead.
-        endRedirectUrl:
-          type: string
-          nullable: true
-          description: URL the study redirects to after it is finished
+        dirName: {type: string, description: Directory name of the study assets}
+        comments: {type: string, nullable: true, description: Some comments}
+        studyInput: {type: string, description: Study input in JSON format}
+        jsonData: {type: string, deprecated: true, description: 'Study input in JSON format. Deprecated, use `studyInput` instead.'}
+        endRedirectUrl: {type: string, nullable: true, description: URL the study redirects to after it is finished}
         studyEntryMsg:
           type: string
           nullable: true
           description: Message shown to the user when starting the study via the study entry page
         members:
           type: array
-          items:
-            $ref: '#/components/schemas/StudyMemberRef'
+          items: { $ref: '#/components/schemas/StudyMemberRef' }
       required: [ id, uuid, title, locked, active, groupStudy, linearStudy, allowPreview, dirName, members, components, batches ]
       additionalProperties: false
 
@@ -2839,27 +3053,14 @@ components:
       type: object
       description: Component properties.
       properties:
-        id:
-          type: integer
-          format: int64
-        uuid:
-          type: string
-        title:
-          type: string
-        htmlFilePath:
-          type: string
-          nullable: true
-          description: Local path to component's HTML file in the study assets folder.
-        reloadable:
-          type: boolean
-        active:
-          type: boolean
-        comments:
-          type: string
-          nullable: true
-        componentInput:
-          type: string
-          description: Component input in JSON format
+        id: {type: integer, format: int64}
+        uuid: { type: string }
+        title: { type: string }
+        htmlFilePath: {type: string, nullable: true, description: Local path to component's HTML file in the study assets folder.}
+        reloadable: { type: boolean }
+        active: { type: boolean }
+        comments: {type: string, nullable: true}
+        componentInput: {type: string, description: Component input in JSON format}
       required: [ id, uuid, title, reloadable, active ]
       additionalProperties: false
 
@@ -2867,21 +3068,10 @@ components:
       type: object
       description: Batch properties.
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Batch ID.
-        uuid:
-          type: string
-          description: Batch UUID.
-        title:
-          type: string
-          nullable: true
-          description: Title of the batch.
-        active:
-          type: boolean
-          description: Whether this batch is active.
-          default: true
+        id: {type: integer, format: int64, description: Batch ID.}
+        uuid: {type: string, description: Batch UUID.}
+        title: {type: string, nullable: true, description: Title of the batch.}
+        active: {type: boolean, description: Whether this batch is active., default: true}
         maxActiveMembers:
           type: integer
           nullable: true
@@ -2897,15 +3087,9 @@ components:
         allowedWorkerTypes:
           type: array
           description: Types allowed to run in this batch.
-          items:
-            type: string
-        comments:
-          type: string
-          nullable: true
-          description: User comments.
-        batchInput:
-          type: string
-          description: Batch input data in JSON format.
+          items: { type: string }
+        comments: {type: string, nullable: true, description: User comments.}
+        batchInput: {type: string, description: Batch input data in JSON format.}
       required: [ id, uuid, active, allowedWorkerTypes ]
       additionalProperties: false
 
@@ -2913,41 +3097,23 @@ components:
       type: object
       description: Group information
       properties:
-        id:
-          type: integer
-          format: int64
+        id: {type: integer, format: int64}
         groupState:
           type: string
           enum: [ STARTED, FINISHED, FIXED ]
         activeMemberList:
           type: array
           description: List of active member studyResult IDs.
-          items:
-            type: integer
-            format: int64
+          items: {type: integer, format: int64}
         historyMemberList:
           type: array
           description: List of past member studyResult IDs.
-          items:
-            type: integer
-            format: int64
-        activeMemberCount:
-          type: integer
-          nullable: true
-        historyMemberCount:
-          type: integer
-          nullable: true
-        resultCount:
-          type: integer
-          description: activeMemberCount + historyMemberCount
-        startDate:
-          type: integer
-          format: int64
-          nullable: true
-        endDate:
-          type: integer
-          format: int64
-          nullable: true
+          items: {type: integer, format: int64}
+        activeMemberCount: {type: integer, nullable: true}
+        historyMemberCount: {type: integer, nullable: true}
+        resultCount: {type: integer, description: activeMemberCount + historyMemberCount}
+        startDate: {type: integer, format: int64, nullable: true}
+        endDate: {type: integer, format: int64, nullable: true}
       required: [ id, activeMemberList, historyMemberList, resultCount ]
       additionalProperties: false
 
@@ -2955,19 +3121,12 @@ components:
       type: object
       description: Study identifier plus the list of member user IDs.
       properties:
-        id:
-          type: integer
-          format: int64
-          description: Study ID.
-        uuid:
-          type: string
-          description: Study UUID.
+        id: {type: integer, format: int64, description: Study ID.}
+        uuid: {type: string, description: Study UUID.}
         members:
           type: array
           description: List of user IDs that are members of this study.
-          items:
-            type: integer
-            format: int64
+          items: {type: integer, format: int64}
       required: [ id, uuid, members ]
       additionalProperties: false
 
@@ -2975,40 +3134,23 @@ components:
       type: object
       description: Information about a study code.
       properties:
-        studyCode:
-          type: string
-        batchId:
-          type: integer
-          format: int64
-        type:
-          type: string
-        comment:
-          type: string
-          nullable: true
-        active:
-          type: boolean
-        studyLinkPath:
-          type: string
-        studyEntryPath:
-          type: string
+        studyCode: { type: string }
+        batchId: {type: integer, format: int64}
+        type: { type: string }
+        comment: {type: string, nullable: true}
+        active: { type: boolean }
+        studyLinkPath: { type: string }
+        studyEntryPath: { type: string }
       required: [ studyCode, batchId, type, active, studyLinkPath, studyEntryPath ]
       additionalProperties: false
 
     UserCreate:
       type: object
       properties:
-        username:
-          type: string
-          description: Username of the new user
-        name:
-          type: string
-          description: Name of the new user
-        email:
-          type: string
-          description: Email address of the new user
-        password:
-          type: string
-          description: Password of the new user (only for `authMethod=DB`)
+        username: {type: string, description: Username of the new user}
+        name: {type: string, description: Name of the new user}
+        email: {type: string, description: Email address of the new user}
+        password: {type: string, description: Password of the new user (only for `authMethod=DB`)}
         authMethod:
           type: string
           enum: [ DB, LDAP ]
@@ -3032,20 +3174,168 @@ components:
       description: >-
         Partial update of a user. Provide only the fields you want to change.
       properties:
-        name:
+        name: {type: string, description: Name of the user}
+        email: {type: string, nullable: true, description: Email address of the user}
+        password: {type: string, description: New password (only applicable for `authMethod=DB`)}
+        active: {type: boolean, description: Whether the user is active}
+        gitCredentials: { $ref: '#/components/schemas/UserGitCredentialsUpdate' }
+      additionalProperties: false
+
+    GitCredentialsStatus:
+      type: object
+      description: >-
+        Present only in GET/PATCH user responses for the authenticated user's own
+        account, not in user listings or responses for other users.
+      properties:
+        configured: { type: boolean }
+        origin: { type: string, nullable: true, example: 'https://github.com' }
+        username: { type: string, nullable: true }
+      required: [ configured ]
+      additionalProperties: false
+
+    UserGitCredentialsUpdate:
+      type: object
+      description: >-
+        Omit this object to leave credentials unchanged. Only one credential is
+        allowed per user. Omitted username/origin retain their existing values.
+        An empty or omitted secret preserves the existing secret. Creating credentials
+        requires origin, username, and a nonempty secret. Changing username or origin
+        requires a new secret. Use removeCredentials to delete; null is not deletion.
+      properties:
+        origin:
           type: string
-          description: Name of the user
-        email:
+          description: HTTPS scheme, host and optional port, without a repository path or embedded credentials.
+          example: https://git.example.org:8443
+        username: {type: string, maxLength: 255, description: Git username without colons or control characters.}
+        secret:
+          type: string
+          format: password
+          writeOnly: true
+          maxLength: 16384
+          description: New password/token; never returned and not trimmed.
+        removeCredentials:
+          type: boolean
+          default: false
+          writeOnly: true
+          description: Delete credentials; cannot be combined with a nonempty secret.
+      additionalProperties: false
+
+    StudySourceSyncPreview:
+      type: object
+      required: [ localFolderPath, propertiesAvailable, assetsAvailable ]
+      properties:
+        localFolderPath: { type: string, description: Configured server-local folder path }
+        propertiesAvailable: { type: boolean }
+        assetsAvailable: { type: boolean }
+
+    StudyGitPullPreview:
+      type: object
+      required: [ gitUrl, commitId, credentialSource, propertiesAvailable, assetsAvailable ]
+      properties:
+        gitUrl: { type: string, description: Configured HTTPS repository URL }
+        gitRef: { type: string, nullable: true, description: Branch or tag; null or blank uses the default branch. }
+        commitId: { type: string, description: Full resolved commit ID of this preview }
+        credentialSource:
+          type: string
+          enum: [ study, owner, global, anonymous ]
+          description: Effective credential source; never includes usernames or secrets.
+        propertiesAvailable: { type: boolean }
+        assetsAvailable: { type: boolean }
+
+    StudyGitPushPreview:
+      type: object
+      required: [ gitUrl, gitRef, commitId, credentialSource, propertiesAvailable, assetsAvailable ]
+      properties:
+        gitUrl: { type: string, description: Configured HTTPS repository URL }
+        gitRef: { type: string, description: Resolved destination branch; tags are not supported. }
+        commitId: { type: string, description: Full resolved commit ID of this preview }
+        credentialSource:
+          type: string
+          enum: [ study, owner, global, anonymous ]
+          description: Effective credential source; never includes usernames or secrets.
+        propertiesAvailable: { type: boolean }
+        assetsAvailable: { type: boolean }
+
+    StudyGitPushResult:
+      type: object
+      required: [ studyId, commitId, changed, message ]
+      properties:
+        studyId: { type: integer, format: int64 }
+        commitId: { type: string, description: Full resulting commit ID }
+        changed: { type: boolean, description: Whether a new commit was pushed }
+        message: { type: string }
+
+    StudySourceSyncUpdate:
+      type: object
+      additionalProperties: false
+      description: Select at least one available content type. Omitted selections default to false.
+      properties:
+        properties: { type: boolean, default: false }
+        assets: { type: boolean, default: false }
+
+    StudySourceSyncResult:
+      type: object
+      required: [ studyId, propertiesUpdated, assetsUpdated, message ]
+      properties:
+        studyId: { type: integer, format: int64 }
+        propertiesUpdated: { type: boolean, description: Whether properties were written to the destination for this operation. }
+        assetsUpdated: { type: boolean, description: Whether assets were replaced in the destination for this operation. }
+        message: { type: string }
+
+    StudySourceUpdate:
+      type: object
+      required: [ type ]
+      properties:
+        type:
+          type: string
+          enum: [ NONE, GIT, LOCAL_FOLDER ]
+        gitUrl:
           type: string
           nullable: true
-          description: Email address of the user
-        password:
+          maxLength: 2048
+          description: Required for GIT. HTTPS repository URL without embedded credentials.
+        gitRef:
           type: string
-          description: New password (only applicable for `authMethod=DB`)
-        active:
+          nullable: true
+          maxLength: 255
+          description: Branch or tag; blank uses the default branch. Arbitrary commit IDs are not supported.
+        localFolderPath:
+          type: string
+          nullable: true
+          maxLength: 4096
+          description: >-
+            Required for LOCAL_FOLDER. Absolute, readable folder on the JATOS host.
+            Nonempty allowedRoots restricts paths to those roots. Empty roots permit
+            all folders in local mode and disable folder sources in server mode.
+        anonymous: {type: boolean, default: false, description: 'Use no credentials, including study, owner, or global credentials.'}
+        username:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: Git username. Changing a saved username requires a new password/token.
+        secret:
+          type: string
+          format: password
+          nullable: true
+          writeOnly: true
+          maxLength: 16384
+          description: Nonempty password/token replaces study credentials; omitted or empty preserves the secret.
+        removeCredentials:
           type: boolean
-          description: Whether the user is active
-      additionalProperties: false
+          default: false
+          writeOnly: true
+          description: Remove study credentials; cannot be combined with a nonempty secret.
+
+    StudySource:
+      allOf:
+        - $ref: '#/components/schemas/StudySourceUpdate'
+        - type: object
+          properties:
+            credentialsConfigured: {type: boolean, readOnly: true}
+            localFolderAllowed:
+              type: boolean
+              readOnly: true
+              description: Whether the installation currently permits local-folder sources.
 
     UserRoleChange:
       type: object
@@ -3058,6 +3348,46 @@ components:
       required: [ role ]
       additionalProperties: false
 
+    StudySourceCreate:
+      type: object
+      additionalProperties: false
+      required: [ source ]
+      properties:
+        source:
+          oneOf:
+            - $ref: '#/components/schemas/LocalFolderStudySourceCreate'
+            - $ref: '#/components/schemas/GitStudySourceCreate'
+      example:
+        source: {type: GIT, gitUrl: 'https://github.com/owner/study.git', gitRef: main}
+
+    LocalFolderStudySourceCreate:
+      type: object
+      additionalProperties: false
+      required: [ type, localFolderPath ]
+      properties:
+        type: { type: string, enum: [ LOCAL_FOLDER ] }
+        localFolderPath: {type: string, maxLength: 4096, description: Absolute path on the computer running JATOS.}
+
+    GitStudySourceCreate:
+      type: object
+      additionalProperties: false
+      required: [ type, gitUrl ]
+      properties:
+        type: { type: string, enum: [ GIT ] }
+        gitUrl: {type: string, maxLength: 2048, description: 'HTTPS repository URL, without embedded credentials, query, or fragment.'}
+        gitRef:
+          type: string
+          maxLength: 255
+          description: Branch or tag; empty selects the default branch. Use refs/heads/ or refs/tags/ for ambiguous names. Commit IDs are not supported.
+        anonymous: {type: boolean, default: false, description: 'Use no credentials, overriding all configured credentials.'}
+        username: {type: string, maxLength: 255, description: Optional study-specific username; requires a password/token.}
+        secret:
+          type: string
+          format: password
+          writeOnly: true
+          maxLength: 16384
+          description: Optional study-specific password/token; requires a username.
+
     StudyCreate:
       allOf:
         - $ref: '#/components/schemas/StudyPropertiesUpdate'
@@ -3068,39 +3398,19 @@ components:
     StudyPropertiesUpdate:
       type: object
       properties:
-        title:
-          type: string
-          description: Title of the study
-        description:
-          type: string
-          nullable: true
-          description: Description of the study
-        active:
-          type: boolean
-          description: A deactivated study cannot be run by a worker.
-          default: true
-        groupStudy:
-          type: boolean
-          default: false
-          description: Is the study a group study
-        linearStudy:
-          type: boolean
-          default: false
-          description: Is the study a linear study
-        allowPreview:
-          type: boolean
-          default: false
-          description: Are previews allowed
+        title: {type: string, description: Title of the study}
+        description: {type: string, nullable: true, description: Description of the study}
+        active: {type: boolean, description: A deactivated study cannot be run by a worker., default: true}
+        groupStudy: {type: boolean, default: false, description: Is the study a group study}
+        linearStudy: {type: boolean, default: false, description: Is the study a linear study}
+        allowPreview: {type: boolean, default: false, description: Are previews allowed}
         dirName:
           type: string
           deprecated: true
           description: >-
             **Optional** study assets directory name. If omitted, the server uses the study **UUID**.
             **Recommended: omit this field unless you have a specific reason to control the directory name.**
-        comments:
-          type: string
-          nullable: true
-          description: Some comments
+        comments: {type: string, nullable: true, description: Some comments}
         studyInput:
           nullable: true
           description: Study input in JSON format, either as a JSON string or as a JSON object.
@@ -3108,10 +3418,7 @@ components:
             - type: string
             - type: object
               additionalProperties: true
-        endRedirectUrl:
-          type: string
-          nullable: true
-          description: URL the study redirects to after it is finished
+        endRedirectUrl: {type: string, nullable: true, description: URL the study redirects to after it is finished}
         studyEntryMsg:
           type: string
           nullable: true
@@ -3121,35 +3428,18 @@ components:
     StudyPropertiesUpdateActiveOnly:
       type: object
       properties:
-        active:
-          type: boolean
-          description: A deactivated study cannot be run by a worker.
-          default: true
+        active: {type: boolean, description: A deactivated study cannot be run by a worker., default: true}
       additionalProperties: false
       required: [ active ]
 
     ComponentUpsert:
       type: object
       properties:
-        title:
-          type: string
-          description: Component title.
-        htmlFilePath:
-          type: string
-          nullable: true
-          description: Local path to component's HTML file in the study assets folder.
-        reloadable:
-          type: boolean
-          default: false
-          description: Is the component reloadable.
-        active:
-          type: boolean
-          default: true
-          description: Whether the component is active.
-        comments:
-          type: string
-          nullable: true
-          description: User comments.
+        title: {type: string, description: Component title.}
+        htmlFilePath: {type: string, nullable: true, description: Local path to component's HTML file in the study assets folder.}
+        reloadable: {type: boolean, default: false, description: Is the component reloadable.}
+        active: {type: boolean, default: true, description: Whether the component is active.}
+        comments: {type: string, nullable: true, description: User comments.}
         componentInput:
           description: Component input in JSON format (either JSON string or JSON object).
           nullable: true
@@ -3172,10 +3462,7 @@ components:
         - $ref: "#/components/schemas/ComponentUpsert"
         - type: object
           properties:
-            htmlFileRename:
-              type: boolean
-              description: Whether the actual HTML file on disk should be renamed.
-              default: false
+            htmlFileRename: {type: boolean, description: Whether the actual HTML file on disk should be renamed., default: false}
 
     CreateBatch:
       allOf:
@@ -3189,13 +3476,8 @@ components:
       description: >-
         Batch properties payload used to create or update a batch.
       properties:
-        title:
-          type: string
-          description: Title of the batch.
-        active:
-          type: boolean
-          default: true
-          description: true if batch can be used.
+        title: {type: string, description: Title of the batch.}
+        active: {type: boolean, default: true, description: true if batch can be used.}
         maxActiveMembers:
           type: integer
           nullable: true
@@ -3212,13 +3494,9 @@ components:
         allowedWorkerTypes:
           type: array
           description: Set of types that are allowed to run in this batch.
-          items:
-            type: string
+          items: { type: string }
           default: [ ]
-        comments:
-          type: string
-          nullable: true
-          description: User comments.
+        comments: {type: string, nullable: true, description: User comments.}
         batchInput:
           nullable: true
           description: Batch input in JSON format, either as a JSON string or as a JSON object.
@@ -3231,123 +3509,61 @@ components:
     ResultsMetadataComponentResultList:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        componentId:
-          type: integer
-          format: int64
-        componentUuid:
-          type: string
-        startDate:
-          type: integer
-          format: int64
-          nullable: true
-        endDate:
-          type: integer
-          format: int64
-          nullable: true
-        duration:
-          type: string
-          nullable: true
-          description: Human-readable duration (derived from start/end).
+        id: {type: integer, format: int64}
+        componentId: {type: integer, format: int64}
+        componentUuid: { type: string }
+        startDate: {type: integer, format: int64, nullable: true}
+        endDate: {type: integer, format: int64, nullable: true}
+        duration: {type: string, nullable: true, description: Human-readable duration (derived from start/end).}
         componentState:
           type: string
           enum: [ STARTED, DATA_RETRIEVED, RESULTDATA_POSTED, FINISHED, RELOADED, ABORTED, FAIL ]
-        path:
-          type: string
-          description: Path to the result files if applicable.
+        path: {type: string, description: Path to the result files if applicable.}
         data:
           properties:
-            size:
-              type: integer
-              format: int64
-            sizeHumanReadable:
-              type: string
-            filename:
-              type: string
-              description: Filename of the data file if applicable.
+            size: {type: integer, format: int64}
+            sizeHumanReadable: { type: string }
+            filename: {type: string, description: Filename of the data file if applicable.}
           required: [ size, sizeHumanReadable ]
           additionalProperties: false
         files:
           type: array
           description: Paths to the result files
-          items:
-            type: object
-            additionalProperties: true
-        isQuotaReached:
-          type: boolean
+          items: {type: object, additionalProperties: true}
+        isQuotaReached: { type: boolean }
       required: [ id, componentId, componentUuid, componentState, data, isQuotaReached ]
       additionalProperties: false
 
     ResultsMetadataStudyResultList:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        uuid:
-          type: string
-        studyCode:
-          type: string
-        comment:
-          type: string
-          nullable: true
-          description: Only present if worker comment is non-empty.
-        startDate:
-          type: integer
-          format: int64
-          nullable: true
-        endDate:
-          type: integer
-          format: int64
-          nullable: true
-        duration:
-          type: string
-          nullable: true
-          description: Human-readable duration (derived from start/end).
-        lastSeenDate:
-          type: integer
-          format: int64
-          nullable: true
+        id: {type: integer, format: int64}
+        uuid: { type: string }
+        studyCode: { type: string }
+        comment: {type: string, nullable: true, description: Only present if worker comment is non-empty.}
+        startDate: {type: integer, format: int64, nullable: true}
+        endDate: {type: integer, format: int64, nullable: true}
+        duration: {type: string, nullable: true, description: Human-readable duration (derived from start/end).}
+        lastSeenDate: {type: integer, format: int64, nullable: true}
         studyState:
           type: string
           enum: [ PRE, STARTED, DATA_RETRIEVED, FINISHED, ABORTED, FAIL ]
-        message:
-          type: string
-          nullable: true
+        message: {type: string, nullable: true}
         urlQueryParameters:
           type: object
-          additionalProperties:
-            type: string
+          additionalProperties: { type: string }
           nullable: true
-        workerId:
-          type: integer
-          format: int64
-        workerType:
-          type: string
-        batchId:
-          type: integer
-          format: int64
-        batchUuid:
-          type: string
-        batchTitle:
-          type: string
-          nullable: true
-        groupId:
-          type: integer
-          format: int64
-          nullable: true
-        confirmationCode:
-          type: string
-          nullable: true
-          description: Present only MTurk type
-        isQuotaReached:
-          type: boolean
+        workerId: {type: integer, format: int64}
+        workerType: { type: string }
+        batchId: {type: integer, format: int64}
+        batchUuid: { type: string }
+        batchTitle: {type: string, nullable: true}
+        groupId: {type: integer, format: int64, nullable: true}
+        confirmationCode: {type: string, nullable: true, description: Present only MTurk type}
+        isQuotaReached: { type: boolean }
         componentResults:
           type: array
-          items:
-            $ref: "#/components/schemas/ResultsMetadataComponentResultList"
+          items: { $ref: '#/components/schemas/ResultsMetadataComponentResultList' }
       required: [ id, uuid, studyCode, studyState, workerId, workerType, batchId, batchUuid, isQuotaReached, componentResults ]
       additionalProperties: false
 
@@ -3357,9 +3573,7 @@ components:
         - type: object
           description: Envelope returned after successful API operations.
           properties:
-            message:
-              type: string
-              description: Human-readable result message.
+            message: {type: string, description: Human-readable result message.}
           required: [ message ]
 
     ApiEnvelopeGeneratedApiToken:
@@ -3367,8 +3581,7 @@ components:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
         - type: object
           properties:
-            data:
-              $ref: '#/components/schemas/ApiTokenWithValue'
+            data: { $ref: '#/components/schemas/ApiTokenWithValue' }
           required: [ data ]
 
     ApiEnvelopeApiTokenMetadata:
@@ -3376,8 +3589,7 @@ components:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
         - type: object
           properties:
-            data:
-              $ref: '#/components/schemas/ApiTokenMetadata'
+            data: { $ref: '#/components/schemas/ApiTokenMetadata' }
           required: [ data ]
 
     ApiEnvelopeApiTokenMetadataList:
@@ -3387,8 +3599,7 @@ components:
           properties:
             data:
               type: array
-              items:
-                $ref: '#/components/schemas/ApiTokenMetadata'
+              items: { $ref: '#/components/schemas/ApiTokenMetadata' }
           required: [ data ]
 
     ApiEnvelopeTokenActiveToggled:
@@ -3410,8 +3621,7 @@ components:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
         - type: object
           properties:
-            data:
-              $ref: '#/components/schemas/User'
+            data: { $ref: '#/components/schemas/User' }
           required: [ data ]
 
     ApiEnvelopeUserList:
@@ -3421,8 +3631,7 @@ components:
           properties:
             data:
               type: array
-              items:
-                $ref: '#/components/schemas/UserWithStudyIds'
+              items: { $ref: '#/components/schemas/UserWithStudyIds' }
           required: [ data ]
 
     ApiEnvelopeAdminStatus:
@@ -3430,8 +3639,7 @@ components:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
         - type: object
           properties:
-            data:
-              $ref: '#/components/schemas/AdminStatus'
+            data: { $ref: '#/components/schemas/AdminStatus' }
           required: [ data ]
 
     ApiEnvelopeStudy:
@@ -3439,8 +3647,7 @@ components:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
         - type: object
           properties:
-            data:
-              $ref: '#/components/schemas/Study'
+            data: { $ref: '#/components/schemas/Study' }
           required: [ data ]
       additionalProperties: false
 
@@ -3451,8 +3658,7 @@ components:
           properties:
             data:
               type: array
-              items:
-                $ref: '#/components/schemas/Study'
+              items: { $ref: '#/components/schemas/Study' }
           required: [ data ]
 
     ApiEnvelopeStudyActiveToggled:
@@ -3461,8 +3667,7 @@ components:
         - type: object
           description: Envelope returned when an admin toggles only the study's `active` flag.
           properties:
-            data:
-              $ref: "#/components/schemas/StudyActiveToggled"
+            data: { $ref: '#/components/schemas/StudyActiveToggled' }
           required: [ data ]
 
     ApiEnvelopeComponent:
@@ -3470,8 +3675,7 @@ components:
         - $ref: "#/components/schemas/ApiEnvelopeSuccess"
         - type: object
           properties:
-            data:
-              $ref: '#/components/schemas/Component'
+            data: { $ref: '#/components/schemas/Component' }
           required: [ data ]
 
     ApiEnvelopeComponentList:
@@ -3481,8 +3685,7 @@ components:
           properties:
             data:
               type: array
-              items:
-                $ref: '#/components/schemas/Component'
+              items: { $ref: '#/components/schemas/Component' }
           required: [ data ]
 
     ApiEnvelopeBatch:
@@ -3491,8 +3694,7 @@ components:
         - type: object
           description: Envelope containing a batch.
           properties:
-            data:
-              $ref: '#/components/schemas/Batch'
+            data: { $ref: '#/components/schemas/Batch' }
           required: [ data ]
 
     ApiEnvelopeBatchList:
@@ -3502,8 +3704,7 @@ components:
           properties:
             data:
               type: array
-              items:
-                $ref: '#/components/schemas/Batch'
+              items: { $ref: '#/components/schemas/Batch' }
           required: [ data ]
 
     ApiEnvelopeGroupList:
@@ -3514,8 +3715,7 @@ components:
           properties:
             data:
               type: array
-              items:
-                $ref: '#/components/schemas/Group'
+              items: { $ref: '#/components/schemas/Group' }
           required: [ data ]
 
     ApiEnvelopeStudyMembers:
@@ -3524,8 +3724,7 @@ components:
         - type: object
           description: Envelope containing the study members response.
           properties:
-            data:
-              $ref: '#/components/schemas/StudyMembers'
+            data: { $ref: '#/components/schemas/StudyMembers' }
           required: [ data ]
 
     ApiEnvelopeLogFileList:
@@ -3539,8 +3738,7 @@ components:
               oneOf:
                 - $ref: '#/components/schemas/DirectoryEntry'
                 - type: array
-                  items:
-                    $ref: '#/components/schemas/DirectoryEntry'
+                  items: { $ref: '#/components/schemas/DirectoryEntry' }
           required: [ data ]
 
     ApiEnvelopeStudyAssetsStructure:
@@ -3555,8 +3753,7 @@ components:
               oneOf:
                 - $ref: '#/components/schemas/DirectoryEntry'
                 - type: array
-                  items:
-                    $ref: '#/components/schemas/DirectoryEntry'
+                  items: { $ref: '#/components/schemas/DirectoryEntry' }
           required: [ data ]
 
     ApiEnvelopeSessionVersion:
@@ -3567,9 +3764,7 @@ components:
             data:
               type: object
               properties:
-                version:
-                  type: integer
-                  format: int64
+                version: {type: integer, format: int64}
               required: [ version ]
               additionalProperties: false
           required: [ data ]
@@ -3580,8 +3775,7 @@ components:
         - type: object
           description: Envelope containing a batch or group session.
           properties:
-            data:
-              $ref: '#/components/schemas/BatchOrGroupSession'
+            data: { $ref: '#/components/schemas/BatchOrGroupSession' }
           required: [ data ]
 
     ApiEnvelopeStudyCode:
@@ -3590,24 +3784,18 @@ components:
         - type: object
           description: Envelope containing study code information.
           properties:
-            data:
-              $ref: '#/components/schemas/StudyCodeInfo'
+            data: { $ref: '#/components/schemas/StudyCodeInfo' }
           required: [ data ]
 
     ResultsMetadataStudyList:
       type: object
       properties:
-        studyId:
-          type: integer
-          format: int64
-        studyUuid:
-          type: string
-        studyTitle:
-          type: string
+        studyId: {type: integer, format: int64}
+        studyUuid: { type: string }
+        studyTitle: { type: string }
         studyResults:
           type: array
-          items:
-            $ref: "#/components/schemas/ResultsMetadataStudyResultList"
+          items: { $ref: '#/components/schemas/ResultsMetadataStudyResultList' }
       required: [ studyId, studyUuid, studyTitle, studyResults ]
 
     ApiEnvelopeResultsMetadata:
@@ -3618,8 +3806,7 @@ components:
           properties:
             data:
               type: array
-              items:
-                $ref: "#/components/schemas/ResultsMetadataStudyList"
+              items: { $ref: '#/components/schemas/ResultsMetadataStudyList' }
           required: [ data ]
 
     ApiEnvelopeDeletedComponentResultIds:
@@ -3630,7 +3817,53 @@ components:
           properties:
             data:
               type: array
-              items:
-                type: integer
-                format: int64
+              items: {type: integer, format: int64}
+          required: [ data ]
+
+    ApiEnvelopeStudySourceSyncResult:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudySourceSyncResult' }
+          required: [ data ]
+
+    ApiEnvelopeStudyGitPullPreview:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudyGitPullPreview' }
+          required: [ data ]
+
+    ApiEnvelopeStudyGitPushPreview:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudyGitPushPreview' }
+          required: [ data ]
+
+    ApiEnvelopeStudyGitPushResult:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudyGitPushResult' }
+          required: [ data ]
+
+    ApiEnvelopeStudySourceSyncPreview:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudySourceSyncPreview' }
+          required: [ data ]
+
+    ApiEnvelopeStudySource:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudySource' }
           required: [ data ]

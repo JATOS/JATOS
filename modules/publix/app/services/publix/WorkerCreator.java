@@ -2,6 +2,7 @@ package services.publix;
 
 import daos.common.BatchDao;
 import daos.common.worker.WorkerDao;
+import general.common.JpaTransactions;
 import models.common.Batch;
 import models.common.workers.GeneralMultipleWorker;
 import models.common.workers.GeneralSingleWorker;
@@ -14,12 +15,15 @@ import javax.inject.Singleton;
 @Singleton
 public class WorkerCreator {
 
+    private final JpaTransactions transactions;
     private final WorkerDao workerDao;
     private final BatchDao batchDao;
 
     @Inject
-    WorkerCreator(WorkerDao workerDao,
+    WorkerCreator(JpaTransactions transactions,
+                  WorkerDao workerDao,
                   BatchDao batchDao) {
+        this.transactions = transactions;
         this.workerDao = workerDao;
         this.batchDao = batchDao;
     }
@@ -29,7 +33,7 @@ public class WorkerCreator {
      */
     public MTWorker createAndPersistMTWorker(String mtWorkerId,
                                              boolean mTurkSandbox, Batch batch) {
-        return workerDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             MTWorker worker;
             if (mTurkSandbox) {
                 worker = new MTSandboxWorker(mtWorkerId);
@@ -46,7 +50,7 @@ public class WorkerCreator {
      * Create and persist a GeneralSingleWorker
      */
     public GeneralSingleWorker createAndPersistGeneralSingleWorker(Batch batch) {
-        return workerDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             GeneralSingleWorker worker = new GeneralSingleWorker();
             workerDao.persist(worker);
             batchDao.addWorkerToBatch(batch.getId(), worker.getId());
@@ -58,7 +62,7 @@ public class WorkerCreator {
      * Create and persist a GeneralMultipleWorker
      */
     public GeneralMultipleWorker createAndPersistGeneralMultipleWorker(Batch batch) {
-        return workerDao.withTransaction(em -> {
+        return transactions.withTransaction(em -> {
             GeneralMultipleWorker worker = new GeneralMultipleWorker();
             workerDao.persist(worker);
             batchDao.addWorkerToBatch(batch.getId(), worker.getId());

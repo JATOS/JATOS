@@ -91,8 +91,10 @@ class DatabaseUpgradeTest {
       try {
         Helpers.start(app)
         val current = app.injector().instanceOf(classOf[Database])
-        assertEquals("25", scalar(current, "SELECT MAX(id) FROM play_evolutions"))
+        assertEquals("26", scalar(current, "SELECT MAX(id) FROM play_evolutions"))
         assertEquals("0", scalar(current, "SELECT COUNT(*) FROM play_evolutions WHERE state <> 'applied'"))
+        assertEquals("admin", scalar(current, "SELECT owner_username FROM Study WHERE id=100"))
+        assertEquals("1", scalar(current, "SELECT COUNT(*) FROM StudyUserMap WHERE study_id=100 AND user_username='admin'"))
         assertEquals("Grüße", scalar(current, "SELECT title FROM Study WHERE id=100"))
         assertEquals("legacy result", scalar(current, "SELECT data FROM ComponentResult WHERE id=100"))
         assertEquals("13", scalar(current, "SELECT dataSize FROM ComponentResult WHERE id=100"))
@@ -104,6 +106,7 @@ class DatabaseUpgradeTest {
     val upgraded = database()
     try {
       // New cascading deletes remove dependents without deleting workers shared by other batches.
+      sql(upgraded, "DELETE FROM StudyUserMap WHERE study_id=100")
       sql(upgraded, "DELETE FROM Study WHERE id=100")
       for (table <- Seq("Batch", "Component", "StudyResult", "ComponentResult"))
         assertEquals(table, "0", scalar(upgraded, s"SELECT COUNT(*) FROM `$table` WHERE id=100"))

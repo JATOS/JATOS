@@ -1,7 +1,7 @@
 @import play.api.mvc.RequestHeader
 @(implicit request: RequestHeader)
 
-@* Study import confirmation Modal *@
+@* Study archive import confirmation Modal *@
 <div class="modal fade" id="confirmStudyImportModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
     <div class="modal-dialog">
         <div class="modal-content">
@@ -13,21 +13,28 @@
                 <div id="confirmStudyImportDescription"></div>
                 <button class="btn btn-outline-secondary dropdown-toggle collapsed" id="confirmStudyImportDetailsButton" type="button" data-bs-toggle="collapse" data-bs-target="#confirmStudyImportDetails">Details</button>
                 <div class="pt-3 collapse" id="confirmStudyImportDetails" >
-                    <div class="form-check">
-                        <label class="form-check-label" for="confirmStudyImportProperties">Overwrite study</label>
-                        <input type="checkbox" class="form-check-input" id="confirmStudyImportProperties">
-                        <div class="form-text">Components included in the imported study will be added or updated. Components not included in the imported study will be inactivated but not deleted.</div>
-                    </div>
-                    <div class="form-check">
-                        <label class="form-check-label" for="confirmStudyImportDir">Overwrite study assets directory</label>
-                        <input type="checkbox" class="form-check-input" id="confirmStudyImportDir">
-                        <div class="form-text">This directory contains the study's files like HTML, CSS, and JavaScript files and images.</div>
-                    </div>
+                    <form id="studyImportForm" class="form-study">
+                        <p>Select what to replace.</p>
+                        <div class="row mb-3">
+                            <label class="col-sm-4 col-form-label" for="confirmStudyImportProperties" data-bs-tooltip="Should the study properties be replaced? Components included in the imported study will be added or updated. Components not included in the imported study will be inactivated but not deleted.">Properties</label>
+                            <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
+                                <input class="form-check-input checkbox-study" id="confirmStudyImportProperties" name="properties" type="checkbox">
+                                <span class="slider slider-study round"></span>
+                            </label></div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-sm-4 col-form-label" for="confirmStudyImportDir" data-bs-tooltip="Should the study assets directory be replaced? This directory contains the study's files like HTML, CSS, and JavaScript files and images. Selected assets are replaced completely, never merged. An empty assets/ directory removes all existing assets.">Assets</label>
+                            <div class="col-sm-8 pt-2"><label class="switch no-info-icon">
+                                <input class="form-check-input checkbox-study" id="confirmStudyImportDir" name="assets" type="checkbox">
+                                <span class="slider slider-study round"></span>
+                            </label></div>
+                        </div>
+                    </form>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-study" id="confirmStudyImportConfirmed">Overwrite</button>
+                <button type="button" class="btn btn-study" id="confirmStudyImportConfirmed">Import</button>
             </div>
         </div>
     </div>
@@ -40,6 +47,7 @@
     import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
 
     const alerts = new Alerts.Named("study-import");
+    let pendingImport = false;
 
     $('#importStudy').click(function() {
         $('#importStudyBrowser').trigger("click");
@@ -61,11 +69,12 @@
             headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
             beforeSend: WaitingModal.show,
             success: function(response) {
+                pendingImport = true;
                 importStudyConfirm(response);
             },
             error : function(err) {
                 const errMsg = err.responseText ? err.responseText : "Something went wrong during study import";
-                alerts.error(errMsg);
+                alerts.error(errMsg, 0, true);
             },
             complete: function() {
                 WaitingModal.hide();
@@ -130,8 +139,8 @@
                 But it seems a study with this UUID already exists in this JATOS.
             </p>
             <p>
-                Additionally the assets directory of the imported study is named "${uploadedDirName}"
-                - but the directory name of the currently installed one is "${currentDirName}". Usually, in this case,
+                Additionally the assets directory of the imported study is named "${Helpers.escapeHtml(uploadedDirName)}"
+                - but the directory name of the currently installed one is "${Helpers.escapeHtml(currentDirName)}". Usually, in this case,
                 the directory is renamed to the imported version, but unfortunately this one already
                 exists and belongs to another study.
             </p>
@@ -165,7 +174,7 @@
             <p>A study with this UUID already exists in this JATOS.</p>
             <p>
                 But currently the study doesn't seem to have a study assets directory associated with it. The directory's
-                name was "${currentDirName}" but it doesn't exist on the disk any more. Maybe someone changed its name or deleted it?
+                name was "${Helpers.escapeHtml(currentDirName)}" but it doesn't exist on the disk any more. Maybe someone changed its name or deleted it?
             </p>
             <p>If you continue the uploaded study assets directory will be used instead of the non-existing current one.</p>
             <p>Do you want to proceed?</p>`;
@@ -181,7 +190,7 @@
             ${infoCard}
             <p>
                 Unfortunately, a study assets directory with this name already exists in this JATOS. If you proceed,
-                the study assets directory of your uploaded study will be renamed to "${newDirName}".
+                the study assets directory of your uploaded study will be renamed to "${Helpers.escapeHtml(newDirName)}".
             </p>
             <p>Do you want to proceed?</p>`;
         const action = () => postStudyImportConfirm({ keepProperties: false, keepAssets : false, renameAssets: true });
@@ -208,6 +217,7 @@
     }
 
     function postStudyImportConfirm({keepProperties, keepAssets, keepCurrentAssetsName, renameAssets}) {
+        pendingImport = false;
         $.ajax({
             type: 'POST',
             url: window.routes.ImportExport.importStudyConfirmed,
@@ -222,7 +232,7 @@
             success: function(studyId) {
                 window.location.href = window.routes.Studies.study(studyId);
             },
-            error: (err) => err.responseText ? alerts.error(err.responseText) : alerts.error("Something went wrong during study import")
+            error: (err) => err.responseText ? alerts.error(err.responseText, 0, true) : alerts.error("Something went wrong during study import", 0, true)
         });
     }
 
@@ -233,6 +243,19 @@
         } else {
             $('#confirmStudyImportConfirmed').attr("disabled", false);
         }
+    });
+
+    // Both import confirmation dialogs have explicit Cancel and close buttons.
+    $('#confirmStudyImportModal, #confirmationModal').on('click', '[data-bs-dismiss="modal"]', function() {
+        if (!pendingImport) return;
+        pendingImport = false;
+        $.ajax({
+            type: 'DELETE',
+            contentType: 'application/x-www-form-urlencoded',
+            url: window.routes.ImportExport.cancelStudyImport,
+            headers: { 'Csrf-Token': '@helper.CSRF.getToken.value' },
+            error: () => alerts.error("Could not cancel the pending import. It will expire automatically.", 0, true)
+        });
     });
 
     $("#confirmStudyImportModal").on('hide.bs.modal', alerts.hideAll);

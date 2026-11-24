@@ -2,18 +2,19 @@ package general.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
-import play.db.jpa.*;
 import com.google.inject.Provides;
-import play.db.jpa.DefaultJPAApi;
+import json.common.DefaultJson;
 import play.db.DBApi;
+import play.db.jpa.DefaultJPAApi;
+import play.db.jpa.DefaultJPAConfig;
+import play.db.jpa.JPAConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import play.libs.pekko.PekkoGuiceSupport;
-import json.common.DefaultJson;
 
 import javax.inject.Singleton;
 
-import static java.util.concurrent.CompletableFuture.*;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * Configuration of Guice dependency injection for Publix module
@@ -38,9 +39,9 @@ public class CommonGuiceModule extends AbstractModule implements PekkoGuiceSuppo
 
     @Provides
     @Singleton
-    public JPAApi provideJPAApi(JPAConfig jpaConfig, ApplicationLifecycle lifecycle, DBApi dbApi) {
+    public JpaTransactions provideTransactions(JPAConfig jpaConfig, ApplicationLifecycle lifecycle, DBApi dbApi) {
         // Create the original implementation
-        JPAApi defaultApi = new DefaultJPAApi(jpaConfig);
+        DefaultJPAApi defaultApi = new DefaultJPAApi(jpaConfig);
 
         lifecycle.addStopHook(() -> {
             defaultApi.shutdown();
@@ -50,6 +51,6 @@ public class CommonGuiceModule extends AbstractModule implements PekkoGuiceSuppo
         defaultApi.start();
 
         // Wrap it with our propagation logic
-        return new TransactionPropagatingJPAApi(defaultApi);
+        return new JpaTransactions(defaultApi);
     }
 }

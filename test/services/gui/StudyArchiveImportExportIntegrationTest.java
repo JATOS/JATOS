@@ -13,8 +13,10 @@ import models.common.Study;
 import models.common.Study.GroupSessionWriteScope;
 import models.common.User;
 import org.assertj.core.api.Fail;
+import org.junit.Assert;
 import org.junit.Test;
 import play.test.Helpers;
+import services.gui.importexport.StudyArchiveImportExport;
 import testutils.JatosTest;
 import utils.common.IOUtils;
 
@@ -27,15 +29,15 @@ import java.util.stream.Stream;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static exceptions.common.JatosException.unchecked;
 import static org.assertj.core.api.Assertions.assertThat;
-import static services.gui.ImportExportService.SESSION_TEMP_IMPORT_STUDY_DIR;
+import static services.gui.importexport.StudyArchiveImportExport.SESSION_TEMP_IMPORT_STUDY_DIR;
 
 /**
- * Tests for ImportExportService
+ * Tests for StudyArchiveImportExport
  */
-public class ImportExportServiceIntegrationTest extends JatosTest {
+public class StudyArchiveImportExportIntegrationTest extends JatosTest {
 
     @Inject
-    private ImportExportService importExportService;
+    private StudyArchiveImportExport studyArchiveImportExport;
 
     @Inject
     private StudyDao studyDao;
@@ -52,6 +54,26 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
     @Inject
     private StudyService studyService;
 
+    @Inject
+    private general.common.JpaTransactions transactions;
+
+    @Test
+    public void newImportAssetsAreRemovedOnRollbackAndStagingIsPreserved() {
+        Context.current().args().put(SIGNEDIN_USER, admin);
+        studyArchiveImportExport.importStudy(exampleStudyArchive());
+        Path staging = IOUtils.tmpDir().resolve(Context.current().response()
+                .getSession(SESSION_TEMP_IMPORT_STUDY_DIR).orElseThrow());
+        Assert.assertThrows(IllegalStateException.class, () ->
+                transactions.withTransaction((java.util.function.Consumer<jakarta.persistence.EntityManager>) em -> {
+                    studyArchiveImportExport.importStudyConfirmed(false, false, false, true);
+                    throw new IllegalStateException("rollback");
+                }));
+        assertThat(ioUtils.checkStudyAssetsDirExists("potatoCompass")).isFalse();
+        assertThat(Files.isDirectory(staging.resolve("content/potatoCompass"))).isTrue();
+        assertThat(studyDao.findByUuid("74ce92a5-2250-445e-be6d-efd5ddbc9e61")).isEmpty();
+        studyArchiveImportExport.cleanupAfterStudyImport();
+    }
+
     private Path exampleStudyArchive() {
         return Path.of(general.common.Common.getBasepath(), TEST_RESOURCES_POTATO_COMPASS_JZIP);
     }
@@ -61,7 +83,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         Context.current().args().put(SIGNEDIN_USER, admin);
 
         Path file = exampleStudyArchive();
-        Map<String, Object> resMap = importExportService.importStudy(file);
+        Map<String, Object> resMap = studyArchiveImportExport.importStudy(file);
 
         assertThat(resMap.get("studyExists")).isEqualTo(Boolean.FALSE);
         assertThat(resMap.get("uuid")).isEqualTo("74ce92a5-2250-445e-be6d-efd5ddbc9e61");
@@ -76,7 +98,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         assertThat(Files.exists(tmpDir)).isTrue();
 
         // Cleanup temp dir and session
-        importExportService.cleanupAfterStudyImport();
+        studyArchiveImportExport.cleanupAfterStudyImport();
 
         assertThat(Files.exists(tmpDir)).isFalse();
         assertThat(Context.current().response().getSession(SESSION_TEMP_IMPORT_STUDY_DIR).isPresent()).isFalse();
@@ -95,7 +117,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         Context.current().args().put(SIGNEDIN_USER, otherUser);
 
         try {
-            importExportService.importStudy(exampleStudyArchive());
+            studyArchiveImportExport.importStudy(exampleStudyArchive());
             Fail.fail();
         } catch (ForbiddenException e) {
             // expected
@@ -108,7 +130,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
     public void importStudyConfirmed_withoutPriorImport_throwsIOException() {
         Context.current().args().put(SIGNEDIN_USER, admin);
         try {
-            importExportService.importStudyConfirmed(false, false, false, false);
+            studyArchiveImportExport.importStudyConfirmed(false, false, false, false);
             Fail.fail();
         } catch (ImportExportException e) {
             // expected
@@ -122,10 +144,10 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         Context.current().args().put(SIGNEDIN_USER, admin);
 
         // First stage: upload/import to prepare temp dir and session
-        importExportService.importStudy(exampleStudyArchive());
+        studyArchiveImportExport.importStudy(exampleStudyArchive());
 
         // Confirm import: for a new study keepProperties=false, keepAssets=false, keepCurrentAssetsName=false, renameAssets=false
-        Study newStudy = importExportService.importStudyConfirmed(false, false, false, false);
+        Study newStudy = studyArchiveImportExport.importStudyConfirmed(false, false, false, false);
         assertThat(newStudy).isNotNull();
         assertThat(newStudy.getId()).isPositive();
 
@@ -133,7 +155,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         checkExampleStudyPropertiesAndAssets(newStudy.getId());
 
         // Clean up remaining temp dir/session if any
-        importExportService.cleanupAfterStudyImport();
+        studyArchiveImportExport.cleanupAfterStudyImport();
     }
 
     /**
@@ -148,7 +170,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         Path file = exampleStudyArchive();
-        Map<String, Object> resMap = importExportService.importStudy(file);
+        Map<String, Object> resMap = studyArchiveImportExport.importStudy(file);
 
         // Check returned JSON object
         assertThat(resMap.get("studyExists")).isEqualTo(Boolean.FALSE);
@@ -160,7 +182,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         assertThat(resMap.get("uploadedDirExists")).isEqualTo(Boolean.FALSE);
 
         // Import part 2: call importStudyConfirmed()
-        Study study = importExportService.importStudyConfirmed(false, false, false, false);
+        Study study = studyArchiveImportExport.importStudyConfirmed(false, false, false, false);
 
         // Check properties and assets of imported study
         checkExampleStudyPropertiesAndAssets(study.getId());
@@ -184,7 +206,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         Path file = exampleStudyArchive();
-        Map<String, Object> resMap = importExportService.importStudy(file);
+        Map<String, Object> resMap = studyArchiveImportExport.importStudy(file);
 
         // Check returned JSON object
         assertThat(resMap.get("studyExists")).isEqualTo(Boolean.TRUE);
@@ -197,7 +219,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         assertThat(resMap.get("uploadedDirExists")).isEqualTo(Boolean.FALSE);
 
         // Import part 2: call importStudyConfirmed(): Allow properties and assets to be overwritten
-        importExportService.importStudyConfirmed(false, false, false, true);
+        studyArchiveImportExport.importStudyConfirmed(false, false, false, true);
 
         // Check properties and assets of updated study
         checkExampleStudyPropertiesAndAssets(studyId);
@@ -220,10 +242,10 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         Path file = exampleStudyArchive();
-        importExportService.importStudy(file);
+        studyArchiveImportExport.importStudy(file);
 
         // Import part 2: call importStudyConfirmed(): Keep properties but allow assets to be overwritten
-        importExportService.importStudyConfirmed(true, false, true, true);
+        studyArchiveImportExport.importStudyConfirmed(true, false, true, true);
 
         // Check that properties are unchanged but assets are changed
         Study updatedStudy = studyDao.findById(studyId);
@@ -250,10 +272,10 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         Path file = exampleStudyArchive();
-        importExportService.importStudy(file);
+        studyArchiveImportExport.importStudy(file);
 
         // Import part 2: call importStudyConfirmed(): Keep properties but allow assets to be overwritten
-        importExportService.importStudyConfirmed(false, true, false, true);
+        studyArchiveImportExport.importStudyConfirmed(false, true, false, true);
 
         // Check that properties are unchanged but assets are changed
         Study importedStudy = studyDao.findById(studyId);
@@ -296,7 +318,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
 
         // Import part 1: call importStudy()
         Path file = exampleStudyArchive();
-        Map<String, Object> resMap = importExportService.importStudy(file);
+        Map<String, Object> resMap = studyArchiveImportExport.importStudy(file);
 
         // Check returned JSON object
         assertThat(resMap.get("studyExists")).isEqualTo(Boolean.FALSE);
@@ -306,13 +328,13 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
         assertThat(resMap.get("uploadedDirExists")).isEqualTo(Boolean.TRUE);
 
         // Import part 2: call importStudyConfirmed(): allow renaming of uploaded assets dir
-        importExportService.importStudyConfirmed(false, false, false, true);
+        studyArchiveImportExport.importStudyConfirmed(false, false, false, true);
 
         Study importedStudy = studyDao.findByUuid("74ce92a5-2250-445e-be6d-efd5ddbc9e61").orElseThrow();
         // Check that properties are unchanged
         assertThat(importedStudy.getTitle()).isEqualTo("Potato Compass");
-        // Check that assets are renamed (have '_2' suffix)
-        assertThat(importedStudy.getDirName()).isEqualTo("potatoCompass_2");
+        // Check that assets are renamed (have '_1' suffix)
+        assertThat(importedStudy.getDirName()).isEqualTo("potatoCompass_1");
         assertThat(ioUtils.checkStudyAssetsDirExists(importedStudy.getDirName())).isTrue();
     }
 
@@ -320,15 +342,16 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
     public void cleanupAfterStudyImport_removesTempDirAndSession() {
         Context.current().args().put(SIGNEDIN_USER, admin);
 
-        importExportService.importStudy(exampleStudyArchive());
+        studyArchiveImportExport.importStudy(exampleStudyArchive());
 
         String tempDirName = Context.current().response().getSession(SESSION_TEMP_IMPORT_STUDY_DIR).orElseThrow();
         Path tmpDir = IOUtils.tmpDir().resolve(tempDirName);
         assertThat(Files.exists(tmpDir)).isTrue();
 
-        importExportService.cleanupAfterStudyImport();
+        studyArchiveImportExport.cleanupAfterStudyImport();
 
-        // Only assert that the session is cleared; the non-empty temp dir may remain on disk
+        assertThat(Files.exists(tmpDir)).isFalse();
+        // Cleanup clears the session as well as the files.
         assertThat(Context.current().response().getSession(SESSION_TEMP_IMPORT_STUDY_DIR).isPresent()).isFalse();
     }
 
@@ -336,7 +359,7 @@ public class ImportExportServiceIntegrationTest extends JatosTest {
     public void createStudyExportZipFile_createsZip() throws Exception {
         Long studyId = importExampleStudy();
 
-        Path zip = importExportService.createStudyExportZipFile(studyId);
+        Path zip = studyArchiveImportExport.createStudyExportZipFile(studyId);
         assertThat(zip).isNotNull();
         assertThat(Files.exists(zip)).isTrue();
         assertThat(Files.size(zip)).isGreaterThan(0L);

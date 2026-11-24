@@ -1,9 +1,9 @@
 package daos.common;
 
+import general.common.JpaTransactions;
 import jakarta.persistence.EntityManager;
 import models.common.Batch;
 import models.common.Study;
-import play.db.jpa.JPAApi;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -16,7 +16,7 @@ import java.util.Optional;
 public class BatchDao extends AbstractDao {
 
     @Inject
-    BatchDao(JPAApi jpa) {
+    BatchDao(JpaTransactions jpa) {
         super(jpa);
     }
 

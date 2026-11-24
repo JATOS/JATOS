@@ -31,8 +31,7 @@ import static auth.gui.AuthAction.Auth;
 import static auth.gui.AuthAction.AuthMethod.Type.SESSION;
 import static auth.gui.AuthAction.AuthMethod.Type.TOKEN;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 @Singleton
 public class ComponentApi extends Controller {
@@ -60,7 +59,7 @@ public class ComponentApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result getComponentsByStudy(String studyIdOrUuid) {
         Study study = studyService.getStudyFromIdOrUuid(studyIdOrUuid);
@@ -75,7 +74,7 @@ public class ComponentApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER}, types = {TOKEN, SESSION})
+    @Auth(roles = {VIEWER, USER, SUPERUSER}, types = {TOKEN, SESSION})
     public Result getComponent(String id) {
         Component component = componentService.getComponentFromIdOrUuid(id);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
@@ -89,7 +88,7 @@ public class ComponentApi extends Controller {
      * Creates a component within the specified study
      */
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result createComponent(Http.Request request, String studyId) {
@@ -109,7 +108,7 @@ public class ComponentApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @BodyParser.Of(ApiJsonBodyParser.class)
     public Result updateComponent(Http.Request request, String id) {
         Component component = componentService.getComponentFromIdOrUuid(id);
@@ -129,7 +128,7 @@ public class ComponentApi extends Controller {
     }
 
     @Async(Executor.IO)
-    @Auth(roles = USER, types = {TOKEN, SESSION})
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
     @Transactional
     public Result deleteComponent(String id) {
         Component component = componentService.getComponentFromIdOrUuid(id);

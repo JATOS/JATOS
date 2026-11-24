@@ -4,6 +4,7 @@ import daos.common.BatchDao;
 import daos.common.StudyLinkDao;
 import daos.common.worker.WorkerDao;
 import exceptions.common.BadRequestException;
+import general.common.JpaTransactions;
 import models.common.Batch;
 import models.common.StudyLink;
 import models.common.workers.Worker;
@@ -29,11 +30,11 @@ import static org.mockito.Mockito.*;
  */
 public class StudyLinkServiceTest {
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private BatchDao batchDao;
     private WorkerDao workerDao;
     private StudyLinkDao studyLinkDao;
     private WorkerService workerService;
-
     private StudyLinkService studyLinkService;
 
     @Before
@@ -43,9 +44,9 @@ public class StudyLinkServiceTest {
         studyLinkDao = Mockito.mock(StudyLinkDao.class);
         workerService = Mockito.mock(WorkerService.class);
 
-        studyLinkService = new StudyLinkService(batchDao, workerDao, studyLinkDao, workerService);
+        studyLinkService = new StudyLinkService(transactions, batchDao, workerDao, studyLinkDao, workerService);
 
-        JPAMocker.mockDaoTransactions(batchDao, workerDao, studyLinkDao);
+        JPAMocker.mockTransactions(null, transactions);
     }
 
     @Test
@@ -61,7 +62,7 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertThat(studyCodes.get(0)).isNotEmpty();
+        assertThat(studyCodes.getFirst()).isNotEmpty();
 
         ArgumentCaptor<Worker> workerCaptor = ArgumentCaptor.forClass(Worker.class);
         verify(workerService).validateWorker(workerCaptor.capture());
@@ -108,7 +109,7 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertThat(studyCodes.get(0)).isNotEmpty();
+        assertThat(studyCodes.getFirst()).isNotEmpty();
 
         verify(workerDao).persist(any(Worker.class));
         verify(studyLinkDao).persist(any(StudyLink.class));
@@ -129,7 +130,7 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertEquals(existingStudyLink.getStudyCode(), studyCodes.get(0));
+        assertEquals(existingStudyLink.getStudyCode(), studyCodes.getFirst());
 
         verify(studyLinkDao).findFirstByBatchAndWorkerType(batch, WorkerType.GENERAL_SINGLE);
         verify(studyLinkDao, never()).persist(any(StudyLink.class));
@@ -151,11 +152,11 @@ public class StudyLinkServiceTest {
         List<String> studyCodes = studyLinkService.getStudyCodes(batch, props);
 
         assertThat(studyCodes).hasSize(1);
-        assertThat(studyCodes.get(0)).isNotEmpty();
+        assertThat(studyCodes.getFirst()).isNotEmpty();
 
         ArgumentCaptor<StudyLink> studyLinkCaptor = ArgumentCaptor.forClass(StudyLink.class);
         verify(studyLinkDao).persist(studyLinkCaptor.capture());
-        assertEquals(studyLinkCaptor.getValue().getStudyCode(), studyCodes.get(0));
+        assertEquals(studyLinkCaptor.getValue().getStudyCode(), studyCodes.getFirst());
 
         verifyNoInteractions(workerDao, batchDao, workerService);
     }

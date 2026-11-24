@@ -15,6 +15,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -295,6 +297,21 @@ public class IOUtils {
         return fullPath;
     }
 
+    /**
+     * Resolves a readable directory and checks its real path against the allowed roots, including descendants. Empty
+     * roots impose no restriction. Returns empty when outside the roots; unavailable paths throw IOException.
+     */
+    public Optional<Path> resolveReadableDirectoryWithinRoots(String directory, List<String> allowedRoots) throws IOException {
+        Path path = getExistingDirSecurely(Path.of(directory).toRealPath());
+        if (!Files.isReadable(path)) throw new IOException("Directory is not readable");
+        if (allowedRoots.isEmpty()) return Optional.of(path);
+        for (String root : allowedRoots) {
+            Path allowed = Path.of(root);
+            if (allowed.isAbsolute() && path.startsWith(allowed.toRealPath())) return Optional.of(path);
+        }
+        return Optional.empty();
+    }
+
     public boolean checkStudyAssetsDirExists(String dirName) {
         return Files.exists(generateStudyAssetsPath(dirName));
     }
@@ -360,11 +377,37 @@ public class IOUtils {
     }
 
     /**
-     * Gets the study assets with the given directory name.
+     * Gets an existing study assets directory, rejecting links, junctions, and paths outside the assets root.
      */
     public Path getStudyAssetsDir(String dirName) throws IOException {
-        Path studyAssetsPath = generateStudyAssetsPath(dirName);
-        return getExistingDirSecurely(studyAssetsPath);
+        return getStudyAssetsDir(dirName, true);
+    }
+
+    /**
+     * Checks for an existing file or directory of the requested type, rejecting links and junctions.
+     * Expects an absolute path with an already resolved parent; the target itself must match its real path.
+     */
+    public static boolean isRegularFileOrDirectory(Path path, boolean directory) throws IOException {
+        return (directory ? Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)
+                : Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) && path.toRealPath().equals(path);
+    }
+
+    /**
+     * Resolves a direct child of the real assets root. Existing targets must be directories without links or
+     * junctions. Missing targets are allowed only when mustExist is false.
+     */
+    public Path getStudyAssetsDir(String dirName, boolean mustExist) throws IOException {
+        Path root = Path.of(Common.getStudyAssetsRootPath()).toRealPath();
+        if (dirName == null || dirName.isBlank() || !checkFilename(dirName))
+            throw new IOException("Invalid installed study assets directory name.");
+        Path target = root.resolve(dirName).normalize();
+        if (!root.equals(target.getParent()))
+            throw new IOException("Study assets must be a directory inside the assets root.");
+        if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)
+                && !isRegularFileOrDirectory(target, true))
+            throw new IOException("Installed study assets must be a regular directory, without links or junctions.");
+        if (mustExist) return getExistingDirSecurely(target);
+        return target;
     }
 
     /**
@@ -477,8 +520,11 @@ public class IOUtils {
         return clonedFile;
     }
 
+    /**
+     * Suggests an available name for previews only; creation must reserve the directory.
+     */
     public String findNonExistingStudyAssetsDirName(String dirName) {
-        int i = 2;
+        int i = 1;
         String newDirName = dirName;
         while (checkStudyAssetsDirExists(newDirName)) {
             newDirName = dirName + "_" + i;
@@ -503,6 +549,29 @@ public class IOUtils {
     }
 
     /**
+     * Atomically reserves an unused assets directory; concurrent creations cannot overwrite each other.
+     */
+    public String reserveStudyAssetsDirectory(String preferredName, String studyUuid) throws IOException {
+        Path root = Path.of(Common.getStudyAssetsRootPath());
+        String base = preferredName == null || preferredName.isBlank() ? studyUuid : preferredName;
+        // Apply the same path checks as ordinary assets creation.
+        getFileSecurely(root, base);
+        for (int suffix = 0; ; suffix++) {
+            String name = suffix == 0 ? base : base + "_" + suffix;
+            try {
+                Files.createDirectory(getFileSecurely(root, name));
+                return name;
+            } catch (FileAlreadyExistsException e) {
+                // Another study owns this name; reserve the next one.
+            }
+        }
+    }
+
+    public void copyStagedStudyAssets(Path assets, String dirName) throws IOException {
+        copyRecursively(assets, getFileSecurely(Path.of(Common.getStudyAssetsRootPath()), dirName));
+    }
+
+    /**
      * Creates a study assets dir.
      *
      * @param dirName Name of the new study assets dir.
@@ -510,10 +579,7 @@ public class IOUtils {
     public void createStudyAssetsDir(String dirName) throws IOException {
         Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
         Path dir = getFileSecurely(studyAssetsRootPath, dirName);
-        if (Files.exists(dir)) {
-            throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(dirName));
-        }
-        Files.createDirectories(dir);
+        Files.createDirectory(dir);
     }
 
     /**

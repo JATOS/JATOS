@@ -1,5 +1,7 @@
 package group
 
+import general.common.JpaTransactions
+
 import daos.common.{GroupResultDao, StudyResultDao}
 import jakarta.persistence.EntityManager
 import models.common.GroupResult.GroupState
@@ -17,7 +19,8 @@ import javax.inject.{Inject, Singleton}
  * identified by the study result ID (which represents a particular study run).
  */
 @Singleton
-class GroupAdministration @Inject()(groupDispatcher: GroupDispatcher,
+class GroupAdministration @Inject()(transactions: JpaTransactions,
+                                    groupDispatcher: GroupDispatcher,
                                     studyResultDao: StudyResultDao,
                                     groupResultDao: GroupResultDao) {
 
@@ -30,7 +33,7 @@ class GroupAdministration @Inject()(groupDispatcher: GroupDispatcher,
    * maxTotalMembers not reached). If there is none, create a new GroupResult.
    */
   def join(studyResult: StudyResult, batch: Batch): GroupResult = {
-    val groupResult = groupResultDao.withNewTransaction((_: EntityManager) => {
+    val groupResult = transactions.withNewTransaction((_: EntityManager) => {
       val managedStudyResult = studyResultDao.findById(studyResult.getId)
       val groupMaxNotReached = groupResultDao.findFirstMaxNotReachedForUpdate(batch)
         .orElseGet(() => groupResultDao.persist(new GroupResult(batch)))
@@ -62,7 +65,7 @@ class GroupAdministration @Inject()(groupDispatcher: GroupDispatcher,
     val groupResult = studyResult.getActiveGroupResult
     if (groupResult == null) return
 
-    groupResultDao.withNewTransaction((_ => {
+    transactions.withNewTransaction((_ => {
       moveActiveMemberToHistory(studyResult.getId)
       checkAndFinishGroup(groupResult.getId)
     }): Consumer[EntityManager])
@@ -110,7 +113,7 @@ class GroupAdministration @Inject()(groupDispatcher: GroupDispatcher,
    * GroupResult. If there is more than one, it assigns to the one with the most active members.
    */
   private def reassignGroupResult(studyResultId: Long, batch: Batch): Option[GroupResult] = {
-    groupResultDao.withNewTransaction(_ => {
+    transactions.withNewTransaction(_ => {
       val studyResult = studyResultDao.findById(studyResultId)
       if (studyResult == null || studyResult.getActiveGroupResult == null) {
         logger.info(s".reassignGroupResult: The study result with ID $studyResultId isn't member in any group.")

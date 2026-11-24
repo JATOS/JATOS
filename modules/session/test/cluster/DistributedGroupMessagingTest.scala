@@ -3,20 +3,20 @@ package cluster
 import batch.BatchDispatcher
 import com.typesafe.config.ConfigFactory
 import daos.common.StudyDao
+import general.common.Common
 import group.GroupProtocol.{GroupAction, GroupMsg, TellWhom}
 import group.{GroupActionHandler, GroupActionMsgBuilder, GroupChannelActor, GroupDispatcher}
-import general.common.Common
 import models.common.Study.GroupSessionWriteScope
 import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
 import org.apache.pekko.cluster.{Cluster, MemberStatus}
 import org.junit.Assert.{assertEquals, assertNull}
 import org.junit.{After, Before, Test}
-import org.mockito.{MockedStatic, Mockito}
 import org.mockito.Mockito.{mock, when}
-import play.api.libs.json.{JsObject, Json}
+import org.mockito.{MockedStatic, Mockito}
+import play.api.libs.json.Json
 
-import java.util.concurrent.{CountDownLatch, LinkedBlockingQueue, TimeUnit}
 import java.time.Duration
+import java.util.concurrent.{CountDownLatch, LinkedBlockingQueue, TimeUnit}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -222,7 +222,7 @@ class DistributedGroupMessagingTest {
     assertEquals(expectedMembers, cluster.state.members.count(_.status == MemberStatus.Up))
   }
 
-  private class StubHandler(sessionHandler: Boolean) extends GroupActionHandler(null, null) {
+  private class StubHandler(sessionHandler: Boolean) extends GroupActionHandler(null, null, null) {
     override def handleActionMsg(msg: GroupMsg,
                                  groupResultId: Long,
                                  studyResultId: Long,
@@ -237,7 +237,7 @@ class DistributedGroupMessagingTest {
     }
   }
 
-  private class StubBuilder extends GroupActionMsgBuilder(null) {
+  private class StubBuilder extends GroupActionMsgBuilder(null, null) {
     override def build(groupResultId: Long,
                        studyResultId: Long,
                        channelStudyResultIds: Option[Iterable[Long]],

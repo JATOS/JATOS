@@ -3,8 +3,8 @@ package services.gui;
 import daos.common.ComponentResultDao;
 import daos.common.GroupResultDao;
 import daos.common.StudyResultDao;
-import daos.common.worker.WorkerDao;
 import exceptions.common.ForbiddenException;
+import general.common.JpaTransactions;
 import general.common.StudyLogger;
 import http.common.Http.Context;
 import models.common.*;
@@ -34,12 +34,12 @@ public class ResultRemoverTest {
 
     private static org.mockito.MockedStatic<general.common.Common> commonStatic;
 
+    private final JpaTransactions transactions = org.mockito.Mockito.mock(JpaTransactions.class);
     private AuthorizationService authorizationService;
     private ComponentResultDao componentResultDao;
     private StudyResultDao studyResultDao;
     private StudyLogger studyLogger;
     private IOUtils ioUtils;
-
     private ResultRemover resultRemover;
     private JPAMocker.TransactionCallbacks callbacks;
 
@@ -71,11 +71,10 @@ public class ResultRemoverTest {
         componentResultDao = mock(ComponentResultDao.class);
         studyResultDao = mock(StudyResultDao.class);
         GroupResultDao groupResultDao = mock(GroupResultDao.class);
-        WorkerDao workerDao = mock(WorkerDao.class);
         studyLogger = mock(StudyLogger.class);
         ioUtils = mock(IOUtils.class);
 
-        resultRemover = new ResultRemover(authorizationService, componentResultDao, studyResultDao, groupResultDao,
+        resultRemover = new ResultRemover(transactions, authorizationService, componentResultDao, studyResultDao, groupResultDao,
                 studyLogger, ioUtils);
 
         // Minimal model graph used by several tests
@@ -86,7 +85,7 @@ public class ResultRemoverTest {
         worker = newWorker();
 
         callbacks = new JPAMocker.TransactionCallbacks();
-        JPAMocker.mockDaoTransactions(callbacks.em, componentResultDao, studyResultDao, groupResultDao, workerDao);
+        JPAMocker.mockTransactions(callbacks.em, transactions);
 
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
         Context.current().args().put(SIGNEDIN_USER, user);
@@ -292,7 +291,7 @@ public class ResultRemoverTest {
         verify(studyResultDao).remove(sr1);
         verify(studyResultDao).remove(sr2);
         // log once
-        verify(studyLogger).log(eq(study), eq(user), contains("Removed result data and files"));
+        verify(studyLogger).log(eq(study.getUuid()), eq(user.getName()), contains("Removed result data and files"));
     }
 
 }

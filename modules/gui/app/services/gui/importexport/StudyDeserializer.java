@@ -1,8 +1,7 @@
-package services.gui;
+package services.gui.importexport;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import exceptions.common.JatosException;
-import general.common.ApiEnvelope.ErrorCode;
+import exceptions.common.ImportExportException;
 import json.common.DefaultJson;
 import models.common.Study;
 
@@ -28,24 +27,24 @@ public class StudyDeserializer {
     }
 
     /**
-     * Accepts a file with the content of a JSON String and turns the data object within this JSON String into an object
-     * of type Study. It can handle different versions of the study model. The version is determined by the version
-     * field in the JSON string.
+     * Reads a study from a JSON file, supporting older study format versions.
      */
     public Study deserialize(Path file) {
         String jsonStr = unchecked(() -> Files.readString(file));
         JsonNode node = mapper.jsonAsJsonNode(jsonStr);
 
-        int version = node.findValue("version").asInt();
+        if (node == null || !node.hasNonNull("version") || !node.path("data").isObject())
+            throw new ImportExportException("File is not a valid JATOS study.");
+        int version = node.path("version").asInt();
         Study study = switch (version) {
             case 0, 1, 2 ->
                     // Version 2
-                    throw new JatosException("Support for this version of the study model has been removed.", ErrorCode.IMPORT_EXPORT_ERROR);
+                    throw new ImportExportException("Support for this version of the study model has been removed.");
             case 3 ->
                     // Current version
                     mapper.jsonNodeAsObj(node.findValue("data"), Study.class);
             default ->
-                    throw new JatosException("This study is from an unsupported version of JATOS.", ErrorCode.IMPORT_EXPORT_ERROR);
+                    throw new ImportExportException("This study is from an unsupported version of JATOS.");
         };
         return study;
     }

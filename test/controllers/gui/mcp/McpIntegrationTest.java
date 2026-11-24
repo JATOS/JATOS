@@ -3,6 +3,7 @@ package controllers.gui.mcp;
 import com.fasterxml.jackson.databind.JsonNode;
 import daos.common.UserDao;
 import general.common.Common;
+import general.common.JpaTransactions;
 import models.common.User;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,19 +21,21 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.UUID;
 
-import static services.gui.mcp.McpProtocolUtils.*;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static services.gui.mcp.McpProtocolUtils.*;
 
 /**
  * Real HTTP MCP -> loopback API -> database, including Play routes and filters.
  */
 public class McpIntegrationTest {
+
+    private static final int MAX_REQUEST_BYTES = 64 * 1024;
+
     @Rule
     public TemporaryFolder temp = new TemporaryFolder();
 
@@ -63,8 +66,10 @@ public class McpIntegrationTest {
                 .configure("play.http.context", prefix)
                 .configure("jatos.urlBasePath", prefix)
                 .configure("jatos.mcp.enabled", true)
+                .configure("jatos.user.role.allowSuperuser", true)
                 .configure("play.server.http.port", port)
                 .configure("jatos.mcp.maxResponseSize", "8KiB")
+                .configure("jatos.mcp.maxRequestSize", MAX_REQUEST_BYTES)
                 .configure("jatos.user.admin.password", "Mcp-Test-Only-42!")
                 .configure("jatos.studyAssets.rootPath", root + "/assets")
                 .configure("jatos.studyLogs.path", root + "/study-logs")
@@ -187,7 +192,7 @@ public class McpIntegrationTest {
             }
 
             var resultDao = app.injector().instanceOf(daos.common.ComponentResultDao.class);
-            long[] resultIds = resultDao.withTransaction(em -> {
+            long[] resultIds = app.injector().instanceOf(JpaTransactions.class).withTransaction(em -> {
                 var worker = new models.common.workers.PersonalSingleWorker("MCP result fixture");
                 em.persist(worker);
                 var link = new models.common.StudyLink(em.find(models.common.Batch.class, batchId), worker);
@@ -286,6 +291,42 @@ public class McpIntegrationTest {
             assertThat(tool(client, base, otherToken, "write_study_asset", textAsset).path("isError").asBoolean()).isTrue();
             assertThat(Files.readString(assetDir.resolve("new folder/script.js"))).isEmpty();
             checkMembershipTools(client, base, token, otherToken, studyId, other.getId());
+            User superuser = new User("mcp-superuser", "Superuser", "superuser@example.org");
+            superuser.updateRoles(User.Role.SUPERUSER);
+            superuser = app.injector().instanceOf(UserService.class)
+                    .createAndPersistUser(superuser, "Mcp-Test-Only-44!", false, User.AuthMethod.DB);
+            // Remove USER so annotations must explicitly permit SUPERUSER, even with VIEWER as the base role.
+            superuser.updateRoles(User.Role.VIEWER);
+            superuser = app.injector().instanceOf(UserDao.class).merge(superuser);
+            String superToken = app.injector().instanceOf(ApiTokenService.class).create(superuser, "super", 0).getRight();
+            var superStudyArgs = Json.newObject();
+            superStudyArgs.putObject("properties").put("title", "Superuser ownership test");
+            long superStudyId = toolData(client, base, token, "create_study", superStudyArgs).path("id").asLong();
+            assertThat(toolData(client, base, superToken, "list_studies", Json.newObject()).toString())
+                    .contains("Superuser ownership test");
+            checkWriteTools(client, base, superToken, superStudyId, token);
+            checkGroupAndSessionTools(app, client, base, superToken, otherToken, token);
+            long superBatchId = toolData(client, base, superToken, "list_batches",
+                    Json.newObject().put("study_id", superStudyId)).get(0).path("id").asLong();
+            checkStudyCodeTools(client, base, superToken, otherToken, superStudyId, superBatchId);
+            var superActivation = Json.newObject().put("study_id", superStudyId);
+            superActivation.putObject("properties").put("active", false);
+            assertThat(tool(client, base, superToken, "set_study_active", superActivation).path("isError").asBoolean()).isTrue();
+            assertThat(tool(client, base, superToken, "update_study", superActivation).path("isError").asBoolean()).isTrue();
+            var superMemberArgs = Json.newObject().put("study_id", superStudyId).put("user_id", other.getId());
+            toolData(client, base, superToken, "add_study_member", superMemberArgs);
+            toolData(client, base, superToken, "remove_study_member", superMemberArgs);
+            toolData(client, base, superToken, "add_study_member", superMemberArgs);
+            HttpResponse<String> transfer = client.send(HttpRequest.newBuilder(URI.create(base
+                            + "/api/v1/studies/" + superStudyId + "/owner/" + other.getId()))
+                    .header("Authorization", "Bearer " + superToken)
+                    .PUT(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(transfer.statusCode()).isEqualTo(200);
+            HttpResponse<String> deletedBySuperuser = client.send(HttpRequest.newBuilder(URI.create(base
+                            + "/api/v1/studies/" + superStudyId))
+                    .header("Authorization", "Bearer " + superToken)
+                    .DELETE().build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(deletedBySuperuser.statusCode()).isEqualTo(200);
             for (String entity : new String[]{"study", "component", "batch", "user"}) {
                 long target = switch (entity) {
                     case "study" -> studyId;
@@ -320,7 +361,11 @@ public class McpIntegrationTest {
                     .build(), HttpResponse.BodyHandlers.ofString());
             assertThat(anonymous.statusCode()).isEqualTo(401);
             assertThat(anonymous.headers().firstValue("WWW-Authenticate")).contains("Bearer");
-            assertThat(post(client, base + "/mcp", token, " ".repeat(65537)).statusCode()).isEqualTo(413);
+            // ASCII JSON padded to the exact byte limit: size rejection must precede JSON parsing.
+            String ping = "{\"jsonrpc\":\"2.0\",\"id\":30,\"method\":\"ping\"}";
+            String atLimit = ping + " ".repeat(MAX_REQUEST_BYTES - ping.length());
+            assertThat(post(client, base + "/mcp", token, atLimit).statusCode()).isEqualTo(200);
+            assertThat(post(client, base + "/mcp", token, atLimit + " ").statusCode()).isEqualTo(413);
 
             var largeProps = Json.newObject();
             largeProps.putObject("studyInput").put("large", "x".repeat(10000));
@@ -360,7 +405,11 @@ public class McpIntegrationTest {
      * Exercises create/update properties and authenticated archive downloads through MCP.
      */
     private void checkWriteTools(HttpClient client, String base, String token, long studyId) throws Exception {
-        JsonNode created = toolData(client, base, token, "create_study",
+        checkWriteTools(client, base, token, studyId, token);
+    }
+
+    private void checkWriteTools(HttpClient client, String base, String token, long studyId, String creatorToken) throws Exception {
+        JsonNode created = toolData(client, base, creatorToken, "create_study",
                 Json.parse("{\"properties\":{\"title\":\"Created through MCP\"}}"));
         long targetId = created.path("id").asLong();
         assertThat(targetId).isPositive().isNotEqualTo(studyId);
@@ -461,14 +510,19 @@ public class McpIntegrationTest {
      */
     private void checkGroupAndSessionTools(Application app, HttpClient client, String base, String token,
                                            String otherToken) throws Exception {
+        checkGroupAndSessionTools(app, client, base, token, otherToken, token);
+    }
+
+    private void checkGroupAndSessionTools(Application app, HttpClient client, String base, String token,
+                                           String otherToken, String creatorToken) throws Exception {
         var create = Json.newObject();
         create.putObject("properties").put("title", "Group session test").put("groupStudy", true);
-        long studyId = toolData(client, base, token, "create_study", create).path("id").asLong();
+        long studyId = toolData(client, base, creatorToken, "create_study", create).path("id").asLong();
         long batchId = toolData(client, base, token, "list_batches", Json.newObject().put("study_id", studyId))
                 .get(0).path("id").asLong();
         var batchArgs = Json.newObject().put("batch_id", batchId);
         assertThat(toolData(client, base, token, "list_groups", batchArgs).size()).isZero();
-        long groupId = app.injector().instanceOf(daos.common.GroupResultDao.class).withTransaction(em -> {
+        long groupId = app.injector().instanceOf(JpaTransactions.class).withTransaction(em -> {
             var batch = em.find(models.common.Batch.class, batchId);
             var active = new models.common.GroupResult(batch);
             em.persist(active);
@@ -546,10 +600,14 @@ public class McpIntegrationTest {
         assertThat(toolData(client, base, otherToken, "get_study", studyArgs).path("id").asLong()).isEqualTo(studyId);
         var activation = studyArgs.deepCopy();
         activation.putObject("properties").put("active", false);
-        assertThat(tool(client, base, otherToken, "set_study_active", activation)
-                .path("content").get(0).path("text").asText()).contains("Requires ADMIN");
+        assertThat(tool(client, base, otherToken, "set_study_active", activation).path("isError").asBoolean()).isTrue();
+        assertThat(tool(client, base, otherToken, "update_study", activation).path("isError").asBoolean()).isTrue();
+        assertThat(toolData(client, base, token, "set_study_active", activation).path("active").asBoolean()).isFalse();
+        activation.withObject("properties").put("active", true);
+        toolData(client, base, token, "set_study_active", activation);
 
-        JsonNode removed = toolData(client, base, token, "remove_study_member", memberArgs);
+        assertThat(tool(client, base, otherToken, "add_study_member", memberArgs).path("isError").asBoolean()).isTrue();
+        JsonNode removed = toolData(client, base, otherToken, "remove_study_member", memberArgs);
         assertThat(java.util.stream.StreamSupport.stream(removed.path("members").spliterator(), false).map(JsonNode::asLong).toList()).doesNotContain(userId);
         assertThat(toolData(client, base, token, "remove_study_member", memberArgs)).isEqualTo(removed);
         assertThat(tool(client, base, otherToken, "get_study", studyArgs).path("isError").asBoolean()).isTrue();

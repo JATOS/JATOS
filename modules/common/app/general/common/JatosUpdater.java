@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import exceptions.common.JatosException;
+import exceptions.common.ForbiddenException;
 import general.common.ApiEnvelope.ErrorCode;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.pekko.Done;
@@ -357,6 +358,10 @@ public class JatosUpdater {
     }
 
     public CompletionStage<?> downloadFromGitHubAndUnzip(boolean dry) {
+        if (Common.isMultiNode()) {
+            throw new ForbiddenException("Auto-update is not supported in a multi-node JATOS installation. Update each node manually.");
+        }
+
         if (currentReleaseInfo == null) {
             return failedStage(new IllegalStateException(
                     "No JATOS release information is available. Check for updates before downloading."));

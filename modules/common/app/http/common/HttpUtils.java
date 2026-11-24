@@ -158,4 +158,45 @@ public class HttpUtils {
                 .collect(Collectors.joining("&", "?", ""));
     }
 
+    /**
+     * Validates and normalizes an HTTPS Git credential origin without network access. Applies Git-specific
+     * restrictions, including rejecting paths other than a trailing slash.
+     */
+    public static String normalizeGitOrigin(String origin) {
+        return parseGitOrigin(origin, false);
+    }
+
+    /**
+     * Extracts a normalized HTTPS origin from a Git repository URL. Rejects embedded credentials, queries and
+     * fragments.
+     */
+    public static String getGitOriginFromRepositoryUrl(String url) {
+        return parseGitOrigin(url, true);
+    }
+
+    private static String parseGitOrigin(String value, boolean repository) {
+        try {
+            if (value == null || value.isBlank()) throw new IllegalArgumentException();
+            URI uri = new URI(value.trim());
+            String host = uri.getHost();
+            int port = uri.getPort();
+            String path = uri.getRawPath();
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || host == null || host.isEmpty()
+                    || uri.getRawUserInfo() != null || uri.getRawQuery() != null || uri.getRawFragment() != null
+                    || port == 0 || port > 65535 || port < -1
+                    || uri.getRawAuthority().endsWith(":")
+                    || (!repository && path != null && !path.isEmpty() && !path.equals("/"))) {
+                throw new IllegalArgumentException();
+            }
+            String normalized = "https://" + host.toLowerCase(Locale.ROOT)
+                    + (port == -1 || port == 443 ? "" : ":" + port);
+            if (normalized.length() > 512) throw new IllegalArgumentException();
+            return normalized;
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            throw new IllegalArgumentException(repository
+                    ? "Use an HTTPS Git URL without embedded credentials, a query, or a fragment."
+                    : "Use an HTTPS origin containing only a hostname and optional port, e.g. https://git.example.org:8443.");
+        }
+    }
+
 }

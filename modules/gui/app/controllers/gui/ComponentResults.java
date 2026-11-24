@@ -2,8 +2,6 @@ package controllers.gui;
 
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
-import org.apache.pekko.stream.javadsl.Source;
-import org.apache.pekko.util.ByteString;
 import auth.gui.AuthAction.Auth;
 import daos.common.ComponentDao;
 import daos.common.ComponentResultDao;
@@ -15,6 +13,8 @@ import models.common.Component;
 import models.common.ComponentResult;
 import models.common.Study;
 import models.common.User;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -31,8 +31,7 @@ import java.util.List;
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static controllers.gui.actionannotations.SaveLastVisitedPageUrlAction.SaveLastVisitedPageUrl;
 import static messaging.common.FlashMessagingHelper.ERROR;
-import static models.common.User.Role.USER;
-import static models.common.User.Role.VIEWER;
+import static models.common.User.Role.*;
 
 /**
  * Controller that deals with requests regarding ComponentResult.
@@ -69,7 +68,7 @@ public class ComponentResults extends Controller {
      * Shows a view with all component results of a component of a study.
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     @SaveLastVisitedPageUrl
     public Result componentResults(Http.Request request, Long studyId, Long componentId) {
         Study study = studyDao.findById(studyId);
@@ -92,7 +91,7 @@ public class ComponentResults extends Controller {
      * list of ComponentResult IDs as a String.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result remove(Http.Request request) {
         if (request.body().asJson() == null) return badRequest("Malformed request body");
         if (!request.body().asJson().has("componentResultIds")) return badRequest("Malformed JSON");
@@ -109,7 +108,7 @@ public class ComponentResults extends Controller {
      * (reduces memory usage)
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result tableDataByComponent(Long componentId) {
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         Component component = componentDao.findById(componentId);
@@ -123,7 +122,7 @@ public class ComponentResults extends Controller {
      * GET result data of one component result
      */
     @Async(Executor.IO)
-    @Auth(roles = {VIEWER, USER})
+    @Auth(roles = {VIEWER, USER, SUPERUSER})
     public Result exportSingleResultData(Long componentResultId) {
         ComponentResult componentResult = componentResultDao.findByIdWithComponent(componentResultId);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);

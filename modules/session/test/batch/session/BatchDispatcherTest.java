@@ -4,13 +4,7 @@ import batch.BatchActionHandler;
 import batch.BatchActionMsgBuilder;
 import batch.BatchDispatcher;
 import batch.BatchProtocol.BatchMsg;
-import cluster.BatchClusterMessage;
-import cluster.GroupClusterMessage;
-import cluster.GroupChannelPresenceRequest;
-import cluster.GroupDirectMsgDeliveryRequest;
-import cluster.GroupReassignmentRequest;
-import cluster.NodeIdentity;
-import cluster.ChannelMessagePublisher;
+import cluster.*;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.pekko.actor.AbstractActor;
@@ -31,7 +25,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static batch.BatchProtocol.*;
+import static batch.BatchProtocol.TellWhom$;
 import static org.junit.Assert.*;
 import static scala.jdk.javaapi.CollectionConverters.asScala;
 
@@ -373,7 +367,7 @@ public class BatchDispatcherTest {
         }
 
         StubBuilder(BatchMsg opened) {
-            super(null);
+            super(null, null);
             this.opened = opened;
         }
 

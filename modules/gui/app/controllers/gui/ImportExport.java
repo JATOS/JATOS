@@ -1,28 +1,31 @@
 package controllers.gui;
 
-import general.common.Common;
-import play.mvc.BodyParser;
-import http.common.UploadBodyParsers;
 import actions.common.AsyncAction.Async;
 import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
+import general.common.Common;
 import general.common.MessagesStrings;
+import http.common.Http.Context;
+import http.common.UploadBodyParsers;
 import json.common.DefaultJson;
 import models.common.Study;
 import play.Logger;
 import play.Logger.ALogger;
 import play.libs.Files.TemporaryFile;
+import play.mvc.BodyParser;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
-import services.gui.ImportExportService;
+import services.gui.importexport.StudyArchiveImportExport;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static messaging.common.FlashMessagingHelper.SUCCESS;
+import static models.common.User.Role.SUPERUSER;
 import static models.common.User.Role.USER;
 
 /**
@@ -33,13 +36,13 @@ public class ImportExport extends Controller {
 
     private static final ALogger LOGGER = Logger.of(ImportExport.class);
 
-    private final ImportExportService importExportService;
+    private final StudyArchiveImportExport studyArchiveImportExport;
     private final DefaultJson defaultJson;
 
     @Inject
-    ImportExport(ImportExportService importExportService,
+    ImportExport(StudyArchiveImportExport studyArchiveImportExport,
                  DefaultJson defaultJson) {
-        this.importExportService = importExportService;
+        this.studyArchiveImportExport = studyArchiveImportExport;
         this.defaultJson = defaultJson;
     }
 
@@ -48,7 +51,7 @@ public class ImportExport extends Controller {
      * directory already exists. The actual import happens in the method importStudyConfirmed().
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     @BodyParser.Of(UploadBodyParsers.StudyArchive.class)
     public Result importStudy(Http.Request request) {
         // Get file from request
@@ -65,10 +68,10 @@ public class ImportExport extends Controller {
 
         try {
             Path file = filePart.getRef().path();
-            Map<String, Object> resultInfo = importExportService.importStudy(file);
+            Map<String, Object> resultInfo = studyArchiveImportExport.importStudy(file);
             return ok(defaultJson.objAsJsonNode(resultInfo));
         } catch (Exception e) {
-            importExportService.cleanupAfterStudyImport();
+            studyArchiveImportExport.cleanupAfterStudyImport();
             throw e;
         }
     }
@@ -93,7 +96,7 @@ public class ImportExport extends Controller {
      *                   Default is `true`.
      */
     @Async(Executor.IO)
-    @Auth(roles = USER)
+    @Auth(roles = {USER, SUPERUSER})
     public Result importStudyConfirmed(Http.Request request) {
         // Get confirmation: overwrite study's properties and/or study assets
         JsonNode json = request.body().asJson();
@@ -110,13 +113,22 @@ public class ImportExport extends Controller {
 
         long importedStudyId;
         try {
-            Study study = importExportService.importStudyConfirmed(keepProperties, keepAssets,
+            Study study = studyArchiveImportExport.importStudyConfirmed(keepProperties, keepAssets,
                     keepCurrentAssetsName, renameAssets);
             importedStudyId = study.getId();
         } finally {
-            importExportService.cleanupAfterStudyImport();
+            studyArchiveImportExport.cleanupAfterStudyImport();
         }
+        String scope = !keepProperties ? (!keepAssets ? "properties and assets" : "properties") : "assets";
+        Context.current().response().putFlash(SUCCESS, "Replaced " + scope + " with those from the study archive.");
         return ok(Long.toString(importedStudyId));
+    }
+
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER})
+    public Result cancelStudyImport() {
+        studyArchiveImportExport.cancelStudyImport();
+        return noContent();
     }
 
 }
