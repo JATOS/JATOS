@@ -4,7 +4,7 @@ import daos.common.{StudyDao, StudyResultDao}
 import exceptions.common.{BadRequestException, ForbiddenException, NotFoundException}
 import executor.common.StudyAssetsExecutor
 import filters.publix.IdCookieFilter.IdCookies
-import general.common.{Common, MessagesStrings}
+import general.common.Common
 import http.common.HttpUtils
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
@@ -165,7 +165,8 @@ class StudyAssets @Inject()(components: ControllerComponents,
         .withHeaders(CACHE_CONTROL -> "no-cache, no-store")
     } catch {
       case _: IOException =>
-        throw new NotFoundException(MessagesStrings.htmlFilePathNotExist(studyDirName, componentHtmlFilePath))
+        throw new NotFoundException("HTML file '" + componentHtmlFilePath + "' in study assets '" + studyDirName + "' couldn't be found. "
+                + "Please change this in the component's properties.")
     }
   }
 

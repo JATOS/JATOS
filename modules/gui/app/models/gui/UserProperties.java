@@ -3,7 +3,6 @@ package models.gui;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import general.common.Common;
-import general.common.MessagesStrings;
 import json.common.StrictStringDeserializer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
@@ -114,26 +113,26 @@ public class UserProperties implements Validatable<List<ValidationError>> {
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (password != null && password.trim().isEmpty()) {
-            errorList.add(new ValidationError(PASSWORD, MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            errorList.add(new ValidationError(PASSWORD, "Password must not be empty"));
         }
         if (password != null && password.length() < Common.getUserPasswordMinLength()) {
-            errorList.add(new ValidationError(PASSWORD, MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
+            errorList.add(new ValidationError(PASSWORD, "Passwords must be at least " + Common.getUserPasswordMinLength() + " characters long."));
         }
         Pair<String, String> regex = Common.getUserPasswordStrengthRegex();
         if (password != null && !password.matches(regex.getRight())) {
             errorList.add(new ValidationError(PASSWORD, regex.getLeft()));
         }
         if (name == null || name.trim().isEmpty()) {
-            errorList.add(new ValidationError(NAME, MessagesStrings.MISSING_NAME));
+            errorList.add(new ValidationError(NAME, "Missing name"));
         }
         if (name != null && name.length() > 255) {
-            errorList.add(new ValidationError(NAME, MessagesStrings.NAME_TOO_LONG));
+            errorList.add(new ValidationError(NAME, "Name too long"));
         }
         if (name != null && !Jsoup.isValid(name, Safelist.none())) {
-            errorList.add(new ValidationError(NAME, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(NAME, "HTML is not allowed"));
         }
         if (email != null && !Jsoup.isValid(email, Safelist.none())) {
-            errorList.add(new ValidationError(EMAIL, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(EMAIL, "HTML is not allowed"));
         }
         return errorList.isEmpty() ? null : errorList;
     }

@@ -2,7 +2,6 @@ package services.gui;
 
 import daos.common.ComponentDao;
 import daos.common.StudyDao;
-import general.common.MessagesStrings;
 import messaging.common.RequestScopeMessaging;
 import models.common.Component;
 import models.common.Study;
@@ -117,7 +116,7 @@ public class ComponentService {
             clone.setHtmlFilePath(clonedHtmlFilePath);
         } catch (IOException e) {
             // Just log it and give a warning - a component is allowed to have no HTML file
-            RequestScopeMessaging.warning(MessagesStrings.componentCloneHtmlNotCloned(component.getHtmlFilePath()));
+            RequestScopeMessaging.warning("Component cloned, but could not copy HTML file \"" + component.getHtmlFilePath() + "\".");
             LOGGER.info(".cloneWholeComponent: " + e.getMessage());
         }
         return clone;
@@ -221,7 +220,7 @@ public class ComponentService {
             LOGGER.warn(".validate: " + props.validate().stream()
                     .map(ValidationError::message)
                     .collect(Collectors.joining(", ")));
-            throw new ValidationException(MessagesStrings.COMPONENT_INVALID);
+            throw new ValidationException("Component is invalid");
         }
     }
 

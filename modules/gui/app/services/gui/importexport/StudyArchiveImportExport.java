@@ -8,7 +8,6 @@ import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
 import general.common.JpaTransactions;
-import general.common.MessagesStrings;
 import http.common.Http.Context;
 import json.common.DomainJsonMapper;
 import messaging.common.RequestScopeMessaging;
@@ -189,8 +188,8 @@ public class StudyArchiveImportExport {
         if (!keepAssets) {
             String dirName = keepCurrentAssetsName ? currentStudy.getDirName() : uploadedStudy.getDirName();
             unchecked(() -> moveStudyAssetsDir(tempUnzippedStudyDir, currentStudy, dirName));
-            RequestScopeMessaging.success(MessagesStrings.studyAssetsOverwritten(
-                    dirName, currentStudy.getId(), currentStudy.getTitle()));
+            RequestScopeMessaging.success("Assets \"" + dirName + "\" of study \"" + currentStudy.getTitle() + "\" (ID " + currentStudy.getId()
+                + ") were overwritten. <a href=\"" + Common.getJatosUrlBasePath() + "jatos/" + currentStudy.getId() + "\">Go to this study.</a>");
         }
 
         if (!keepProperties) {
@@ -200,8 +199,8 @@ public class StudyArchiveImportExport {
                 studyService.updateStudyAndRenameAssets(currentStudy, uploadedStudy);
             }
             studyImportService.updateStudysComponents(currentStudy, uploadedStudy);
-            RequestScopeMessaging.success(MessagesStrings
-                    .studysPropertiesOverwritten(currentStudy.getId(), currentStudy.getTitle()));
+            RequestScopeMessaging.success("Properties of study \"" + currentStudy.getTitle() + "\" (ID " + currentStudy.getId() + ") were overwritten. "
+                + "<a href=\"" + Common.getJatosUrlBasePath() + "jatos/" + currentStudy.getId() + "\">Go to this study.</a>");
         }
     }
 
@@ -214,8 +213,8 @@ public class StudyArchiveImportExport {
         }
         Study newStudy = studyImportService.createNewStudy(importedStudy,
                 directories.length == 0 ? null : directories[0], renameAssets);
-        RequestScopeMessaging.success(MessagesStrings.importedNewStudy(
-                importedStudy.getDirName(), importedStudy.getId(), importedStudy.getTitle()));
+        RequestScopeMessaging.success("Newly imported study \"" + importedStudy.getTitle() + "\" (ID " + importedStudy.getId() + ") with study assets \"" + importedStudy.getDirName()
+                + "\". <a href=\"" + Common.getJatosUrlBasePath() + "jatos/" + importedStudy.getId() + "\">Go to this study.</a>");
         return newStudy;
     }
 

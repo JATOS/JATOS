@@ -1,7 +1,6 @@
 package models.gui;
 
 import general.common.Common;
-import general.common.MessagesStrings;
 import models.common.User;
 import org.apache.commons.lang3.tuple.Pair;
 import play.data.validation.Constraints;
@@ -67,22 +66,22 @@ public class ChangePasswordProperties implements Validatable<List<ValidationErro
 
         // Checks new password not empty
         if (newPassword == null || newPassword.trim().isEmpty()) {
-            errorList.add(new ValidationError(NEW_PASSWORD, MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            errorList.add(new ValidationError(NEW_PASSWORD, "Password must not be empty"));
         }
         // Check new password repeat not empty
         if (newPasswordRepeat == null || newPasswordRepeat.trim().isEmpty()) {
-            errorList.add(new ValidationError(NEW_PASSWORD_REPEAT, MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+            errorList.add(new ValidationError(NEW_PASSWORD_REPEAT, "Password must not be empty"));
         }
 
         // Check both passwords match
         if (newPassword != null && newPasswordRepeat != null && !newPassword.equals(newPasswordRepeat)) {
-            errorList.add(new ValidationError(NEW_PASSWORD, MessagesStrings.PASSWORDS_DONT_MATCH));
+            errorList.add(new ValidationError(NEW_PASSWORD, "Passwords don't match"));
         }
 
         // Check length as specified in conf
         if (newPassword != null && newPassword.length() < Common.getUserPasswordMinLength()) {
             errorList.add(new ValidationError(NEW_PASSWORD,
-                    MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
+                    "Passwords must be at least " + Common.getUserPasswordMinLength() + " characters long."));
         }
 
         // Check strength as specified in conf

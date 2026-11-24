@@ -3,7 +3,6 @@ package models.gui;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.Strings;
 import general.common.Common;
-import general.common.MessagesStrings;
 import json.common.StrictStringDeserializer;
 import models.common.User;
 import models.common.User.AuthMethod;
@@ -108,49 +107,49 @@ public class NewUserProperties implements Validatable<List<ValidationError>> {
         List<ValidationError> errorList = new ArrayList<>();
 
         if (username == null || username.isEmpty()) {
-            errorList.add(new ValidationError(USERNAME, MessagesStrings.MISSING_USERNAME));
+            errorList.add(new ValidationError(USERNAME, "Missing username"));
         } else {
             if (!username.matches("^[\\p{IsAlphabetic}\\p{IsDigit}-_@.+&'=~]+$")) {
-                errorList.add(new ValidationError(USERNAME, MessagesStrings.USERNAME_INVALID));
+                errorList.add(new ValidationError(USERNAME, "Use only letters, numbers, and these characters: -_@.+&'=~"));
             }
 
             if (username.length() > 255) {
-                errorList.add(new ValidationError(USERNAME, MessagesStrings.USERNAME_TOO_LONG));
+                errorList.add(new ValidationError(USERNAME, "Username too long"));
             }
 
             // Check with Jsoup for illegal HTML
             if (!Jsoup.isValid(username, Safelist.none())) {
-                errorList.add(new ValidationError(USERNAME, MessagesStrings.NO_HTML_ALLOWED));
+                errorList.add(new ValidationError(USERNAME, "HTML is not allowed"));
             }
         }
 
         if (name == null || name.trim().isEmpty()) {
-            errorList.add(new ValidationError(NAME, MessagesStrings.MISSING_NAME));
+            errorList.add(new ValidationError(NAME, "Missing name"));
         } else {
             if (name.length() > 255) {
-                errorList.add(new ValidationError(NAME, MessagesStrings.NAME_TOO_LONG));
+                errorList.add(new ValidationError(NAME, "Name too long"));
             }
 
             // Check with Jsoup for illegal HTML
             if (!Jsoup.isValid(name, Safelist.none())) {
-                errorList.add(new ValidationError(NAME, MessagesStrings.NO_HTML_ALLOWED));
+                errorList.add(new ValidationError(NAME, "HTML is not allowed"));
             }
         }
 
         // Check with Jsoup for illegal HTML
         if (!Strings.isNullOrEmpty(email) && !Jsoup.isValid(email, Safelist.none())) {
-            errorList.add(new ValidationError(EMAIL, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(EMAIL, "HTML is not allowed"));
         }
 
         // Check password only if authenticated by DB
         if (isAuthByDb()) {
             if (password == null || password.trim().isEmpty()) {
-                errorList.add(new ValidationError(PASSWORD, MessagesStrings.PASSWORDS_SHOULDNT_BE_EMPTY_STRINGS));
+                errorList.add(new ValidationError(PASSWORD, "Password must not be empty"));
             } else {
                 // Check password length as specified in config
                 if (password.length() < Common.getUserPasswordMinLength()) {
                     errorList.add(new ValidationError(PASSWORD,
-                            MessagesStrings.userPasswordMinLength(Common.getUserPasswordMinLength())));
+                            "Passwords must be at least " + Common.getUserPasswordMinLength() + " characters long."));
                 }
 
                 // Check password strength as specified in config

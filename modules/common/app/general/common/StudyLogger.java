@@ -305,10 +305,10 @@ public class StudyLogger {
                 writer.write(currentLine);
             }
             if (nextLine != null) {
-                writer.write(",\"" + MessagesStrings.LOG_CUT + "\"");
+                writer.write(",\"" + "--- Log is cut here. Download it to get the whole file. ---" + "\"");
             }
         } catch (Exception e) {
-            writer.write("\"" + MessagesStrings.COULDNT_OPEN_LOG + "\"");
+            writer.write("\"" + "Error: Could not open log file" + "\"");
             LOGGER.error("Couldn't open study log " + filePath);
         } finally {
             writer.write("]");

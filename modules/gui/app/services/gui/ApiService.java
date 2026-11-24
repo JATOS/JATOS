@@ -8,7 +8,6 @@ import exceptions.common.BadRequestException;
 import exceptions.common.FieldValidationException;
 import general.common.ApiEnvelope.ErrorCode;
 import general.common.Common;
-import general.common.MessagesStrings;
 import http.common.HttpUtils;
 import json.common.DefaultJson;
 import models.common.Study;
@@ -161,12 +160,12 @@ public class ApiService {
 
         if (contentType.startsWith("multipart/form-data") && filePartName != null) {
             if (request.body().asMultipartFormData() == null) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+                throw new BadRequestException("File missing", ErrorCode.MISSING_FILE);
             }
             MultipartFormData<TemporaryFile> body = request.body().asMultipartFormData();
             FilePart<TemporaryFile> filePart = body.getFile(filePartName);
             if (filePart == null) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+                throw new BadRequestException("File missing", ErrorCode.MISSING_FILE);
             }
             return filePart.getRef().path();
         }
@@ -174,14 +173,14 @@ public class ApiService {
         if (allowedRawTypes.stream().anyMatch(contentType::startsWith) || contentType.isEmpty()) {
             Http.RawBuffer raw = request.body().asRaw();
             if (raw == null) {
-                throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+                throw new BadRequestException("File missing", ErrorCode.MISSING_FILE);
             }
             // Returns the existing temporary file or writes an in-memory upload to one.
             File rawFile = raw.asFile();
             if (rawFile != null && rawFile.exists() && rawFile.length() > 0) {
                 return rawFile.toPath();
             }
-            throw new BadRequestException(MessagesStrings.FILE_MISSING, ErrorCode.MISSING_FILE);
+            throw new BadRequestException("File missing", ErrorCode.MISSING_FILE);
         }
 
         throw new BadRequestException(

@@ -8,7 +8,6 @@ import daos.common.StudyDao;
 import daos.common.StudyLinkDao;
 import exceptions.common.JatosException;
 import general.common.Common;
-import general.common.MessagesStrings;
 import http.common.Http.Context;
 import json.common.DefaultJson;
 import messaging.common.RequestScopeMessaging;
@@ -81,7 +80,7 @@ public class Components extends Controller {
         authorizationService.canUserAccessComponent(component, signedinUser);
 
         if (component.getHtmlFilePath() == null || component.getHtmlFilePath().trim().isEmpty()) {
-            String errorMsg = MessagesStrings.htmlFilePathEmpty(componentId);
+            String errorMsg = "Component " + componentId + "'s HTML file path is empty.";
             return badRequest(errorMsg);
         }
 
@@ -187,7 +186,8 @@ public class Components extends Controller {
         authorizationService.canUserAccessComponent(component, signedinUser);
 
         componentService.remove(component);
-        RequestScopeMessaging.success(MessagesStrings.COMPONENT_DELETED_BUT_FILES_NOT);
+        RequestScopeMessaging.success("Component deleted. Its files (including its HTML "
+            + "file) remain in the study assets directory.");
         return ok(RequestScopeMessaging.asJson());
     }
 

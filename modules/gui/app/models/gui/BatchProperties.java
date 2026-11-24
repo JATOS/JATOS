@@ -3,7 +3,6 @@ package models.gui;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.google.common.base.Strings;
 import models.common.workers.WorkerType;
-import general.common.MessagesStrings;
 import json.common.DefaultJson;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
@@ -198,16 +197,16 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
         List<ValidationError> errorList = new ArrayList<>();
 
         if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
-            errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(UUID, "HTML is not allowed"));
         }
         if (title == null || title.trim().isEmpty()) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+            errorList.add(new ValidationError(TITLE, "Missing title"));
         }
         if (title != null && title.length() > 255) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+            errorList.add(new ValidationError(TITLE, "Title too long"));
         }
         if (title != null && !Jsoup.isValid(title, Safelist.none())) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(TITLE, "HTML is not allowed"));
         }
         if (maxActiveMembers != null && maxActiveMembers < 1) {
             errorList.add(new ValidationError(MAX_ACTIVE_MEMBERS, "Batch's max active member size must be at least 1."));
@@ -222,10 +221,10 @@ public class BatchProperties implements Validatable<List<ValidationError>> {
             errorList.add(new ValidationError(MAX_TOTAL_MEMBERS, "Maximum total members must be greater than or equal to maximum active members."));
         }
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
-            errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(COMMENTS, "HTML is not allowed"));
         }
         if (!Strings.isNullOrEmpty(batchInput) && !DefaultJson.isValid(batchInput)) {
-            errorList.add(new ValidationError(BATCH_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
+            errorList.add(new ValidationError(BATCH_INPUT, "Invalid JSON format"));
         }
         return errorList.isEmpty() ? null : errorList;
     }

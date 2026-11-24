@@ -6,7 +6,6 @@ import org.apache.pekko.stream.javadsl.Source;
 import org.apache.pekko.util.ByteString;
 import com.google.common.base.Strings;
 import general.common.Common;
-import general.common.MessagesStrings;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Singleton;
@@ -251,16 +250,16 @@ public class IOUtils {
      */
     private Path getFileSecurely(Path baseDirPath, String filePathStr) throws IOException {
         if (!baseDirPath.isAbsolute()) {
-            throw new IOException(MessagesStrings.pathNotAbsolute(baseDirPath.toString()));
+            throw new IOException("Path \"" + baseDirPath + "\" must be absolute.");
         }
         // Check for characters that are illegal or unsafe in imported relative paths
         if (!checkPath(filePathStr)) {
-            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePathStr));
+            throw new IOException("Couldn't generate path to file or directory \"" + filePathStr + "\".");
         }
 
         Path filePath = Path.of(filePathStr);
         if (filePath.isAbsolute()) {
-            throw new IOException(MessagesStrings.pathNotRelative(filePath.toString()));
+            throw new IOException("Path \"" + filePath + "\" must be relative.");
         }
 
         // Join the two paths together, then normalize so that any ".." elements
@@ -270,7 +269,7 @@ public class IOUtils {
         // Make sure the resulting path is still within the required directory.
         // (In the example above, "/foo/bar/attack" is not.)
         if (!resolvedPath.startsWith(baseDirPath)) {
-            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(filePath.toString()));
+            throw new IOException("Couldn't generate path to file or directory \"" + filePath + "\".");
         }
 
         return resolvedPath;
@@ -282,17 +281,17 @@ public class IOUtils {
      */
     private Path getExistingDirSecurely(Path fullPath) throws IOException {
         if (!fullPath.isAbsolute()) {
-            throw new IOException(MessagesStrings.pathNotAbsolute(fullPath.toString()));
+            throw new IOException("Path \"" + fullPath + "\" must be absolute.");
         }
 
         // Normalize so that any ".." gets removed
         // (e.g. "/foo/bar/baz/../attack" -> "/foo/bar/attack")
         // and check that the normalized path is equal to the original one
         if (!fullPath.normalize().equals(fullPath)) {
-            throw new IOException(MessagesStrings.couldntGeneratePathToFileOrDir(fullPath.toString()));
+            throw new IOException("Couldn't generate path to file or directory \"" + fullPath + "\".");
         }
         if (!Files.exists(fullPath) || !Files.isDirectory(fullPath)) {
-            throw new IOException(MessagesStrings.dirPathIsntDir(fullPath.toString()));
+            throw new IOException("Directory path \"" + fullPath + "\" doesn't lead to a directory.");
         }
         return fullPath;
     }
@@ -336,7 +335,7 @@ public class IOUtils {
         Path path = Path.of(pathStr);
         Path file = getFileSecurely(path, filePathStr);
         if (!Files.exists(file) || Files.isDirectory(file)) {
-            throw new IOException(MessagesStrings.FILE_NOT_EXIST_OR_DIR);
+            throw new IOException("File does not exist or is a directory");
         }
         return file;
     }
@@ -358,7 +357,7 @@ public class IOUtils {
      */
     public Path getFileInStudyAssetsDir(String dirName, String filePath) throws IOException {
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new IOException(MessagesStrings.FILE_MISSING);
+            throw new IOException("File missing");
         }
         Path studyAssetsPath = generateStudyAssetsPath(dirName);
         return getFileSecurely(studyAssetsPath, filePath);
@@ -454,7 +453,7 @@ public class IOUtils {
             return;
         }
         if (!Files.isDirectory(dir)) {
-            throw new IOException(MessagesStrings.dirPathIsntDir(dir.getFileName().toString()));
+            throw new IOException("Directory path \"" + dir.getFileName().toString() + "\" doesn't lead to a directory.");
         }
         deleteRecursively(dir);
     }
@@ -470,7 +469,7 @@ public class IOUtils {
     public String cloneComponentHtmlFile(String studyAssetsDirName, String htmlFilePath) throws IOException {
         Path htmlFile = getFileInStudyAssetsDir(studyAssetsDirName, htmlFilePath);
         if (!Files.isRegularFile(htmlFile)) {
-            throw new IOException(MessagesStrings.filePathIsntFile(htmlFile.getFileName().toString()));
+            throw new IOException("File path \"" + htmlFile.getFileName().toString() + "\" doesn't lead to a file.");
         }
 
         Path clonedHtmlFile = generateCloneFile(htmlFile);
@@ -489,7 +488,7 @@ public class IOUtils {
         Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
         Path srcDir = getFileSecurely(studyAssetsRootPath, srcDirName);
         if (!Files.isDirectory(srcDir)) {
-            throw new IOException(MessagesStrings.dirPathIsntDir(srcDir.getFileName().toString()));
+            throw new IOException("Directory path \"" + srcDir.getFileName().toString() + "\" doesn't lead to a directory.");
         }
 
         Path destDir = generateCloneFile(srcDir);
@@ -543,7 +542,7 @@ public class IOUtils {
         Path studyAssetsRootPath = Path.of(Common.getStudyAssetsRootPath());
         Path targetDir = getFileSecurely(studyAssetsRootPath, targetDirName);
         if (Files.exists(targetDir)) {
-            throw new IOException(MessagesStrings.studyAssetsDirNotCreatedBecauseExists(targetDir.getFileName().toString()));
+            throw new IOException("Study assets' directory (" + targetDir.getFileName().toString() + ") couldn't be created because the destination already exists.");
         }
         moveRecursively(srcDir, targetDir);
     }
@@ -617,7 +616,8 @@ public class IOUtils {
             return;
         }
         if (Files.exists(newDir)) {
-            throw new IOException(MessagesStrings.studyAssetsNotRenamedBecauseExists(oldDirName, newDirName));
+            throw new IOException("Study assets directory \"" + oldDirName + "\" couldn't be renamed to \"" + newDirName
+                + "\" because the destination already exists.");
         }
         if (!Files.exists(oldDir)) {
             createStudyAssetsDir(newDirName);
@@ -666,7 +666,8 @@ public class IOUtils {
         }
 
         if (Files.exists(newHtmlFile)) {
-            throw new IOException(MessagesStrings.htmlFileNotRenamedBecauseExists(oldHtmlFilePath, newHtmlFilePath));
+            throw new IOException("HTML file \"" + oldHtmlFilePath + "\" couldn't be renamed to \"" + newHtmlFilePath
+                + "\" because the destination already exists.");
         }
 
         moveFile(oldHtmlFile, newHtmlFile, false);

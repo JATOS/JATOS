@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableMap;
 import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import http.common.Http.Context;
-import general.common.MessagesStrings;
 import json.common.DefaultJson;
 import models.common.LoginAttempt;
 import models.common.User;
@@ -102,13 +101,13 @@ public class Signin extends Controller {
     private Result return401DueToRepeatedSigninAttempt(String normalizedUsername, String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress
                 + " failed repeatedly for username " + normalizedUsername);
-        return unauthorized(MessagesStrings.FAILED_THREE_TIMES);
+        return unauthorized("Too many sign-in attempts. Please wait a minute before trying again.");
     }
 
     private Result return401DueToFailedAuth(String normalizedUsername, String remoteAddress) {
         LOGGER.warn("Authentication failed: remote address " + remoteAddress + " failed for username "
                 + normalizedUsername);
-        return unauthorized(MessagesStrings.INVALID_USER_OR_PASSWORD);
+        return unauthorized("Invalid username or password");
     }
 
     /**

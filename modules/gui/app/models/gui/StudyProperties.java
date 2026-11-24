@@ -3,7 +3,6 @@ package models.gui;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
-import general.common.MessagesStrings;
 import models.common.Study.GroupSessionWriteScope;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
@@ -250,23 +249,23 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
         List<ValidationError> errorList = new ArrayList<>();
 
         if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
-            errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(UUID, "HTML is not allowed"));
         }
         if (title == null || title.trim().isEmpty()) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+            errorList.add(new ValidationError(TITLE, "Missing title"));
         }
         if (title != null && title.length() > 255) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+            errorList.add(new ValidationError(TITLE, "Title too long"));
         }
         if (title != null && !Jsoup.isValid(title, Safelist.none())) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(TITLE, "HTML is not allowed"));
         }
         if (dirName != null) { // Only during study creation, dirName can be null
             if (dirName.trim().isEmpty()) {
-                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.MISSING_DIR_NAME));
+                errorList.add(new ValidationError(DIR_NAME, "Missing directory name"));
             }
             if (dirName.length() > 255) {
-                errorList.add(new ValidationError(DIR_NAME, MessagesStrings.DIR_NAME_TOO_LONG));
+                errorList.add(new ValidationError(DIR_NAME, "Directory name too long"));
             }
             if (!IOUtils.checkFilename(dirName)) {
                 errorList.add(new ValidationError(DIR_NAME, "Invalid study assets directory name."));
@@ -277,25 +276,25 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
             }
         }
         if (description != null && !Jsoup.isValid(description, Safelist.none())) {
-            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(DESCRIPTION, "HTML is not allowed"));
         }
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
-            errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(COMMENTS, "HTML is not allowed"));
         }
         if (!Strings.isNullOrEmpty(studyInput) && !DefaultJson.isValid(studyInput)) {
-            errorList.add(new ValidationError(STUDY_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
+            errorList.add(new ValidationError(STUDY_INPUT, "Invalid JSON format"));
         }
         if (description != null && !Jsoup.isValid(description, Safelist.none())) {
-            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(DESCRIPTION, "HTML is not allowed"));
         }
         if (endRedirectUrl != null && !Jsoup.isValid(endRedirectUrl, Safelist.none())) {
-            errorList.add(new ValidationError(END_REDIRECT_URL, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(END_REDIRECT_URL, "HTML is not allowed"));
         }
         if (studyEntryMsg != null && !Jsoup.isValid(studyEntryMsg, Safelist.none())) {
-            errorList.add(new ValidationError(STUDY_ENTRY_MSG, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(STUDY_ENTRY_MSG, "HTML is not allowed"));
         }
         if (studyEntryMsg != null && studyEntryMsg.getBytes().length > 1000) {
-            errorList.add(new ValidationError(STUDY_ENTRY_MSG, MessagesStrings.STUDY_ENTRY_MSG_TOO_LONG));
+            errorList.add(new ValidationError(STUDY_ENTRY_MSG, "Study entry message too long"));
         }
         return errorList.isEmpty() ? null : errorList;
     }
@@ -303,7 +302,7 @@ public class StudyProperties implements Validatable<List<ValidationError>> {
     public List<ValidationError> validateDescription() {
         List<ValidationError> errorList = new ArrayList<>();
         if (description != null && !Jsoup.isValid(description, Safelist.none())) {
-            errorList.add(new ValidationError(DESCRIPTION, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(DESCRIPTION, "HTML is not allowed"));
         }
         return errorList;
     }

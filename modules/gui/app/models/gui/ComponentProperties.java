@@ -3,7 +3,6 @@ package models.gui;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
-import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.Constraints;
@@ -196,33 +195,34 @@ public class ComponentProperties implements Validatable<List<ValidationError>> {
         List<ValidationError> errorList = new ArrayList<>();
 
         if (uuid != null && !Jsoup.isValid(uuid, Safelist.none())) {
-            errorList.add(new ValidationError(UUID, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(UUID, "HTML is not allowed"));
         }
         if (title == null || title.trim().isEmpty()) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.MISSING_TITLE));
+            errorList.add(new ValidationError(TITLE, "Missing title"));
         }
         if (title != null && title.length() > 255) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.TITLE_TOO_LONG));
+            errorList.add(new ValidationError(TITLE, "Title too long"));
         }
         if (title != null && !Jsoup.isValid(title, Safelist.none())) {
-            errorList.add(new ValidationError(TITLE, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(TITLE, "HTML is not allowed"));
         }
         if (htmlFilePath != null && !htmlFilePath.trim().isEmpty()) {
             if (htmlFilePath.length() > 255) {
-                errorList.add(new ValidationError(HTML_FILE_PATH, MessagesStrings.PATH_TOO_LONG));
+                errorList.add(new ValidationError(HTML_FILE_PATH, "Path too long"));
             }
             // This regular expression defines how a file path should look like
             String pathRegEx = "^[\\w\\d_-][\\w\\d/_-]*\\.[\\w\\d_-]+$";
             if (!(htmlFilePath.matches(pathRegEx))) {
                 errorList.add(
-                        new ValidationError(HTML_FILE_PATH, MessagesStrings.NOT_A_VALID_PATH_YOU_CAN_LEAVE_IT_EMPTY));
+                        new ValidationError(HTML_FILE_PATH, "Not a valid path or filename. Remember to "
+            + "use '/' as folder separator, and to include the file extension. You can leave it empty for now."));
             }
         }
         if (comments != null && !Jsoup.isValid(comments, Safelist.none())) {
-            errorList.add(new ValidationError(COMMENTS, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(COMMENTS, "HTML is not allowed"));
         }
         if (!Strings.isNullOrEmpty(componentInput) && !DefaultJson.isValid(componentInput)) {
-            errorList.add(new ValidationError(COMPONENT_INPUT, MessagesStrings.INVALID_JSON_FORMAT));
+            errorList.add(new ValidationError(COMPONENT_INPUT, "Invalid JSON format"));
         }
         return errorList.isEmpty() ? null : errorList;
     }

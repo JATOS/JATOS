@@ -6,7 +6,6 @@ import daos.common.LoginAttemptDao;
 import daos.common.UserDao;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
-import general.common.MessagesStrings;
 import http.common.Http.Context;
 import json.common.DefaultJson;
 import models.common.User;
@@ -96,7 +95,7 @@ public class SigninTest {
         Result res = controller.authenticate(emptyRequest());
 
         assertThat(res.status()).isEqualTo(UNAUTHORIZED);
-        assertThat(contentAsString(res)).isEqualTo(MessagesStrings.FAILED_THREE_TIMES);
+        assertThat(contentAsString(res)).isEqualTo("Too many sign-in attempts. Please wait a minute before trying again.");
         verifyNoInteractions(userDao);
         verify(loginAttemptDao, never()).persist(any());
     }
@@ -132,7 +131,7 @@ public class SigninTest {
         Result res = controller.authenticate(emptyRequest());
 
         assertThat(res.status()).isEqualTo(UNAUTHORIZED);
-        assertThat(contentAsString(res)).isEqualTo(MessagesStrings.INVALID_USER_OR_PASSWORD);
+        assertThat(contentAsString(res)).isEqualTo("Invalid username or password");
         verify(loginAttemptDao, times(1)).persist(any());
     }
 
@@ -149,7 +148,7 @@ public class SigninTest {
         Result res = controller.authenticate(emptyRequest());
 
         assertThat(res.status()).isEqualTo(UNAUTHORIZED);
-        assertThat(contentAsString(res)).isEqualTo(MessagesStrings.FAILED_THREE_TIMES);
+        assertThat(contentAsString(res)).isEqualTo("Too many sign-in attempts. Please wait a minute before trying again.");
         verify(loginAttemptDao, times(1)).persist(any());
     }
 

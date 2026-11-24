@@ -8,7 +8,6 @@ import exceptions.common.ForbiddenException;
 import exceptions.common.NotFoundException;
 import general.common.Common;
 import general.common.JpaTransactions;
-import general.common.MessagesStrings;
 import http.common.Http.Context;
 import models.common.Study;
 import models.common.User;
@@ -215,10 +214,10 @@ public class UserService {
         User user = retrieveUser(normalizedUsername);
         User signedinUser = Context.current().args().get(SIGNEDIN_USER);
         if (user.equals(signedinUser)) {
-            throw new ForbiddenException(MessagesStrings.ADMIN_NOT_ALLOWED_TO_REMOVE_HIS_OWN_ADMIN_ROLE);
+            throw new ForbiddenException("You cannot remove your own administrator role. Ask another administrator to remove it.");
         }
         if (user.getUsername().equals(ADMIN_USERNAME)) {
-            throw new ForbiddenException(MessagesStrings.NOT_ALLOWED_REMOVE_ADMINS_ADMIN_RIGHTS);
+            throw new ForbiddenException("You cannot remove the administrator role from the 'admin' account.");
         }
 
         if (admin) {

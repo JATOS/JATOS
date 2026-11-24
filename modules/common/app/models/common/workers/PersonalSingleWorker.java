@@ -1,7 +1,6 @@
 package models.common.workers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import general.common.MessagesStrings;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import play.data.validation.ValidationError;
@@ -47,10 +46,10 @@ public class PersonalSingleWorker extends Worker {
     public List<ValidationError> validate() {
         List<ValidationError> errorList = new ArrayList<>();
         if (comment != null && comment.length() > 255) {
-            errorList.add(new ValidationError(COMMENT, MessagesStrings.COMMENT_TOO_LONG));
+            errorList.add(new ValidationError(COMMENT, "Comment too long"));
         }
         if (comment != null && !Jsoup.isValid(comment, Safelist.none())) {
-            errorList.add(new ValidationError(COMMENT, MessagesStrings.NO_HTML_ALLOWED));
+            errorList.add(new ValidationError(COMMENT, "HTML is not allowed"));
         }
         return errorList.isEmpty() ? null : errorList;
     }

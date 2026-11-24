@@ -5,7 +5,6 @@ import actions.common.AsyncAction.Executor;
 import auth.gui.AuthAction.Auth;
 import com.fasterxml.jackson.databind.JsonNode;
 import general.common.Common;
-import general.common.MessagesStrings;
 import http.common.Http.Context;
 import http.common.UploadBodyParsers;
 import json.common.DefaultJson;
@@ -59,7 +58,7 @@ public class ImportExport extends Controller {
         Http.MultipartFormData.FilePart<TemporaryFile> filePart = body == null ? null : body.getFile(Study.STUDY);
 
         if (filePart == null) {
-            return badRequest(MessagesStrings.FILE_MISSING);
+            return badRequest("File missing");
         }
 
         if (filePart.getFileSize() > Common.getStudyArchiveMaxSize()) {
