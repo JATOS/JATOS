@@ -1,6 +1,8 @@
 package utils.common;
 
 import com.google.common.base.Strings;
+import play.libs.Json;
+import play.twirl.api.Html;
 
 import java.nio.charset.StandardCharsets;
 import java.text.CharacterIterator;
@@ -11,6 +13,20 @@ import java.util.Date;
 import java.util.Optional;
 
 public class StringUtils {
+
+    /**
+     * Serializes a value as a JavaScript literal for use inside an HTML script element.
+     * Preserves JSON types (including null), escapes JavaScript string characters, and
+     * escapes less-than signs so values cannot terminate the surrounding script element.
+     * Use directly in Twirl without surrounding quotes or an additional Html wrapper.
+     *
+     * @param value value to serialize
+     * @return serialized literal marked as already escaped for Twirl
+     */
+    public static Html javascriptValue(Object value) {
+        String json = Json.stringify(Json.toJson(value));
+        return new Html(json.replace("<", "\\u003c"));
+    }
 
     /**
      * Trims the value, returning null for null or blank input.

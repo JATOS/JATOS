@@ -1,4 +1,5 @@
 @import play.api.mvc.RequestHeader
+@import models.common.workers.WorkerType
 @import general.common._
 @import utils.common._
 @(study: Option[common.Study], signedinUser: Option[common.User], worker: Option[common.workers.Worker])(implicit request: RequestHeader)
@@ -9,24 +10,24 @@
 
 <script @{helper.CSPNonce.attr} type="module">
     window.common = {};
-    window.common.jatosVersion = "@Common.getJatosVersion";
+    window.common.jatosVersion = @StringUtils.javascriptValue(Common.getJatosVersion);
     window.common.isServer = @Common.isServer;
     window.common.realHostUrl = location.protocol + '//' + location.host;
-    window.common.realBaseUrl = `${window.common.realHostUrl}@Common.getJatosUrlBasePath`;
-    window.common.jatosUrlBasePath = "@Common.getJatosUrlBasePath";
+    window.common.jatosUrlBasePath = @StringUtils.javascriptValue(Common.getJatosUrlBasePath);
+    window.common.realBaseUrl = window.common.realHostUrl + window.common.jatosUrlBasePath;
     window.common.isUserRoleAllowSuperuser = @Common.isUserRoleAllowSuperuser;
-    window.common.termsOfUseUrl = "@Common.getTermsOfUseUrl";
-    window.common.hasBranding = "@Common.hasBranding";
-    window.common.locale = "@Common.getLocale";
-    window.common.logsFilename = "@Common.getLogsFilename";
-    window.common.logsAppender = "@Common.getLogsAppender";
+    window.common.termsOfUseUrl = @StringUtils.javascriptValue(Common.getTermsOfUseUrl);
+    window.common.hasBranding = @StringUtils.javascriptValue(Common.hasBranding);
+    window.common.locale = @StringUtils.javascriptValue(Common.getLocale);
+    window.common.logsFilename = @StringUtils.javascriptValue(Common.getLogsFilename);
+    window.common.logsAppender = @StringUtils.javascriptValue(Common.getLogsAppender);
     window.common.isMultiNode = @Common.isMultiNode;
     window.common.isResultUploadsEnabled = @Common.isResultUploadsEnabled;
     window.common.isStudyLogsEnabled = @Common.isStudyLogsEnabled;
     window.common.userPasswordMinLength = @Common.getUserPasswordMinLength;
-    window.common.userPasswordStrengthDescription = "@Common.getUserPasswordStrengthRegex.getLeft";
-    window.common.studyArchiveSuffix = "@Common.getStudyArchiveSuffix";
-    window.common.resultsArchiveSuffix = "@Common.getResultsArchiveSuffix";
+    window.common.userPasswordStrengthDescription = @StringUtils.javascriptValue(Common.getUserPasswordStrengthRegex.getLeft);
+    window.common.studyArchiveSuffix = @StringUtils.javascriptValue(Common.getStudyArchiveSuffix);
+    window.common.resultsArchiveSuffix = @StringUtils.javascriptValue(Common.getResultsArchiveSuffix);
     window.common.resultDataMaxSize = @Common.getResultDataMaxSize;
     window.common.resultUploadsMaxFileSize = @Common.getResultUploadsMaxFileSize;
     window.common.resultUploadsLimitPerStudyRun = @Common.getResultUploadsLimitPerStudyRun;
@@ -35,50 +36,53 @@
     window.common.isLdapAllowed = @Common.isLdapAllowed;
 
     window.common.isOauthGoogleAllowed = @Common.isOauthGoogleAllowed;
-    window.common.oauthGoogleClientId = "@Common.getOauthGoogleClientId";
-    window.common.googlePictureUrl = "@request.session.get("googlePictureUrl").getOrElse("")";
+    window.common.oauthGoogleClientId = @StringUtils.javascriptValue(Common.getOauthGoogleClientId);
+    window.common.googlePictureUrl = @StringUtils.javascriptValue(request.session.get("googlePictureUrl").getOrElse(""));
 
     window.common.isOidcAllowed = @Common.isOidcAllowed;
-    window.common.oidcSigninButtonText = "@Common.getOidcSigninButtonText";
-    window.common.oidcSigninButtonLogoUrl = "@Common.getOidcSigninButtonLogoUrl";
+    window.common.oidcSigninButtonText = @StringUtils.javascriptValue(Common.getOidcSigninButtonText);
+    window.common.oidcSigninButtonLogoUrl = @StringUtils.javascriptValue(Common.getOidcSigninButtonLogoUrl);
 
     window.common.isOrcidAllowed = @Common.isOrcidAllowed;
-    window.common.orcidSigninButtonText = "@Common.getOrcidSigninButtonText";
-    window.common.orcidSigninButtonLogoUrl = "@Common.getOrcidSigninButtonLogoUrl";
+    window.common.orcidSigninButtonText = @StringUtils.javascriptValue(Common.getOrcidSigninButtonText);
+    window.common.orcidSigninButtonLogoUrl = @StringUtils.javascriptValue(Common.getOrcidSigninButtonLogoUrl);
 
     window.common.isSramAllowed = @Common.isSramAllowed;
-    window.common.sramSigninButtonText = "@Common.getSramSigninButtonText";
-    window.common.sramSigninButtonLogoUrl = "@Common.getSramSigninButtonLogoUrl";
+    window.common.sramSigninButtonText = @StringUtils.javascriptValue(Common.getSramSigninButtonText);
+    window.common.sramSigninButtonLogoUrl = @StringUtils.javascriptValue(Common.getSramSigninButtonLogoUrl);
 
     window.common.isConextAllowed = @Common.isConextAllowed;
-    window.common.conextSigninButtonText = "@Common.getConextSigninButtonText";
-    window.common.conextSigninButtonLogoUrl = "@Common.getConextSigninButtonLogoUrl";
+    window.common.conextSigninButtonText = @StringUtils.javascriptValue(Common.getConextSigninButtonText);
+    window.common.conextSigninButtonLogoUrl = @StringUtils.javascriptValue(Common.getConextSigninButtonLogoUrl);
 
     window.common.userSessionTimeout = @Common.getUserSessionTimeout.toMillis;
     window.common.userSessionInactivity = @Common.getUserSessionInactivity.toMillis;
     window.common.allowKeepSignedin = @Common.getUserSessionAllowKeepSignedin;
-    window.common.userSigninTime = "@request.session.get("signinTime").getOrElse("-1")";
+    window.common.userSigninTime = @StringUtils.javascriptValue(request.session.get("signinTime").getOrElse("-1"));
     window.common.keepSignedin = @(request.session.get("keepSignedin").getOrElse("false")).toBoolean;
 
     @if(study.isDefined) {
     window.study = {};
     window.study.id = @study.get.getId;
-    window.study.uuid = "@study.get.getUuid";
-    window.study.title = "@study.get.getTitle";
+    window.study.ownerUsername = @StringUtils.javascriptValue(study.get.getOwner.getUsername);
+    window.study.uuid = @StringUtils.javascriptValue(study.get.getUuid);
+    window.study.title = @StringUtils.javascriptValue(study.get.getTitle);
     window.study.isLocked = @study.get.isLocked;
     window.study.isActive = @study.get.isActive;
     window.study.isGroupStudy = @study.get.isGroupStudy;
-    window.study.dirName = "@study.get.getDirName";
-    window.study.sourceType = "@Option(study.get.getStudySource).map(_.getType.toString).getOrElse("NONE")";
+    window.study.dirName = @StringUtils.javascriptValue(study.get.getDirName);
+    window.study.sourceType = @StringUtils.javascriptValue(Option(study.get.getStudySource).map(_.getType.toString).getOrElse("NONE"));
+    window.study.gitUrl = @StringUtils.javascriptValue(Option(study.get.getStudySource).map(_.getGitUrl).getOrElse(""));
+    window.study.localFolderPath = @StringUtils.javascriptValue(Option(study.get.getStudySource).map(_.getLocalFolderPath).getOrElse(""));
     }
 
     @if(signedinUser.isDefined) {
     window.signedinUser = {};
     window.signedinUser.id = @signedinUser.get.getId;
-    window.signedinUser.username = "@signedinUser.get.getUsername";
-    window.signedinUser.name = "@signedinUser.get.getName";
-    window.signedinUser.email = "@signedinUser.get.getEmail";
-    window.signedinUser.authMethod = "@signedinUser.get.getAuthMethod";
+    window.signedinUser.username = @StringUtils.javascriptValue(signedinUser.get.getUsername);
+    window.signedinUser.name = @StringUtils.javascriptValue(signedinUser.get.getName);
+    window.signedinUser.email = @StringUtils.javascriptValue(signedinUser.get.getEmail);
+    window.signedinUser.authMethod = @StringUtils.javascriptValue(signedinUser.get.getAuthMethod.toString);
     window.signedinUser.isDb = @signedinUser.get.isDb;
     window.signedinUser.isLdap = @signedinUser.get.isLdap;
     window.signedinUser.isOauthGoogle = @signedinUser.get.isOauthGoogle;
@@ -95,14 +99,14 @@
     @if(worker.isDefined) {
     window.worker = {};
     window.worker.id = @worker.get.getId;
-    window.worker.workerType = "@worker.get.getWorkerType";
-    window.worker.comment = "@worker.get.getComment";
-    @if(worker.get.getWorkerType().equals("MT") || worker.get.getWorkerType().equals("MTSandbox")){
-    window.worker.mtWorkerId = "@worker.get.asInstanceOf[common.workers.MTWorker].getMTWorkerId";
+    window.worker.workerType = @StringUtils.javascriptValue(worker.get.getWorkerType.toString);
+    window.worker.comment = @StringUtils.javascriptValue(worker.get.getComment);
+    @if(worker.get.getWorkerType() == WorkerType.MT || worker.get.getWorkerType() == WorkerType.MT_SANDBOX){
+    window.worker.mtWorkerId = @StringUtils.javascriptValue(worker.get.asInstanceOf[common.workers.MTWorker].getMTWorkerId);
     }
-    @if(worker.get.getWorkerType().equals("Jatos") && worker.get.asInstanceOf[common.workers.JatosWorker].getUser() != null){
+    @if(worker.get.getWorkerType() == WorkerType.JATOS && worker.get.asInstanceOf[common.workers.JatosWorker].getUser() != null){
     window.worker.isJatosUserDefined = true;
-    window.worker.jatosUserName = "@worker.get.asInstanceOf[common.workers.JatosWorker].getUser.getName";
+    window.worker.jatosUserName = @StringUtils.javascriptValue(worker.get.asInstanceOf[common.workers.JatosWorker].getUser.getName);
     }else{
     window.worker.isJatosUserDefined = false;
     }
