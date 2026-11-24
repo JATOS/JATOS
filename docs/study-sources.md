@@ -15,8 +15,8 @@ Choose one source:
   running JATOS. It does not refer to the browser's computer.
 
 Saving settings does not fetch a repository, copy files, or synchronize study
-content. Local-folder creation/import/export and Git creation are available. Git pull/push
-for existing studies is not implemented yet. Archive export remains available as a backup.
+content. Local-folder creation/import/export and Git creation/pull/push are available.
+Archive export remains available as a backup.
 
 ## Git credentials
 
@@ -225,13 +225,13 @@ assets unavailable to concurrent readers; avoid synchronizing during active runs
 Successful synchronization writes a study-log entry after commit, recording the
 selected content and source folder along with the time and initiating user. The GUI reloads the study and displays a success
 message with the applied scope and a reminder to test. Export remains available
-for backups. Git synchronization is not implemented yet.
+for backups. Git sources offer Pull and Push.
 
 ## Export to the configured local folder
 
 Study members and enabled superusers can choose **Sync → Export** for an unlocked study.
 The modal previews the destination and lets them select properties, assets, or both.
-Members can still use **Sync → Import**. Git pull/push is not implemented yet.
+Members can still use **Sync → Import**. Git sources offer Pull and Push.
 
 Export uses the same allowed-root policy as import and requires an existing writable
 folder. An empty destination is supported. Properties replace the single existing
@@ -335,3 +335,38 @@ Optional `username` and `secret` fields configure study-specific credentials. Us
 study in `data` and a success `message`. Session-authenticated requests require CSRF
 protection, just like other creation methods. Source configuration and credentials are
 not included in `.jas` files or study exports.
+
+
+## Push an existing study to Git
+
+Choose **Sync → Push**, review the destination branch, and select properties, assets,
+or both. Members may push; changing the configured source still requires the owner
+or an enabled superuser. Push uses the same credentials as pull, but those credentials
+must also permit writing to the repository. The preview cannot guarantee write access
+or bypass protected-branch rules.
+
+JATOS fetches the branch again when pushing. An existing `.jas` must be valid and
+have the study's UUID; multiple root `.jas` files are rejected, even for assets-only
+pushes. The selected `.jas` is replaced (or `study.jas` is created), and selected
+assets replace `assets/` completely. Unselected content and unrelated repository
+files are preserved. Source configuration, credentials, and synchronization history
+are never included in exported properties.
+
+Push supports existing default and named branches. Tags remain available for pulling
+only. JATOS creates a normal child commit and rejects a concurrent remote branch
+change instead of forcing or merging. Retry to fetch the latest branch. Empty
+repositories need an initial branch commit before JATOS can push.
+
+Author and committer are **JATOS <noreply@jatos.org>**; the commit message is
+**Update study content**. No JATOS username, study title, or UUID is added to commit
+metadata. The exported files themselves still contain normal study properties.
+If the selected content is unchanged, JATOS reports that no new commit was needed.
+Successful pushes are recorded in the study log with the initiating user and commit.
+
+API clients can use GET and POST `/jatos/api/v1/studies/{id}/source/git/push` (ID or
+UUID). POST accepts `{"properties":true,"assets":true}` without requiring a preview.
+The response data contains `studyId`, `commitId`, `changed`, and `message`. Conflicting
+synchronizations or a changed remote branch return HTTP 409.
+
+A Git push is external to the database transaction and cannot be rolled back by JATOS.
+If a connection fails after sending the update, check the remote branch before retrying.

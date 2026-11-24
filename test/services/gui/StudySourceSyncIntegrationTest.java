@@ -2,7 +2,7 @@ package services.gui;
 
 import exceptions.common.BadRequestException;
 import exceptions.common.ForbiddenException;
-import exceptions.common.HttpException;
+import exceptions.common.ConflictException;
 import general.common.Common;
 import general.common.StudyLogger;
 import http.common.Http.Context;
@@ -304,7 +304,7 @@ public class StudySourceSyncIntegrationTest extends JatosTest {
     @Test
     public void concurrentSyncIsRejectedWithoutTouchingAssets() throws Exception {
         try (var ignored = new StudySourceSyncIO(jpaApi, application.injector().instanceOf(IOUtils.class)).lock(studyId)) {
-            assertEquals(409, assertThrows(HttpException.class, () -> sync.importFromFolder(studyId, selection(false, true))).getHttpStatus());
+            assertEquals(409, assertThrows(ConflictException.class, () -> sync.importFromFolder(studyId, selection(false, true))).getHttpStatus());
         }
         sync.importFromFolder(studyId, selection(false, true));
         assertNoStaging();

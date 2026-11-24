@@ -41,7 +41,7 @@
             <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
-            <div class="btn-group d-none" id="studySyncButton">
+            <div class="btn-group d-none no-info-icon" id="studySyncButton" data-bs-tooltip="Synchronize this study's properties and assets with its configured Git repository or local folder">
                 <button class="btn btn-study dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <i class="bi-arrow-repeat"></i><span class="d-none d-xl-inline ps-1">Sync</span>
                 </button>
@@ -54,6 +54,9 @@
                     </button></li>
                     <li class="study-git-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="PULL" data-bs-tooltip="Pull from the configured Git repository and replace selected study content in JATOS.">
                         <i class="bi-box-arrow-in-down-right pe-1"></i>Pull
+                    </button></li>
+                    <li class="study-git-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="PUSH" data-bs-tooltip="Push selected study content to the configured Git branch.">
+                        <i class="bi-box-arrow-in-up-right pe-1"></i>Push
                     </button></li>
                 </ul>
             </div>
@@ -80,15 +83,13 @@
                     <li class="no-info-icon" data-bs-tooltip="Show this study's study log">
                         <a class="dropdown-item" data-bs-toggle="modal" href="#studyLogModal"><i class="bi-journal-text pe-1"></i>Study log</a>
                     </li>
-                    @if(study.getOwner().getUsername() == signedinUser.getUsername() || (general.common.Common.isUserRoleAllowSuperuser() && signedinUser.isSuperuser())) {
-                    <li class="no-info-icon">
+                    <li class="study-owner-action d-none no-info-icon" data-bs-tooltip="Configure a Git repository or local folder to synchronize this study's properties and assets">
                         <a class="dropdown-item" data-bs-toggle="modal" href="#studySourceModal"><i class="bi-folder-symlink pe-1"></i>Study Source</a>
                     </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li class="no-info-icon" data-bs-tooltip="Delete this study including its components, assets and results">
+                    <li class="study-owner-action d-none"><hr class="dropdown-divider"></li>
+                    <li class="study-owner-action d-none no-info-icon" data-bs-tooltip="Delete this study including its components, assets and results">
                         <a class="dropdown-item" id="removeStudy" href="#"><i class="bi-x-circle-fill pe-1"></i>Delete</a>
                     </li>
-                    }
                 </ul>
             </div>
             <button class="btn btn-component me-3" data-bs-toggle="modal" data-bs-target="#componentCreatorModal" type="button" data-bs-tooltip="Add a new component">
@@ -121,24 +122,86 @@
     import * as FileSystemAccess from "@routes.Assets.versioned("lib/jatos-gui/javascripts/fileSystemAccess.js")";
     import * as InfoCard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/infoCard.js")";
 
-    if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit this study, it can't be run by you nor by a worker. Please contact your admin.", 10000, true);
+    init();
 
-    $("#studyToolbar").before(InfoCard.render([
-        {"name": "Study ID", "value": window.study.id, "tooltip": "This ID is unique within this JATOS instance"},
-        {"name": "Study UUID", "value": window.study.uuid, "tooltip": "Universally unique identifier - used to keep track of studies between different JATOS instances"},
-        {"name": "Study assets", "value": window.study.dirName, "tooltip": "Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."}
-    ]));
+    function init() {
+        if (!window.study.isActive) Alerts.warning("An admin deactivated this study. Although you can still edit " +
+            "this study, it can't be run by you nor by a worker. Please contact your admin.", 10000, true);
 
-    const studyResultButtonTooltip = @studyResultsCount > 0
+        renderStudyInfo();
+        $(document).on('study-source-changed study-properties-changed', renderStudyInfo);
+
+        // Set the href property in code so users can use the Ctrl + click to open the study run in a different tab
+        $('#runStudy').prop("href", `${window.routes.Studies.runStudy(window.study.id)}`);
+        $('#runStudy2x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 2, 2, 1)}`);
+        $('#runStudy3x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 3, 3, 1)}`);
+        $('#runStudy2x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 4, 2, 2)}`);
+        $('#runStudy3x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 6, 3, 2)}`);
+        $('#runStudy4x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 8, 4, 2)}`);
+        $('#runStudy3x3').prop("href", `${window.routes.Studies.runStudy(window.study.id, 9, 3, 3)}`);
+
+        const studyResultButtonTooltip = @studyResultsCount > 0
             ? "This study has @studyResultsCount study result(s) so far. Click here to go to the study result page."
             : "This study has no study results yet. Maybe do a test run to generate one.";
-    $("#studyResults").attr("data-bs-tooltip", studyResultButtonTooltip);
+        $("#studyResults").attr("data-bs-tooltip", studyResultButtonTooltip);
 
-    $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
-    $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
-    $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
+        const canManageStudy = window.study.ownerUsername === window.signedinUser.username
+            || (window.common.isUserRoleAllowSuperuser && window.signedinUser.isSuperuser);
+        $(".study-owner-action").toggleClass("d-none", !canManageStudy);
 
-    drawLockButton();
+        $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
+        $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
+        $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
+
+        drawLockButton();
+    }
+
+    function renderStudyInfo() {
+        const git = window.study.sourceType === "GIT";
+        const location = git ? window.study.gitUrl : window.study.localFolderPath;
+        const studyInfo = $(InfoCard.render([
+            {
+                "name": "Study ID",
+                "value": window.study.id,
+                "tooltip": "This ID is unique within this JATOS instance"
+            },
+            {
+                "name": "UUID",
+                "value": window.study.uuid,
+                "truncate": 8, addCopyBtn: true,
+                "tooltip": "Universally unique identifier - used to keep track of studies between different JATOS instances. Only the first 8 characters are displayed; hover to see the full UUID."
+            },
+            {
+                "name": "Assets",
+                "value": window.study.dirName,
+                "useMonospace": true,
+                "tooltip": "Name of the directory that is linked to this study. In there all your study's assets, e.g. HTML, JavaScript, CSS, and images, will be saved."
+            },
+            {
+                "name": "Source",
+                "value": window.study.sourceType === "NONE" ? "None" : location,
+                "displayValue": git && location ? location.replace(/^https:\/\//, '') : undefined,
+                "icon": window.study.sourceType === "NONE" ? undefined : (git ? 'bi-git' : 'bi-folder'),
+                "href": git ? location : undefined,
+                "useMonospace": window.study.sourceType === "LOCAL_FOLDER",
+                "tooltip": "The configured source for synchronizing this study's properties and assets. Configure it under More → Study Source."
+            }
+        ]));
+        $('#studyInfoCard').remove();
+        studyInfo.attr('id', 'studyInfoCard');
+        $("#studyToolbar").before(studyInfo);
+        Helpers.activateTooltips(studyInfo);
+    }
+
+    function drawLockButton() {
+        if (window.study.isLocked) {
+            $('#lockStudy').html('<i class="bi-lock-fill"></i>');
+            $('#lockStudy').removeClass('btn-study').addClass('btn-warning');
+        } else {
+            $('#lockStudy').html('<i class="bi-unlock-fill"></i>');
+            $('#lockStudy').removeClass('btn-warning').addClass('btn-study');
+        }
+    }
 
     $('#lockStudy').click(function() {
         $.ajax({
@@ -153,25 +216,6 @@
             error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't toggle study lock", 0, true)
         });
     });
-
-    function drawLockButton() {
-        if (window.study.isLocked) {
-            $('#lockStudy').html('<i class="bi-lock-fill"></i>');
-            $('#lockStudy').removeClass('btn-study').addClass('btn-warning');
-        } else {
-            $('#lockStudy').html('<i class="bi-unlock-fill"></i>');
-            $('#lockStudy').removeClass('btn-warning').addClass('btn-study');
-        }
-    }
-
-    // Set the href property in code so users can use the Ctrl + click to open the study run in a different tab
-    $('#runStudy').prop("href", `${window.routes.Studies.runStudy(window.study.id)}`);
-    $('#runStudy2x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 2, 2, 1)}`);
-    $('#runStudy3x1').prop("href", `${window.routes.Studies.runStudy(window.study.id, 3, 3, 1)}`);
-    $('#runStudy2x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 4, 2, 2)}`);
-    $('#runStudy3x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 6, 3, 2)}`);
-    $('#runStudy4x2').prop("href", `${window.routes.Studies.runStudy(window.study.id, 8, 4, 2)}`);
-    $('#runStudy3x3').prop("href", `${window.routes.Studies.runStudy(window.study.id, 9, 3, 3)}`);
 
     $('#studyResults').click(function() {
         window.location.href = window.routes.StudyResults.studysStudyResults(window.study.id);

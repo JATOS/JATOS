@@ -117,6 +117,94 @@ public class GitStudyCreationIntegrationTest extends JatosTest {
                 .set("data", Json.newObject().put("uuid", sourceUuid).put("title", title).put("dirName", "changed-name")).toString());
     }
 
+    private String pushUrl(long id) {
+        return "/jatos/api/v1/studies/" + id + "/source/git/push";
+    }
+
+    @Test
+    public void memberPushesWithoutPreviewAndReportsCommitAndNoChanges() throws Exception {
+        long id = createGitStudy();
+        var member = createUser("push-member");
+        jpaApi.withTransaction(em -> {
+            em.find(Study.class, id).addUser(em.find(models.common.User.class, member.getUsername()));
+            em.find(Study.class, id).setTitle("Exported title");
+        });
+        var preview = api("/jatos/api/v1/studies/" + uuid + "/source/git/push").get();
+        assertEquals(preview.getBody(), 200, preview.getStatus());
+        assertEquals(commit, preview.asJson().path("data").path("commitId").asText());
+        String token = createApiToken(member);
+        var selection = Json.newObject().put("properties", true).put("assets", true);
+        var response = api(pushUrl(id)).token(token).post(selection);
+        assertEquals(response.getBody(), 200, response.getStatus());
+        assertTrue(response.asJson().path("data").path("changed").asBoolean());
+        String pushed = response.asJson().path("data").path("commitId").asText();
+        assertEquals(pushed, git.getRepository().resolve("refs/heads/main").name());
+        try (var walk = new org.eclipse.jgit.revwalk.RevWalk(git.getRepository())) {
+            var revision = walk.parseCommit(org.eclipse.jgit.lib.ObjectId.fromString(pushed));
+            try (var tree = org.eclipse.jgit.treewalk.TreeWalk.forPath(git.getRepository(), "study.jas", revision.getTree())) {
+                String json = new String(git.getRepository().open(tree.getObjectId(0)).getBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                assertTrue(json.contains("Exported title"));
+                assertFalse(json.contains("gitUrl"));
+                assertFalse(json.contains("encryptedSecret"));
+            }
+        }
+        response = api(pushUrl(id)).token(token).post(selection);
+        assertEquals(response.getBody(), 200, response.getStatus());
+        assertFalse(response.asJson().path("data").path("changed").asBoolean());
+        assertEquals(pushed, response.asJson().path("data").path("commitId").asText());
+        String log = Files.readString(Path.of(Common.getStudyLogsPath(), uuid + ".log"), java.nio.charset.StandardCharsets.ISO_8859_1);
+        assertTrue(log.contains("Pushed properties and assets to Git at commit " + pushed));
+        noStaging();
+    }
+
+    @Test
+    public void pushChecksMembersLocksAndDestinationProperties() throws Exception {
+        long id = createGitStudy();
+        String outsider = createApiToken(createUser("push-outsider"));
+        var selection = Json.newObject().put("assets", true);
+        int before = fetches;
+        assertEquals(403, api(pushUrl(id)).token(outsider).get().getStatus());
+        assertEquals(403, api(pushUrl(id)).token(outsider).post(selection).getStatus());
+        assertEquals(before, fetches);
+        try (var lock = application.injector().instanceOf(services.gui.importexport.StudySourceSyncIO.class).lock(id)) {
+            assertEquals(409, api(pushUrl(id)).post(selection).getStatus());
+        }
+        properties(UUID.randomUUID().toString(), "Different study");
+        commit();
+        assertEquals(400, api(pushUrl(id)).get().getStatus());
+        assertEquals(400, api(pushUrl(id)).post(selection).getStatus());
+        Files.writeString(repository.resolve("study.jas"), "invalid JSON");
+        commit();
+        assertEquals(400, api(pushUrl(id)).post(selection).getStatus());
+        properties(uuid, "Correct study");
+        Files.copy(repository.resolve("study.jas"), repository.resolve("other.jas"));
+        commit();
+        assertEquals(400, api(pushUrl(id)).post(selection).getStatus());
+        assertEquals(commit, git.getRepository().resolve("refs/heads/main").name());
+        noStaging();
+    }
+
+    @Test
+    public void pushRejectsTagsLockedStudiesAndMissingSelections() throws Exception {
+        long id = createGitStudy();
+        git.tag().setName("release").setAnnotated(false).call();
+        jpaApi.withTransaction(em -> { em.find(Study.class, id).getStudySource().setGitRef("release"); });
+        var selection = Json.newObject().put("properties", true);
+        assertEquals(400, api(pushUrl(id)).get().getStatus());
+        assertEquals(400, api(pushUrl(id)).post(selection).getStatus());
+        assertEquals(200, api(pullUrl(id)).get().getStatus());
+        jpaApi.withTransaction(em -> {
+            em.find(Study.class, id).getStudySource().setGitRef("main");
+            em.find(Study.class, id).setLocked(true);
+        });
+        assertEquals(403, api(pushUrl(id)).get().getStatus());
+        assertEquals(403, api(pushUrl(id)).post(selection).getStatus());
+        jpaApi.withTransaction(em -> { em.find(Study.class, id).setLocked(false); });
+        assertEquals(400, api(pushUrl(id)).post(Json.newObject()).getStatus());
+        assertEquals(commit, git.getRepository().resolve("refs/heads/main").name());
+        noStaging();
+    }
+
     @Test
     public void memberPullsWithoutPreviewAndPreservesLocalSettings() throws Exception {
         long id = createGitStudy();
@@ -154,7 +242,7 @@ public class GitStudyCreationIntegrationTest extends JatosTest {
         var response = api("/jatos/api/v1/studies/" + uuid + "/source/git/pull").get();
         assertEquals(response.getBody(), 200, response.getStatus());
         var preview = response.asJson().path("data");
-        assertEquals(commit, preview.path("commit").asText());
+        assertEquals(commit, preview.path("commitId").asText());
         assertEquals("anonymous", preview.path("credentialSource").asText());
         assertTrue(preview.path("propertiesAvailable").asBoolean());
         assertTrue(preview.path("assetsAvailable").asBoolean());
@@ -239,7 +327,7 @@ public class GitStudyCreationIntegrationTest extends JatosTest {
         assertEquals(403, Helpers.route(application, request).status());
         var result = Helpers.route(application, request.header("Csrf-Token", csrf));
         assertEquals(Helpers.contentAsString(result), 200, result.status());
-        assertTrue(result.flash().get("success").orElseThrow().contains("Please test"));
+        assertTrue(result.flash().get("success").orElseThrow().contains("Pulled assets from Git"));
         jpaApi.withTransaction(em -> {em.find(Study.class, id).setLocked(true);});
         assertEquals(403, api(pullUrl(id)).get().getStatus());
         assertEquals(403, api(pullUrl(id)).post(Json.newObject().put("assets", true)).getStatus());
@@ -267,7 +355,7 @@ public class GitStudyCreationIntegrationTest extends JatosTest {
                 injector.instanceOf(services.gui.importexport.StudySourceService.class),
                 injector.instanceOf(json.common.DomainJsonMapper.class),
                 injector.instanceOf(general.common.StudyLogger.class),
-                injector.instanceOf(daos.common.UserDao.class), failingIO);
+                injector.instanceOf(daos.common.UserDao.class), failingIO, injector.instanceOf(IOUtils.class));
         var sync = new services.gui.importexport.StudySourceSync(jpaApi,
                 injector.instanceOf(daos.common.StudyDao.class), injector.instanceOf(daos.common.UserDao.class),
                 injector.instanceOf(AuthorizationService.class), failingIO, injector.instanceOf(general.common.StudyLogger.class),
@@ -395,7 +483,7 @@ public class GitStudyCreationIntegrationTest extends JatosTest {
                 injector.instanceOf(json.common.DomainJsonMapper.class),
                 injector.instanceOf(general.common.StudyLogger.class),
                 injector.instanceOf(daos.common.UserDao.class),
-                injector.instanceOf(services.gui.importexport.StudySourceSyncIO.class));
+                injector.instanceOf(services.gui.importexport.StudySourceSyncIO.class), injector.instanceOf(IOUtils.class));
         var props = new models.gui.StudySourceProperties();
         props.setType(StudySource.Type.GIT);
         props.setGitUrl("https://example.org/repo.git");

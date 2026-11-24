@@ -146,8 +146,7 @@
         $("#studyPropertiesForm")[0].reset();
         FormValidation.clear("#studyPropertiesForm");
         $('#studyPropertiesModal').data(properties);
-        Helpers.generateModalSubtitles("#studyPropertiesModal",
-                {"ID": properties.studyId, "UUID": properties.uuid}, true);
+        Helpers.generateModalSubtitles("#studyPropertiesModal", {"ID": properties.studyId, "UUID": properties.uuid}, true);
 
         $('#studyPropertiesFormTitle').val(properties.title);
         $('#studyPropertiesFormDescription').val(properties.description ? properties.description: "");
@@ -189,6 +188,9 @@
                 $('#studyPropertiesModal').modal('hide');
                 Alerts.success("The study properties were changed successfully.", 5000, true);
                 const title = $('#studyPropertiesFormTitle').val();
+                window.study.title = title;
+                window.study.dirName = $('#studyPropertiesFormDirName').val();
+                $(document).trigger('study-properties-changed');
                 $('#breadcrumbs .nav-item:last').text(title);
             },
             error : function(response) {

@@ -155,6 +155,9 @@ public class Common {
     private static String studySourcesGitCredentialOrigin;
     private static String studySourcesGitCredentialUsername;
     private static String studySourcesGitCredentialSecret;
+    private static String studySourcesGitIdentityName;
+    private static String studySourcesGitIdentityEmail;
+    private static boolean studySourcesGitIdentityUseUserDetails;
 
     /**
      * List of regular expressions and their description as Pairs that define password restrictions (the regexes are
@@ -313,7 +316,9 @@ public class Common {
         studySourcesGitCredentialOrigin = config.getString("jatos.studySources.git.credentials.origin");
         studySourcesGitCredentialUsername = config.getString("jatos.studySources.git.credentials.username");
         studySourcesGitCredentialSecret = config.getString("jatos.studySources.git.credentials.secret");
-
+        studySourcesGitIdentityName = config.getString("jatos.studySources.git.identity.name");
+        studySourcesGitIdentityEmail = config.getString("jatos.studySources.git.identity.email");
+        studySourcesGitIdentityUseUserDetails = config.getBoolean("jatos.studySources.git.identity.useUserDetails");
     }
 
     /**
@@ -1311,5 +1316,26 @@ public class Common {
      */
     public static String getStudySourcesGitCredentialSecret() {
         return studySourcesGitCredentialSecret;
+    }
+
+    /**
+     * Author and committer identity for study pushes.
+     */
+    public static String getStudySourcesGitIdentityName() {
+        return studySourcesGitIdentityName;
+    }
+
+    /**
+     * Author and committer's email for study pushes.
+     */
+    public static String getStudySourcesGitIdentityEmail() {
+        return studySourcesGitIdentityEmail;
+    }
+
+    /**
+     * Use name/email of the signed-in user for git pushes; missing fields use the default identity.
+     */
+    public static boolean isStudySourcesGitIdentityUseUserDetails() {
+        return studySourcesGitIdentityUseUserDetails;
     }
 }

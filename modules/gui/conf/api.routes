@@ -70,6 +70,8 @@ GET      /jatos/api/v1/studies/:id/properties                               @con
 PATCH    /jatos/api/v1/studies/:id/properties                               @controllers.gui.api.StudyApi.updateStudyProperties(request: Request, id)
 GET      /jatos/api/v1/studies/:id/source/git/pull                          @controllers.gui.api.StudyApi.previewStudyGitPull(id)
 POST     /jatos/api/v1/studies/:id/source/git/pull                          @controllers.gui.api.StudyApi.pullStudyFromGit(request: Request, id)
+GET      /jatos/api/v1/studies/:id/source/git/push                          @controllers.gui.api.StudyApi.previewStudyGitPush(id)
+POST     /jatos/api/v1/studies/:id/source/git/push                          @controllers.gui.api.StudyApi.pushStudyToGit(request: Request, id)
 GET      /jatos/api/v1/studies/:id/source/folder/import                     @controllers.gui.api.StudyApi.previewStudyFolderImport(id)
 POST     /jatos/api/v1/studies/:id/source/folder/import                     @controllers.gui.api.StudyApi.importStudyFromFolder(request: Request, id)
 GET      /jatos/api/v1/studies/:id/source/folder/export                     @controllers.gui.api.StudyApi.previewStudyFolderExport(id)

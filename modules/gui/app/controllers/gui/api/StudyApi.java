@@ -32,7 +32,6 @@ import services.gui.ApiService;
 import services.gui.AuthorizationService;
 import services.gui.StudyService;
 import services.gui.importexport.*;
-import services.gui.importexport.StudySourceSync.LocalFolderPreview;
 import services.gui.importexport.StudySourceSync.SyncResult;
 import utils.common.IOUtils;
 
@@ -583,6 +582,30 @@ public class StudyApi extends Controller {
         StudySourceSyncProperties props = readStudySourceSyncProperties(request);
         SyncResult result = studySourceSync.pullFromGit(study.getId(), props);
         Context.current().response().putFlash(SUCCESS, result.message());
+        return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
+    }
+
+    /**
+     * Previews a Git push for a study member.
+     */
+    @Async(Executor.IO)
+    @Transactional
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    public Result previewStudyGitPush(String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        User user = Context.current().args().get(SIGNEDIN_USER);
+        authorizationService.canUserAccessStudy(study, user, true);
+        var preview = studySourceSync.previewGitPush(study.getId());
+        return ok(ApiEnvelope.wrap(preview).asJsonNode());
+    }
+
+    @Async(Executor.IO)
+    @Auth(roles = {USER, SUPERUSER}, types = {TOKEN, SESSION})
+    @BodyParser.Of(ApiJsonBodyParser.class)
+    public Result pushStudyToGit(Http.Request request, String id) {
+        Study study = studyService.getStudyFromIdOrUuid(id);
+        if (study == null) throw new NotFoundException("Study doesn't exist.");
+        var result = studySourceSync.pushToGit(study.getId(), readStudySourceSyncProperties(request));
         return ok(ApiEnvelope.wrap(result.message(), Json.toJson(result)).asJsonNode());
     }
 

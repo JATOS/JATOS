@@ -732,6 +732,71 @@ paths:
         '409':
           $ref: '#/components/responses/ConflictError'
 
+  /jatos/api/v1/studies/{id}/source/git/push:
+    parameters:
+      - $ref: '#/components/parameters/StudyIdOrUuidParameter'
+    get:
+      summary: Preview push to the configured Git branch
+      description: >-
+        Fetches the destination branch and checks its study identity. Returns the resolved branch, commitId,
+        credential source, and content available in JATOS. Requires study membership and a configured GIT source.
+        Tags cannot be pushed to. This preview checks read access; write access and branch protection are checked
+        during the push.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Destination branch and available study content (properties and assets)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyGitPushPreview'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Push selected study content to the configured Git branch
+      description: >-
+        Exports selected properties and/or assets to the configured default or named branch. A preview is optional.
+        Replaces selected content completely, preserving unrelated repository files.
+        Source settings, credentials, and synchronization history are excluded. Requires study membership;
+        the selected credentials must have write access. Credential selection is the same as for pulling.
+        Exported study properties retain their normal content. No force push or automatic merge is performed.
+        Returns the resulting commit and changed=false if no new commit was needed. Tags and repositories without
+        an existing destination branch are rejected.
+      tags: [ study ]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudySourceSyncUpdate'
+      responses:
+        '200':
+          description: Push completed, or selected content was already up to date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeStudyGitPushResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
   /jatos/api/v1/studies/{id}/source/folder/import:
     parameters:
       - $ref: '#/components/parameters/StudyIdOrUuidParameter'
@@ -3165,17 +3230,40 @@ components:
 
     StudyGitPullPreview:
       type: object
-      required: [ gitUrl, commit, credentialSource, propertiesAvailable, assetsAvailable ]
+      required: [ gitUrl, commitId, credentialSource, propertiesAvailable, assetsAvailable ]
       properties:
         gitUrl: { type: string, description: Configured HTTPS repository URL }
         gitRef: { type: string, nullable: true, description: Branch or tag; null or blank uses the default branch. }
-        commit: { type: string, description: Full resolved commit ID of this preview }
+        commitId: { type: string, description: Full resolved commit ID of this preview }
         credentialSource:
           type: string
           enum: [ study, owner, global, anonymous ]
           description: Effective credential source; never includes usernames or secrets.
         propertiesAvailable: { type: boolean }
         assetsAvailable: { type: boolean }
+
+    StudyGitPushPreview:
+      type: object
+      required: [ gitUrl, gitRef, commitId, credentialSource, propertiesAvailable, assetsAvailable ]
+      properties:
+        gitUrl: { type: string, description: Configured HTTPS repository URL }
+        gitRef: { type: string, description: Resolved destination branch; tags are not supported. }
+        commitId: { type: string, description: Full resolved commit ID of this preview }
+        credentialSource:
+          type: string
+          enum: [ study, owner, global, anonymous ]
+          description: Effective credential source; never includes usernames or secrets.
+        propertiesAvailable: { type: boolean }
+        assetsAvailable: { type: boolean }
+
+    StudyGitPushResult:
+      type: object
+      required: [ studyId, commitId, changed, message ]
+      properties:
+        studyId: { type: integer, format: int64 }
+        commitId: { type: string, description: Full resulting commit ID }
+        changed: { type: boolean, description: Whether a new commit was pushed }
+        message: { type: string }
 
     StudySourceSyncUpdate:
       type: object
@@ -3746,6 +3834,22 @@ components:
         - type: object
           properties:
             data: { $ref: '#/components/schemas/StudyGitPullPreview' }
+          required: [ data ]
+
+    ApiEnvelopeStudyGitPushPreview:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudyGitPushPreview' }
+          required: [ data ]
+
+    ApiEnvelopeStudyGitPushResult:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeSuccess'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/StudyGitPushResult' }
           required: [ data ]
 
     ApiEnvelopeStudySourceSyncPreview:

@@ -1,7 +1,7 @@
 package services.gui.importexport;
 
 import exceptions.common.BadRequestException;
-import exceptions.common.HttpException;
+import exceptions.common.ConflictException;
 import general.common.Common;
 import general.common.JpaTransactions;
 import utils.common.IOUtils;
@@ -64,8 +64,8 @@ public class StudySourceSyncIO {
         }
     }
 
-    private HttpException busy() {
-        return new HttpException(409, "This study is already being synchronized. Try again shortly.");
+    private ConflictException busy() {
+        return new ConflictException("This study is already being synchronized. Try again shortly.");
     }
 
     /**

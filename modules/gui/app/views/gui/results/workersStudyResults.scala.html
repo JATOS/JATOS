@@ -14,7 +14,7 @@
                 <th class="no-info-icon" data-bs-tooltip="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Was the quota (max result data / file size) reached at least once during the study run? If yes a warning sign (⚠) is shown."><span class="d-none">Quota reached</span><span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon text-nowrap" data-bs-tooltip="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances. Only the first 8 characters are displayed; hover over a UUID to see its full value.">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
@@ -39,7 +39,7 @@
                 <th class="no-info-icon" data-bs-tooltip="Check the box to select this result for export or deleting."><span class="info-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="Was the quota (max result data / file size) reached at least once during the study run? If yes a warning sign (⚠) is shown."><span class="d-none">Quota reached</span><span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The ID of the study result">Result ID<span class="info-icon"></span><span class="ordering-icon"></span></th>
-                <th class="no-info-icon text-nowrap" data-bs-tooltip="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
+                <th class="no-info-icon text-nowrap" data-bs-tooltip="UUID (Universally Unique Identifier) of the study result - used to keep track of results between different JATOS instances. Only the first 8 characters are displayed; hover over a UUID to see its full value.">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The study code that was used to run this study">Study code<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The start time of the study run (in local time)">Start time<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="The end time of the study run (in local time)">End time<span class="info-icon"></span><span class="ordering-icon"></span></th>
@@ -98,6 +98,8 @@
     $("#resultsTable").before(InfoCard.render(info));
 
     let dataTable;
+    $("#resultsTable").on("click", ".uuid-copy", CopyToClipboard.onClick);
+
     $(document).ready(function() {
         dataTable = $('#resultsTable').DataTable({
             "ajax": {
@@ -169,9 +171,23 @@
                 },
                 {
                     "data": "uuid",
-                    "className": "text-break",
+                    "render": (data, type) => {
+                        if (type !== 'display') return data;
+                        const uuid = $('<span class="d-inline-flex align-items-center gap-2 text-nowrap">');
+                        uuid.append($('<span class="no-info-icon">')
+                            .attr('data-bs-tooltip', data)
+                            .text(data.split('-')[0]));
+                        uuid.append($('<button type="button" class="btn btn-sm p-0 btn-clipboard uuid-copy no-info-icon">')
+                            .attr({
+                                'aria-label': 'Copy full UUID',
+                                'data-bs-tooltip': 'Copy full UUID',
+                                'data-clipboard-text': data
+                            }));
+                        return uuid.prop('outerHTML');
+                    },
+                    "className": "text-nowrap",
                     "visible": false,
-                    "width": "10%"
+                    "width": "1%"
                 },
                 {
                     "data": "studyCode",

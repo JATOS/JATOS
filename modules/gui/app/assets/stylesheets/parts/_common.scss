@@ -62,3 +62,13 @@ button[disabled] {
         min-width: 0;
     }
 }
+
+// Keep long paths and URLs inside info cards on narrow screens.
+.info-card-value {
+    min-width: 0;
+}
+
+.info-card-value-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}

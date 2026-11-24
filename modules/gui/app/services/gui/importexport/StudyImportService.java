@@ -4,7 +4,7 @@ import daos.common.ComponentDao;
 import daos.common.StudyDao;
 import exceptions.common.ForbiddenException;
 import exceptions.common.BadRequestException;
-import exceptions.common.HttpException;
+import exceptions.common.ConflictException;
 import exceptions.common.ImportExportException;
 import exceptions.common.JatosException;
 import general.common.ApiEnvelope.ErrorCode;
@@ -109,8 +109,8 @@ public class StudyImportService {
         return failure;
     }
 
-    private HttpException studySourceUuidConflict() {
-        return new HttpException(409,
+    private ConflictException studySourceUuidConflict() {
+        return new ConflictException(
                 "A study with this UUID already exists. If you own this study, you can change its source settings to use this folder.",
                 ErrorCode.INVALID_REQUEST);
     }

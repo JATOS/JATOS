@@ -47,8 +47,8 @@
     </div>
 
     @* Create User Modal *@
-    <div class="modal fade" id="userCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
-        <div class="modal-dialog modal-lg">
+        <div class="modal fade" id="userCreatorModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":true}'>
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header align-items-start">
                     <h5 class="modal-title text-truncate flex-grow-1">Add a new user</h5>
@@ -57,43 +57,37 @@
                 <div class="modal-body">
                     <form class="form-admin" id="userCreatorForm">
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="userCreatorUsername">
+                            <label class="col-sm-3 col-form-label" for="userCreatorUsername" data-bs-tooltip="What will be the username of the new user? Username and password are used for authentication. E.g., email address. The username is stored in lowercase.">
                                 Username<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="userCreatorUsername" name="username" autocapitalize="none" autocomplete="off" required>
-                                <span class="form-text">What will be the username of the new user? Username and password are used for authentication. E.g., email address.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="userCreatorName">
+                            <label class="col-sm-3 col-form-label" for="userCreatorName" data-bs-tooltip="The name is not used for authentication and only further describes the user.">
                                 Name<span class="input-required" data-bs-tooltip="required"></span>
                             </label>
                             <div class="col-sm-9">
                                 <input type="text" class="form-control" id="userCreatorName" name="name" autocomplete="off" required>
-                                <span class="form-text">The name is not used for authentication and only further describes the user.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-sm-3 col-form-label" for="userCreatorEmail">Email</label>
+                            <label class="col-sm-3 col-form-label" for="userCreatorEmail" data-bs-tooltip="Optional email address of the user. This field is not used for authentication.">Email</label>
                             <div class="col-sm-9">
                                 <input type="email" class="form-control" id="userCreatorEmail" name="email" autocomplete="off">
-                                <span class="form-text">Optional email address of the user. This field is not used for authentication.</span>
                             </div>
                         </div>
 
                         <div class="row mb-3 d-none" id="userCreatorAuthByLdapDiv">
-                            <legend class="col-sm-3 col-form-label pt-0">
+                            <label class="col-sm-3 col-form-label pt-0" for="userCreatorAuthByLdap" data-bs-tooltip="Authenticate this user by your central LDAP service?">
                                 LDAP
-                            </legend>
+                            </label>
                             <div class="col-sm-9">
                                 <div class="form-check">
                                     <input class="form-check-input checkbox-admin" type="checkbox" name="authMethod" id="userCreatorAuthByLdap" value="LDAP" data-bs-toggle="collapse" data-bs-target="#userCreatorPasswordDiv">
-                                    <label class="form-check-label" for="userCreatorAuthByLdap">
-                                        Authenticate this user by your central LDAP service?
-                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -115,10 +109,10 @@
                             </div>
                         </div>
                     </form>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-admin" id="userCreatorConfirm">Add</button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-admin" id="userCreatorConfirm">Add</button>
                 </div>
             </div>
         </div>

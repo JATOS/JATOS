@@ -15,17 +15,21 @@ import models.gui.StudySourceProperties;
 import models.gui.StudySourceSyncProperties;
 import services.gui.importexport.GitCredentialsResolver.ResolvedCredentials;
 import services.gui.importexport.GitStudySourceIO.FetchedStudy;
+import services.gui.importexport.GitStudySourceIO.PushResult;
 import services.gui.importexport.StudySourceSync.GitPreview;
+import utils.common.IOUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static auth.gui.AuthAction.SIGNEDIN_USER;
 import static exceptions.common.JatosException.unchecked;
 
 /**
- * Creates and updates studies from Git snapshots.
+ * Creates studies from Git and pulls or pushes selected study content.
  */
 @Singleton
 public class GitStudyImportExport {
@@ -39,6 +43,7 @@ public class GitStudyImportExport {
     private final StudyLogger studyLogger;
     private final UserDao userDao;
     private final StudySourceSyncIO studySourceSyncIO;
+    private final IOUtils ioUtils;
 
     @Inject
     public GitStudyImportExport(JpaTransactions transactions,
@@ -49,7 +54,8 @@ public class GitStudyImportExport {
                                 DomainJsonMapper domainJsonMapper,
                                 StudyLogger studyLogger,
                                 UserDao userDao,
-                                StudySourceSyncIO studySourceSyncIO) {
+                                StudySourceSyncIO studySourceSyncIO,
+                                IOUtils ioUtils) {
         this.transactions = transactions;
         this.gitCredentialsResolver = gitCredentialsResolver;
         this.gitStudySourceIO = gitStudySourceIO;
@@ -59,10 +65,12 @@ public class GitStudyImportExport {
         this.studyLogger = studyLogger;
         this.userDao = userDao;
         this.studySourceSyncIO = studySourceSyncIO;
+        this.ioUtils = ioUtils;
     }
 
     /**
-     * Fetches the Git source and checks which study content is available. Temporary files are removed before returning.
+     * Fetches the Git source and checks which study content is available. Temporary files are removed before
+     * returning.
      */
     public GitPreview previewPull(Study study) throws IOException {
         var source = gitSource(study);
@@ -72,7 +80,7 @@ public class GitStudyImportExport {
             return new GitPreview(
                     source.getGitUrl(),
                     source.getGitRef(),
-                    fetchedStudy.commit(),
+                    fetchedStudy.commitId(),
                     credentials.source(),
                     fetchedStudy.content().getProperties().isPresent(),
                     fetchedStudy.content().getAssets().isPresent());
@@ -90,7 +98,48 @@ public class GitStudyImportExport {
             studyImportService.importPropertiesFromStagedSource(study, fetchedStudy.content(), props);
             if (props.isAssets())
                 studySourceSyncIO.replaceAssets(fetchedStudy.content().getAssets().orElseThrow(), study.getDirName());
-            return fetchedStudy.commit();
+            return fetchedStudy.commitId();
+        }
+    }
+
+    /**
+     * Fetches the destination branch and checks its study identity before pushing.
+     */
+    public GitPreview previewPush(Study study) throws IOException {
+        var source = gitSource(study);
+        try (var credentials = gitCredentialsResolver.forExistingStudy(study);
+             var destination = gitStudySourceIO.preparePush(source.getGitUrl(), source.getGitRef(), credentials)) {
+            studyImportService.readStudyFromSource(study, destination.fetchedStudy().content());
+            return new GitPreview(
+                    source.getGitUrl(),
+                    destination.branch(),
+                    destination.fetchedStudy().commitId(),
+                    credentials.source(),
+                    true,
+                    Files.isDirectory(ioUtils.getStudyAssetsDir(study.getDirName(), false)));
+        }
+    }
+
+    /**
+     * Exports selected study content and pushes a commit to the configured branch.
+     */
+    public PushResult pushToGit(Study study, StudySourceSyncProperties props) throws IOException {
+        var source = gitSource(study);
+        try (var credentials = gitCredentialsResolver.forExistingStudy(study);
+             var destination = gitStudySourceIO.preparePush(source.getGitUrl(), source.getGitRef(), credentials)) {
+            var content = destination.fetchedStudy().content();
+            studyImportService.readStudyFromSource(study, content);
+            Path staged = Files.createDirectory(content.getDirectory().resolve("export"));
+            String filename = content.getProperties().map(path -> path.getFileName().toString()).orElse("study.jas");
+            if (props.isProperties()) {
+                domainJsonMapper.studyAsJsonForIO(study, staged.resolve(filename));
+            }
+            if (props.isAssets()) {
+                Path assets = ioUtils.getStudyAssetsDir(study.getDirName());
+                LocalFolderStudySourceIO.copySourceDirectory(assets, assets, staged.resolve("assets"));
+            }
+            return gitStudySourceIO.push(destination, source.getGitUrl(), credentials, staged,
+                    props.isProperties(), props.isAssets(), Context.current().args().get(SIGNEDIN_USER));
         }
     }
 
@@ -138,7 +187,7 @@ public class GitStudyImportExport {
             String uuid = study.getUuid();
             String userName = signedinUser.getName();
             String message = "Created study from Git: imported " + scope + " from " + props.getGitUrl().trim()
-                    + " at commit " + fetchedStudy.commit();
+                    + " at commit " + fetchedStudy.commitId();
             transactions.afterCommit("Log Git study creation", () -> studyLogger.log(uuid, userName, message));
 
             JsonNode json = domainJsonMapper.studyAsJsonForApi(study, false, false);

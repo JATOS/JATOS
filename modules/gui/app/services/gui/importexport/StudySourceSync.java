@@ -59,17 +59,26 @@ public class StudySourceSync {
                                      boolean propertiesAvailable,
                                      boolean assetsAvailable) {}
 
-    public record GitPreview(String gitUrl,
-                             String gitRef,
-                             String commit,
-                             String credentialSource,
-                             boolean propertiesAvailable,
-                             boolean assetsAvailable) {}
+    public record GitPreview(
+            String gitUrl, // Configured repository URL
+            String gitRef, // For pull: configured branch/tag or empty for default branch. For push: resolved branch.
+            String commitId, // Full commit ID. For push, the destination’s current commit, not the future new commit.
+            String credentialSource, // Where the selected credentials come from: study, owner, global, or anonymous.
+            boolean propertiesAvailable,
+            boolean assetsAvailable) {}
 
-    public record SyncResult(long studyId,
-                             boolean propertiesUpdated,
-                             boolean assetsUpdated,
-                             String message) {}
+    // Used for local folder import/export and git pull (but not push)
+    public record SyncResult(
+            long studyId,
+            boolean propertiesUpdated,
+            boolean assetsUpdated,
+            String message) {} // Human-readable success message for the GUI or API client.
+
+    public record GitPushResult(
+            long studyId,
+            String commitId, // Resulting commit ID: the new commit, or the existing commit if nothing changed.
+            boolean changed, // Whether selected content differed and a new commit was pushed.
+            String message) {} // Human-readable success or “nothing changed” message.
 
     /**
      * Checks which properties and assets can be imported from the local folder.
@@ -109,6 +118,7 @@ public class StudySourceSync {
      * Imports selected content from the local folder.
      */
     public SyncResult importFromFolder(long studyId, StudySourceSyncProperties props) {
+        //noinspection try
         try (var ignored = studySourceSyncIO.lock(studyId)) {
             return transactions.withNewTransaction(em -> {
                 Study study = getAuthorizedStudy(studyId);
@@ -138,6 +148,7 @@ public class StudySourceSync {
      * Exports selected content to the local folder.
      */
     public SyncResult exportToFolder(long studyId, StudySourceSyncProperties props) {
+        //noinspection try
         try (var ignored = studySourceSyncIO.lock(studyId)) {
             return transactions.withNewTransaction(em -> {
                 Study study = getAuthorizedStudy(studyId);
@@ -176,6 +187,7 @@ public class StudySourceSync {
      * Pulls selected content from Git into the study.
      */
     public SyncResult pullFromGit(long studyId, StudySourceSyncProperties props) {
+        //noinspection try
         try (var ignored = studySourceSyncIO.lock(studyId)) {
             return transactions.withNewTransaction(em -> {
                 Study study = getAuthorizedStudy(studyId);
@@ -192,6 +204,50 @@ public class StudySourceSync {
                     return new SyncResult(studyId, props.isProperties(), props.isAssets(), message);
                 } catch (IOException e) {
                     throw new ImportExportException("Could not pull or clean up the Git study source.");
+                }
+            });
+        } catch (IOException e) {
+            throw new ImportExportException("Could not access the study synchronization lock.");
+        }
+    }
+
+    /**
+     * Checks the configured Git branch before exporting study content.
+     */
+    public GitPreview previewGitPush(long studyId) {
+        Study study = studyDao.findByIdWithSourceAndLock(studyId);
+        try {
+            return gitStudyImportExport.previewPush(study);
+        } catch (IOException e) {
+            throw new ImportExportException("Could not preview or clean up the Git destination.");
+        }
+    }
+
+    /**
+     * Pushes selected content under the same study lock and member permissions as other synchronization.
+     */
+    public GitPushResult pushToGit(long studyId, StudySourceSyncProperties props) {
+        //noinspection try
+        try (var ignored = studySourceSyncIO.lock(studyId)) {
+            return transactions.withNewTransaction(em -> {
+                Study study = getAuthorizedStudy(studyId);
+                try {
+                    // Flush before the remote operation: a successful Git push cannot be rolled back by the database.
+                    em.flush();
+                    var result = gitStudyImportExport.pushToGit(study, props);
+                    String scope = props.isProperties() ? (props.isAssets() ? "properties and assets" : "properties") : "assets";
+                    String message = result.changed()
+                            ? "Pushed " + scope + " to Git at commit " + result.commitId() + "."
+                            : "Nothing changed. Git is already up to date at commit " + result.commitId() + ".";
+                    String uuid = study.getUuid();
+                    User user = Context.current().args().get(SIGNEDIN_USER);
+                    String userName = user.getName();
+                    String url = study.getStudySource().getGitUrl();
+                    transactions.afterCommit("Log Git push",
+                            () -> studyLogger.log(uuid, userName, message + " Repository: " + url));
+                    return new GitPushResult(studyId, result.commitId(), result.changed(), message);
+                } catch (IOException e) {
+                    throw new ImportExportException("Could not push or clean up the Git destination. Check the remote branch before retrying.");
                 }
             });
         } catch (IOException e) {

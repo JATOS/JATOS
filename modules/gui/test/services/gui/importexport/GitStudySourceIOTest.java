@@ -76,11 +76,135 @@ public class GitStudySourceIOTest {
         var common = mockStatic(Common.class);
         common.when(Common::getTmpPath).thenReturn(tmp.toString());
         common.when(Common::getStudySourcesGitTimeout).thenReturn(java.time.Duration.ofSeconds(30));
+        common.when(Common::getStudySourcesGitIdentityName).thenReturn("JATOS");
+        common.when(Common::getStudySourcesGitIdentityEmail).thenReturn("noreply@jatos.org");
         return common;
     }
 
     private void noStaging() throws IOException {
         try (var files = Files.list(tmp)) {assertEquals(0, files.count());}
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @Test
+    public void usesConfiguredIdentityAndOptionalUserDetails() throws Exception {
+        try (var common = configuration(); var access = anonymous()) {
+            common.when(Common::getStudySourcesGitIdentityName).thenReturn("Configured");
+            common.when(Common::getStudySourcesGitIdentityEmail).thenReturn("configured@example.org");
+            User[] users = {new User("user", "User", "u@example.org"),
+                    new User("user", "User", "u@example.org"),
+                    new User("user", " ", "u@example.org"),
+                    new User("user", "User", null), null};
+            String[] names = {"Configured", "User", "Configured", "User", "Configured"};
+            String[] emails = {"configured@example.org", "u@example.org", "u@example.org",
+                    "configured@example.org", "configured@example.org"};
+            for (int i = 0; i < users.length; i++) {
+                common.when(Common::isStudySourcesGitIdentityUseUserDetails).thenReturn(i != 0);
+                try (var destination = io.preparePush(url, "main", access)) {
+                    Path staged = Files.createDirectory(destination.fetchedStudy().content().getDirectory().resolve("export"));
+                    Files.writeString(staged.resolve("study.jas"), "properties " + i);
+                    var result = io.push(destination, url, access, staged, true, false, users[i]);
+                    try (var walk = new org.eclipse.jgit.revwalk.RevWalk(git.getRepository())) {
+                        var commit = walk.parseCommit(org.eclipse.jgit.lib.ObjectId.fromString(result.commitId()));
+                        assertEquals(names[i], commit.getAuthorIdent().getName());
+                        assertEquals(emails[i], commit.getAuthorIdent().getEmailAddress());
+                        assertEquals(names[i], commit.getCommitterIdent().getName());
+                        assertEquals(emails[i], commit.getCommitterIdent().getEmailAddress());
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void pushesSelectedContentPreservesOtherFilesAndUsesFixedIdentity() throws Exception {
+        try (var ignored = configuration(); var access = anonymous()) {
+            for (String ref : new String[]{"", "main", "refs/heads/main"}) {
+                try (var destination = io.preparePush(url, ref, access)) {
+                    Path staged = Files.createDirectory(destination.fetchedStudy().content().getDirectory().resolve("export"));
+                    Files.createDirectory(staged.resolve("assets"));
+                    Files.writeString(staged.resolve("assets/new.html"), "new");
+                    var result = io.push(destination, url, access, staged, false, true, null);
+                    try (var walk = new org.eclipse.jgit.revwalk.RevWalk(git.getRepository())) {
+                        var commit = walk.parseCommit(org.eclipse.jgit.lib.ObjectId.fromString(result.commitId()));
+                        assertEquals("JATOS", commit.getAuthorIdent().getName());
+                        assertEquals("noreply@jatos.org", commit.getCommitterIdent().getEmailAddress());
+                        assertEquals("Update study content", commit.getFullMessage());
+                        assertNotNull(org.eclipse.jgit.treewalk.TreeWalk.forPath(git.getRepository(), "README", commit.getTree()));
+                        assertNotNull(org.eclipse.jgit.treewalk.TreeWalk.forPath(git.getRepository(), "study.jas", commit.getTree()));
+                        assertNull(org.eclipse.jgit.treewalk.TreeWalk.forPath(git.getRepository(), "assets/index.html", commit.getTree()));
+                    }
+                    assertEquals(ref.isEmpty(), result.changed());
+                }
+                noStaging();
+            }
+        }
+    }
+
+    @Test
+    public void propertiesOnlyPreservesAssetsAndEmptyAssetsRemovesThem() throws Exception {
+        try (var ignored = configuration(); var access = anonymous()) {
+            try (var destination = io.preparePush(url, "main", access)) {
+                Path staged = Files.createDirectory(destination.fetchedStudy().content().getDirectory().resolve("export"));
+                Files.writeString(staged.resolve("study.jas"), "updated properties");
+                io.push(destination, url, access, staged, true, false, null);
+            }
+            try (var fetched = io.stage(url, "main", access)) {
+                assertEquals("updated properties", Files.readString(fetched.content().getProperties().orElseThrow()));
+                assertEquals("first", Files.readString(fetched.content().getAssets().orElseThrow().resolve("index.html")));
+            }
+            try (var destination = io.preparePush(url, "main", access)) {
+                Path staged = Files.createDirectory(destination.fetchedStudy().content().getDirectory().resolve("export"));
+                Files.createDirectory(staged.resolve("assets"));
+                assertTrue(io.push(destination, url, access, staged, false, true, null).changed());
+            }
+            try (var fetched = io.stage(url, "main", access)) {
+                assertTrue(fetched.content().getAssets().isEmpty());
+                assertEquals("updated properties", Files.readString(fetched.content().getProperties().orElseThrow()));
+            }
+            noStaging();
+        }
+    }
+
+    @Test
+    public void rejectsTagAndConcurrentRemoteChangeWithoutForcePush() throws Exception {
+        git.tag().setName("release").setAnnotated(false).call();
+        try (var ignored = configuration(); var access = anonymous()) {
+            assertThrows(FieldValidationException.class, () -> io.preparePush(url, "release", access));
+            noStaging();
+            try (var destination = io.preparePush(url, "main", access)) {
+                Path staged = Files.createDirectory(destination.fetchedStudy().content().getDirectory().resolve("export"));
+                Files.writeString(staged.resolve("study.jas"), "new properties");
+                Files.writeString(repository.resolve("README"), "concurrent update");
+                String remote = commit();
+                var error = assertThrows(exceptions.common.ConflictException.class,
+                        () -> io.push(destination, url, access, staged, true, false, null));
+                assertTrue(error.getMessage().contains("Retry"));
+                assertEquals(remote, git.getRepository().resolve("refs/heads/main").name());
+            }
+            noStaging();
+        }
+    }
+
+    @Test
+    public void pushAuthenticationFailureIsSanitizedAndTemporaryFilesAreRemoved() throws Exception {
+        try (var ignored = configuration(); var access = anonymous()) {
+            var failing = new GitStudySourceIO() {
+                @Override
+                protected Transport openTransport(Repository local, String value) throws IOException {
+                    throw new org.eclipse.jgit.errors.TransportException("secret-marker authentication failed");
+                }
+            };
+            try (var destination = io.preparePush(url, "main", access)) {
+                Path staged = Files.createDirectory(destination.fetchedStudy().content().getDirectory().resolve("export"));
+                Files.writeString(staged.resolve("study.jas"), "new properties");
+                var error = assertThrows(BadRequestException.class,
+                        () -> failing.push(destination, url, access, staged, true, false, null));
+                assertFalse(error.getMessage().contains("secret-marker"));
+            }
+            assertThrows(BadRequestException.class, () -> failing.preparePush(url, "main", access));
+            noStaging();
+        }
     }
 
     @Test
@@ -94,7 +218,7 @@ public class GitStudySourceIOTest {
             for (String ref : new String[]{"", "main", "refs/heads/main", "feature", "release", "refs/tags/release"}) {
                 try (var fetched = io.stage(url, ref, access)) {
                     boolean old = ref.equals("feature") || ref.contains("release");
-                    assertEquals(old ? first : second, fetched.commit());
+                    assertEquals(old ? first : second, fetched.commitId());
                     assertEquals(old ? "first" : "second", Files.readString(fetched.content().getAssets().orElseThrow().resolve("index.html")));
                     assertEquals("properties", Files.readString(fetched.content().getProperties().orElseThrow()));
                     assertFalse(Files.exists(fetched.content().getAssets().orElseThrow().resolve(".git")));

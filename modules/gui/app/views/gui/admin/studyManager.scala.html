@@ -10,6 +10,7 @@
             <tr>
                 <th class="no-info-icon" data-bs-tooltip="A deactivated study cannot be started by participants (aka workers) anymore, but an already started study can be continued. The member users can still open and edit the study and export its result data.">Active<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th>ID<span class="ordering-icon"></span></th>
+                <th class="no-info-icon" data-bs-tooltip="Only the first 8 characters of the UUID are displayed. Hover over a UUID to see its full value.">UUID<span class="info-icon"></span><span class="ordering-icon"></span></th>
                 <th>Title<span class="ordering-icon"></span></th>
                 <th>Owner<span class="ordering-icon"></span></th>
                 <th class="no-info-icon" data-bs-tooltip="All users who are member of this study">Members<span class="info-icon"></span><span class="ordering-icon"></span></th>
@@ -24,7 +25,10 @@
 
     <div class="modal fade" id="changeOwnerModal" tabindex="-1" aria-labelledby="changeOwnerTitle">
         <div class="modal-dialog"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title" id="changeOwnerTitle">Reassign study ownership</h5></div>
+            <div class="modal-header align-items-start">
+                <h5 class="modal-title text-truncate flex-grow-1" id="changeOwnerTitle">Reassign study ownership</h5>
+                <button class="btn btn-close2 btn-xs btn-nav" type="button" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
                 <p id="changeOwnerCurrent"></p>
                 <div id="changeOwnerForm">
@@ -34,8 +38,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-admin" id="confirmChangeOwner">Reassign ownership</button>
+                <button type="button" class="btn btn-admin" id="confirmChangeOwner">Reassign</button>
             </div>
         </div></div>
     </div>
@@ -44,12 +47,12 @@
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
+    import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
     import * as WaitingModal from "@routes.Assets.versioned("lib/jatos-gui/javascripts/waitingModal.js")";
 
     const changeOwnerAlerts = new Alerts.Named("change-study-owner");
-    $("#changeOwnerModal").on("hide.bs.modal", changeOwnerAlerts.hideAll);
-
     let dataTable;
+
     $(document).ready(function() {
         dataTable = $('#studyManagerTable').DataTable({
             "ajax": {
@@ -62,7 +65,7 @@
             "dom": `<'d-flex flex-row flex-wrap justify-content-between align-items-center form-admin mt-1 mb-3'<'mb-2'f><'mb-2'l>>
                     rt
                     <'d-flex flex-row flex-wrap justify-content-between align-items-center mt-3'<'mb-2'i><'mb-2'p>>`,
-            "order": [[ 7, "dsc" ]],
+            "order": [[ 8, "dsc" ]],
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "pageLength": 10,
             "pagingType": "full_numbers",
@@ -91,6 +94,23 @@
                     "data": "id"
                 },
                 {
+                    "data": "uuid",
+                    "render": (data, type) => {
+                        if (type !== 'display') return data;
+                        const uuid = $('<span class="d-inline-flex align-items-center gap-2 text-nowrap">');
+                        uuid.append($('<span class="no-info-icon">')
+                            .attr('data-bs-tooltip', data)
+                            .text(data.split('-')[0]));
+                        uuid.append($('<button type="button" class="btn btn-sm p-0 btn-clipboard uuid-copy no-info-icon">')
+                            .attr({
+                                'aria-label': 'Copy full UUID',
+                                'data-bs-tooltip': 'Copy full UUID',
+                                'data-clipboard-text': data
+                            }));
+                        return uuid.prop('outerHTML');
+                    }
+                },
+                {
                     "data": "title",
                     "render": (data) => Helpers.trimTextWithThreeDots(data, 50)
                 },
@@ -98,7 +118,7 @@
                     "data": "ownerUsername",
                     "render": (data, type, study) => {
                         if (type !== 'display') return data;
-                        const button = $('<button type="button" class="change-owner btn btn-admin btn-sm">Reassign</button>');
+                        const button = $('<button type="button" class="change-owner btn btn-admin btn-sm"><i class="bi-person-gear"></i></button>');
                         const wrapper = $('<span class="d-inline-block no-info-icon">').append(button);
                         if (study.members.length <= 1) {
                             disableButton(button);
@@ -185,7 +205,7 @@
     $('#studyManagerTable').on('click', '.change-owner:not(:disabled)', function() {
         const ownerStudy = dataTable.row($(this).closest('tr')).data();
         $('#changeOwnerModal').data('studyId', ownerStudy.id);
-        Helpers.generateModalSubtitles("#changeOwnerModal", {"ID": ownerStudy.id, "Title": ownerStudy.title});
+        Helpers.generateModalSubtitles("#changeOwnerModal", {"ID": ownerStudy.id, "UUID": ownerStudy.uuid, "Title": ownerStudy.title}, true);
 
         $('#changeOwnerCurrent').text(`Current owner: ${ownerStudy.ownerUsername}`);
         changeOwnerAlerts.hideAll();
@@ -284,6 +304,10 @@
             error: (err) => err.responseText ? Alerts.error(err.responseText, 0, true) : Alerts.error("Couldn't result file size", 0, true)
         });
     });
+
+    $("#studyManagerTable").on("click", ".uuid-copy", CopyToClipboard.onClick);
+
+    $("#changeOwnerModal").on("hide.bs.modal", changeOwnerAlerts.hideAll);
 
 </script>
 }

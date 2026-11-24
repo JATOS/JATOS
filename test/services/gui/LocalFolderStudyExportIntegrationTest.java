@@ -1,7 +1,7 @@
 package services.gui;
 
 import exceptions.common.BadRequestException;
-import exceptions.common.HttpException;
+import exceptions.common.ConflictException;
 import general.common.Common;
 import http.common.Http.Context;
 import models.common.Study;
@@ -252,7 +252,7 @@ public class LocalFolderStudyExportIntegrationTest extends JatosTest {
             assertThrows(BadRequestException.class, () -> sync.exportToFolder(studyId, selection(true, true)));
         }
         try (var ignored = application.injector().instanceOf(StudySourceSyncIO.class).lock(studyId)) {
-            assertEquals(409, assertThrows(HttpException.class, () -> sync.exportToFolder(studyId, selection(true, true))).getHttpStatus());
+            assertEquals(409, assertThrows(ConflictException.class, () -> sync.exportToFolder(studyId, selection(true, true))).getHttpStatus());
         }
         noTemporaryFiles();
     }

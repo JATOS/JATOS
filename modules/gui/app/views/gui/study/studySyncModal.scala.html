@@ -43,24 +43,50 @@
     import * as CopyToClipboard from "@routes.Assets.versioned("lib/jatos-gui/javascripts/copyToClipboard.js")";
 
     const alerts = new Alerts.Named("study-sync");
-    let exporting;
-    let syncUrl;
+    let operation;
     let previewData;
     const form = $("#studySyncForm");
     const confirm = $("#studySyncConfirm");
 
+    const operations = Object.freeze({
+        gitPull: {
+            syncUrl: window.routes.Api.studyGitPull,
+            git: true, exportOrPush: false,
+            title: "Pull from Git", button: "Pull",
+            explanation: "Select what to replace in JATOS. Pull fetches the configured branch or tag again; it may have changed since this preview."
+        },
+        gitPush: {
+            syncUrl: window.routes.Api.studyGitPush,
+            git: true, exportOrPush: true,
+            title: "Push to Git", button: "Push",
+            explanation: "Select what to replace in the Git branch. Unrelated repository files are preserved. Push fetches the branch again and creates a commit only if content changed. Concurrent branch changes are rejected; no force push or merge is performed."
+        },
+        localFolderImport: {
+            syncUrl: window.routes.Api.studyFolderImport,
+            git: false, exportOrPush: false,
+            title: "Import from local folder", button: "Import",
+            explanation: "Select what to replace in JATOS."
+        },
+        localFolderExport: {
+            syncUrl: window.routes.Api.studyFolderExport,
+            git: false, exportOrPush: true,
+            title: "Export to local folder", button: "Export",
+            explanation: "Select what to replace in the local folder. Unrelated root files, including .git, are preserved."
+        }
+    });
+
     $("#studySyncModal").on("show.bs.modal", function(event) {
         previewData = null;
-        exporting = $(event.relatedTarget).data("operation") === "EXPORT";
-        syncUrl = window.study.sourceType === "GIT"
-            ? window.routes.Api.studyGitPull(window.study.id)
-            : exporting
-                ? window.routes.Api.studyFolderExport(window.study.id)
-                : window.routes.Api.studyFolderImport(window.study.id);
+        const requestedOperation = $(event.relatedTarget).data("operation");
+        const exportOrPush = requestedOperation === "EXPORT" || requestedOperation === "PUSH";
+        const operationName = window.study.sourceType === "GIT"
+            ? (exportOrPush ? "gitPush" : "gitPull")
+            : (exportOrPush ? "localFolderExport" : "localFolderImport");
+        operation = operations[operationName];
         prepareModal();
         $.ajax({
             beforeSend: WaitingModal.show,
-            url: syncUrl,
+            url: operation.syncUrl(window.study.id),
             success: function(response) {
                 previewData = response.data;
                 generateModalSubtitles(previewData);
@@ -92,62 +118,44 @@
             "Source": window.study.sourceType
         }, true);
 
-        const title = window.study.sourceType === "GIT"
-            ? "Pull from Git"
-            : exporting
-                ? "Export to local folder"
-                : "Import from local folder";
-        $("#studySyncModal .modal-title").text(title);
-        const confirmButtonText = window.study.sourceType === "GIT"
-            ? "Pull"
-            : exporting
-                ? "Export"
-                : "Import";
-        confirm.text(confirmButtonText);
-        const explanation = exporting
-            ? "Select what to replace in the local folder. Unrelated root files, including .git, are preserved."
-            : window.study.sourceType === "GIT"
-                ? "Select what to replace in JATOS. Pull fetches the configured branch or tag again; it may have changed since this preview."
-                : "Select what to replace in JATOS.";
-        $("#studySyncExplanation").text(explanation);
-        $("#studySyncPropertiesAbsent").text(exporting ? "No properties available." : "No .jas file; existing properties are kept.");
-        $("#studySyncAssetsAbsent").text(exporting ? "The study has no assets directory; destination assets are kept." : "No assets/ directory; existing assets are kept.");
+        $("#studySyncModal .modal-title").text(operation.title);
+        confirm.text(operation.button);
+        $("#studySyncExplanation").text(operation.explanation);
+        $("#studySyncPropertiesAbsent").text(operation.exportOrPush ? "No properties available." : "No .jas file; existing properties are kept.");
+        $("#studySyncAssetsAbsent").text(operation.exportOrPush ? "The study has no assets directory; destination assets are kept." : "No assets/ directory; existing assets are kept.");
         $("#studySyncPropertiesAbsent, #studySyncAssetsAbsent").addClass("d-none");
     }
 
     function generateModalSubtitles(previewData) {
-        const details = window.study.sourceType === "GIT" ? {
-            "Study": window.study.title,
-            "Repository": previewData.gitUrl,
-            "Branch / tag": previewData.gitRef || "Default branch",
-            "Commit": previewData.commit,
-            "Credentials": {
-                study: "Using study credentials",
-                owner: "Using owner credentials",
-                global: "Using server credentials",
-                anonymous: "Anonymous access"
-            }[previewData.credentialSource]
-        } : {
-            "Study": window.study.title,
-            "Local folder": previewData.localFolderPath
-        };
-        if (window.study.sourceType === "GIT") {
+        const details = {"Study": window.study.title};
+        if (operation.git) {
             details.Repository = $("<a>").attr({
                 href: previewData.gitUrl,
                 target: "_blank",
                 rel: "noopener noreferrer"
             }).text(previewData.gitUrl.replace(/^https:\/\//, ""));
             const commit = $("<span>").addClass("d-inline-flex align-items-center gap-2");
-            commit.append($("<span>").addClass("font-monospace no-info-icon")
-                .attr("data-bs-tooltip", previewData.commit).text(previewData.commit.slice(0, 8)));
+            commit.append($("<span>")
+                .addClass("font-monospace no-info-icon")
+                .attr("data-bs-tooltip", previewData.commitId)
+                .text(previewData.commitId.slice(0, 8)));
             commit.append($("<button>").attr({
                 type: "button",
                 "aria-label": "Copy full commit ID",
                 "data-bs-tooltip": "Copy full commit ID",
-                "data-clipboard-text": previewData.commit
+                "data-clipboard-text": previewData.commitId
             }).addClass("btn btn-sm p-0 btn-clipboard no-info-icon")
                 .on("click", CopyToClipboard.onClick));
+            details[operation.exportOrPush ? "Branch" : "Branch / tag"] = previewData.gitRef || "Default branch";
             details.Commit = commit;
+            details.Credentials = {
+                study: "Using study credentials",
+                owner: "Using owner credentials",
+                global: "Using server credentials",
+                anonymous: "Anonymous access"
+            }[previewData.credentialSource];
+        } else {
+            details["Local folder"] = previewData.localFolderPath;
         }
         Helpers.generateModalSubtitles("#studySyncModal", details, true);
         Helpers.activateTooltips("#studySyncModal .modal-subtitle");
@@ -168,13 +176,13 @@
         $("#studySyncModal button").prop("disabled", true);
         $.ajax({
             beforeSend: WaitingModal.show,
-            url: syncUrl,
+            url: operation.syncUrl(window.study.id),
             type: "POST",
             contentType: "application/json",
             headers: {"Csrf-Token": "@helper.CSRF.getToken.value"},
             data: JSON.stringify(data),
             success: function(response) {
-                if (exporting) {
+                if (operation.exportOrPush) {
                     $("#studySyncModal button").prop("disabled", false);
                     $("#studySyncModal").modal("hide");
                     Alerts.success(response.message, 5000, true);

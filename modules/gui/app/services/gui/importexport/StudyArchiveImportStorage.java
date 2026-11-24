@@ -54,8 +54,9 @@ public class StudyArchiveImportStorage {
         } catch (IOException e) {
             throw new JatosException("Could not create temporary study import storage.", e, IO_ERROR);
         }
+        //noinspection try
         try (ImportClaim ignored1 = claim(directory);
-             FileChannel channel = openState(directory); FileLock ignored = channel.lock()) {
+             FileChannel channel = openState(directory); FileLock ignored2 = channel.lock()) {
             T result = action.apply(directory.resolve("content"));
             //noinspection ResultOfMethodCallIgnored
             channel.write(ByteBuffer.wrap(new byte[]{1}));
@@ -82,6 +83,7 @@ public class StudyArchiveImportStorage {
      */
     public <T> T use(Path directory, Function<Path, T> action) {
         if (directory == null) throw new ImportExportException(EXPIRED_ERROR_MSG);
+        //noinspection try
         try (ImportClaim ignored = claim(directory);
              FileChannel channel = openState(directory); FileLock lock = tryLock(channel)) {
             if (lock == null)

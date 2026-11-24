@@ -3,7 +3,7 @@
 
 @* Edit study source Modal - does not synchronize a study *@
 <div class="modal fade" id="studySourceModal" tabindex="-1" data-bs-config='{"backdrop":"static", "focus":true, "keyboard":false}'>
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header align-items-start">
                 <h5 class="modal-title text-truncate flex-grow-1">Study Source</h5>
@@ -96,7 +96,7 @@
 
 <script @{helper.CSPNonce.attr} type="module">
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
-
+    import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as FormValidation from "@routes.Assets.versioned("lib/jatos-gui/javascripts/formValidation.js")";
 
     const alerts = new Alerts.Named("study-source");
@@ -114,6 +114,7 @@
         alerts.hideAll();
         form.find("input, select").prop("disabled", true);
         save.prop("disabled", true);
+        Helpers.generateModalSubtitles("#studySourceModal", {"Study": window.study.title});
         $.ajax({
             url: window.routes.Api.getStudySource(window.study.id),
             success: (response) => fillStudySourceForm(response.data),
@@ -202,6 +203,9 @@
             data: JSON.stringify(jsonData),
             success: function(response) {
                 window.study.sourceType = response.data.type;
+                window.study.gitUrl = response.data.gitUrl;
+                window.study.localFolderPath = response.data.localFolderPath;
+                $(document).trigger('study-source-changed');
                 $("#studySyncButton").toggleClass("d-none", window.study.sourceType === "NONE");
                 $(".study-folder-sync").toggleClass("d-none", window.study.sourceType !== "LOCAL_FOLDER");
                 $(".study-git-sync").toggleClass("d-none", window.study.sourceType !== "GIT");
