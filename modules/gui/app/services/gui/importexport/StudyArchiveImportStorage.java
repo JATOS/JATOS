@@ -46,6 +46,7 @@ public class StudyArchiveImportStorage {
      * Prepares temporary storage and calls the supplied action to extract and validate the archive.
      * Successful uploads expire after 24 hours. Failed preparation removes the temporary files.
      */
+    @SuppressWarnings("try")
     public <T> T prepare(Function<Path, T> action) {
         Path directory;
         try {
@@ -54,7 +55,6 @@ public class StudyArchiveImportStorage {
         } catch (IOException e) {
             throw new JatosException("Could not create temporary study import storage.", e, IO_ERROR);
         }
-        //noinspection try
         try (ImportClaim ignored1 = claim(directory);
              FileChannel channel = openState(directory); FileLock ignored2 = channel.lock()) {
             T result = action.apply(directory.resolve("content"));
@@ -81,9 +81,9 @@ public class StudyArchiveImportStorage {
      * Runs the supplied action on a prepared upload while holding its lock.
      * Rejects unfinished or expired uploads. Does not delete the upload or extend its lifetime.
      */
+    @SuppressWarnings("try")
     public <T> T use(Path directory, Function<Path, T> action) {
         if (directory == null) throw new ImportExportException(EXPIRED_ERROR_MSG);
-        //noinspection try
         try (ImportClaim ignored = claim(directory);
              FileChannel channel = openState(directory); FileLock lock = tryLock(channel)) {
             if (lock == null)

@@ -117,8 +117,8 @@ public class StudySourceSync {
     /**
      * Imports selected content from the local folder.
      */
+    @SuppressWarnings("try")
     public SyncResult importFromFolder(long studyId, StudySourceSyncProperties props) {
-        //noinspection try
         try (var ignored = studySourceSyncIO.lock(studyId)) {
             return transactions.withNewTransaction(em -> {
                 Study study = getAuthorizedStudy(studyId);
@@ -147,8 +147,8 @@ public class StudySourceSync {
     /**
      * Exports selected content to the local folder.
      */
+    @SuppressWarnings("try")
     public SyncResult exportToFolder(long studyId, StudySourceSyncProperties props) {
-        //noinspection try
         try (var ignored = studySourceSyncIO.lock(studyId)) {
             return transactions.withNewTransaction(em -> {
                 Study study = getAuthorizedStudy(studyId);
@@ -186,8 +186,8 @@ public class StudySourceSync {
     /**
      * Pulls selected content from Git into the study.
      */
+    @SuppressWarnings("try")
     public SyncResult pullFromGit(long studyId, StudySourceSyncProperties props) {
-        //noinspection try
         try (var ignored = studySourceSyncIO.lock(studyId)) {
             return transactions.withNewTransaction(em -> {
                 Study study = getAuthorizedStudy(studyId);
@@ -226,8 +226,8 @@ public class StudySourceSync {
     /**
      * Pushes selected content under the same study lock and member permissions as other synchronization.
      */
+    @SuppressWarnings("try")
     public GitPushResult pushToGit(long studyId, StudySourceSyncProperties props) {
-        //noinspection try
         try (var ignored = studySourceSyncIO.lock(studyId)) {
             return transactions.withNewTransaction(em -> {
                 Study study = getAuthorizedStudy(studyId);
