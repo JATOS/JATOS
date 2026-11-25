@@ -17,6 +17,7 @@ function setup(t, reloadable = false) {
     });
     const jatos = {componentProperties: {reloadable}};
     const ui = createBrowserUi(jatos);
+    Object.assign(jatos, ui.api);
     const warns = () => !dom.window.dispatchEvent(new dom.window.Event("beforeunload", {cancelable: true}));
     return {jatos, ui, window: dom.window, document: dom.window.document, warns};
 }

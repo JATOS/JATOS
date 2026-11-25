@@ -3,7 +3,8 @@
 import {createDeferred, rejectedPromise} from "./jatos-promise.js";
 import {callMany, callWithArgs} from "./utils/callbacks.js";
 
-export function installResultDataApi(jatos, dependencies) {
+export function createResultDataApi(jatos, dependencies) {
+    const api = {};
     const {
         studyRunState,
         getURL,
@@ -23,7 +24,7 @@ export function installResultDataApi(jatos, dependencies) {
      * @param {Function} [onError] - Called in case of error
      * @returns {JatosPromise}
      */
-    jatos.submitResultData = function (resultData, onSuccess, onError) {
+    api.submitResultData = function (resultData, onSuccess, onError) {
         return submitOrAppendResultData(resultData, false, onSuccess, onError);
     };
 
@@ -38,7 +39,7 @@ export function installResultDataApi(jatos, dependencies) {
      * @param {Function} [onError] - Called in case of error
      * @returns {JatosPromise}
      */
-    jatos.appendResultData = function (resultData, onSuccess, onError) {
+    api.appendResultData = function (resultData, onSuccess, onError) {
         return submitOrAppendResultData(resultData, true, onSuccess, onError);
     };
 
@@ -84,7 +85,7 @@ export function installResultDataApi(jatos, dependencies) {
      * @param {Function} [onError] - Called in case of error
      * @returns {JatosPromise}
      */
-    jatos.uploadResultFile = function (obj, filename, onSuccess, onError) {
+    api.uploadResultFile = function (obj, filename, onSuccess, onError) {
         if (studyRunState.invalid) {
             const errorMsg = "Can't upload file. This study run is invalid.";
             callMany(errorMsg, onError, console.warn);
@@ -144,7 +145,7 @@ export function installResultDataApi(jatos, dependencies) {
      * @param {Function} [onError] - Error callback when a component position is supplied
      * @returns {JatosPromise}
      */
-    jatos.downloadResultFile = function (filenameOrComponentPos, filenameOrOnSuccess,
+    api.downloadResultFile = function (filenameOrComponentPos, filenameOrOnSuccess,
                                          onSuccessOrOnError, onError) {
         if (!isInitialized()) {
             const errorMsg = "jatos.js not yet initialized";
@@ -230,4 +231,6 @@ export function installResultDataApi(jatos, dependencies) {
 
         return deferred.promise();
     };
+    return api;
+
 }

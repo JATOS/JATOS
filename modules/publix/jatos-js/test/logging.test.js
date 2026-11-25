@@ -1,16 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {installLoggingApi} from "../src/logging.js";
+import {onError, logError, log, catchAndLogErrors} from "../src/logging.js";
 
 function setup() {
     const requests = [];
     const state = {initialized: false};
     const jatos = {httpTimeout: 1000, httpRetry: 2, httpRetryWait: 300};
-    installLoggingApi(jatos, {
+    const dependencies = {
         getURL: path => `https://example.test/component/${path}`,
         isInitialized: () => state.initialized,
         sendToHttpLoop: request => requests.push(request)
-    });
+    };
+    jatos.onError = onError;
+    jatos.logError = logError;
+    jatos.log = logMsg => log(jatos, dependencies, logMsg);
+    jatos.catchAndLogErrors = () => catchAndLogErrors(jatos);
     return {jatos, state, requests};
 }
 

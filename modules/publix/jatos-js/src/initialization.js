@@ -4,6 +4,7 @@ import {createDeferred} from "./jatos-promise.js";
 
 /** Owns startup, readiness callbacks, and the study-run heartbeat worker. */
 export function createInitialization(jatos, dependencies) {
+    const api = {};
     const {requestHttp, getURL, showIdOverlay, httpLoop, channels} = dependencies;
 
     let initialized = false;
@@ -155,7 +156,7 @@ export function createInitialization(jatos, dependencies) {
      * @param {function} callback - callback function
      * @param {function} [onError] - Called if startup fails, including batch opening timeout
      */
-    jatos.onLoad = function (callback, onError) {
+    api.onLoad = function (callback, onError) {
         if (initializationError !== undefined) {
             if (typeof onError === "function") onError(initializationError);
             return;
@@ -172,7 +173,7 @@ export function createInitialization(jatos, dependencies) {
     /**
      * Lowercase alias retained for compatibility with the conventional `onload` spelling.
      */
-    jatos.onload = jatos.onLoad;
+    api.onload = api.onLoad;
 
     /**
      * Calls onLoadCallback if it already exists and jatos.js is initialised.
@@ -192,13 +193,14 @@ export function createInitialization(jatos, dependencies) {
      *
      * @param {number} heartbeatPeriod - Period in milliseconds
      */
-    jatos.setHeartbeatPeriod = function (heartbeatPeriod) {
+    api.setHeartbeatPeriod = function (heartbeatPeriod) {
         if (typeof heartbeatPeriod == 'number' && heartbeatWorker) {
             heartbeatWorker.postMessage([jatos.studyResultUuid, heartbeatPeriod]);
         }
     };
 
     return {
+        api,
         start: initJatos,
         isInitialized: () => initialized,
         terminateHeartbeat: () => heartbeatWorker.terminate()

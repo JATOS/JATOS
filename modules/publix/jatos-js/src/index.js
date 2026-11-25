@@ -5,17 +5,19 @@
  */
 
 import {requestHttp} from "./http-transport.js";
-import {installLoggingApi} from "./logging.js";
-import {installResultDataApi} from "./result-data.js";
+import {onError, logError, log, catchAndLogErrors} from "./logging.js";
+import {createResultDataApi} from "./result-data.js";
 import {createHttpLoop} from "./http-loop.js";
 import {createChannels} from "./channels.js";
 import {createBrowserUi} from "./browser-ui.js";
 import {createInitialization} from "./initialization.js";
 import {
     createStudyRunState,
-    installStudyRunApi,
+    createStudyRunApi,
     isInvalidComponentPosition
 } from "./study-run.js";
+import {addJatosIds} from "./utils/add-jatos-ids.js";
+import {convertToCSV} from "./utils/convert-to-csv.js";
 
 jatos = {};
 window.jatos = jatos; // Make jatos available in the window object for backward compatibility
@@ -91,6 +93,11 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
 
     const studyRunState = createStudyRunState();
     const browserUi = createBrowserUi(jatos);
+    jatos.showBeforeUnloadWarning = browserUi.api.showBeforeUnloadWarning;
+    jatos.showOverlay = browserUi.api.showOverlay;
+    jatos.removeOverlay = browserUi.api.removeOverlay;
+    jatos.removeOverlays = browserUi.api.removeOverlays;
+    jatos.addAbortButton = browserUi.api.addAbortButton;
 
     const httpLoop = createHttpLoop({
         isInitialized: () => initialization.isInitialized()
@@ -102,6 +109,25 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         getURL,
         showIdOverlay: browserUi.showIdOverlay,
     });
+    jatos.onConnected = channels.api.onConnected;
+    jatos.onDisconnected = channels.api.onDisconnected;
+    jatos.isConnected = channels.api.isConnected;
+    jatos.batchSession = channels.api.batchSession;
+    jatos.onBatchSession = channels.api.onBatchSession;
+    jatos.joinGroup = channels.api.joinGroup;
+    jatos.getGroupState = channels.api.getGroupState;
+    jatos.isGroupFixed = channels.api.isGroupFixed;
+    jatos.groupSession = channels.api.groupSession;
+    jatos.setGroupFixed = channels.api.setGroupFixed;
+    jatos.hasJoinedGroup = channels.api.hasJoinedGroup;
+    jatos.hasOpenGroupChannel = channels.api.hasOpenGroupChannel;
+    jatos.isMaxActiveMemberReached = channels.api.isMaxActiveMemberReached;
+    jatos.isMaxActiveMemberOpen = channels.api.isMaxActiveMemberOpen;
+    jatos.isGroupOpen = channels.api.isGroupOpen;
+    jatos.sendGroupMsg = channels.api.sendGroupMsg;
+    jatos.sendGroupMsgTo = channels.api.sendGroupMsgTo;
+    jatos.reassignGroup = channels.api.reassignGroup;
+    jatos.leaveGroup = channels.api.leaveGroup;
 
     const initialization = createInitialization(jatos, {
         requestHttp,
@@ -110,19 +136,26 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         httpLoop,
         channels
     });
+    jatos.onLoad = initialization.api.onLoad;
+    jatos.onload = initialization.api.onload;
+    jatos.setHeartbeatPeriod = initialization.api.setHeartbeatPeriod;
 
     jatos.onLoad(browserUi.onLoad);
     initialization.start();
 
-    installResultDataApi(jatos, {
+    const resultData = createResultDataApi(jatos, {
         studyRunState,
         getURL,
         isInitialized: () => initialization.isInitialized(),
         isInvalidComponentPosition: pos => isInvalidComponentPosition(jatos.componentList, pos),
         sendToHttpLoop: httpLoop.send
     });
+    jatos.submitResultData = resultData.submitResultData;
+    jatos.appendResultData = resultData.appendResultData;
+    jatos.uploadResultFile = resultData.uploadResultFile;
+    jatos.downloadResultFile = resultData.downloadResultFile;
 
-    installStudyRunApi(jatos, {
+    const studyRun = createStudyRunApi(jatos, {
         studyRunState,
         removeBeforeUnloadWarning: browserUi.removeBeforeUnloadWarning,
         getURL,
@@ -135,6 +168,20 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
             channels.stopClosedChecks();
         }
     });
+    jatos.setStudySessionData = studyRun.setStudySessionData;
+    jatos.startComponent = studyRun.startComponent;
+    jatos.startComponentByPos = studyRun.startComponentByPos;
+    jatos.startComponentByTitle = studyRun.startComponentByTitle;
+    jatos.startNextComponent = studyRun.startNextComponent;
+    jatos.startLastComponent = studyRun.startLastComponent;
+    jatos.abortStudyWithoutRedirect = studyRun.abortStudyWithoutRedirect;
+    jatos.abortStudyAjax = studyRun.abortStudyAjax;
+    jatos.abortStudyAndRedirect = studyRun.abortStudyAndRedirect;
+    jatos.abortStudy = studyRun.abortStudy;
+    jatos.endStudyWithoutRedirect = studyRun.endStudyWithoutRedirect;
+    jatos.endStudyAjax = studyRun.endStudyAjax;
+    jatos.endStudyAndRedirect = studyRun.endStudyAndRedirect;
+    jatos.endStudy = studyRun.endStudy;
 
     /**
      * Returns the URL with protocol, host and port to the given path
@@ -147,36 +194,17 @@ window.jatos = jatos; // Make jatos available in the window object for backward 
         return httpLoop.getCounter();
     };
 
-    installLoggingApi(jatos, {
+    const loggingDependencies = {
         getURL,
         isInitialized: () => initialization.isInitialized(),
         sendToHttpLoop: httpLoop.send
-    });
-
-    /**
-     * Convenience function that adds all JATOS IDs (study ID, study title,
-     * component ID, component position, component title, worker ID,
-     * study result ID, component result ID, group result ID, group member ID)
-     * to the given object.
-     *
-     * @param {Object} [obj={}] - Object to which the IDs will be added
-     * @returns {Object} The same object passed in with IDs added
-     */
-    jatos.addJatosIds = function (obj = {}) {
-        obj.studyCode = jatos.studyCode;
-        obj.studyId = jatos.studyId;
-        obj.studyTitle = jatos.studyProperties.title;
-        obj.batchId = jatos.batchId;
-        obj.batchTitle = jatos.batchProperties.title;
-        obj.componentId = jatos.componentId;
-        obj.componentPos = jatos.componentPos;
-        obj.componentTitle = jatos.componentProperties.title;
-        obj.workerId = jatos.workerId;
-        obj.studyResultId = jatos.studyResultId;
-        obj.componentResultId = jatos.componentResultId;
-        obj.groupResultId = jatos.groupResultId;
-        obj.groupMemberId = jatos.groupMemberId;
-        return obj;
     };
+    jatos.onError = onError;
+    jatos.logError = logError;
+    jatos.log = logMsg => log(jatos, loggingDependencies, logMsg);
+    jatos.catchAndLogErrors = () => catchAndLogErrors(jatos);
+
+    jatos.convertToCSV = convertToCSV;
+    jatos.addJatosIds = obj => addJatosIds(jatos, obj);
 
 })();

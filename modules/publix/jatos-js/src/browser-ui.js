@@ -1,5 +1,6 @@
-/** Installs browser UI helpers and owns the unload-warning listener. */
+/** Creates browser UI helpers and owns the unload-warning listener. */
 export function createBrowserUi(jatos) {
+    const api = {};
     /**
      * Config of the overlay that is shown when the component ended, but
      * the httpLoop still has requests to send. See function jatos.showOverlay
@@ -43,7 +44,7 @@ export function createBrowserUi(jatos) {
      * @param {boolean} show - If true the warning will be shown - if false a
      * 		previously added warning will be canceled
      */
-    jatos.showBeforeUnloadWarning = function (show) {
+    api.showBeforeUnloadWarning = function (show) {
         showBeforeUnloadWarning = show;
         if (show) {
             window.addEventListener("beforeunload", beforeUnloadWarning, { capture: true });
@@ -70,7 +71,7 @@ export function createBrowserUi(jatos) {
      * @param {number} [config.timeout] - If set the overlay will be removed after the given milliseconds
      * @returns {HTMLElement|undefined} The created or updated element, or undefined when hidden by configuration
      */
-    jatos.showOverlay = function (config) {
+    api.showOverlay = function (config) {
         if (config && typeof config.show == "boolean" && !config.show) return;
 
         // If an element with the given ID already exists just update the text and return
@@ -137,7 +138,7 @@ export function createBrowserUi(jatos) {
     };
 
     /** @deprecated Use `jatos.removeOverlays` instead. */
-    jatos.removeOverlay = () => jatos.removeOverlays();
+    api.removeOverlay = () => jatos.removeOverlays();
 
     /**
      * Removes all overlays that have the class 'jatosOverlay' and the data attribute
@@ -145,7 +146,7 @@ export function createBrowserUi(jatos) {
      * attribute 'keep' set to "true".
      * @param {boolean} [force=false] - If true, remove overlays even if they are marked to keep
      */
-    jatos.removeOverlays = function (force) {
+    api.removeOverlays = function (force) {
         document.querySelectorAll('.jatosOverlay').forEach(el => {
             if (el.dataset.keep === "false" || force) el.remove();
         });
@@ -187,7 +188,7 @@ export function createBrowserUi(jatos) {
      * @param {string} [config.style] - Additional CSS styles for the button element
      * @param {Function} [config.action] - Function to call instead of `jatos.abortStudy`
      */
-    jatos.addAbortButton = function (config) {
+    api.addAbortButton = function (config) {
         const buttonText = (config && typeof config.text == "string") ?
             config.text : "Cancel";
         const confirm = (config && typeof config.confirm == "boolean") ?
@@ -230,5 +231,5 @@ export function createBrowserUi(jatos) {
         document.body.appendChild(buttonDiv);
     };
 
-    return {onLoad, showIdOverlay, removeBeforeUnloadWarning};
+    return {api, onLoad, showIdOverlay, removeBeforeUnloadWarning};
 }

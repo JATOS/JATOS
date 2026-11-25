@@ -67,6 +67,7 @@ function setup(t, cookie = "other=value; JATOS_ID_old=studyResultUuid=other&comp
         httpLoop: {start: () => events.push("http-start"), terminate: () => events.push("terminate-http")},
         channels: {openBatchChannelWithRetry: () => { events.push("batch-open"); return batch.promise(); }}
     });
+    Object.assign(jatos, initialization.api);
     function start() {
         initialization.start();
         flush();

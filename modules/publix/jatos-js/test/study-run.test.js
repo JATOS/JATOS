@@ -3,7 +3,7 @@ import test from "node:test";
 
 import {
     createStudyRunState,
-    installStudyRunApi,
+    createStudyRunApi,
     isInvalidComponentPosition
 } from "../src/study-run.js";
 
@@ -101,7 +101,7 @@ function createNavigationApi(t, overrides = {}) {
         ...overrides
     };
 
-    installStudyRunApi(jatos, dependencies);
+    Object.assign(jatos, createStudyRunApi(jatos, dependencies));
 
     jatos.setStudySessionData = () => { sessionCalls++; };
 
@@ -116,14 +116,14 @@ test("study session persistence updates local data and queues the full session a
     const calls = [];
     const promise = {};
     const jatos = {studySessionData: {old: true}};
-    installStudyRunApi(jatos, {
+    Object.assign(jatos, createStudyRunApi(jatos, {
         getURL: path => `https://example.test/${path}`,
         httpLoop: {send: (...args) => {
             calls.push(args);
             assert.equal(jatos.studySessionData, data);
             return {promise: () => promise};
         }}
-    });
+    }));
     // Settings are read at call time, including changes made after installation.
     Object.assign(jatos, {httpTimeout: 1000, httpRetry: 2, httpRetryWait: 500});
     const data = {score: 7, nested: {completed: true}};
@@ -145,10 +145,10 @@ test("study session persistence updates local data and queues the full session a
 
 test("serialization failure still replaces local session data without sending", () => {
     const jatos = {studySessionData: {old: true}};
-    installStudyRunApi(jatos, {
+    Object.assign(jatos, createStudyRunApi(jatos, {
         getURL: () => assert.fail("must not resolve a URL"),
         httpLoop: {send: () => assert.fail("must not queue a request")}
-    });
+    }));
     const data = {};
     data.circular = data;
 
@@ -181,7 +181,7 @@ function createLifecycleApi(t) {
         showOverlay: () => events.push("overlay"),
         removeOverlays: () => events.push("remove-overlays")
     };
-    installStudyRunApi(jatos, {
+    Object.assign(jatos, createStudyRunApi(jatos, {
         getURL: path => `https://example.test/${path}`,
         studyRunState: state,
         isInitialized: () => state.initialized,
@@ -198,7 +198,7 @@ function createLifecycleApi(t) {
                 return deferred;
             }
         }
-    });
+    }));
     return {jatos, state, events, requests, timers, window, idle: () => idleCallback()};
 }
 

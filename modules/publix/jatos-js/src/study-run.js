@@ -15,7 +15,8 @@ export function createStudyRunState() {
     return {starting: false, ending: false, invalid: false};
 }
 
-export function installStudyRunApi(jatos, dependencies) {
+export function createStudyRunApi(jatos, dependencies) {
+    const api = {};
     const {
         studyRunState,
         removeBeforeUnloadWarning,
@@ -42,7 +43,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {Function} [onError] - Called if the request fails
      * @returns {JatosPromise}
      */
-    jatos.setStudySessionData = function (studySessionData, onSuccess, onError) {
+    api.setStudySessionData = function (studySessionData, onSuccess, onError) {
         jatos.studySessionData = studySessionData;
         const studySessionDataStr = JSON.stringify(studySessionData);
         const request = {
@@ -68,7 +69,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
      * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startComponent = function (componentIdOrUuid, resultData, messageOrOnError, onError) {
+    api.startComponent = function (componentIdOrUuid, resultData, messageOrOnError, onError) {
         if (!isInitialized()) {
             console.error("jatos.js not yet initialized");
             return;
@@ -140,7 +141,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
      * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startComponentByPos = function (componentPos, resultData, messageOrOnError, onError) {
+    api.startComponentByPos = function (componentPos, resultData, messageOrOnError, onError) {
         if (isInvalidComponentPosition(jatos.componentList, componentPos)) {
             onError = parseLookupErrorCallback(messageOrOnError, onError);
             callMany("Component position does not exist", onError, console.error);
@@ -162,7 +163,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
      * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startComponentByTitle = function (title, resultData, messageOrOnError, onError) {
+    api.startComponentByTitle = function (title, resultData, messageOrOnError, onError) {
         const component = jatos.componentList.find(component => component.title === title);
         if (!component) {
             onError = parseLookupErrorCallback(messageOrOnError, onError);
@@ -185,7 +186,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
      * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startNextComponent = function (resultData, messageOrOnError, onError) {
+    api.startNextComponent = function (resultData, messageOrOnError, onError) {
         const {message} = normalizeStartComponentArguments(messageOrOnError, onError);
 
         // If this is the last component, end study
@@ -220,7 +221,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string|Function} [messageOrOnError] - Log message (max 255 chars) or error callback
      * @param {Function} [onError] - Error callback when a message is supplied
      */
-    jatos.startLastComponent = function (resultData, messageOrOnError, onError) {
+    api.startLastComponent = function (resultData, messageOrOnError, onError) {
         const lastActiveComponent = jatos.componentList.slice().reverse().find(c => c.active);
         jatos.startComponent(lastActiveComponent.uuid, resultData, messageOrOnError, onError);
     };
@@ -234,7 +235,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {Function} [onError] - Called in case of error
      * @returns {JatosPromise}
      */
-    jatos.abortStudyWithoutRedirect = function (message, onSuccess, onError) {
+    api.abortStudyWithoutRedirect = function (message, onSuccess, onError) {
         if (!isInitialized()) {
             const errorMsg = "jatos.js not yet initialized.";
             callMany(errorMsg, onError, console.error);
@@ -259,7 +260,7 @@ export function installStudyRunApi(jatos, dependencies) {
     /**
      * @deprecated Use `jatos.abortStudyWithoutRedirect` instead.
      */
-    jatos.abortStudyAjax = function (message, onSuccess, onError) {
+    api.abortStudyAjax = function (message, onSuccess, onError) {
         return jatos.abortStudyWithoutRedirect(message, onSuccess, onError);
     }
 
@@ -268,7 +269,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * will be deleted. The first parameter is the URL and the other up to 3 parameters
      * are the same as in jatos.abortStudyWithoutRedirect.
      */
-    jatos.abortStudyAndRedirect = function (url, message, onSuccess, onError) {
+    api.abortStudyAndRedirect = function (url, message, onSuccess, onError) {
         jatos.abortStudyWithoutRedirect(message, onSuccess, onError).done(function () {
             window.location.href = url;
         });
@@ -285,7 +286,7 @@ export function installStudyRunApi(jatos, dependencies) {
      *          current page. Alternatively jatos.abortStudyAndRedirect can be used to
      *          redirect to another page.
      */
-    jatos.abortStudy = function (message, showEndPage = true) {
+    api.abortStudy = function (message, showEndPage = true) {
         if (studyRunState.invalid) {
             console.warn("Can't abort study. This study run is invalid.");
             return;
@@ -324,7 +325,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {Function} [onError] - Error callback when result data is supplied
      * @returns {JatosPromise}
      */
-    jatos.endStudyWithoutRedirect = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+    api.endStudyWithoutRedirect = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
         if (!isInitialized()) {
             const errorMsg = "jatos.js not yet initialized.";
             console.error(errorMsg);
@@ -357,7 +358,7 @@ export function installStudyRunApi(jatos, dependencies) {
     /**
      * @deprecated Use `jatos.endStudyWithoutRedirect` instead.
      */
-    jatos.endStudyAjax = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+    api.endStudyAjax = function (resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
         return jatos.endStudyWithoutRedirect(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError);
     }
 
@@ -365,7 +366,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * Ends study and redirects to another URL. The first parameter is the URL and the
      * other up to 5 parameters are the same as in jatos.endStudyWithoutRedirect.
      */
-    jatos.endStudyAndRedirect = function (url, resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
+    api.endStudyAndRedirect = function (url, resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError) {
         jatos.endStudyWithoutRedirect(resultDataOrSuccessful, successfulOrMessage, messageOrOnSuccess, onSuccessOrOnError, onError).done(function () {
             window.location.href = url;
         });
@@ -380,7 +381,7 @@ export function installStudyRunApi(jatos, dependencies) {
      * @param {string|boolean} [messageOrShowEndPage] - Log message with data; otherwise end-page flag
      * @param {boolean} [showEndPage=true] - End-page flag when result data is supplied
      */
-    jatos.endStudy = function (resultDataOrSuccessful, successfulOrMessage, messageOrShowEndPage, showEndPage) {
+    api.endStudy = function (resultDataOrSuccessful, successfulOrMessage, messageOrShowEndPage, showEndPage) {
         if (!isInitialized()) {
             console.error("jatos.js not yet initialized");
             return;
@@ -481,6 +482,8 @@ export function installStudyRunApi(jatos, dependencies) {
             window.location.href = getRedirectUrl();
         });
     }
+
+    return api;
 
 }
 

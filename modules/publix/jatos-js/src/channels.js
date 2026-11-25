@@ -8,8 +8,9 @@ import {createSessionApi} from "./session-api.js";
 import {createSessionSender} from "./session-sender.js";
 import {createDeferred, rejectedPromise, isDeferredPending} from "./jatos-promise.js";
 
-/** Installs the batch and group APIs and owns their channel state. */
+/** Creates the batch and group APIs and owns their channel state. */
 export function createChannels(jatos, dependencies) {
+    const api = {};
     const {
         requestHttp,
         studyRunState,
@@ -173,7 +174,7 @@ export function createChannels(jatos, dependencies) {
      * Adds the callback function to the batchChannelAlive event listener. The batchChannelAlive event gets fired
      * when jatos.js establishes a connection to JATOS which is detected by the heartbeat in the batch channel.
      */
-    jatos.onConnected = function (callback) {
+    api.onConnected = function (callback) {
         window.addEventListener("batchChannelAlive", callback);
     }
 
@@ -181,7 +182,7 @@ export function createChannels(jatos, dependencies) {
      * Adds the callback function to the batchChannelDead event listener. The batchChannelDead event gets fired
      * when jatos.js loses its connection to JATOS which is detected by the heartbeat in the batch channel.
      */
-    jatos.onDisconnected = function (callback) {
+    api.onDisconnected = function (callback) {
         window.addEventListener("batchChannelDead", callback);
     }
 
@@ -189,7 +190,7 @@ export function createChannels(jatos, dependencies) {
      * Returns true if jatos.js established a connection to JATOS which is detected by the heartbeat in the batch
      * channel. False otherwise.
      */
-    jatos.isConnected = function () {
+    api.isConnected = function () {
         return batchChannelAlive;
     }
 
@@ -523,12 +524,12 @@ export function createChannels(jatos, dependencies) {
             action: "SESSION", id, patches, version: batchSessionSync.getVersion(), versioning
         })
     });
-    jatos.batchSession = createSessionApi(batchSessionSync.getData, batchSessionSender.send);
+    api.batchSession = createSessionApi(batchSessionSync.getData, batchSessionSender.send);
 
     /**
      * Registers a callback that is called when a batch-session patch is received.
      */
-    jatos.onBatchSession = function (onBatchSession) {
+    api.onBatchSession = function (onBatchSession) {
         onJatosBatchSession = onBatchSession;
     };
 
@@ -568,7 +569,7 @@ export function createChannels(jatos, dependencies) {
      * Leaving the group or changing/ending the study cancels pending joining.
      * @returns {JatosPromise}
      */
-    jatos.joinGroup = function (callbacks) {
+    api.joinGroup = function (callbacks) {
         if (groupJoinRetry) return groupJoinRetry.promise;
         if (groupChannel && groupChannel.readyState !== groupChannel.CLOSED) {
             return rejectedPromise("Can open only one group channel.");
@@ -894,11 +895,11 @@ export function createChannels(jatos, dependencies) {
         }
     }
 
-    jatos.getGroupState = function () {
+    api.getGroupState = function () {
         return groupState;
     };
 
-    jatos.isGroupFixed = function () {
+    api.isGroupFixed = function () {
         return groupState === "FIXED";
     };
 
@@ -917,7 +918,7 @@ export function createChannels(jatos, dependencies) {
             sessionVersion: groupSessionSync.getVersion(), sessionVersioning: versioning
         })
     });
-    jatos.groupSession = createSessionApi(groupSessionSync.getData, groupSessionSender.send);
+    api.groupSession = createSessionApi(groupSessionSync.getData, groupSessionSender.send);
 
     /**
      * Ask the JATOS server to fix this group.
@@ -925,7 +926,7 @@ export function createChannels(jatos, dependencies) {
      * @param {Function} [onFail] - Called if the fixing failed
      * @returns {JatosPromise}
      */
-    jatos.setGroupFixed = function (onSuccess, onFail) {
+    api.setGroupFixed = function (onSuccess, onFail) {
         if (!groupChannel || groupChannel.readyState !== groupChannel.OPEN) {
             const errorMsg = "Can't fix group. No open group channel.";
             callMany(errorMsg, onFail, console.error);
@@ -992,7 +993,7 @@ export function createChannels(jatos, dependencies) {
      * group in a prior component. If you want to check for an open group channel
      * use jatos.hasOpenGroupChannel.
      */
-    jatos.hasJoinedGroup = function () {
+    api.hasJoinedGroup = function () {
         return jatos.groupResultId !== null;
     };
 
@@ -1001,7 +1002,7 @@ export function createChannels(jatos, dependencies) {
      * Since you can't open a group channel without joining a group, it also means
      * that we joined a group.
      */
-    jatos.hasOpenGroupChannel = function () {
+    api.hasOpenGroupChannel = function () {
         return groupChannel && groupChannel.readyState === groupChannel.OPEN;
     };
 
@@ -1010,7 +1011,7 @@ export function createChannels(jatos, dependencies) {
      *         members like specified in the batch properties. It's not necessary
      *         that each member has an open group channel.
      */
-    jatos.isMaxActiveMemberReached = function () {
+    api.isMaxActiveMemberReached = function () {
         if (!jatos.batchProperties || jatos.batchProperties.maxActiveMembers === null) {
             return false;
         } else {
@@ -1023,7 +1024,7 @@ export function createChannels(jatos, dependencies) {
      *         members like specified in the batch properties and each member has an
      *         open group channel.
      */
-    jatos.isMaxActiveMemberOpen = function () {
+    api.isMaxActiveMemberOpen = function () {
         if (!jatos.batchProperties || jatos.batchProperties.maxActiveMembers === null) {
             return false;
         } else {
@@ -1036,7 +1037,7 @@ export function createChannels(jatos, dependencies) {
      *         channel. It's not necessary that the group has reached its minimum
      *         or maximum active member size.
      */
-    jatos.isGroupOpen = function () {
+    api.isGroupOpen = function () {
         if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
             return jatos.groupMembers.length === jatos.groupChannels.length;
         } else {
@@ -1049,7 +1050,7 @@ export function createChannels(jatos, dependencies) {
      *
      * @param {*} msg - Any JSON-serializable value
      */
-    jatos.sendGroupMsg = function (msg) {
+    api.sendGroupMsg = function (msg) {
         if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
             const msgObj = {};
             msgObj.msg = msg;
@@ -1064,7 +1065,7 @@ export function createChannels(jatos, dependencies) {
      * @param {string} recipient - Recipient's group member ID
      * @param {*} msg - Any JSON-serializable value
      */
-    jatos.sendGroupMsgTo = function (recipient, msg) {
+    api.sendGroupMsgTo = function (recipient, msg) {
         if (groupChannel && groupChannel.readyState === groupChannel.OPEN) {
             const msgObj = {};
             msgObj.recipient = recipient;
@@ -1082,7 +1083,7 @@ export function createChannels(jatos, dependencies) {
      * @param {Function} [onFail] - Called if the reassignment was unsuccessful
      * @returns {JatosPromise}
      */
-    jatos.reassignGroup = function (onSuccess, onFail) {
+    api.reassignGroup = function (onSuccess, onFail) {
         if (isDeferredPending(openingGroupChannelDeferred)) {
             const errorMsg = "Can't reassign a group if not joined yet.";
             callMany(errorMsg, console.error, onFail);
@@ -1144,7 +1145,7 @@ export function createChannels(jatos, dependencies) {
      * @param {Function} [onError] - Called in case of error
      * @returns {JatosPromise}
      */
-    jatos.leaveGroup = function (onSuccess, onError) {
+    api.leaveGroup = function (onSuccess, onError) {
         cancelGroupJoinRetries();
         groupClosedCheck.stop();
         if (isDeferredPending(openingGroupChannelDeferred)) {
@@ -1224,6 +1225,7 @@ export function createChannels(jatos, dependencies) {
 
 
     return {
+        api,
         openBatchChannelWithRetry,
         // Study transitions cancel pending batch and group opening/reconnection attempts.
         cancelChannelOpenings: () => {

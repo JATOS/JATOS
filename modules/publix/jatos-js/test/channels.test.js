@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {installResultDataApi} from "../src/result-data.js";
-import {createStudyRunState, installStudyRunApi} from "../src/study-run.js";
+import {createResultDataApi} from "../src/result-data.js";
+import {createStudyRunState, createStudyRunApi} from "../src/study-run.js";
 import {createChannels} from "../src/channels.js";
 
 function setup(t) {
@@ -56,6 +56,7 @@ function setup(t) {
         getURL: path => `https://example.test/${path}`,
         showIdOverlay: () => events.push("ids"),
     });
+    Object.assign(jatos, channels.api);
     function fire(id) {
         const timer = timers.get(id);
         assert.ok(timer, `timer ${id} exists`);
@@ -700,11 +701,11 @@ for (const kind of ["batch", "group"]) {
 
 test("server invalidation reaches result-data and navigation through the shared run state", t => {
     const {jatos, open, state} = setup(t);
-    installResultDataApi(jatos, {
+    Object.assign(jatos, createResultDataApi(jatos, {
         studyRunState: state,
         sendToHttpLoop: () => assert.fail("invalid run must not send result data")
-    });
-    installStudyRunApi(jatos, {studyRunState: state, isInitialized: () => true});
+    }));
+    Object.assign(jatos, createStudyRunApi(jatos, {studyRunState: state, isInitialized: () => true}));
     const socket = open("batch");
     socket.receive({action: "CLOSED"});
     const errors = [];
@@ -885,12 +886,12 @@ for (const pendingSocket of [true, false]) {
 for (const operation of ["startComponent", "endStudy", "abortStudy"]) {
     test(`${operation} cancels scheduled group joining before waiting for HTTP requests`, t => {
         const {jatos, channels, sockets, timers, state} = setup(t);
-        installStudyRunApi(jatos, {
+        Object.assign(jatos, createStudyRunApi(jatos, {
             studyRunState: state, isInitialized: () => true,
             cancelChannelOpenings: channels.cancelChannelOpenings,
             getURL: path => path, removeBeforeUnloadWarning: () => {},
             httpLoop: {isBusy: () => false, whenIdle: () => {}}
-        });
+        }));
         jatos.setStudySessionData = () => {};
         const promise = jatos.joinGroup();
         sockets[0].close();

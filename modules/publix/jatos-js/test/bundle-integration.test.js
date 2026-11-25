@@ -60,6 +60,23 @@ async function startBundle(t, minify, slim) {
     assert.equal(window.$, pageJquery);
     assert.equal(window.Deferred, undefined);
     const {jatos} = window;
+    const publicMethods = [
+        "showBeforeUnloadWarning", "showOverlay", "removeOverlay", "removeOverlays", "addAbortButton",
+        "onConnected", "onDisconnected", "isConnected", "onBatchSession", "joinGroup",
+        "getGroupState", "isGroupFixed", "setGroupFixed", "hasJoinedGroup", "hasOpenGroupChannel",
+        "isMaxActiveMemberReached", "isMaxActiveMemberOpen", "isGroupOpen", "sendGroupMsg",
+        "sendGroupMsgTo", "reassignGroup", "leaveGroup", "onLoad", "onload", "setHeartbeatPeriod",
+        "submitResultData", "appendResultData", "uploadResultFile", "downloadResultFile",
+        "setStudySessionData", "startComponent", "startComponentByPos", "startComponentByTitle",
+        "startNextComponent", "startLastComponent", "abortStudyWithoutRedirect", "abortStudyAjax",
+        "abortStudyAndRedirect", "abortStudy", "endStudyWithoutRedirect", "endStudyAjax",
+        "endStudyAndRedirect", "endStudy", "getHttpLoopCounter", "onError", "logError", "log",
+        "catchAndLogErrors", "convertToCSV", "addJatosIds"
+    ];
+    assert.deepEqual(Object.keys(jatos).filter(name => typeof jatos[name] === "function" && name !== "jQuery").sort(),
+        publicMethods.sort());
+    assert.equal(jatos.onload, jatos.onLoad);
+    assert.equal(jatos.convertToCSV([{score: 42}]), "score\r\n42");
     const loaded = new Promise(resolve => jatos.onLoad(resolve));
     const jquery = jatos.jQuery;
     if (slim) {
@@ -76,9 +93,9 @@ async function startBundle(t, minify, slim) {
         status = 200;
         statusText = "OK";
         responseText = JSON.stringify({
-            batchProperties: {}, studySessionData: '{"score":1}', studyProperties: {},
+            batchProperties: {}, studySessionData: '{"score":1}', studyProperties: {uuid: "study-uuid"},
             componentList: [{id: 1, uuid: "component-uuid", position: 1, active: true}],
-            componentProperties: {reloadable: true}, urlQueryParameters: {}, studyCode: "code"
+            componentProperties: {reloadable: true, uuid: "component-uuid"}, urlQueryParameters: {}, studyCode: "code"
         });
         open(method, url) { assert.equal(method, "GET"); assert.ok(url.endsWith("/initData")); }
         setRequestHeader() {}
@@ -86,6 +103,11 @@ async function startBundle(t, minify, slim) {
         send() { window.setTimeout(() => this.onload()); }
     };
     await loaded;
+    const ids = jatos.addJatosIds();
+    assert.equal(ids.studyUuid, "study-uuid");
+    assert.equal(ids.componentUuid, "component-uuid");
+    assert.equal(ids.studyResultUuid, "run-uuid");
+    assert.equal(ids.workerType, "GeneralMultiple");
     assert.equal(window.jQuery, pageJquery);
     assert.equal(window.$, pageJquery);
     assert.equal(jatos.jQuery, jquery);
