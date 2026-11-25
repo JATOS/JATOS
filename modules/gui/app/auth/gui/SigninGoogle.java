@@ -24,15 +24,16 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Map;
 
 import static messaging.common.FlashMessagingHelper.ERROR;
 import static models.common.User.AuthMethod.OAUTH_GOOGLE;
 
 /**
- * Class that handles the sign-in of users via Google OIDC sign-in button.
- * The actual authentication is done with Google's gsi/client JavaScript library in the browser. Here we just check the
- * Token ID, create the user if it doesn't exist yet und sign in the user into JATOS. Google OIDC is just used for
- * authentication - authorization and session management is still done by JATOS and Play Framework.
+ * Class that handles the sign-in of users via Google OIDC sign-in button. The actual authentication is done with
+ * Google's gsi/client JavaScript library in the browser. Here we just check the Token ID, create the user if it doesn't
+ * exist yet und sign in the user into JATOS. Google OIDC is just used for authentication - authorization and session
+ * management is still done by JATOS and Play Framework.
  *
  * More info: https://developers.google.com/identity/gsi/web
  */
@@ -62,7 +63,18 @@ public class SigninGoogle extends Controller {
      */
     @Async(Executor.IO)
     public Result signin(Http.Request request) throws GeneralSecurityException, IOException {
-        String idTokenString = request.body().asFormUrlEncoded().get("credential")[0];
+        Map<String, String[]> form = request.body().asFormUrlEncoded();
+        String csrfToken = singleFormValue(form, "g_csrf_token");
+        Http.Cookie csrfCookie = request.cookies().get("g_csrf_token").orElse(null);
+        // Google supplies its own double-submit CSRF token.
+        if (csrfToken == null || csrfCookie == null || !csrfToken.equals(csrfCookie.value())) {
+            return forbidden("Invalid Google sign-in CSRF token");
+        }
+
+        String idTokenString = singleFormValue(form, "credential");
+        if (idTokenString == null) {
+            return badRequest("Missing or invalid Google credential");
+        }
         GoogleIdToken idToken = googleIdTokenVerifier.verify(idTokenString);
         if (idToken == null) {
             LOGGER.warn("Google sign in: Invalid ID token.");
@@ -97,6 +109,17 @@ public class SigninGoogle extends Controller {
         return redirect(redirectPage);
     }
 
+    /**
+     * Reject missing, blank, or repeated form fields.
+     */
+    private static String singleFormValue(Map<String, String[]> form, String name) {
+        String[] values = form == null ? null : form.get(name);
+        if (values == null || values.length != 1 || values[0] == null || values[0].isBlank()) {
+            return null;
+        }
+        return values[0];
+    }
+
     private User getOrRegisterUser(GoogleIdToken.Payload idTokenPayload) {
         String normalizedUsername = User.normalizeUsername(idTokenPayload.getEmail());
         User user = userDao.findByUsername(normalizedUsername);
@@ -113,7 +136,7 @@ public class SigninGoogle extends Controller {
             newUserProperties.setAuthMethod(OAUTH_GOOGLE);
             List<ValidationError> errors = newUserProperties.validate();
             if (errors != null && !errors.isEmpty()) {
-                throw new ValidationException(errors.get(0).message());
+                throw new ValidationException(errors.getFirst().message());
             }
             return userService.registerUser(newUserProperties);
         }

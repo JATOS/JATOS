@@ -50,8 +50,58 @@ public class SigninGoogleTest {
     private static Http.Request requestWithCredential() {
         return new Http.RequestBuilder()
                 .method("POST")
-                .bodyForm(java.util.Collections.singletonMap("credential", "token-xyz"))
+                .cookie(Http.Cookie.builder("g_csrf_token", "csrf-token").build())
+                .bodyForm(java.util.Map.of("credential", "token-xyz", "g_csrf_token", "csrf-token"))
                 .build();
+    }
+
+    @Test
+    public void signin_invalidCsrf_rejectsBeforeAuthentication() throws Exception {
+        String[][] cases = {
+                {null, "token"}, {"token", null}, {"", ""},
+                {"token", ""}, {"", "token"}, {"token", "different"}
+        };
+        for (String[] values : cases) {
+            var form = new java.util.HashMap<String, String>();
+            form.put("credential", "token-xyz");
+            if (values[1] != null) form.put("g_csrf_token", values[1]);
+            var request = new Http.RequestBuilder().method("POST").bodyForm(form);
+            if (values[0] != null) {
+                request.cookie(Http.Cookie.builder("g_csrf_token", values[0]).build());
+            }
+            assertThat(signinGoogle.signin(request.build()).status()).isEqualTo(403);
+        }
+        verifyNoInteractions(googleIdTokenVerifier, userDao, userService, authService);
+        assertThat(Context.current().response().session().data()).isEmpty();
+    }
+
+    @Test
+    public void signin_nonFormBody_rejectsWithoutSideEffects() throws Exception {
+        var request = new Http.RequestBuilder().method("POST").bodyText("invalid").build();
+        assertThat(signinGoogle.signin(request).status()).isEqualTo(403);
+        verifyNoInteractions(googleIdTokenVerifier, userDao, userService, authService);
+    }
+
+    @Test
+    public void signin_malformedFields_rejectsWithoutSideEffects() throws Exception {
+        for (String field : java.util.List.of("g_csrf_token", "credential")) {
+            for (String[] invalid : new String[][] {new String[0], {""}, {"one", "two"}}) {
+                var form = new java.util.HashMap<String, String[]>();
+                form.put("g_csrf_token", new String[] {"csrf-token"});
+                form.put("credential", new String[] {"token-xyz"});
+                form.put(field, invalid);
+                var request = new Http.RequestBuilder().method("POST")
+                        .cookie(Http.Cookie.builder("g_csrf_token", "csrf-token").build())
+                        .bodyFormArrayValues(form).build();
+                int expectedStatus = field.equals("g_csrf_token") ? 403 : 400;
+                assertThat(signinGoogle.signin(request).status()).isEqualTo(expectedStatus);
+            }
+        }
+        var missingCredential = new Http.RequestBuilder().method("POST")
+                .cookie(Http.Cookie.builder("g_csrf_token", "csrf-token").build())
+                .bodyForm(java.util.Map.of("g_csrf_token", "csrf-token")).build();
+        assertThat(signinGoogle.signin(missingCredential).status()).isEqualTo(400);
+        verifyNoInteractions(googleIdTokenVerifier, userDao, userService, authService);
     }
 
     @SuppressWarnings("SameParameterValue")
