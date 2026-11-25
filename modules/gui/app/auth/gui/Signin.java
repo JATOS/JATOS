@@ -91,7 +91,7 @@ public class Signin extends Controller {
         } else {
             userService.setLastSignin(normalizedUsername);
             loginAttemptDao.removeByUsername(normalizedUsername);
-            authService.writeSessionCookie(normalizedUsername, signinData.getKeepSignedin());
+            authService.writeSessionCookie(user, signinData.getKeepSignedin());
             return ok(defaultJson.objAsJsonNode(ImmutableMap.of(
                     "redirectUrl", authService.getRedirectPageAfterSignin(user),
                     "userSigninTime", authService.getSessionSigninTime())));
@@ -117,6 +117,8 @@ public class Signin extends Controller {
     @Auth(roles = {VIEWER, USER, ADMIN})
     public Result signout() {
         LOGGER.info(".signout: " + Context.current().response().getSession(AuthService.SESSION_USERNAME));
+        // Logout invalidates this user's sessions on every device.
+        Context.current().response().getSession(AuthService.SESSION_USERNAME).ifPresent(userDao::revokeSessions);
         Context.current().response().clearSession();
         Context.current().response().putFlash(SUCCESS, "You've been signed out.");
         return redirect(auth.gui.routes.Signin.signin());

@@ -92,7 +92,7 @@ public class SigninGoogle extends Controller {
 
         String pictureUrl = idTokenPayload.get("picture") != null ? idTokenPayload.get("picture").toString() : "";
         String redirectPage = authService.getRedirectPageAfterSignin(user);
-        authService.writeSessionCookie(normalizedUsername, false);
+        authService.writeSessionCookie(user, false);
         Context.current().response().putSession("googlePictureUrl", pictureUrl);
         return redirect(redirectPage);
     }

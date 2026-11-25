@@ -76,8 +76,8 @@ public class UserDao extends AbstractDao {
     }
 
     /**
-     * Loads and locks a user and refreshes credentials loaded before that lock. User locks must be acquired before
-     * the study locks.
+     * Loads and locks a user and refreshes credentials loaded before that lock. User locks must be acquired before the
+     * study locks.
      */
     public User findByUsernameWithGitCredentialsAndLock(String username) {
         return withTransaction(em -> {
@@ -193,5 +193,38 @@ public class UserDao extends AbstractDao {
                     .getResultList();
         });
     }
+
+    /**
+     * Merges user changes and revokes all their sessions in one transaction.
+     */
+    public void mergeAndRevokeSessions(User user) {
+        withTransaction(em -> {
+            em.merge(user);
+            em.flush();
+            incrementSessionVersion(em, user.getUsername());
+        });
+    }
+
+    /**
+     * Invalidates the user's existing sessions on every device.
+     */
+    public void revokeSessions(String username) {
+        withTransaction(em -> {
+            incrementSessionVersion(em, username);
+        });
+    }
+
+    /**
+     * Atomically increments the version and refreshes the managed user.
+     */
+    private void incrementSessionVersion(EntityManager em, String username) {
+        em.createQuery("UPDATE User SET sessionVersion = sessionVersion + 1 WHERE username = :username")
+                .setParameter("username", username)
+                .executeUpdate();
+        // Bulk updates bypass managed entities.
+        User user = em.find(User.class, username);
+        if (user != null) em.refresh(user);
+    }
+
 
 }

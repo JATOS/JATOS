@@ -223,7 +223,7 @@ public abstract class SigninOidc extends Controller {
                     .getSession("keepSignedin").orElse("false"));
             userService.setLastSignin(normalizedUsername);
 
-            authService.writeSessionCookie(normalizedUsername, keepSignedin);
+            authService.writeSessionCookie(user, keepSignedin);
             Result result = redirect(authService.getRedirectPageAfterSignin(user));
             if (!Strings.isNullOrEmpty(oidcConfig.successMsg)) {
                 Context.current().response().putFlash(SUCCESS, oidcConfig.successMsg);

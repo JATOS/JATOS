@@ -104,7 +104,7 @@ public class SigninGoogleTest {
         // Session contains googlePictureUrl
         assertThat(Context.current().response().getSession("googlePictureUrl").orElseThrow()).isEqualTo("http://pic");
         // Services called
-        verify(authService).writeSessionCookie(eq("alice@example.org"), eq(false));
+        verify(authService).writeSessionCookie(eq(user), eq(false));
         verify(userService).setLastSignin("alice@example.org");
     }
 

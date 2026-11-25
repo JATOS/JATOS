@@ -33,6 +33,8 @@ public class AuthService {
      */
     public static final String SESSION_USERNAME = "username";
 
+    public static final String SESSION_VERSION = "sessionVersion";
+
     /**
      * Parameter name in Play's session cookie: It contains the timestamp of the sign-in time
      */
@@ -100,16 +102,26 @@ public class AuthService {
         if (normalizedUsername.isPresent()) {
             signedinUser = userDao.findByUsername(normalizedUsername.orElse(null));
         }
+        if (signedinUser == null) {
+            return null;
+        }
+
+        String cookieVersion = Context.current().response().getSession(SESSION_VERSION).orElse(null);
+        String currentVersion = String.valueOf(signedinUser.getSessionVersion());
+        if (!currentVersion.equals(cookieVersion)) {
+            return null;
+        }
         return signedinUser;
     }
 
     /**
-     * Prepares Play's session cookie for the user with the given username to be signed-in. Does not authenticate the
+     * Prepares Play's session cookie for the given user to be signed-in. Does not authenticate the
      * user (use authenticate() for this).
      */
-    public void writeSessionCookie(String normalizedUsername, boolean keepSignedin) {
+    public void writeSessionCookie(User user, boolean keepSignedin) {
         Map<String, String> map = new HashMap<>();
-        map.put(SESSION_USERNAME, normalizedUsername);
+        map.put(SESSION_VERSION, String.valueOf(user.getSessionVersion()));
+        map.put(SESSION_USERNAME, user.getUsername());
         map.put(SESSION_SIGNIN_TIME, String.valueOf(Instant.now().toEpochMilli()));
         map.put(SESSION_LAST_ACTIVITY_TIME, String.valueOf(Instant.now().toEpochMilli()));
         map.put(SESSION_KEEP_SIGNEDIN, String.valueOf(Common.getUserSessionAllowKeepSignedin() && keepSignedin));

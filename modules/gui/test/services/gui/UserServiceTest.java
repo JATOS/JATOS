@@ -112,7 +112,7 @@ public class UserServiceTest {
         User u = new User("foo@foo.org", "Foo", "foo@foo.org");
         userService.updatePassword(u, "newPass");
         assertThat(u.getPasswordHash()).isNotEmpty();
-        verify(userDao, times(1)).merge(eq(u));
+        verify(userDao, times(1)).mergeAndRevokeSessions(eq(u));
     }
 
     @Test

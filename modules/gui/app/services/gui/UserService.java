@@ -160,8 +160,10 @@ public class UserService {
         if (props.getPassword() != null) {
             String newPasswordHash = HashUtils.getHashMD5(props.getPassword());
             user.setPasswordHash(newPasswordHash);
+            userDao.mergeAndRevokeSessions(user);
+        } else {
+            userDao.merge(user);
         }
-        userDao.merge(user);
     }
 
     /**
@@ -170,7 +172,7 @@ public class UserService {
     public void updatePassword(User user, String newPassword) {
         String newPasswordHash = HashUtils.getHashMD5(newPassword);
         user.setPasswordHash(newPasswordHash);
-        userDao.merge(user);
+        userDao.mergeAndRevokeSessions(user);
     }
 
     public void toggleActive(String normalizedUsername, boolean active) {

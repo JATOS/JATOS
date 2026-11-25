@@ -42,6 +42,29 @@ public class UserServiceIntegrationTest extends JatosTest {
     private ApiTokenDao apiTokenDao;
 
     @Test
+    public void passwordChangeAndLogoutRejectOldCookies() {
+        User user = createUser("session-revocation");
+        authService.writeSessionCookie(user, true);
+        assertThat(authService.getSignedinUserBySessionCookie()).isNotNull();
+
+        userService.updatePassword(user, "new-password");
+        assertThat(authService.getSignedinUserBySessionCookie()).isNull();
+        assertThat(userDao.findByUsername(user.getUsername()).getSessionVersion()).isEqualTo(1);
+
+        // A stale profile update must not restore the old version.
+        userDao.merge(user);
+        assertThat(userDao.findByUsername(user.getUsername()).getSessionVersion()).isEqualTo(1);
+        user = userDao.findByUsername(user.getUsername());
+        authService.writeSessionCookie(user, true);
+        assertThat(authService.getSignedinUserBySessionCookie()).isNotNull();
+        var oldCookie = Http.Context.current().response().session().data();
+        application.injector().instanceOf(auth.gui.Signin.class).signout();
+        Http.Context.current().response().putSession(oldCookie);
+        assertThat(authService.getSignedinUserBySessionCookie()).isNull();
+        assertThat(userDao.findByUsername(user.getUsername()).getSessionVersion()).isEqualTo(2);
+    }
+
+    @Test
     public void deletionReportsOwnershipTransfersAndAdminDataShowsNewOwner() {
         Long studyId = importExampleStudy();
         User owner = createUser("departing-owner");

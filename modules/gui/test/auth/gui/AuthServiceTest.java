@@ -111,6 +111,7 @@ public class AuthServiceTest {
     public void getSignedinUserBySessionCookie_returnsUserWhenPresent() {
         Map<String, String> map = new HashMap<>();
         map.put(SESSION_USERNAME, "charlie");
+        map.put(SESSION_VERSION, "0");
         Context.current().response().putSession(map);
 
         User user = new User();
@@ -122,13 +123,35 @@ public class AuthServiceTest {
     }
 
     @Test
+    public void oldOrMissingSessionVersionIsRejected() {
+        User user = Mockito.mock(User.class);
+        when(userDao.findByUsername("alice")).thenReturn(user);
+        when(user.getSessionVersion()).thenReturn(1L);
+        Context.current().response().putSession(SESSION_USERNAME, "alice");
+        Context.current().response().putSession(SESSION_KEEP_SIGNEDIN, "true");
+        assertThat(authService.getSignedinUserBySessionCookie()).isNull();
+        Context.current().response().putSession(SESSION_VERSION, "0");
+        assertThat(authService.getSignedinUserBySessionCookie()).isNull();
+        Context.current().response().putSession(SESSION_VERSION, "1");
+        assertThat(authService.getSignedinUserBySessionCookie()).isSameAs(user);
+        when(user.getSessionVersion()).thenReturn(2L);
+        assertThat(authService.getSignedinUserBySessionCookie()).isNull();
+    }
+
+    @Test
     public void getSignedinUserBySessionCookie_returnsNullWhenMissing() {
         assertThat(authService.getSignedinUserBySessionCookie()).isNull();
     }
 
     @Test
     public void writeSessionCookie_setsExpectedKeys_and_isSessionKeepSignedinReflectsAllowFlag() {
-        authService.writeSessionCookie("dana", true);
+        User user = mock(User.class);
+        when(user.getUsername()).thenReturn("dana");
+        when(user.getSessionVersion()).thenReturn(7L);
+        authService.writeSessionCookie(user, true);
+
+        verifyNoInteractions(userDao);
+        assertThat(Context.current().response().getSession(SESSION_VERSION)).contains("7");
 
         // Keys set
         Http.Session session = Context.current().response().session();
@@ -151,7 +174,8 @@ public class AuthServiceTest {
             //noinspection ResultOfMethodCallIgnored
             utilities.when(Common::getUserSessionAllowKeepSignedin).thenReturn(true);
 
-            authService.writeSessionCookie("dana", true);
+            User user = new User("dana", "Dana", "dana@example.org");
+            authService.writeSessionCookie(user, true);
 
             Http.Session session = Context.current().response().session();
             assertThat(session.get(SESSION_KEEP_SIGNEDIN).orElse(null)).isEqualTo("true");

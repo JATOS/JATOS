@@ -94,6 +94,14 @@ public class User {
     private String passwordHash;
 
     /**
+     * Sessions must match this version. Incrementing it revokes all existing sessions.
+     * Updated only by explicit revocation.
+     */
+    @JsonIgnore
+    @Column(nullable = false, updatable = false)
+    private long sessionVersion;
+
+    /**
      * Which method to use for authentication
      */
     @JsonView({JsonForApi.class})
@@ -283,6 +291,11 @@ public class User {
     @JsonIgnore
     public String getPasswordHash() {
         return this.passwordHash;
+    }
+
+    @JsonIgnore
+    public long getSessionVersion() {
+        return sessionVersion;
     }
 
     public AuthMethod getAuthMethod() {

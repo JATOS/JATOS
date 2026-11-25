@@ -58,6 +58,14 @@ public class SigninTest {
         Context.setCurrent(new Context(Helpers.fakeRequest().build()));
     }
 
+    @Test
+    public void signoutRevokesSessionsBeforeClearingCookie() {
+        Context.current().response().putSession(AuthService.SESSION_USERNAME, "alice");
+        controller.signout();
+        verify(userDao).revokeSessions("alice");
+        assertThat(Context.current().response().session().data()).isEmpty();
+    }
+
     @After
     public void tearDown() {
         Context.clear();
@@ -173,7 +181,7 @@ public class SigninTest {
         assertThat(json.get("redirectUrl").asText()).isEqualTo("/home");
         assertThat(json.get("userSigninTime").isNumber()).isTrue();
 
-        verify(authService, times(1)).writeSessionCookie(eq("bob"), eq(true));
+        verify(authService, times(1)).writeSessionCookie(eq(user), eq(true));
         verify(userService, times(1)).setLastSignin("bob");
         verify(loginAttemptDao, times(1)).removeByUsername("bob");
     }
