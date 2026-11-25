@@ -33,11 +33,11 @@ public class BatchDao extends AbstractDao {
     }
 
     public Batch findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(Batch.class, id));
+        return forReadOnly((EntityManager em) -> em.find(Batch.class, id));
     }
 
     public Optional<Batch> findByUuid(String uuid) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT s FROM Batch s WHERE " + "s.uuid=:uuid";
             return em.createQuery(queryStr, Batch.class)
                     .setParameter("uuid", uuid)
@@ -51,7 +51,7 @@ public class BatchDao extends AbstractDao {
      * Finds a study by its ID and eagerly fetches the batchList to avoid LazyInitializationException.
      */
     public Batch findByIdWithStudy(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT b FROM Batch b LEFT JOIN FETCH b.study WHERE b.id = :id";
             return em.createQuery(queryStr, Batch.class)
                     .setParameter("id", id)
@@ -64,7 +64,7 @@ public class BatchDao extends AbstractDao {
      * database.
      */
     public Batch findDefaultBatchByStudy(Study study) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String hql = "SELECT b FROM Study s JOIN s.batchList b WHERE s = :study ORDER BY INDEX(b)";
             return em.createQuery(hql, Batch.class)
                     .setParameter("study", study)
@@ -105,7 +105,7 @@ public class BatchDao extends AbstractDao {
      * Reads only the session version, without loading session data or the entity.
      */
     public Optional<Long> findSessionVersion(Long id) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT s.batchSessionVersion FROM Batch s WHERE s.id = :id", Long.class)
                         .setParameter("id", id)
                         .getResultStream()
@@ -116,7 +116,7 @@ public class BatchDao extends AbstractDao {
      * Returns the number of Workers belonging to the given Batch.
      */
     public int countWorkers(Batch batch) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             //noinspection SqlResolve
             Number result = (Number) em
                     .createNativeQuery("SELECT COUNT(*) FROM BatchWorkerMap WHERE batch_id = :batchId")

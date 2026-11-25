@@ -93,7 +93,7 @@ public class JpaTransactions implements JPAApi {
                             // otherwise it is NOT_ACTIVE. JDBC rollback failures do not invoke this callback.
                             || (status == Status.STATUS_UNKNOWN
                             && (transaction.getStatus() == TransactionStatus.NOT_ACTIVE
-                                || transaction.getStatus() == TransactionStatus.MARKED_ROLLBACK)
+                            || transaction.getStatus() == TransactionStatus.MARKED_ROLLBACK)
                             && manager.unwrap(SessionImplementor.class).getTransactionCoordinator()
                             instanceof JdbcResourceLocalTransactionCoordinatorImpl))
                         rolledBack.run();
@@ -152,16 +152,20 @@ public class JpaTransactions implements JPAApi {
         });
     }
 
-    /** Open a read-only scope, or join the current same-thread transaction. */
-    public <T> T withReadOnlyTransaction(Function<EntityManager, T> block) {
+    /**
+     * Reuses the same-thread scope, or opens an EntityManager without starting a transaction.
+     */
+    public <T> T forReadOnly(Function<EntityManager, T> block) {
         return withTransaction("default", true, block);
     }
 
-    public void withReadOnlyTransaction(Consumer<EntityManager> block) {
+    public void forReadOnly(Consumer<EntityManager> block) {
         withTransaction("default", true, block);
     }
 
-    /** Open an independent transaction, suspending any current same-thread transaction. */
+    /**
+     * Open an independent transaction, suspending any current same-thread transaction.
+     */
     public <T> T withNewTransaction(Function<EntityManager, T> block) {
         return withTransaction(Propagation.REQUIRES_NEW, block);
     }

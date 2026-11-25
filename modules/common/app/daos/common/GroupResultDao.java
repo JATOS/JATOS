@@ -43,11 +43,11 @@ public class GroupResultDao extends AbstractDao {
     }
 
     public GroupResult findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(GroupResult.class, id));
+        return forReadOnly((EntityManager em) -> em.find(GroupResult.class, id));
     }
 
     public GroupResult findByIdWithBatch(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT gr FROM GroupResult gr LEFT JOIN FETCH gr.batch WHERE gr.id = :id";
             return em.createQuery(queryStr, GroupResult.class)
                     .setParameter("id", id)
@@ -56,7 +56,7 @@ public class GroupResultDao extends AbstractDao {
     }
 
     public List<GroupResult> findAllByBatch(Batch batch) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT gr FROM GroupResult gr WHERE gr.batch=:batch";
             TypedQuery<GroupResult> query = em.createQuery(queryStr, GroupResult.class);
             return query.setParameter("batch", batch).getResultList();
@@ -64,7 +64,7 @@ public class GroupResultDao extends AbstractDao {
     }
 
     public Integer countByBatch(Batch batch) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT COUNT(gr) FROM GroupResult gr WHERE gr.batch=:batch";
             Query query = em.createQuery(queryStr).setParameter("batch", batch);
             Number result = (Number) query.getSingleResult();
@@ -82,7 +82,7 @@ public class GroupResultDao extends AbstractDao {
      * not-yet-full group.
      */
     public Optional<GroupResult> findFirstMaxNotReachedForUpdate(Batch batch) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT gr FROM GroupResult gr "
                     + "JOIN gr.batch b "
                     + "WHERE b = :batch "
@@ -111,7 +111,7 @@ public class GroupResultDao extends AbstractDao {
      * not-yet-full group.
      */
     public Optional<GroupResult> findFirstDifferentMaxNotReachedForUpdate(Batch batch, GroupResult excludedGroupResult) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT gr FROM GroupResult gr "
                     + "JOIN gr.batch b "
                     + "WHERE b = :batch "
@@ -137,7 +137,7 @@ public class GroupResultDao extends AbstractDao {
      * Returns a list of IDs of all StudyResults that are part of the active member list of the given GroupResult.
      */
     public List<Long> findAllActiveMemberIds(GroupResult groupResult) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT sr.id FROM StudyResult sr WHERE sr.activeGroupResult = :groupResult";
             return em.createQuery(queryStr, Long.class)
                     .setParameter("groupResult", groupResult)
@@ -149,7 +149,7 @@ public class GroupResultDao extends AbstractDao {
      * Returns a list of IDs of all StudyResults that are part of the history member list of the given GroupResult.
      */
     public List<Long> findAllHistoryMemberIds(GroupResult groupResult) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT sr.id FROM StudyResult sr WHERE sr.historyGroupResult = :groupResult";
             return em.createQuery(queryStr, Long.class)
                     .setParameter("groupResult", groupResult)
@@ -188,7 +188,7 @@ public class GroupResultDao extends AbstractDao {
      *
      */
     public Optional<Long> findSessionVersion(Long id) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT s.groupSessionVersion FROM GroupResult s WHERE s.id = :id", Long.class)
                         .setParameter("id", id)
                         .getResultStream()

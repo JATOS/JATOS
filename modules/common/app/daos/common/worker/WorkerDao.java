@@ -35,11 +35,11 @@ public class WorkerDao extends AbstractDao {
     }
 
     public Worker findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(Worker.class, id));
+        return forReadOnly((EntityManager em) -> em.find(Worker.class, id));
     }
 
     public List<Worker> findAll() {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT w FROM Worker w", Worker.class).getResultList());
     }
 
@@ -47,7 +47,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the number of Worker rows
      */
     public int count() {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT COUNT(w) FROM Worker w").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -57,7 +57,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the total number of Worker (including the deleted ones)
      */
     public int countTotal() {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT max(id) FROM Worker").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -67,7 +67,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the number of StudyResults that belong to the given Worker.
      */
     public int countStudyResults(Worker worker) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery(
                             "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.worker = :worker")
                     .setParameter("worker", worker)
@@ -80,7 +80,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the first StudyResult of the given Worker.
      */
     public Optional<StudyResult> findFirstStudyResult(Worker worker) {
-        return withReadOnlyTransaction((EntityManager em) -> em.createQuery(
+        return forReadOnly((EntityManager em) -> em.createQuery(
                         "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id ASC",
                         StudyResult.class)
                 .setParameter("worker", worker)
@@ -93,7 +93,7 @@ public class WorkerDao extends AbstractDao {
      * Returns the last StudyResult of the given Worker.
      */
     public Optional<StudyResult> findLastStudyResult(Worker worker) {
-        return withReadOnlyTransaction((EntityManager em) -> em.createQuery(
+        return forReadOnly((EntityManager em) -> em.createQuery(
                         "SELECT sr FROM StudyResult sr WHERE sr.worker = :worker ORDER BY sr.id DESC",
                         StudyResult.class)
                 .setParameter("worker", worker)

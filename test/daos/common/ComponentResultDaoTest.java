@@ -29,7 +29,7 @@ public class ComponentResultDaoTest extends JatosTest {
             componentResultDao.persist(cr);
 
             // Read the column directly: getDataSize() also returns zero for a database NULL.
-            Number storedSize = componentResultDao.withReadOnlyTransaction(em ->
+            Number storedSize = componentResultDao.forReadOnly(em ->
                     (Number) em.createNativeQuery("SELECT dataSize FROM ComponentResult WHERE id = :id")
                     .setParameter("id", cr.getId())
                     .getSingleResult());

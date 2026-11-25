@@ -56,12 +56,12 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public StudyResult findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(StudyResult.class, id));
+        return forReadOnly((EntityManager em) -> em.find(StudyResult.class, id));
     }
 
     public List<StudyResult> findByIds(List<Long> ids) {
         if (ids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT sr FROM StudyResult sr WHERE sr.id IN :ids", StudyResult.class)
                         .setParameter("ids", ids)
                         .getResultList());
@@ -69,7 +69,7 @@ public class StudyResultDao extends AbstractDao {
 
     public List<StudyResult> findByIds(List<Long> ids, int first, int max) {
         if (ids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                         SELECT sr FROM StudyResult sr
                                         WHERE sr.id IN :ids
@@ -82,7 +82,7 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public Optional<StudyResult> findByUuid(String uuid) {
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("SELECT sr FROM StudyResult sr WHERE sr.uuid =:uuid", StudyResult.class)
                 .setParameter("uuid", uuid)
                 .setMaxResults(1)
@@ -94,7 +94,7 @@ public class StudyResultDao extends AbstractDao {
      * Finds a StudyResult by UUID and initializes fields needed outside of the transaction.
      */
     public Optional<StudyResult> findByUuidWithBatchStudyAndGroup(String uuid) {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             List<StudyResult> results = em.createQuery("""
                             SELECT sr
                             FROM StudyResult sr
@@ -126,7 +126,7 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public boolean existsByUuid(String uuid) {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             Number count = (Number) em.createQuery("SELECT COUNT(sr) FROM StudyResult sr WHERE sr.uuid = :uuid")
                     .setParameter("uuid", uuid)
                     .getSingleResult();
@@ -135,7 +135,7 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public Optional<StudyResult> findByStudyCode(String studyCode) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT sr FROM StudyResult sr WHERE sr.studyCode =:studyCode", StudyResult.class)
                         .setParameter("studyCode", studyCode)
                         .setMaxResults(1)
@@ -149,7 +149,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public List<StudyResult> findIdleGroupMembers(Duration idleAfter) {
         Date cutoff = Date.from(Instant.now().minus(idleAfter));
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                 SELECT sr FROM StudyResult sr
                                 WHERE sr.activeGroupResult is not null
@@ -162,7 +162,7 @@ public class StudyResultDao extends AbstractDao {
      * Returns the number of StudyResult rows
      */
     public int count() {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT COUNT(sr) FROM StudyResult sr").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -172,7 +172,7 @@ public class StudyResultDao extends AbstractDao {
      * Returns the total number of StudyResults (including the deleted ones)
      */
     public int countTotal() {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT max(id) FROM StudyResult").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -182,7 +182,7 @@ public class StudyResultDao extends AbstractDao {
      * Returns the number of StudyResults belonging to the given study.
      */
     public int countByStudy(Study study) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT COUNT(sr) FROM StudyResult sr WHERE sr.study=:study";
             Query query = em.createQuery(queryStr);
             Number result = (Number) query.setParameter("study", study).getSingleResult();
@@ -195,7 +195,7 @@ public class StudyResultDao extends AbstractDao {
      * workerTypeToBeExcluded.
      */
     public int countByBatchExcludingWorkerType(Batch batch, WorkerType workerTypeToBeExcluded) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery("""
                             SELECT COUNT(sr) FROM StudyResult sr WHERE sr.batch=:batch
                             AND sr.worker.workerType <> :workerType""")
@@ -211,7 +211,7 @@ public class StudyResultDao extends AbstractDao {
      * the given User as a member.
      */
     public int countByWorker(Worker worker, User user) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery("""
                             SELECT COUNT(sr) FROM StudyResult sr WHERE sr.worker = :worker
                             AND sr.study IN (SELECT s FROM Study s JOIN s.userList ul where ul.username = :username)""")
@@ -226,7 +226,7 @@ public class StudyResultDao extends AbstractDao {
      * Returns the number of StudyResults belonging to the given group.
      */
     public int countByGroup(GroupResult groupResult) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = """
                     SELECT COUNT(sr) FROM StudyResult sr WHERE sr.activeGroupResult = :groupResult
                     OR sr.historyGroupResult = :groupResult""";
@@ -246,7 +246,7 @@ public class StudyResultDao extends AbstractDao {
                 ? Arrays.asList(WorkerType.MT.value(), WorkerType.MT_SANDBOX.value())
                 : Collections.singletonList(workerType.value());
 
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String hql = """
                     SELECT COUNT(sr) FROM StudyResult sr
                     WHERE sr.batch = :batch
@@ -263,7 +263,7 @@ public class StudyResultDao extends AbstractDao {
      * Returns the number of StudyResults belonging to the given batch, grouped by worker type.
      */
     public Map<WorkerType, Integer> countByBatchForAllWorkerTypes(Batch batch) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Map<WorkerType, Integer> counts = Arrays.stream(WorkerType.values())
                     .filter(workerType -> workerType != WorkerType.NONE)
                     .collect(Collectors.toMap(workerType -> workerType, workerType -> 0));
@@ -287,7 +287,7 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public List<Long> findIdsByStudyId(Long studyId) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT sr.id FROM StudyResult sr WHERE sr.study.id = :studyId", Long.class)
                         .setParameter("studyId", studyId)
                         .getResultList());
@@ -301,7 +301,7 @@ public class StudyResultDao extends AbstractDao {
      */
     public List<StudyResult> findAllByStudy(Study study, int first, int max) {
         // Added 'LEFT JOIN FETCH' for performance (loads LAZY-linked Workers in StudyResults)
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("""
                                 SELECT sr FROM StudyResult sr
                                 LEFT JOIN FETCH sr.worker
@@ -315,7 +315,7 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public List<StudyResult> findAllByBatch(Batch batch) {
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("SELECT sr FROM StudyResult sr WHERE sr.batch=:batch", StudyResult.class)
                 .setParameter("batch", batch)
                 .getResultList());
@@ -329,7 +329,7 @@ public class StudyResultDao extends AbstractDao {
      * (https://stackoverflow.com/a/2826512/1278769)
      */
     public List<StudyResult> findAllByBatch(Batch batch, WorkerType workerTypeToBeExcluded, int first, int max) {
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("""
                                 SELECT sr FROM StudyResult sr
                                 WHERE sr.batch = :batch
@@ -355,7 +355,7 @@ public class StudyResultDao extends AbstractDao {
                 ? Arrays.asList(WorkerType.MT.value(), WorkerType.MT_SANDBOX.value())
                 : Collections.singletonList(workerType.value());
 
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("""
                                 SELECT sr FROM StudyResult sr
                                 WHERE sr.batch = :batch
@@ -377,7 +377,7 @@ public class StudyResultDao extends AbstractDao {
      * (https://stackoverflow.com/a/2826512/1278769)
      */
     public List<StudyResult> findAllByWorker(Worker worker, User user, int first, int max) {
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("""
                                 SELECT sr FROM StudyResult sr
                                 WHERE sr.worker = :worker
@@ -400,7 +400,7 @@ public class StudyResultDao extends AbstractDao {
      * (https://stackoverflow.com/a/2826512/1278769)
      */
     public List<StudyResult> findAllByGroup(GroupResult groupResult, int first, int max) {
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("""
                                 SELECT sr FROM StudyResult sr
                                 WHERE sr.activeGroupResult = :group
@@ -417,7 +417,7 @@ public class StudyResultDao extends AbstractDao {
      * Find the StudyResultStatus with the most recent lastSeen
      */
     public List<StudyResultStatus> findLastSeen(int limit) {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             String queryStr = """
                     SELECT srs
                     FROM StudyResultStatus srs
@@ -437,14 +437,14 @@ public class StudyResultDao extends AbstractDao {
      */
     public List<Long> findIdsByComponentResultIds(List<Long> crids) {
         if (crids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) -> em.createQuery("SELECT cr.studyResult.id FROM ComponentResult cr WHERE cr.id IN :crids", Long.class)
+        return forReadOnly((EntityManager em) -> em.createQuery("SELECT cr.studyResult.id FROM ComponentResult cr WHERE cr.id IN :crids", Long.class)
                 .setParameter("crids", crids)
                 .getResultList().stream().distinct().collect(Collectors.toList()));
     }
 
     public List<Long> findIdsFromListThatBelongToStudy(List<Long> srids, Long studyId) {
         if (srids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) -> em.createQuery("SELECT sr.id FROM StudyResult sr WHERE sr.id IN :srids AND sr.study.id = :studyId", Long.class)
+        return forReadOnly((EntityManager em) -> em.createQuery("SELECT sr.id FROM StudyResult sr WHERE sr.id IN :srids AND sr.study.id = :studyId", Long.class)
                 .setParameter("srids", srids)
                 .setParameter("studyId", studyId)
                 .getResultList().stream().distinct().collect(Collectors.toList()));
@@ -452,21 +452,21 @@ public class StudyResultDao extends AbstractDao {
 
     public List<Long> findIdsByBatchIds(List<Long> batchIds) {
         if (batchIds.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) -> em.createQuery("SELECT sr.id FROM StudyResult sr WHERE sr.batch.id IN :batchIds", Long.class)
+        return forReadOnly((EntityManager em) -> em.createQuery("SELECT sr.id FROM StudyResult sr WHERE sr.batch.id IN :batchIds", Long.class)
                 .setParameter("batchIds", batchIds)
                 .getResultList());
     }
 
     public List<Long> findIdsByGroupIds(List<Long> groupIds) {
         if (groupIds.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) -> em.createQuery("SELECT sr.id FROM StudyResult sr WHERE sr.activeGroupResult.id IN :groupIds OR sr.historyGroupResult.id IN :groupIds", Long.class)
+        return forReadOnly((EntityManager em) -> em.createQuery("SELECT sr.id FROM StudyResult sr WHERE sr.activeGroupResult.id IN :groupIds OR sr.historyGroupResult.id IN :groupIds", Long.class)
                 .setParameter("groupIds", groupIds)
                 .getResultList());
     }
 
     public Map<Long, Integer> countComponentResultsForStudyResultIds(List<Long> srids) {
         if (srids.isEmpty()) return Collections.emptyMap();
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             List<Tuple> tuples = em
                     .createQuery("""
                             SELECT cr.studyResult.id AS srid, COUNT(cr) AS count FROM ComponentResult cr
@@ -493,7 +493,7 @@ public class StudyResultDao extends AbstractDao {
      * states.
      */
     public boolean hasStudyWithStudyRunDone(Worker worker, Study study) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String hql = """
                     SELECT COUNT(sr) FROM StudyResult sr
                     WHERE sr.worker = :worker AND sr.study = :study
@@ -516,7 +516,7 @@ public class StudyResultDao extends AbstractDao {
      * Checks if the StudyResult with the given ID is done. 'Done' includes FINISHED, ABORTED, and FAIL states.
      */
     public boolean isStudyRunDone(String studyResultUuid) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = """
                     SELECT COUNT(sr) FROM StudyResult sr
                     WHERE sr.uuid = :studyResultUuid
@@ -539,7 +539,7 @@ public class StudyResultDao extends AbstractDao {
      * not FINISHED, ABORTED, or FAIL.
      */
     public boolean isStudyRunning(String uuid) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = """
                     SELECT COUNT(sr) FROM StudyResult sr WHERE sr.uuid = :uuid
                     AND sr.studyState NOT IN (:states)""";
@@ -589,7 +589,7 @@ public class StudyResultDao extends AbstractDao {
     }
 
     public String findUrlQueryParametersByUuid(String uuid) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT sr.urlQueryParameters FROM StudyResult sr WHERE sr.uuid = :uuid", String.class)
                         .setParameter("uuid", uuid)
                         .getSingleResult());

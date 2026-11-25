@@ -60,7 +60,7 @@ class ChannelInterceptor @Inject()(transactions: JpaTransactions,
         if (!channelMessageBus.isReady) {
           Left(Results.ServiceUnavailable("Cluster node is joining; retry the channel connection.")
             .withHeaders("Retry-After" -> "1"))
-        } else transactions.withReadOnlyTransaction((_: EntityManager) => {
+        } else transactions.forReadOnly((_: EntityManager) => {
           try {
             val studyResult = fetchStudyResult(studyResultUuid)
             studyResult.getWorkerType match {

@@ -34,11 +34,11 @@ public class ApiTokenDao extends AbstractDao {
     }
 
     public ApiToken find(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(ApiToken.class, id));
+        return forReadOnly((EntityManager em) -> em.find(ApiToken.class, id));
     }
 
     public Optional<ApiToken> findByHash(String tokenHash) {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             String queryStr = """
                     SELECT t FROM ApiToken t
                     LEFT JOIN FETCH t.user u
@@ -53,7 +53,7 @@ public class ApiTokenDao extends AbstractDao {
 
     public List<ApiToken> findByUser(User user) {
         String queryStr = "SELECT t FROM ApiToken t WHERE t.user = :user";
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery(queryStr, ApiToken.class)
                 .setParameter("user", user)
                 .getResultList());

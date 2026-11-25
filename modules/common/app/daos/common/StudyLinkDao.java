@@ -34,18 +34,18 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public StudyLink findByStudyCode(String studyCode) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(StudyLink.class, studyCode));
+        return forReadOnly((EntityManager em) -> em.find(StudyLink.class, studyCode));
     }
 
     public int countAll() {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery("SELECT count(sl) FROM StudyLink sl").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
     }
 
     public int countByBatchAndWorkerType(Batch batch, WorkerType workerType) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT count(sl) FROM StudyLink sl WHERE sl.batch = :batch AND sl.workerType = :workerType";
             Number result = (Number) em.createQuery(queryStr)
                     .setParameter("batch", batch)
@@ -56,7 +56,7 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public List<StudyLink> findAllByBatchAndWorkerType(Batch batch, WorkerType workerType) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = """
                     SELECT sl FROM StudyLink sl
                     LEFT JOIN FETCH sl.worker w
@@ -69,7 +69,7 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public Optional<StudyLink> findFirstByBatchAndWorkerType(Batch batch, WorkerType workerType) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.workerType = :workerType";
             return em.createQuery(queryStr, StudyLink.class)
                     .setParameter("batch", batch)
@@ -81,7 +81,7 @@ public class StudyLinkDao extends AbstractDao {
     }
 
     public Optional<StudyLink> findByBatchAndWorker(Batch batch, Worker worker) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT sr FROM StudyLink sr WHERE sr.batch =:batch AND sr.worker = :worker";
             return em.createQuery(queryStr, StudyLink.class)
                     .setParameter("batch", batch)

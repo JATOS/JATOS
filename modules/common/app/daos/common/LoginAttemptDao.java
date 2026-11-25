@@ -32,7 +32,7 @@ public class LoginAttemptDao extends AbstractDao {
     }
 
     public LoginAttempt find(Long id) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.find(LoginAttempt.class, id));
     }
 
@@ -61,7 +61,7 @@ public class LoginAttemptDao extends AbstractDao {
      * Returns the count of LoginAttempts that happened within the last minute for the given username and remoteAddress
      */
     public int countLoginAttemptsOfLastMin(String username, String remoteAddress) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MINUTE, -1);
             Number result = (Number) em.createQuery("""

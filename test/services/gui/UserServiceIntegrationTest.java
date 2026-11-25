@@ -42,6 +42,34 @@ public class UserServiceIntegrationTest extends JatosTest {
     private ApiTokenDao apiTokenDao;
 
     @Test
+    public void legacyPasswordUpgradePreservesSessionsAndRejectsStaleUpdates() {
+        User user = createUser("legacy-password");
+        assertThat(user.getPasswordHash()).startsWith("$argon2id$");
+        String legacy = utils.common.HashUtils.getHashMD5("legacy-secret");
+        user.setPasswordHash(legacy);
+        userDao.merge(user);
+        long version = user.getSessionVersion();
+        authService.writeSessionCookie(user, true);
+        assertThat(authService.authenticate(user, "wrong")).isFalse();
+        assertThat(userDao.findByUsername(user.getUsername()).getPasswordHash()).isEqualTo(legacy);
+        assertThat(authService.authenticate(user, "legacy-secret")).isTrue();
+        User upgraded = userDao.findByUsername(user.getUsername());
+        assertThat(upgraded.getPasswordHash()).startsWith("$argon2id$");
+        assertThat(upgraded.getSessionVersion()).isEqualTo(version);
+        assertThat(authService.getSignedinUserBySessionCookie()).isNotNull();
+
+        String oldHash = upgraded.getPasswordHash();
+        userService.updatePassword(upgraded, "reset-secret");
+        assertThat(userDao.upgradePasswordHash(user, oldHash, auth.gui.PasswordHasher.hash("legacy-secret")))
+                .isFalse();
+        User reset = userDao.findByUsername(user.getUsername());
+        assertThat(authService.authenticate(reset, "reset-secret")).isTrue();
+        assertThat(authService.authenticate(reset, "legacy-secret")).isFalse();
+        assertThat(reset.getSessionVersion()).isEqualTo(version + 1);
+        assertThat(authService.getSignedinUserBySessionCookie()).isNull();
+    }
+
+    @Test
     public void passwordChangeAndLogoutRejectOldCookies() {
         User user = createUser("session-revocation");
         authService.writeSessionCookie(user, true);

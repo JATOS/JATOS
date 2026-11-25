@@ -98,7 +98,7 @@ class BatchActionMsgBuilder @Inject()(transactions: JpaTransactions, batchDao: B
    * Builds a BatchMsg with the current batch session data and version
    */
   def buildSessionData(batchId: Long, action: BatchAction, tellWhom: TellWhom): BatchMsg = {
-    transactions.withReadOnlyTransaction((_: EntityManager) => {
+    transactions.forReadOnly((_: EntityManager) => {
       logger.debug(s".buildSessionData: batchId $batchId, action $action, tellWhom ${
         tellWhom
           .toString

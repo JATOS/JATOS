@@ -22,7 +22,7 @@ import play.data.Form;
 import play.data.validation.Constraints.Validatable;
 import play.data.validation.ValidationError;
 import services.gui.importexport.GitCredentialsService;
-import utils.common.HashUtils;
+import auth.gui.PasswordHasher;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -123,7 +123,7 @@ public class UserService {
 
             // Set password only if DB authentication
             if (authMethod == AuthMethod.DB) {
-                String passwordHash = HashUtils.getHashMD5(password);
+                String passwordHash = PasswordHasher.hash(password);
                 user.setPasswordHash(passwordHash);
             }
 
@@ -158,7 +158,7 @@ public class UserService {
         user.setEmail(props.getEmail());
         user.setActive(props.isActive());
         if (props.getPassword() != null) {
-            String newPasswordHash = HashUtils.getHashMD5(props.getPassword());
+            String newPasswordHash = PasswordHasher.hash(props.getPassword());
             user.setPasswordHash(newPasswordHash);
             userDao.mergeAndRevokeSessions(user);
         } else {
@@ -170,7 +170,7 @@ public class UserService {
      * Change password and persist user.
      */
     public void updatePassword(User user, String newPassword) {
-        String newPasswordHash = HashUtils.getHashMD5(newPassword);
+        String newPasswordHash = PasswordHasher.hash(newPassword);
         user.setPasswordHash(newPasswordHash);
         userDao.mergeAndRevokeSessions(user);
     }

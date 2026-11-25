@@ -60,11 +60,11 @@ public class JPAMocker {
             return null;
         }).when(transactions).withTransaction(any(Consumer.class));
         doAnswer(call -> ((Function<EntityManager, ?>) call.getArgument(0)).apply(entityManager))
-                .when(transactions).withReadOnlyTransaction(any(Function.class));
+                .when(transactions).forReadOnly(any(Function.class));
         doAnswer(call -> {
             ((Consumer<EntityManager>) call.getArgument(0)).accept(entityManager);
             return null;
-        }).when(transactions).withReadOnlyTransaction(any(Consumer.class));
+        }).when(transactions).forReadOnly(any(Consumer.class));
         doAnswer(call -> ((Function<EntityManager, ?>) call.getArgument(0)).apply(entityManager))
                 .when(transactions).withNewTransaction(any(Function.class));
         doAnswer(call -> {

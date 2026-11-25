@@ -156,7 +156,7 @@ public class ComponentResultDao extends AbstractDao {
      * in use, MySQL or H2. So we have to treat them differently to get the String.
      */
     public String getData(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             //noinspection SqlResolve
             Object result = em.createNativeQuery("SELECT cr.data FROM ComponentResult cr WHERE cr.id = :id")
                     .setParameter("id", id)
@@ -174,14 +174,14 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     public ComponentResult findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(ComponentResult.class, id));
+        return forReadOnly((EntityManager em) -> em.find(ComponentResult.class, id));
     }
 
     /**
      * Finds a componentResult by its ID and eagerly fetches the componet to avoid LazyInitializationException.
      */
     public ComponentResult findByIdWithComponent(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT cr FROM ComponentResult cr LEFT JOIN FETCH cr.component WHERE cr.id = :id";
             return em.createQuery(queryStr, ComponentResult.class)
                     .setParameter("id", id)
@@ -191,14 +191,14 @@ public class ComponentResultDao extends AbstractDao {
 
     public List<ComponentResult> findByIds(List<Long> ids) {
         if (ids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) -> em
+        return forReadOnly((EntityManager em) -> em
                 .createQuery("SELECT cr FROM ComponentResult cr WHERE cr.id IN :ids", ComponentResult.class)
                 .setParameter("ids", ids)
                 .getResultList());
     }
 
     public int count() {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr";
             Query query = em.createQuery(queryStr);
             Number result = (Number) query.getSingleResult();
@@ -210,7 +210,7 @@ public class ComponentResultDao extends AbstractDao {
      * Returns the number of ComponentResults belonging to the given Component.
      */
     public int countByComponent(Component component) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT COUNT(cr) FROM ComponentResult cr WHERE cr.component=:component";
             Query query = em.createQuery(queryStr);
             Number result = (Number) query.setParameter("component", component).getSingleResult();
@@ -223,7 +223,7 @@ public class ComponentResultDao extends AbstractDao {
      */
     public Map<Long, Integer> countByStudyComponents(Study study) {
         if (study == null) return Collections.emptyMap();
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             List<Tuple> tuples = em.createQuery("""
                                     SELECT cr.component.id AS componentId, COUNT(cr) AS count
                                     FROM ComponentResult cr
@@ -244,13 +244,13 @@ public class ComponentResultDao extends AbstractDao {
      * JATOS that didn't have those fields yet.
      */
     public List<Long> findAllIdsWhereDataSizeIsNull() {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.dataSize is NULL", Long.class)
                         .getResultList());
     }
 
     public List<ComponentResult> findAllByComponent(Component component) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT cr FROM ComponentResult cr WHERE cr.component=:component", ComponentResult.class)
                         .setParameter("component", component)
                         .getResultList());
@@ -264,7 +264,7 @@ public class ComponentResultDao extends AbstractDao {
      */
     public List<ComponentResult> findAllByComponent(Component component, int first, int max) {
         // Added 'LEFT JOIN FETCH' for performance (loads LAZY-linked StudyResults and their Workers)
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                         SELECT cr FROM ComponentResult cr
                                         LEFT JOIN FETCH cr.studyResult sr
@@ -288,7 +288,7 @@ public class ComponentResultDao extends AbstractDao {
                 .filter(Objects::nonNull)
                 .map(Component::getId)
                 .collect(Collectors.toList());
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             Number result = (Number) em.createQuery(
                             "SELECT SUM(cr.dataSize) FROM ComponentResult cr WHERE cr.component.id IN :componentIds")
                     .setParameter("componentIds", componentIds)
@@ -299,7 +299,7 @@ public class ComponentResultDao extends AbstractDao {
 
     public List<Long> findIdsByComponentIds(List<Long> componentIds) {
         if (componentIds.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN :componentIds", Long.class)
                         .setParameter("componentIds", componentIds)
                         .getResultList().stream().distinct().collect(Collectors.toList()));
@@ -307,7 +307,7 @@ public class ComponentResultDao extends AbstractDao {
 
     public List<Long> findIdsByComponentUuids(List<String> componentUuids) {
         if (componentUuids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                 SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN
                                 (SELECT c.id FROM Component c WHERE c.uuid IN :componentUuids)""", Long.class)
@@ -317,7 +317,7 @@ public class ComponentResultDao extends AbstractDao {
 
     public List<Long> findIdsByStudyIds(List<Long> studyIds) {
         if (studyIds.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                 SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN
                                 (SELECT c.id FROM Component c WHERE c.study.id IN :studyIds)""", Long.class)
@@ -327,7 +327,7 @@ public class ComponentResultDao extends AbstractDao {
 
     public List<Long> findIdsByStudyUuids(List<String> studyUuids) {
         if (studyUuids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                 SELECT cr.id FROM ComponentResult cr WHERE cr.component.id IN
                                 (SELECT c.id FROM Component c WHERE c.study.id IN
@@ -337,7 +337,7 @@ public class ComponentResultDao extends AbstractDao {
     }
 
     public List<Long> findIdsByStudyResultId(Long srid) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.studyResult.id = :srid", Long.class)
                         .setParameter("srid", srid)
                         .getResultList());
@@ -347,7 +347,7 @@ public class ComponentResultDao extends AbstractDao {
      * Returns the last ComponentResult that belongs to the given StudyResult.
      */
     public Optional<ComponentResult> findLastByStudyResult(StudyResult studyResult) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT cr FROM ComponentResult cr WHERE cr.studyResult = :studyResult ORDER BY cr.id DESC";
             return em.createQuery(queryStr, ComponentResult.class)
                     .setParameter("studyResult", studyResult)
@@ -362,7 +362,7 @@ public class ComponentResultDao extends AbstractDao {
      * component.
      */
     public List<Long> findIdsByStudyResultAndComponent(Long studyResultId, Component component) {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             String queryStr = "SELECT cr.id FROM ComponentResult cr WHERE cr.studyResult.id = :srid";
             if (component != null) {
                 queryStr += " AND cr.component = :component";
@@ -386,7 +386,7 @@ public class ComponentResultDao extends AbstractDao {
             return Collections.emptyList();
         }
 
-        List<Object[]> dbResults = withReadOnlyTransaction((EntityManager em) ->
+        List<Object[]> dbResults = forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                 SELECT cr.studyResult.id, cr.id
                                 FROM ComponentResult cr
@@ -424,7 +424,7 @@ public class ComponentResultDao extends AbstractDao {
      */
     public List<Long> findIdsByComponentResultIds(List<Long> crids) {
         if (crids.isEmpty()) return Collections.emptyList();
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT cr.id FROM ComponentResult cr WHERE cr.id IN :ids", Long.class)
                         .setParameter("ids", crids)
                         .getResultList().stream().distinct().collect(Collectors.toList()));

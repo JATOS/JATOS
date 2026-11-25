@@ -92,7 +92,7 @@ class GroupActionMsgBuilder @Inject()(transactions: JpaTransactions, groupResult
             includeSessionData: Boolean, action: GroupAction, tellWhom: TellWhom): GroupMsg = {
     // The current group data are persisted in a GroupResult entity.
     // The GroupResult determines who is a member of the group - and not the group registry.
-    transactions.withReadOnlyTransaction((_: EntityManager) => {
+    transactions.forReadOnly((_: EntityManager) => {
       logger.debug(s".build: groupResultId $groupResultId, studyResultId $studyResultId, action " +
         s"$action , tellWhom ${tellWhom.toString}")
       val groupResult = groupResultDao.findById(groupResultId)

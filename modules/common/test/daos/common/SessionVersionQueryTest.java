@@ -27,7 +27,7 @@ public class SessionVersionQueryTest {
         JpaTransactions api = mock(JpaTransactions.class);
         EntityManager em = mock(EntityManager.class);
         TypedQuery<Long> query = mock(TypedQuery.class);
-        when(api.withReadOnlyTransaction(any(Function.class)))
+        when(api.forReadOnly(any(Function.class)))
                 .thenAnswer(call -> ((Function<EntityManager, ?>) call.getArgument(0)).apply(em));
         when(em.createQuery(jpql, Long.class)).thenReturn(query);
         when(query.setParameter("id", 1L)).thenReturn(query);

@@ -26,7 +26,7 @@ public class MTWorkerDao extends WorkerDao {
      * case-insensitive way. The only possible worker types are "MT" or "MTSandbox".
      */
     public Optional<MTWorker> findByMTWorkerId(String mtWorkerId, WorkerType workerType) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = """
                     SELECT w
                     FROM Worker w

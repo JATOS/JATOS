@@ -50,12 +50,12 @@ public abstract class AbstractDao {
     }
 
     // Convenience helpers for DAO implementations; services coordinate transactions through the API.
-    protected <T> T withReadOnlyTransaction(Function<EntityManager, T> block) {
-        return jpa.withReadOnlyTransaction(block);
+    protected <T> T forReadOnly(Function<EntityManager, T> block) {
+        return jpa.forReadOnly(block);
     }
 
-    protected void withReadOnlyTransaction(Consumer<EntityManager> block) {
-        jpa.withReadOnlyTransaction(block);
+    protected void forReadOnly(Consumer<EntityManager> block) {
+        jpa.forReadOnly(block);
     }
 
     protected <T> T withTransaction(Function<EntityManager, T> block) {

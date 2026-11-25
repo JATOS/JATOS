@@ -36,14 +36,14 @@ public class ComponentDao extends AbstractDao {
     }
 
     public Component findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(Component.class, id));
+        return forReadOnly((EntityManager em) -> em.find(Component.class, id));
     }
 
     /**
      * Finds the component by its ID and eagerly fetches the Study it belongs to.
      */
     public Component findByIdWithStudy(Long id) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c JOIN FETCH c.study WHERE c.id = :id";
             return em.createQuery(queryStr, Component.class)
                     .setParameter("id", id)
@@ -55,7 +55,7 @@ public class ComponentDao extends AbstractDao {
      * Finds the component with this UUID
      */
     public Optional<Component> findByUuid(String uuid) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.uuid=:uuid";
             return em.createQuery(queryStr, Component.class)
                     .setParameter("uuid", uuid)
@@ -70,7 +70,7 @@ public class ComponentDao extends AbstractDao {
      * Component does not have an index on its UUID field.
      */
     public Optional<Component> findByUuid(String uuid, Study study) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.study=:study AND c.uuid=:uuid";
             return em.createQuery(queryStr, Component.class)
                     .setParameter("study", study)
@@ -85,7 +85,7 @@ public class ComponentDao extends AbstractDao {
      * Finds all components with the given title and returns them in a list. If there is none it returns an empty list.
      */
     public List<Component> findByTitle(String title) {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             String queryStr = "SELECT c FROM Component c WHERE c.title=:title";
             TypedQuery<Component> query = em.createQuery(queryStr, Component.class);
             return query.setParameter("title", title).getResultList();
@@ -102,7 +102,7 @@ public class ComponentDao extends AbstractDao {
                 .collect(Collectors.toList());
         if (componentUuids.isEmpty()) return Optional.empty();
 
-        return withReadOnlyTransaction((EntityManager em) -> em.createQuery("""
+        return forReadOnly((EntityManager em) -> em.createQuery("""
                         SELECT c.uuid FROM Component c
                         WHERE c.uuid IN :componentUuids AND c.study.uuid <> :studyUuid""",
                         String.class)
