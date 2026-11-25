@@ -10,7 +10,7 @@ import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import services.gui.importexport.StudyArchiveImportStorage
 import services.publix.GroupCleaner
-import utils.common.HashUtils
+import auth.gui.PasswordHasher
 
 import java.io.File
 import java.net.{BindException, InetAddress, InetSocketAddress, ServerSocket}
@@ -162,11 +162,14 @@ class OnStartStop @Inject()(lifecycle: ApplicationLifecycle,
     if (Common.hasUserAdminPassword) {
       val admin = userDao.findByUsername("admin")
       if (admin != null) {
-        val newHash = HashUtils.getHashMD5(Common.getUserAdminPassword)
-        if (admin.getPasswordHash != newHash) {
-          admin.setPasswordHash(newHash)
-          userDao.merge(admin)
+        val password = Common.getUserAdminPassword
+        val storedHash = admin.getPasswordHash
+        if (!PasswordHasher.verify(password, storedHash)) {
+          admin.setPasswordHash(PasswordHasher.hash(password))
+          userDao.mergeAndRevokeSessions(admin)
           logger.info("Admin password updated from configuration")
+        } else if (PasswordHasher.isLegacy(storedHash)) {
+          userDao.upgradePasswordHash(admin, storedHash, PasswordHasher.hash(password))
         }
       }
     }

@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import models.common.Study;
 import models.common.User;
+import models.common.User.AuthMethod;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -41,23 +42,31 @@ public class UserDao extends AbstractDao {
         super.refresh(user);
     }
 
-    public boolean authenticate(String normalizedUsername, String passwordHash) {
-        if (normalizedUsername == null || passwordHash == null) return false;
-
-        return withReadOnlyTransaction(em -> {
-            Long count = em.createQuery("""
-                                    SELECT COUNT(u) FROM User u
-                                    WHERE u.username = :username AND u.passwordHash = :passwordHash""",
-                            Long.class)
-                    .setParameter("username", normalizedUsername)
-                    .setParameter("passwordHash", passwordHash)
-                    .getSingleResult();
-            return count != null && count > 0;
+    /**
+     * Upgrades a verified hash without overwriting a concurrent reset or revoking sessions.
+     */
+    public boolean upgradePasswordHash(User user, String expectedHash, String upgradedHash) {
+        return withTransaction(em -> {
+            int updated = em.createQuery("""
+                            UPDATE User SET passwordHash = :upgradedHash
+                            WHERE username = :username AND passwordHash = :expectedHash
+                            AND sessionVersion = :sessionVersion AND authMethod = :authMethod
+                            """)
+                    .setParameter("upgradedHash", upgradedHash)
+                    .setParameter("username", user.getUsername())
+                    .setParameter("expectedHash", expectedHash)
+                    .setParameter("sessionVersion", user.getSessionVersion())
+                    .setParameter("authMethod", AuthMethod.DB)
+                    .executeUpdate();
+            // Reload User after bulk update
+            User managed = em.find(User.class, user.getUsername());
+            if (managed != null) em.refresh(managed);
+            return updated == 1;
         });
     }
 
     public User findByUsername(String normalizedUsername) {
-        return withReadOnlyTransaction((EntityManager em) -> em.find(User.class, normalizedUsername));
+        return forReadOnly((EntityManager em) -> em.find(User.class, normalizedUsername));
     }
 
     /**
@@ -95,7 +104,7 @@ public class UserDao extends AbstractDao {
      * Finds a user by username and eagerly fetches their studyList.
      */
     public User findByUsernameWithStudies(String normalizedUsername) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("""
                                 SELECT DISTINCT u FROM User u
                                         LEFT JOIN FETCH u.studyList
@@ -109,7 +118,7 @@ public class UserDao extends AbstractDao {
     }
 
     public User findById(Long id) {
-        return withReadOnlyTransaction((EntityManager em) ->
+        return forReadOnly((EntityManager em) ->
                 em.createQuery("SELECT u FROM User u WHERE u.id = :id", User.class)
                         .setParameter("id", id)
                         .setMaxResults(1)
@@ -119,7 +128,7 @@ public class UserDao extends AbstractDao {
     }
 
     public List<User> findAll() {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             return em.createQuery("SELECT u FROM User u", User.class).getResultList();
         });
     }
@@ -136,7 +145,7 @@ public class UserDao extends AbstractDao {
      * Returns a list of all users and eagerly fetches their studyList.
      */
     public List<User> findAllWithStudies() {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             return em.createQuery("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.studyList", User.class)
                     .getResultList();
         });
@@ -146,7 +155,7 @@ public class UserDao extends AbstractDao {
      * Returns a mapping of usernames to a list of study IDs for which each user is a member.
      */
     public Map<String, List<Long>> findAllUsersAndTheirStudyIds() {
-        return withReadOnlyTransaction((EntityManager em) -> {
+        return forReadOnly((EntityManager em) -> {
             List<Object[]> userStudyMappings = em.createQuery(
                             "SELECT u.username, s.id FROM User u JOIN u.studyList s", Object[].class)
                     .getResultList();
@@ -166,7 +175,7 @@ public class UserDao extends AbstractDao {
      * Returns all users that are members of the given study.
      */
     public List<User> findAllByStudy(Study study) {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             return em.createQuery("SELECT u FROM Study s JOIN s.userList u WHERE s = :study", User.class)
                     .setParameter("study", study)
                     .getResultList();
@@ -177,7 +186,7 @@ public class UserDao extends AbstractDao {
      * Returns the number of User rows
      */
     public int count() {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             Number result = (Number) em.createQuery("SELECT COUNT(u) FROM User u").getSingleResult();
             return result != null ? result.intValue() : 0;
         });
@@ -187,7 +196,7 @@ public class UserDao extends AbstractDao {
      * Returns the users with the most recent lastSeen datetime field. Limit the number by 'limit'.
      */
     public List<User> findLastSeen(int limit) {
-        return withReadOnlyTransaction(em -> {
+        return forReadOnly(em -> {
             return em.createQuery("SELECT u FROM User u ORDER BY lastSeen DESC", User.class)
                     .setMaxResults(limit)
                     .getResultList();

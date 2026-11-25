@@ -51,19 +51,36 @@ public class AuthServiceTest {
     }
 
     @Test
-    public void authenticate_DB_hashesPasswordAndDelegatesToUserDao() {
-        User user = new User();
-        user.setUsername("alice");
+    public void authenticate_legacyPasswordUpgradesOnlyAfterVerification() {
+        User user = new User("alice", "Alice", null);
         user.setAuthMethod(User.AuthMethod.DB);
-        String password = "secret";
-        String expectedHash = HashUtils.getHashMD5(password);
-        when(userDao.authenticate("alice", expectedHash)).thenReturn(true);
+        String legacy = HashUtils.getHashMD5("secret");
+        user.setPasswordHash(legacy);
+        assertThat(authService.authenticate(user, "wrong")).isFalse();
+        verifyNoInteractions(userDao);
+        when(userDao.upgradePasswordHash(eq(user), eq(legacy), anyString())).thenReturn(true);
+        assertThat(authService.authenticate(user, "secret")).isTrue();
+        assertThat(user.getPasswordHash()).startsWith("$argon2id$");
+        assertThat(PasswordHasher.verify("secret", user.getPasswordHash())).isTrue();
+    }
 
-        boolean result = authService.authenticate(user, password);
+    @Test
+    public void authenticate_concurrentResetRejectsLegacyLogin() {
+        User user = new User("alice", "Alice", null);
+        user.setAuthMethod(User.AuthMethod.DB);
+        user.setPasswordHash(HashUtils.getHashMD5("secret"));
+        assertThat(authService.authenticate(user, "secret")).isFalse();
+        verify(userDao).upgradePasswordHash(eq(user), eq(user.getPasswordHash()), anyString());
+    }
 
-        assertThat(result).isTrue();
-        verify(userDao).authenticate("alice", expectedHash);
-        verifyNoInteractions(signinLdap);
+    @Test
+    public void authenticate_argon2DoesNotWriteToDatabase() {
+        User user = new User("alice", "Alice", null);
+        user.setAuthMethod(User.AuthMethod.DB);
+        user.setPasswordHash(PasswordHasher.hash("secret"));
+        assertThat(authService.authenticate(user, "secret")).isTrue();
+        assertThat(authService.authenticate(user, "wrong")).isFalse();
+        verifyNoInteractions(userDao, signinLdap);
     }
 
     @Test

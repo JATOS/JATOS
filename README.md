@@ -155,3 +155,11 @@ bash deploy/build-release.sh --help
   body, so fill in the template for the release before using this option.
 
 Without publishing options, the script only builds local release artifacts.
+
+### Local password storage
+
+Local passwords use salted Argon2id (19 MiB, two iterations, parallelism one).
+Existing MD5 hashes are upgraded after successful password authentication; users keep their passwords.
+Password changes revoke sessions, while hash upgrades do not. The existing `User.passwordHash` column is reused.
+Accounts that never authenticate retain their legacy hashes until a password reset.
+Upgrade all nodes together: older JATOS versions cannot verify Argon2id hashes, including after rollback.

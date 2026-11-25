@@ -10,7 +10,6 @@ import models.common.User;
 import play.Logger;
 import play.Logger.ALogger;
 import play.mvc.Http;
-import utils.common.HashUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -71,14 +70,21 @@ public class AuthService {
 
         return switch (user.getAuthMethod()) {
             case LDAP -> signinLdap.authenticate(user.getUsername(), password);
-            case DB -> authenticateViaDb(user.getUsername(), password);
+            case DB -> authenticateViaDb(user, password);
             default -> throw new AuthException("Unsupported auth method " + user.getAuthMethod().name());
         };
     }
 
-    private boolean authenticateViaDb(String normalizedUsername, String password) {
-        String passwordHash = HashUtils.getHashMD5(password);
-        return userDao.authenticate(normalizedUsername, passwordHash);
+    private boolean authenticateViaDb(User user, String password) {
+        String storedHash = user.getPasswordHash();
+        if (!PasswordHasher.verify(password, storedHash)) return false;
+        if (!PasswordHasher.isLegacy(storedHash)) return true;
+
+        String upgradedHash = PasswordHasher.hash(password);
+        // A concurrent password reset or logout must win over this upgrade.
+        if (!userDao.upgradePasswordHash(user, storedHash, upgradedHash)) return false;
+        user.setPasswordHash(upgradedHash);
+        return true;
     }
 
     /**
