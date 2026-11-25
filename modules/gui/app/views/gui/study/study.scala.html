@@ -41,9 +41,11 @@
             <button class="btn btn-study" id="studyProperties" type="button" data-bs-toggle="modal" data-bs-target="#studyPropertiesModal" data-bs-tooltip="Change this study's properties">
                 <i class="bi-gear-fill"></i><span class="d-none d-xl-inline ps-1">Properties</span>
             </button>
-            <div class="btn-group d-none no-info-icon" id="studySyncButton" data-bs-tooltip="Synchronize this study's properties and assets with its configured Git repository or local folder">
+            <div class="btn-group d-none no-info-icon" id="studySyncButton">
                 <button class="btn btn-study dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i id="studySyncIcon"></i><span class="d-none d-xl-inline ps-1">Sync</span>
+                    <span class="no-info-icon" data-bs-tooltip="Synchronize this study's properties and assets with its configured Git repository or local folder">
+                        <i id="studySyncIcon"></i><span class="d-none d-xl-inline ps-1">Sync</span>
+                    </span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-study">
                     <li class="study-folder-sync"><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#studySyncModal" data-operation="IMPORT" data-bs-tooltip="Import this study from a local folder. The current study's properties and assets will be replaced. The folder's location is configured in the study source.">
