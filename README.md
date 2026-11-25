@@ -5,6 +5,14 @@ More information about JATOS: [www.jatos.org/Whats-JATOS.html](http://www.jatos.
 This software is licensed under the [Apache 2 License](http://www.apache.org/licenses/LICENSE-2.0.html).
 
 
+## Study link types
+
+The Study Links page offers Personal Single, Personal Multiple, General Single,
+and General Multiple links. MTurk setup and source-code generation have been
+removed. Legacy MTurk and MTurk Sandbox types and historical results remain
+supported in stored data. Saving batch properties no longer submits MTurk as an
+allowed type.
+
 ## Build from source
 
 Run the following commands from the repository root. Install a JDK (Java 21 or

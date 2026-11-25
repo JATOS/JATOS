@@ -43,6 +43,9 @@
     import * as Helpers from "@routes.Assets.versioned("lib/jatos-gui/javascripts/helpers.js")";
     import * as Alerts from "@routes.Assets.versioned("lib/jatos-gui/javascripts/alerts.js")";
 
+    // The study link page doesn't deal with the "Jatos" type meant for development
+    const studyLinkTypes = ["PersonalSingle", "PersonalMultiple", "GeneralSingle", "GeneralMultiple"];
+
     $("#studyLinksCreatorAllTypesModal").on('show.bs.modal', function() {
         $("#studyLinksCreatorAllTypesForm")[0].reset();
         $("#studyLinksCreatorAllTypesBatchSelect").empty();
@@ -50,7 +53,7 @@
 
         const batchList = $("#batchTable").DataTable().data();
         $.each(batchList, function(index, batch) {
-            const allowedWorkerTypes = batch.allowedWorkerTypes.filter(t => t !== "Jatos" && t !== "MTSandbox");
+            const allowedWorkerTypes = batch.allowedWorkerTypes.filter(t => studyLinkTypes.includes(t));
             const option = $(`<option value="${batch.id}">${batch.title}</option>`)
                 .data("allowed-types", allowedWorkerTypes)
                 .data("batch", batch);
@@ -58,7 +61,7 @@
         });
 
         const availableTypes = Object.entries(Helpers.getWorkerTypeNames())
-            .filter(([k, v]) => k !== "MTSandbox" && k !== "Jatos"); // Filter out types that we do not want here
+            .filter(([k, v]) => studyLinkTypes.includes(k));
         $.each(availableTypes, function(index, type) {
             $("#studyLinksCreatorAllTypesTypeSelect").append(`<option value="${type[0]}">${type[1]}</option>`);
         });
@@ -100,12 +103,6 @@
             $('#studyLinksCreatorAllTypesModal')
                     .modal('hide')
                     .one('hidden.bs.modal', () => $("#singleStudyLinkDisplayModal").modal('show'));
-            break;
-        case 'MT':
-            $('#mtSourceCodeModal').data('batch', batch);
-            $('#studyLinksCreatorAllTypesModal')
-                    .modal('hide')
-                    .one('hidden.bs.modal', () => $("#mtSourceCodeModal").modal('show'));
             break;
         }
     });

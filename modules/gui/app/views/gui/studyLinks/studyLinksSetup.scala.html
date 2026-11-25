@@ -79,23 +79,6 @@
             </div>
         </div>
 
-        <div class="study-links-setup d-flex align-items-center" data-type="MT">
-            <label class="switch no-info-icon" data-bs-tooltip="Use this switch to de-/activate this type. Study links from deactivated types will not work.">
-                <input class="active-type" type="checkbox">
-                <span class="slider slider-batch round"></span>
-            </label>
-            <div class="flex-grow-1 mx-3">
-                <span data-bs-tooltip="MTurk workers do not have a study link they have source code that contains the study link. This source code has to be copied into the 'source' field of your study's design layout in Mechanical Turk.">MTurk</span>
-            </div>
-            <div class="text-nowrap float-end">
-                <button class="btn btn-batch mt-source-code" type="button" data-bs-tooltip="Show code that has to be copied into the 'source' field of your study's design layout in Mechanical Turk">
-                    <span class="d-none d-xl-inline"><i class="bi-code-slash pe-1"></i>Source </span>Code
-                </button>
-                <button class="btn btn-batch worker-results-button" type="button" data-bs-tooltip="Show all study results that belong to this batch and type MTurk">
-                    Results<span class="worker-results-badge badge text-batch bg-white rounded-pill ms-1"></span>
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -166,7 +149,6 @@
         renderResultsButton("PersonalMultiple", countsPerType.PersonalMultiple, studyLinksSetupDiv);
         renderResultsButton("GeneralSingle", countsPerType.GeneralSingle, studyLinksSetupDiv);
         renderResultsButton("GeneralMultiple", countsPerType.GeneralMultiple, studyLinksSetupDiv);
-        renderResultsButton("MT", countsPerType.MT + countsPerType.MTSandbox, studyLinksSetupDiv);
     }
 
     function renderStudyLinksManagerButton(type, count, studyLinksSetupDiv) {
@@ -259,10 +241,4 @@
             alerts.warning(`Type "${typeUI}" is currently not allowed in this batch and study links belonging to this type will not run. Activate this type to allow study runs.`, 10000, true);
         }
     }
-
-    $('#batchTable').on('click', '.mt-source-code', function() {
-        const batch = Helpers.getDataFromDataTableRow($("#batchTable").DataTable(), this);
-        $('#mtSourceCodeModal').data('batch', batch);
-        $("#mtSourceCodeModal").modal('show');
-    });
 </script>
