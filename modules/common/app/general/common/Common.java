@@ -77,6 +77,7 @@ public class Common {
     private static String oidcPkceMode;
     private static List<String> oidcScope;
     private static String oidcUsernameFrom;
+    private static boolean oidcAllowUnverifiedEmail;
     private static String oidcIdTokenSigningAlgorithm;
     private static String oidcSigninButtonText;
     private static String oidcSigninButtonLogoUrl;
@@ -87,6 +88,7 @@ public class Common {
     private static String orcidPkceMode;
     private static List<String> orcidScope;
     private static String orcidUsernameFrom;
+    private static boolean orcidAllowUnverifiedEmail;
     private static String orcidIdTokenSigningAlgorithm;
     private static String orcidSigninButtonText;
     private static String orcidSigninButtonLogoUrl;
@@ -97,6 +99,7 @@ public class Common {
     private static String sramPkceMode;
     private static List<String> sramScope;
     private static String sramUsernameFrom;
+    private static boolean sramAllowUnverifiedEmail;
     private static String sramIdTokenSigningAlgorithm;
     private static String sramSigninButtonText;
     private static String sramSigninButtonLogoUrl;
@@ -107,6 +110,7 @@ public class Common {
     private static String conextPkceMode;
     private static List<String> conextScope;
     private static String conextUsernameFrom;
+    private static boolean conextAllowUnverifiedEmail;
     private static String conextIdTokenSigningAlgorithm;
     private static String conextSigninButtonText;
     private static String conextSigninButtonLogoUrl;
@@ -234,6 +238,7 @@ public class Common {
         oidcPkceMode = readPkceMode(config, "jatos.user.authentication.oidc.pkceMode");
         oidcScope = getStringList(config, "jatos.user.authentication.oidc.scope");
         oidcUsernameFrom = config.getString("jatos.user.authentication.oidc.usernameFrom");
+        oidcAllowUnverifiedEmail = config.getBoolean("jatos.user.authentication.oidc.allowUnverifiedEmail");
         oidcIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.oidc.idTokenSigningAlgorithm");
         oidcSigninButtonText = config.getString("jatos.user.authentication.oidc.signInButtonText");
         oidcSigninButtonLogoUrl = config.getString("jatos.user.authentication.oidc.signInButtonLogoUrl");
@@ -244,6 +249,7 @@ public class Common {
         orcidPkceMode = readPkceMode(config, "jatos.user.authentication.orcid.pkceMode");
         orcidScope = getStringList(config, "jatos.user.authentication.orcid.scope");
         orcidUsernameFrom = config.getString("jatos.user.authentication.orcid.usernameFrom");
+        orcidAllowUnverifiedEmail = config.getBoolean("jatos.user.authentication.orcid.allowUnverifiedEmail");
         orcidIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.orcid.idTokenSigningAlgorithm");
         orcidSigninButtonText = config.getString("jatos.user.authentication.orcid.signInButtonText");
         orcidSigninButtonLogoUrl = config.getString("jatos.user.authentication.orcid.signInButtonLogoUrl");
@@ -254,6 +260,7 @@ public class Common {
         sramPkceMode = readPkceMode(config, "jatos.user.authentication.sram.pkceMode");
         sramScope = getStringList(config, "jatos.user.authentication.sram.scope");
         sramUsernameFrom = config.getString("jatos.user.authentication.sram.usernameFrom");
+        sramAllowUnverifiedEmail = config.getBoolean("jatos.user.authentication.sram.allowUnverifiedEmail");
         sramIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.sram.idTokenSigningAlgorithm");
         sramSigninButtonText = config.getString("jatos.user.authentication.sram.signInButtonText");
         sramSigninButtonLogoUrl = config.getString("jatos.user.authentication.sram.signInButtonLogoUrl");
@@ -264,6 +271,7 @@ public class Common {
         conextPkceMode = readPkceMode(config, "jatos.user.authentication.conext.pkceMode");
         conextScope = getStringList(config, "jatos.user.authentication.conext.scope");
         conextUsernameFrom = config.getString("jatos.user.authentication.conext.usernameFrom");
+        conextAllowUnverifiedEmail = config.getBoolean("jatos.user.authentication.conext.allowUnverifiedEmail");
         conextIdTokenSigningAlgorithm = config.getString("jatos.user.authentication.conext.idTokenSigningAlgorithm");
         conextSigninButtonText = config.getString("jatos.user.authentication.conext.signInButtonText");
         conextSigninButtonLogoUrl = config.getString("jatos.user.authentication.conext.signInButtonLogoUrl");
@@ -746,6 +754,11 @@ public class Common {
         return oidcUsernameFrom;
     }
 
+    /** Whether email-based login may bypass the provider's verification claim. */
+    public static boolean getOidcAllowUnverifiedEmail() {
+        return oidcAllowUnverifiedEmail;
+    }
+
     /**
      * OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
      */
@@ -815,6 +828,11 @@ public class Common {
      */
     public static String getOrcidUsernameFrom() {
         return orcidUsernameFrom;
+    }
+
+    /** Whether email-based login may bypass the provider's verification claim. */
+    public static boolean getOrcidAllowUnverifiedEmail() {
+        return orcidAllowUnverifiedEmail;
     }
 
     /**
@@ -891,6 +909,11 @@ public class Common {
         return sramUsernameFrom;
     }
 
+    /** Whether email-based login may bypass the provider's verification claim. */
+    public static boolean getSramAllowUnverifiedEmail() {
+        return sramAllowUnverifiedEmail;
+    }
+
     /**
      * SRAM's OpenId Connect (OIDC) token signing algorithm (e.g. RS256)
      */
@@ -965,6 +988,11 @@ public class Common {
      */
     public static String getConextUsernameFrom() {
         return conextUsernameFrom;
+    }
+
+    /** Whether email-based login may bypass the provider's verification claim. */
+    public static boolean getConextAllowUnverifiedEmail() {
+        return conextAllowUnverifiedEmail;
     }
 
     /**

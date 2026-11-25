@@ -20,6 +20,7 @@ public class SigninBasicOidc extends SigninOidc {
                 Common.getOidcScope(),
                 Common.getOidcPkceMode(),
                 Common.getOidcUsernameFrom(),
+                Common.getOidcAllowUnverifiedEmail(),
                 Common.getOidcIdTokenSigningAlgorithm(),
                 Common.getOidcSuccessFeedback()
         ));

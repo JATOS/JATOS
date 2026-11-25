@@ -23,6 +23,7 @@ public class SigninOrcid extends SigninOidc {
                 Common.getOrcidScope(),
                 Common.getOrcidPkceMode(),
                 Common.getOrcidUsernameFrom(),
+                Common.getOrcidAllowUnverifiedEmail(),
                 Common.getOrcidIdTokenSigningAlgorithm(),
                 Common.getOrcidSuccessFeedback()
         ));

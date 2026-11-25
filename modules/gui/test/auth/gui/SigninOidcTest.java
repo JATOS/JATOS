@@ -57,6 +57,10 @@ public class SigninOidcTest {
         }
 
         TestSigninOidc(String pkceMode, String clientSecret) {
+            this(pkceMode, clientSecret, false);
+        }
+
+        TestSigninOidc(String pkceMode, String clientSecret, boolean allowUnverifiedEmail) {
             super(new OidcConfig(
                     models.common.User.AuthMethod.OIDC,
                     "https://discovery.example/.well-known/openid-configuration",
@@ -66,6 +70,7 @@ public class SigninOidcTest {
                     Arrays.asList("openid", "profile", "email"),
                     pkceMode,
                     "email",
+                    allowUnverifiedEmail,
                     "RS256",
                     ""
             ));
@@ -91,9 +96,57 @@ public class SigninOidcTest {
         TestSigninOidc tso = new TestSigninOidc();
         UserInfo info = new UserInfo(new Subject("sub-1"));
         info.setEmailAddress("Alice@example.org");
+        info.setEmailVerified(true);
 
         assertThat(tso.getUsername(info, "email")).isEqualTo("Alice@example.org");
         assertThat(tso.getUsername(info, "subject")).isEqualTo("sub-1");
+    }
+
+    @Test
+    public void emailVerification_rejectsFalseAndMissingBeforeUserLookup() throws Exception {
+        TestSigninOidc controller = new TestSigninOidc();
+        injectServices(controller);
+        for (Boolean verified : Arrays.asList(false, null)) {
+            UserInfo info = new UserInfo(new Subject("attacker"));
+            info.setEmailAddress("victim@example.org");
+            info.setEmailVerified(verified);
+            assertThatThrownBy(() -> invokeGetOrRegisterUser(controller, info))
+                    .hasCauseInstanceOf(AuthException.class);
+        }
+        Mockito.verifyNoInteractions(userDao, userService, authService);
+    }
+
+    @Test
+    public void emailVerification_adminOverrideAllowsFalseAndMissing() throws Exception {
+        TestSigninOidc controller = new TestSigninOidc("off", "", true);
+        injectServices(controller);
+        User existing = new User("alice@example.org", "Alice", "alice@example.org");
+        existing.setAuthMethod(User.AuthMethod.OIDC);
+        when(userDao.findByUsername("alice@example.org")).thenReturn(existing);
+        for (Boolean verified : Arrays.asList(false, null)) {
+            UserInfo info = new UserInfo(new Subject("alice"));
+            info.setEmailAddress("alice@example.org");
+            info.setEmailVerified(verified);
+            assertThat(invokeGetOrRegisterUser(controller, info)).isSameAs(existing);
+        }
+    }
+
+    @Test
+    public void emailVerification_subjectDoesNotRequireVerifiedEmail() {
+        UserInfo info = new UserInfo(new Subject("alice"));
+        info.setEmailVerified(false);
+        assertThat(new TestSigninOidc().getUsername(info, "subject")).isEqualTo("alice");
+    }
+
+    @Test
+    public void emailVerification_overrideStillRequiresEmail() {
+        TestSigninOidc controller = new TestSigninOidc("off", "", true);
+        for (String email : Arrays.asList(null, "", " ")) {
+            UserInfo info = new UserInfo(new Subject("alice"));
+            info.setEmailAddress(email);
+            assertThatThrownBy(() -> controller.getUsername(info, "email"))
+                    .isInstanceOf(AuthException.class);
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -382,6 +435,7 @@ public class SigninOidcTest {
 
         UserInfo info = new UserInfo(new Subject("sub-3"));
         info.setEmailAddress("Alice@example.org");
+        info.setEmailVerified(true);
 
         User user = new User("alice@example.org", "Alice", "alice@example.org");
         user.setAuthMethod(User.AuthMethod.OIDC);
@@ -399,6 +453,7 @@ public class SigninOidcTest {
 
         UserInfo info = new UserInfo(new Subject("sub-4"));
         info.setEmailAddress("Bob@example.org");
+        info.setEmailVerified(true);
 
         User user = new User("bob@example.org", "Bob", "bob@example.org");
         user.setAuthMethod(User.AuthMethod.DB);
@@ -418,6 +473,7 @@ public class SigninOidcTest {
 
         UserInfo info = new UserInfo(new Subject("sub-5"));
         info.setEmailAddress("Carol@example.org");
+        info.setEmailVerified(true);
         info.setName("Carol Example");
 
         when(userDao.findByUsername("carol@example.org")).thenReturn(null);
@@ -448,6 +504,7 @@ public class SigninOidcTest {
 
         UserInfo info = new UserInfo(new Subject("sub-6"));
         info.setEmailAddress("Dana@example.org");
+        info.setEmailVerified(true);
         info.setGivenName("Dana");
         info.setFamilyName("Example");
 
@@ -473,6 +530,7 @@ public class SigninOidcTest {
 
         UserInfo info = new UserInfo(new Subject("sub-7"));
         info.setEmailAddress("Erin@example.org");
+        info.setEmailVerified(true);
 
         when(userDao.findByUsername("erin@example.org")).thenReturn(null);
 

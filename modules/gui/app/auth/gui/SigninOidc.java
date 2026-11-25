@@ -125,6 +125,9 @@ public abstract class SigninOidc extends Controller {
          */
         private final String usernameFrom;
 
+        // Admin opt-out for providers that guarantee email ownership externally.
+        private final boolean allowUnverifiedEmail;
+
         /**
          * OIDC token signing algorithm
          */
@@ -136,7 +139,7 @@ public abstract class SigninOidc extends Controller {
         private final String successMsg;
 
         OidcConfig(User.AuthMethod authMethod, String discoveryUrl, String callbackUrlPath, String clientId,
-                   String clientSecret, List<String> scope, String pkceMode, String usernameFrom,
+                   String clientSecret, List<String> scope, String pkceMode, String usernameFrom, boolean allowUnverifiedEmail,
                    String idTokenSigningAlgorithm, String successMsg) {
             this.authMethod = authMethod;
             this.discoveryUrl = discoveryUrl;
@@ -146,6 +149,7 @@ public abstract class SigninOidc extends Controller {
             this.scope = new Scope(scope.toArray(String[]::new));
             this.pkceMode = pkceMode;
             this.usernameFrom = usernameFrom;
+            this.allowUnverifiedEmail = allowUnverifiedEmail;
             this.idTokenSigningAlgorithm = idTokenSigningAlgorithm;
             this.successMsg = successMsg;
         }
@@ -402,7 +406,17 @@ public abstract class SigninOidc extends Controller {
 
     protected String getUsername(UserInfo userInfo, String usernameFrom) {
         return switch (usernameFrom) {
-            case "email" -> userInfo.getEmailAddress();
+            case "email" -> {
+                String email = userInfo.getEmailAddress();
+                if (email == null || email.isBlank()) {
+                    throw new AuthException("OIDC error - Your identity provider did not supply an email address.");
+                }
+                if (!oidcConfig.allowUnverifiedEmail && !Boolean.TRUE.equals(userInfo.getEmailVerified())) {
+                    throw new AuthException("OIDC error - Your identity provider has not confirmed your email address. "
+                            + "Contact your administrator.");
+                }
+                yield email;
+            }
             case "subject" -> userInfo.getSubject().getValue();
             default ->
                     throw new IllegalArgumentException("Unknown value in configuration - usernameFrom: " + oidcConfig.usernameFrom);
